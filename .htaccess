@@ -1,0 +1,10 @@
+# Protege o site inteiro com usuário e senha (evita que qualquer pessoa na internet acesse os dados).
+AuthType Basic
+AuthName "Krieger - Sistema de Condominios"
+AuthUserFile /home/SEU_USUARIO/domains/krieger.therafinancial.com.br/public_html/.htpasswd
+Require valid-user
+
+# Bloqueia o acesso direto a arquivos sensíveis (config.php nunca é exibido, mas fica bloqueado por garantia).
+<FilesMatch "\.(sql|htpasswd)$">
+  Require all denied
+</FilesMatch>

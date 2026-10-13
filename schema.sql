@@ -1,0 +1,36 @@
+-- Esquema do banco do Sistema Krieger (condomínios). Importe uma vez, pelo phpMyAdmin do Hostinger.
+CREATE TABLE IF NOT EXISTS kr_condominios (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kr_exercicios (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kr_mensais (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kr_assembleias (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kr_modelos (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kr_config (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
