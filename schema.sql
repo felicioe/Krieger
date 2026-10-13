@@ -34,3 +34,11 @@ CREATE TABLE IF NOT EXISTS kr_config (
   dados LONGTEXT NOT NULL,
   atualizado_em DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Tabela transitória (staging): relatórios lidos do PDF aguardando confirmação do usuário.
+-- Cada registro guarda o JSON completo do relatório; status: pendente | confirmado | descartado.
+CREATE TABLE IF NOT EXISTS kr_importacoes (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

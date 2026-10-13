@@ -15,7 +15,7 @@ function saida($dados): never {
   exit;
 }
 
-$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'config'];
+$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'config', 'importacoes'];
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try {

@@ -21,3 +21,12 @@ O sufixo `092026` do nome do arquivo é a data de emissão, não o período; o p
 
 ## Conferência
 Nos layouts de período único, a soma dos itens é comparada com o total impresso no PDF (`conferencia`). Divergência indica linha não lida.
+
+## Tabela transitória (staging) – `kr_importacoes`
+Fluxo ao importar um PDF de condomínio **não cadastrado**:
+1. O PDF é lido (`lerRelatorio`) e o resultado é salvo em `kr_importacoes` com `status: "pendente"` (store `importacoes`, pela API: `salvar`).
+   Formato do registro: `{ id, status, arquivo, importadoEm, relatorio: <JSON do parser>, cadastro: cadastroBasico(), condominioId: null }`.
+2. A tela mostra a confirmação com os dados do cadastro básico (editáveis; campos faltando em destaque).
+3. Ao confirmar: cria o condomínio em `kr_condominios`, grava o relatório em `kr_mensais`/`kr_exercicios` e muda o staging para `confirmado` (com `condominioId`).
+4. Ao cancelar: `descartado`. Pendentes ficam listados para retomar depois (`listar` + filtro por status).
+Se o condomínio **já existe** (mesmo código ou CNPJ), o relatório segue direto, sem passar pelo staging.
