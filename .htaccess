@@ -1,3 +1,6 @@
+# Garante o tipo correto para o worker de PDF (.mjs); sem isso o navegador recusa o módulo.
+AddType text/javascript .mjs .js
+
 # Bloqueia o acesso direto a arquivos sensíveis.
 <FilesMatch "\.(sql|htpasswd)$">
   Require all denied
