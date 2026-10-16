@@ -42,3 +42,23 @@ CREATE TABLE IF NOT EXISTS kr_importacoes (
   dados LONGTEXT NOT NULL,
   atualizado_em DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Controle de acesso: usuários do sistema (perfil 'admin' ou 'user') e controle de tentativas de login.
+CREATE TABLE IF NOT EXISTS kr_usuarios (
+  id VARCHAR(32) PRIMARY KEY,
+  login VARCHAR(40) NOT NULL UNIQUE,
+  nome VARCHAR(120) NOT NULL,
+  senha_hash VARCHAR(255) NOT NULL,
+  perfil VARCHAR(10) NOT NULL DEFAULT 'user',
+  ativo TINYINT(1) NOT NULL DEFAULT 1,
+  trocar_senha TINYINT(1) NOT NULL DEFAULT 1,
+  criado_em DATETIME NOT NULL,
+  ultimo_acesso DATETIME NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS kr_login_tentativas (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  chave VARCHAR(160) NOT NULL,
+  criado_em DATETIME NOT NULL,
+  KEY idx_chave (chave, criado_em)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

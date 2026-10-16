@@ -24,7 +24,7 @@ function lerLinha(texto) {
 
 // "073_092026 - Estrelas do Mar - DRE Agosto.pdf" -> codigo "073"
 export function codigoDoArquivo(nome = '') {
-  const m = nome.replace(/^.*[\\/]/, '').match(/^(\d{1,4})(?=[\s_.-])/);
+  const m = nome.replace(/^.*[\\/]/, '').match(/^(\d{1,3})(?=[\s_.-])/); // até 3 dígitos: evita confundir ano (2026_...) com código
   return m ? m[1].padStart(3, '0') : null;
 }
 
@@ -59,7 +59,7 @@ function lerSecao(linhasSecao, colunas, porMaiusculas) {
     for (const n of nums) {
       let melhor = colunas[0];
       for (const c of colunas) if (Math.abs(c.fim - n.fim) < Math.abs(melhor.fim - n.fim)) melhor = c;
-      if (['Total', 'Média'].includes(melhor.nome)) (v._ ??= {})[melhor.nome.toLowerCase()] = n.valor;
+      if (['Total', 'Média'].includes(melhor.nome)) (v._ ??= {})[melhor.nome === 'Total' ? 'total' : 'media'] = n.valor;
       else v[melhor.nome] = n.valor;
     }
     return { valores: Object.fromEntries(Object.entries(v).filter(([k]) => k !== '_')), ...(v._ || {}) };
@@ -114,12 +114,16 @@ export function lerRelatorio(texto, nomeArquivo = '') {
     const s = SECOES.find(([, re]) => re.test(l));
     if (s) { atual = s[0]; secoes[atual] = []; continue; }
     if (!atual) continue;
-    if (/^\s*(Krieger Assessoria|Alexandre Krieger|Telefones|Conta a receber|RESULTADO DO M)/i.test(l)) { if (/Krieger Assessoria|Alexandre/.test(l)) atual = null; else atual = null; continue; }
+    if (/^\s*RESULTADO DO M[ÊE]S/i.test(l)) { secoes.resultadoMes = [l]; atual = null; continue; }
+    if (/^\s*(Krieger Assessoria|Alexandre Krieger|Telefones|Conta a receber)/i.test(l)) { atual = null; continue; }
     secoes[atual].push(l);
   }
   const out = { layout: colunas ? 'comparativo' : (/ORIGEM DOS RECURSOS/.test(bruto) ? 'demonstrativo_hierarquico' : 'dre_simples'), ...info };
   if (colunas) out.meses = colunas.filter((c) => /\//.test(c.nome)).map((c) => c.nome);
-  for (const [k] of SECOES) if (secoes[k]) out[k] = lerSecao(secoes[k], colunas, out.layout === 'dre_simples');
+  for (const k of [...SECOES.map(([n]) => n), 'resultadoMes']) if (secoes[k]) out[k] = lerSecao(secoes[k], colunas, out.layout === 'dre_simples');
+
+  const cr = bruto.match(/Conta a receber at[ée] a data de\s+(\d{2}\/\d{2}\/\d{4})\s+Quantidade de Unidades:\s*(\d+)\s+Totalizando:[ .]*R\$\s*(-?[\d.]+,\d{2})/i);
+  if (cr) out.contasAReceber = { ate: dataISO(cr[1]), unidades: +cr[2], total: paraNumero(cr[3]) };
 
   const soma = (s) => (s?.itens ?? []).filter((i) => !i.subtotal && i.valor != null).reduce((a, i) => a + i.valor, 0);
   if (!colunas) {
@@ -128,6 +132,16 @@ export function lerRelatorio(texto, nomeArquivo = '') {
       const tot = out[k]?.totais?.[0]; const alvo = Array.isArray(tot) ? tot[0] : null;
       if (alvo != null) out.conferencia[k] = { somaItens: +soma(out[k]).toFixed(2), totalRelatorio: alvo, confere: Math.abs(soma(out[k]) - alvo) < 0.02 };
     }
+  }
+  if (colunas) { // comparativo: a soma dos meses de cada linha deve bater com a coluna Total
+    const divergentes = []; let conferidas = 0;
+    for (const k of ['receitas', 'despesas']) for (const i of out[k]?.itens ?? []) {
+      if (i.total == null || !i.valores) continue;
+      conferidas++;
+      const soma = Object.values(i.valores).reduce((a, b) => a + b, 0);
+      if (Math.abs(soma - i.total) > 0.05) divergentes.push({ secao: k, descricao: i.descricao, somaMeses: +soma.toFixed(2), total: i.total });
+    }
+    out.conferencia = { linhasConferidas: conferidas, divergentes };
   }
   return out;
 }

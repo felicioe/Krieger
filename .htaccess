@@ -1,7 +1,12 @@
-# Garante o tipo correto para o worker de PDF (.mjs); sem isso o navegador recusa o módulo.
+# Tipo correto para o worker de PDF (.mjs); sem isso o navegador recusa o módulo.
 AddType text/javascript .mjs .js
+Options -Indexes
 
-# Bloqueia o acesso direto a arquivos sensíveis.
-<FilesMatch "\.(sql|htpasswd)$">
+# Nunca expor o repositório Git nem pastas de apoio/cópias.
+RedirectMatch 404 "(^|/)\.git(/|$)"
+RedirectMatch 404 "^/(krieger|importador)(/|$)"
+
+# Bloqueia o acesso direto a arquivos internos e sensíveis.
+<FilesMatch "(\.(sql|md|htpasswd)$|^\.git|^lib_auth\.php$|^config\.example\.php$)">
   Require all denied
 </FilesMatch>
