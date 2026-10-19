@@ -5,9 +5,7 @@
 // Admin: GET ?a=usuarios | POST a=usuario_salvar|usuario_excluir
 declare(strict_types=1);
 require __DIR__ . '/lib_auth.php';
-header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
-header('X-Content-Type-Options: nosniff');
+aplicar_cabecalhos_seguranca();
 
 try { $pdo = conectar(); }
 catch (Throwable $e) { error_log('[krieger] ' . $e->getMessage()); json_erro('Não foi possível conectar ao banco de dados. Confira config.php.', 500); }
@@ -32,6 +30,13 @@ function admins_ativos_exceto(PDO $pdo, string $id): int {
   return (int) $st->fetchColumn();
 }
 
+function purgar_tentativas_expiradas(PDO $pdo): void {
+  try {
+    $limite24h = date('Y-m-d H:i:s', time() - 86400);
+    $pdo->prepare('DELETE FROM kr_login_tentativas WHERE criado_em < ?')->execute([$limite24h]);
+  } catch (Throwable) {}
+}
+
 try {
   switch ($a) {
     case 'eu': {
@@ -40,6 +45,7 @@ try {
     }
 
     case 'entrar': {
+      purgar_tentativas_expiradas($pdo);
       iniciar_sessao();
       $login = strtolower($txt('login', 40));
       $senha = is_string($c['senha'] ?? null) ? $c['senha'] : '';
@@ -71,6 +77,7 @@ try {
     }
 
     case 'sair': {
+      purgar_tentativas_expiradas($pdo);
       iniciar_sessao();
       $_SESSION = [];
       session_destroy();

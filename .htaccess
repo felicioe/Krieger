@@ -2,11 +2,19 @@
 AddType text/javascript .mjs .js
 Options -Indexes
 
+# Cabeçalhos de segurança (proteção contra clickjacking, MIME-sniffing e vazamento de referrer)
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
 # Nunca expor o repositório Git nem pastas de apoio/cópias.
 RedirectMatch 404 "(^|/)\.git(/|$)"
 RedirectMatch 404 "^/(krieger|importador)(/|$)"
 
-# Bloqueia o acesso direto a arquivos internos e sensíveis.
-<FilesMatch "(\.(sql|md|htpasswd)$|^\.git|^lib_auth\.php$|^config\.example\.php$)">
+# Bloqueia o acesso direto a arquivos internos, configurações, scripts e documentos sensíveis.
+<FilesMatch "(\.(sql|md|log|env|bak|old|json|lock)$|^\.git|^lib_auth\.php$|^config\.php$|^config\..*\.php$)">
   Require all denied
 </FilesMatch>
