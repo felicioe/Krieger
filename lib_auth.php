@@ -9,6 +9,15 @@ date_default_timezone_set('America/Sao_Paulo');
 const SESSAO_NOME = 'KRSESS';
 const SESSAO_TEMPO = 28800; // 8 h sem atividade encerram a sessão
 
+function aplicar_cabecalhos_seguranca(): void {
+  header('Content-Type: application/json; charset=utf-8');
+  header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+  header('Pragma: no-cache');
+  header('X-Content-Type-Options: nosniff');
+  header('X-Frame-Options: SAMEORIGIN');
+  header('Referrer-Policy: strict-origin-when-cross-origin');
+}
+
 function json_ok($dados): never {
   echo json_encode($dados, JSON_UNESCAPED_UNICODE);
   exit;
