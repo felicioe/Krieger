@@ -52,3 +52,9 @@ O usuário escolhe quais seções incluir; conferência dos totais antes de emit
 ## Acesso
 Sessão com cookie `HttpOnly`/`SameSite=Lax`, bloqueio após 5 falhas em 15 min, expiração em 8 h sem uso, senha provisória com troca obrigatória,
 último administrador ativo nunca pode ser removido.
+
+## Projeto no Lovable
+- Editor: https://lovable.dev/projects/aa3c8b14-19f5-402a-87df-2d6d01f6de4c
+- Prévia: https://id-preview--aa3c8b14-19f5-402a-87df-2d6d01f6de4c.lovable.app (usa adaptador de dados de teste; a API PHP só existe na Hostinger)
+- Entregas: 1) base + login + usuários + condomínios + painel + escritório + backup; 2) prestação de contas e previsão (ajustes +/−);
+  3) previsto × realizado; 4) relatório mensal; 5) editais e modelos; 6) atas e relatório final.
