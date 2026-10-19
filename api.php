@@ -16,7 +16,7 @@ function id_valido($v): string {
   return $v;
 }
 
-$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'config', 'importacoes'];
+$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'config', 'importacoes', 'atas'];
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try { $pdo = conectar(); }

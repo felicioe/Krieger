@@ -62,3 +62,10 @@ CREATE TABLE IF NOT EXISTS kr_login_tentativas (
   criado_em DATETIME NOT NULL,
   KEY idx_chave (chave, criado_em)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Atas de assembleia (rascunhos e atas finalizadas).
+CREATE TABLE IF NOT EXISTS kr_atas (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
