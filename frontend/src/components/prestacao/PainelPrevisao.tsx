@@ -1,0 +1,381 @@
+import { Fragment } from "react";
+import { Link } from "@tanstack/react-router";
+import { Minus, Plus, TriangleAlert } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { SectionCard } from "@/components/app/SectionCard";
+import { Field } from "@/components/app/Field";
+import { RepeatableList } from "@/components/app/RepeatableList";
+import { DinheiroInput, InteiroInput, PercentualInput, Selecao } from "@/components/app/inputs";
+import { formatBRL, formatNumeroBR } from "@/lib/format";
+import { novoId } from "@/lib/id";
+import { cn } from "@/lib/utils";
+import type { ResultadoPrevisao } from "@/domain/previsao";
+import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
+
+const SEM_GRUPO = "__geral";
+
+const MODOS = [
+  { valor: "tradicional" as const, rotulo: "Tradicional (por grupo)" },
+  { valor: "detalhado" as const, rotulo: "Detalhado (por despesa)" },
+];
+const METODOS: { valor: VariacaoMetodo; rotulo: string }[] = [
+  { valor: "manual", rotulo: "Manual" },
+  { valor: "percentual", rotulo: "Percentual fixo" },
+  { valor: "mediaIndices", rotulo: "Média dos índices" },
+];
+const ARREDONDAMENTO: { valor: Arredondamento; rotulo: string }[] = [
+  { valor: "truncar", rotulo: "Truncar (sem centavos, para baixo)" },
+  { valor: "arredondar", rotulo: "Arredondar (sem centavos)" },
+  { valor: "centavos", rotulo: "Manter centavos" },
+];
+
+const pct = (n: number | null | undefined, sinal = false) =>
+  n === null || n === undefined ? "—" : `${sinal && n > 0 ? "+" : ""}${formatNumeroBR(n)}%`;
+
+type Prev = NonNullable<Exercicio["prev"]>;
+
+export function PainelPrevisao({
+  exercicio: e,
+  resultado: r,
+  unidades,
+  condoId,
+  grupos,
+  onChange,
+}: {
+  exercicio: Exercicio;
+  resultado: ResultadoPrevisao;
+  unidades: number | null;
+  condoId: string;
+  grupos: string[];
+  onChange: (parcial: Partial<Exercicio>) => void;
+}) {
+  const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
+  const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
+  const ajustes = prev.ajustes ?? [];
+  const opcoesGrupo = [{ valor: SEM_GRUPO, rotulo: "Geral" }, ...grupos.filter(Boolean).map((g) => ({ valor: g, rotulo: g }))];
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
+      <div className="min-w-0 space-y-6">
+        <SectionCard titulo="Parâmetros da previsão">
+          <div className="grid gap-4 sm:grid-cols-6">
+            <Field rotulo="Modo" className="sm:col-span-3">
+              <Selecao value={prev.modo} onChange={(v) => setPrev({ modo: v })} opcoes={MODOS} />
+            </Field>
+            <Field rotulo="Arredondamento do valor por unidade" className="sm:col-span-3">
+              <Selecao value={e.arredondamento} onChange={(v) => onChange({ arredondamento: v })} opcoes={ARREDONDAMENTO} />
+            </Field>
+            <Field rotulo="Método da variação" className="sm:col-span-2">
+              <Selecao value={e.variacaoMetodo} onChange={(v) => onChange({ variacaoMetodo: v })} opcoes={METODOS} />
+            </Field>
+            {e.variacaoMetodo === "manual" && (
+              <Field rotulo="Variação" dica="Reajuste aplicado sobre a base." className="sm:col-span-2">
+                <PercentualInput value={e.variacao} onChange={(v) => onChange({ variacao: v })} />
+              </Field>
+            )}
+            {e.variacaoMetodo === "percentual" && (
+              <Field rotulo="Percentual fixo" className="sm:col-span-2">
+                <PercentualInput value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} />
+              </Field>
+            )}
+            {e.variacaoMetodo === "mediaIndices" && (
+              <Field rotulo="Anos na média" dica={`Vazio = todos. Média atual: ${pct(r.variacaoPct)}`} className="sm:col-span-2">
+                <InteiroInput value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} placeholder="Todos" />
+              </Field>
+            )}
+            <Field rotulo="Fundo de reserva" dica="Sobre o valor por unidade." className="sm:col-span-2">
+              <PercentualInput value={prev.fundoReservaPct} onChange={(v) => setPrev({ fundoReservaPct: v })} />
+            </Field>
+            <Field
+              rotulo="Dedução (retirar da base)"
+              dica="Despesas cujo nome ou grupo contém este texto saem da base. Aceita expressão regular."
+              className="sm:col-span-4"
+            >
+              <Input value={e.deducaoRegex} onChange={(ev) => onChange({ deducaoRegex: ev.target.value })} />
+            </Field>
+            <div className="grid content-start gap-1.5 sm:col-span-2">
+              <span className="text-xs font-medium text-muted-foreground">Unidades</span>
+              <div className="flex h-9 items-center justify-between rounded-md border bg-muted/40 px-3 text-sm">
+                <span className="num">{unidades ?? "—"}</span>
+                <Link to="/condominios/$id" params={{ id: condoId }} className="text-xs text-primary underline-offset-2 hover:underline">
+                  alterar
+                </Link>
+              </div>
+            </div>
+          </div>
+        </SectionCard>
+
+        {e.variacaoMetodo === "mediaIndices" && (
+          <SectionCard titulo="Índices de correção" descricao="Usados para a média da variação. Os mais recentes entram primeiro.">
+            <RepeatableList
+              itens={e.consid.indices}
+              onChange={(indices) => onChange({ consid: { ...e.consid, indices } })}
+              novo={() => ({ ano: null, pct: null })}
+              colunas="grid-cols-[7rem_9rem]"
+              cabecalhos={["Ano", "Índice"]}
+              rotuloAdicionar="Adicionar índice"
+              vazio="Nenhum índice informado."
+              reordenavel={false}
+              render={(i, up) => (
+                <>
+                  <InteiroInput aria-label="Ano" value={i.ano} onChange={(v) => up({ ano: v })} maxLength={4} />
+                  <PercentualInput aria-label="Índice" value={i.pct} onChange={(v) => up({ pct: v })} />
+                </>
+              )}
+            />
+          </SectionCard>
+        )}
+
+        <SectionCard
+          titulo="Ajustes da previsão"
+          descricao="Acréscimos (+) e reduções (−) somados ao anual: obras programadas, contratos novos ou encerrados etc."
+        >
+          <RepeatableList<AjustePrevisao>
+            itens={ajustes}
+            onChange={(v) => setPrev({ ajustes: v })}
+            novo={() => ({ id: novoId(), descricao: "", sinal: "+", valor: 0 })}
+            colunas="grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[5.5rem_minmax(0,1fr)_9.5rem]"
+            cabecalhos={["Sinal", "Descrição e grupo", "Valor anual"]}
+            reordenavel={false}
+            rotuloAdicionar="Adicionar ajuste"
+            vazio="Nenhum ajuste. A previsão usa só a base com a variação."
+            render={(a, up) => (
+              <>
+                <div className="flex h-9 overflow-hidden rounded-md border" role="group" aria-label="Sinal do ajuste">
+                  {(["+", "-"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      aria-pressed={a.sinal === s}
+                      aria-label={s === "+" ? "Acréscimo" : "Redução"}
+                      onClick={() => up({ sinal: s })}
+                      className={cn(
+                        "flex flex-1 items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                        a.sinal === s
+                          ? s === "+"
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-destructive text-destructive-foreground"
+                          : "bg-card text-muted-foreground hover:bg-muted",
+                      )}
+                    >
+                      {s === "+" ? <Plus className="size-4" /> : <Minus className="size-4" />}
+                    </button>
+                  ))}
+                </div>
+                <Input aria-label="Descrição" placeholder="Descrição do ajuste" value={a.descricao} onChange={(ev) => up({ descricao: ev.target.value })} />
+                <div className="col-span-2 sm:col-span-1">
+                  <DinheiroInput aria-label="Valor anual" value={a.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
+                </div>
+                <div className="col-span-2 mb-2 flex items-center gap-2 sm:col-start-2">
+                  <span className="text-xs text-muted-foreground">Grupo</span>
+                  <Selecao
+                    value={a.grupo || SEM_GRUPO}
+                    onChange={(v) => up({ grupo: v === SEM_GRUPO ? "" : v })}
+                    opcoes={opcoesGrupo}
+                    className="h-8 text-xs sm:max-w-[16rem]"
+                  />
+                </div>
+              </>
+            )}
+          />
+        </SectionCard>
+
+        <SectionCard titulo={r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}>
+          <TabelaLinhas r={r} />
+        </SectionCard>
+      </div>
+
+      <aside className="lg:sticky lg:top-6 lg:self-start">
+        <Resumo r={r} arredondamento={e.arredondamento} aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })} />
+      </aside>
+    </div>
+  );
+}
+
+function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
+  if (r.linhas.length === 0) {
+    return <p className="text-sm text-muted-foreground">Lance as despesas na aba Demonstrativo para ver a previsão.</p>;
+  }
+  const ajustesPorGrupo = (g: string) => (g ? r.ajustes.filter((a) => a.grupo === g) : []);
+  const grupos = [...new Set(r.linhas.map((l) => l.grupo))];
+  const gerais = r.ajustes.filter((a) => !a.grupo || !grupos.includes(a.grupo));
+  const linhaAjuste = (a: AjustePrevisao) => (
+    <TableRow key={a.id} className="text-sm">
+      <TableCell className="pl-6 text-muted-foreground">
+        <span className={cn("mr-1.5 font-semibold", a.sinal === "-" ? "text-destructive" : "text-primary")}>
+          {a.sinal === "-" ? "−" : "+"}
+        </span>
+        {a.descricao || "Ajuste sem descrição"}
+      </TableCell>
+      <TableCell className="num text-right text-muted-foreground">—</TableCell>
+      <TableCell className={cn("num whitespace-nowrap text-right", a.sinal === "-" && "text-destructive")}>
+        {a.sinal === "-" ? "−" : ""}
+        {formatBRL(Math.abs(a.valor))}
+      </TableCell>
+      <TableCell />
+    </TableRow>
+  );
+
+  return (
+    <div className="-mx-5 -mb-5 overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/60 hover:bg-muted/60">
+            <TableHead className="text-xs font-semibold uppercase tracking-wide text-primary">
+              {r.modo === "detalhado" ? "Despesa" : "Grupo"}
+            </TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Realizado</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Previsto</TableHead>
+            <TableHead className="w-20 text-right text-xs font-semibold uppercase tracking-wide text-primary">Var.</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {grupos.map((g) => {
+            const linhas = r.linhas.filter((l) => l.grupo === g);
+            return (
+              <Fragment key={g}>
+                {r.modo === "detalhado" && (
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableCell colSpan={4} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {g || "Sem grupo"}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {linhas.map((l, i) => (
+                  <TableRow key={`${g}-${i}`} className={cn(l.deduzida && l.previsto === 0 && "text-muted-foreground")}>
+                    <TableCell className={cn(r.modo === "detalhado" && "pl-6")}>
+                      <span>{l.nome || "Sem nome"}</span>
+                      {l.deduzida && (
+                        <Badge variant="warning" className="ml-2 align-middle text-[10px]">
+                          {l.previsto === 0 ? "deduzida" : "com dedução"}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="num whitespace-nowrap text-right">{formatBRL(l.realizado)}</TableCell>
+                    <TableCell className="num whitespace-nowrap text-right font-medium">{formatBRL(l.previsto)}</TableCell>
+                    <TableCell className="num text-right text-xs text-muted-foreground">
+                      {l.realizado ? pct(Math.round((l.previsto / l.realizado - 1) * 10000) / 100, true) : "—"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {ajustesPorGrupo(g).map(linhaAjuste)}
+              </Fragment>
+            );
+          })}
+          {gerais.length > 0 && (
+            <>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableCell colSpan={4} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Ajustes gerais
+                </TableCell>
+              </TableRow>
+              {gerais.map(linhaAjuste)}
+            </>
+          )}
+        </TableBody>
+        <TableFooter>
+          <TableRow className="bg-secondary hover:bg-secondary">
+            <TableCell className="font-semibold text-primary">Anual ajustado</TableCell>
+            <TableCell className="num whitespace-nowrap text-right">{formatBRL(r.base)}</TableCell>
+            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.totalAnual)}</TableCell>
+            <TableCell className="num text-right text-xs">
+              {r.base ? pct(Math.round((r.totalAnual / r.base - 1) * 10000) / 100, true) : "—"}
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
+    </div>
+  );
+}
+
+function LinhaResumo({
+  rotulo,
+  valor,
+  forte,
+  negativo,
+  className,
+}: {
+  rotulo: string;
+  valor: string;
+  forte?: boolean;
+  negativo?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex items-baseline justify-between gap-3 py-1 text-sm", forte && "font-semibold text-primary", className)}>
+      <span className={cn(!forte && "text-muted-foreground")}>{rotulo}</span>
+      <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
+    </div>
+  );
+}
+
+const ROTULO_ARRED: Record<Arredondamento, string> = {
+  truncar: "truncado, sem centavos",
+  arredondar: "arredondado, sem centavos",
+  centavos: "com centavos",
+};
+
+function Resumo({ r, arredondamento, aoAprovar }: { r: ResultadoPrevisao; arredondamento: Arredondamento; aoAprovar: () => void }) {
+  return (
+    <section className="rounded-md border bg-card" aria-label="Resumo da previsão">
+      <header className="border-b px-5 py-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Resumo da previsão</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">Atualiza a cada alteração.</p>
+      </header>
+      <div className="px-5 py-4">
+        <LinhaResumo rotulo="Base (despesas realizadas)" valor={formatBRL(r.base)} />
+        <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
+        <LinhaResumo rotulo={`(+) Variação ${pct(r.variacaoPct)}`} valor={formatBRL(r.variacaoValor)} />
+        <LinhaResumo rotulo="(+) Ajustes" valor={formatBRL(r.ajustesMais)} />
+        <LinhaResumo rotulo="(−) Ajustes" valor={formatBRL(r.ajustesMenos)} negativo={r.ajustesMenos > 0} />
+        <LinhaResumo rotulo="Anual ajustado" valor={formatBRL(r.totalAnual)} forte className="mt-1 border-t pt-2" />
+
+        <div className="mt-4 border-t pt-3">
+          <LinhaResumo rotulo="Mensal (÷ 12)" valor={formatBRL(r.mensal)} />
+          <LinhaResumo rotulo="(÷) Unidades" valor={r.unidades ? String(r.unidades) : "—"} />
+          <LinhaResumo rotulo="Cota por unidade" valor={formatBRL(r.cotaUnidade)} forte />
+          <LinhaResumo rotulo={`(+) Reserva por unidade ${pct(r.fundoReservaPct)}`} valor={formatBRL(r.reservaUnidade)} />
+        </div>
+
+        <div className="mt-4 rounded-md bg-sidebar px-4 py-3 text-sidebar-foreground">
+          <div className="text-xs uppercase tracking-wide text-sidebar-muted">Valor por unidade</div>
+          <div className="num mt-0.5 text-2xl font-semibold">{formatBRL(r.rateioSugerido)}</div>
+          <div className="text-xs text-sidebar-muted">{ROTULO_ARRED[arredondamento]}</div>
+        </div>
+
+        <div className="mt-3">
+          <LinhaResumo rotulo="Rateio atual" valor={formatBRL(r.rateioAtual)} />
+          <LinhaResumo
+            rotulo="Índice de reajuste"
+            valor={pct(r.indice, true)}
+            forte
+            negativo={r.indice !== null && r.indice < 0}
+          />
+        </div>
+
+        {r.rateioSugerido !== null && (
+          <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={aoAprovar}>
+            Usar como rateio aprovado
+          </Button>
+        )}
+
+        {r.avisos.length > 0 && (
+          <Alert variant="warning" className="mt-4">
+            <TriangleAlert />
+            <AlertDescription>
+              <ul className="list-disc space-y-1 pl-4">
+                {r.avisos.map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+    </section>
+  );
+}

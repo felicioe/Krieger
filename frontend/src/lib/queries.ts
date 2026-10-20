@@ -1,0 +1,28 @@
+import { queryOptions } from "@tanstack/react-query";
+import type { Store } from "@/domain/types";
+import { api } from "./api";
+
+export const chaves = {
+  lista: (store: Store) => ["store", store, "lista"] as const,
+  item: (store: Store, id: string) => ["store", store, "item", id] as const,
+  store: (store: Store) => ["store", store] as const,
+  usuarios: ["auth", "usuarios"] as const,
+};
+
+export const listaQuery = <T>(store: Store) =>
+  queryOptions({
+    queryKey: chaves.lista(store),
+    queryFn: () => api.listar<T>(store),
+  });
+
+export const itemQuery = <T>(store: Store, id: string) =>
+  queryOptions({
+    queryKey: chaves.item(store, id),
+    queryFn: () => api.obter<T>(store, id),
+  });
+
+export const usuariosQuery = () =>
+  queryOptions({
+    queryKey: chaves.usuarios,
+    queryFn: () => api.auth.usuarios(),
+  });
