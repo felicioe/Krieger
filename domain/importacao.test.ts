@@ -125,6 +125,38 @@ describe("importação do PDF Systemar — período único", () => {
     expect(d.totais.saldoAtual).toBe(27700);
     expect(resumoConferencia(rel2).ok).toBe(true);
   });
+
+  it("acumula despesas em vez de reiniciar quando a seção continua numa segunda página (cabeçalho repetido)", () => {
+    // Achado testando com um PDF real de 7 páginas: "(-) DESPESAS" aparecia 2 vezes no texto (a seção
+    // continuava na página seguinte), e o parser reiniciava a lista do zero ao ver o cabeçalho de novo,
+    // perdendo tudo que tinha lido da primeira página.
+    const duasPaginas = [
+      "Condomínio: (73) - Estrelas do Mar - CNPJ: 12.345.678/0001-90",
+      "Demonstrativo de Receitas e Despesas - Período de 01/08/2026 a 31/08/2026",
+      "(*) SALDO ANTERIOR",
+      linha("Banco do Brasil", 4, ["10.000,00"], UNICO),
+      linha("", 0, ["10.000,00"], UNICO),
+      "(+) RECEITAS",
+      linha("Taxa condominial", 4, ["20.000,00"], UNICO),
+      linha("", 0, ["20.000,00"], UNICO),
+      "(-) DESPESAS",
+      "  PESSOAL",
+      linha("Salários", 4, ["8.000,00"], UNICO),
+      // quebra de página no meio da seção; o relatório repete o cabeçalho na página seguinte
+      "(-) DESPESAS",
+      "  CONSUMO",
+      linha("Água", 4, ["2.000,00"], UNICO),
+      linha("", 0, ["10.000,00"], UNICO),
+      "(=) SALDO ATUAL",
+      linha("Banco do Brasil", 4, ["20.000,00"], UNICO),
+      linha("", 0, ["20.000,00"], UNICO),
+    ].join("\n");
+    const rel2 = lerRelatorio(duasPaginas, "073_082026 - Estrelas do Mar.pdf");
+    const d = demonstrativoDoRelatorio(rel2, null, "Estrelas do Mar");
+    expect(d.despesas.grupos.map((g) => g.nome)).toEqual(["PESSOAL", "CONSUMO"]);
+    expect(d.totais.despesas).toBe(10000);
+    expect(resumoConferencia(rel2).ok).toBe(true);
+  });
 });
 
 describe("importação do PDF Systemar — comparativo", () => {

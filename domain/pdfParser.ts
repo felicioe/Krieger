@@ -247,8 +247,11 @@ export function lerRelatorio(texto: string, nomeArquivo = ''): RelatorioLido {
   for (const l of util) {
     const s = SECOES.find(([, re]) => re.test(l));
     if (s) {
+      // Em relatórios longos a seção continua em outra página e o cabeçalho se repete (ex.: "(-)
+      // DESPESAS" de novo no topo da página seguinte) — acrescenta aos itens já lidos em vez de
+      // reiniciar, senão perde tudo que veio antes da repetição.
       atual = s[0];
-      secoes[atual] = [];
+      secoes[atual] = secoes[atual] ?? [];
       continue;
     }
     if (!atual) continue;
