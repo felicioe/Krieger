@@ -20,9 +20,10 @@ npm run docs:check
 npm run package:hostinger
 ```
 
-Não existe `npm run dev` nem `npm run build` React nesta revisão. Não inferir
-que o package.json do domínio é o projeto frontend. O código React precisa ser
-recuperado na #16 antes de implementar mudanças visuais reproduzíveis.
+Não há build/dev React no package.json da raiz. Os fontes estão em frontend/,
+com package.json próprio, bun.lock e scripts dev/build/test/lint. Ler o AGENTS.md
+local antes de editar. O CI atual valida apenas o domínio da raiz; a validação
+reproduzível do frontend e sua integração ao pacote continuam na #16.
 
 Para desenvolvimento PHP, criar banco local de teste, aplicar `schema.sql` e
 criar `config.php` a partir do exemplo com credenciais locais. Nunca usar o banco

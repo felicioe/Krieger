@@ -1,5 +1,17 @@
 # Decisões do projeto
 
+## 2026-10-20 — conexões separadas da publicação
+
+Auditoria #24 confirmou acesso Codex/GitHub/Hostinger e Claude Code autenticado
+com MCP Hostinger conectado. A Hostinger já possui auto-deploy, mas segue a branch
+antiga; main é a integração desejada. Não renovar tokens ou reinstalar conectores
+que respondem corretamente apenas para resolver essa divergência de branch.
+Trocar a branch pelo hosting_deploy também publica e requer confirmação específica,
+backup e preservação de config.php. Estado detalhado em CONEXOES.md e #19.
+
+PRs #21/#23 trouxeram frontend/ para main; isso resolve localização dos fontes,
+mas não demonstra build reproduzível nem centralização das regras duplicadas (#16).
+
 ## 2026-10-20 — main como integração
 
 Decisão: `main` é a branch padrão e origem de publicações. Foi criada no commit
