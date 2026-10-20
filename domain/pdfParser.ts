@@ -257,8 +257,18 @@ export function lerRelatorio(texto: string, nomeArquivo = ''): RelatorioLido {
       atual = null;
       continue;
     }
+    // "Conta a receber..." é rodapé que sempre traz um valor monetário (o totalizador da conta), então
+    // fecha a seção mesmo assim. Os demais são texto de rodapé/assinatura/título de página que nunca
+    // trazem valor monetário — só fecham quando a linha não tem um (telefone não é "0,00"), pra não
+    // confundir com um item de despesa real cujo nome bata com o rótulo (ex.: a rubrica "Telefones",
+    // comum em despesas de condomínio).
+    if (/^\s*Conta a receber/i.test(l)) {
+      atual = null;
+      continue;
+    }
     if (
-      /^\s*(Krieger Assessoria|Alexandre Krieger|Telefones|Conta a receber|CONSIDERA[ÇC][ÕO]ES FINAIS|PREVIS[ÃA]O OR[ÇC]AMENT[ÁA]RIA)/i.test(
+      !/-?\d{1,3}(?:\.\d{3})*,\d{2}/.test(l) &&
+      /^\s*(Krieger Assessoria|Alexandre Krieger|Telefones|CONSIDERA[ÇC][ÕO]ES FINAIS|PREVIS[ÃA]O OR[ÇC]AMENT[ÁA]RIA)/i.test(
         l,
       )
     ) {
