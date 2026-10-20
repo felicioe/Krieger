@@ -40,3 +40,27 @@ AGENTS.md concentra regras comuns; CLAUDE.md aponta para ele. README indexa os
 documentos, issues mantêm pendências e PRs registram mudanças/testes. Estado atual
 é um snapshot datado, não substitui consulta ao GitHub. Check automático valida
 links locais e presença dos documentos; revisão humana/agente avalia conteúdo.
+
+## 2026-10-20 — branch de deploy dedicada (deploy-hostinger) e incidente de config.php
+
+Decisão: em vez de apontar o auto-deploy do Hostinger direto para `main` (que tem
+a árvore inteira do repositório — testes, domain/, docs/, scripts/), foi criada uma
+branch órfã `deploy-hostinger`, cuja raiz é exatamente o conteúdo de
+`npm run package:hostinger` (gerado a partir de `main`). O auto-deploy do Hostinger
+foi apontado para essa branch, com a confirmação do responsável.
+
+**Incidente ocorrido na troca**: ao mudar a branch/repositório do auto-deploy, a
+ferramenta não preservou `config.php` (nunca esteve no Git) como a descrição da
+API sugeria ("reset + pull, preservando o que não é rastreado") — na prática, a
+troca de branch limpou a pasta inteira do site antes de clonar o novo conteúdo, e
+`config.php` foi apagado junto. O site ficou fora do ar (erro de conexão com banco)
+até o responsável recriar `config.php` manualmente pelo Gerenciador de Arquivos do
+hPanel. O banco de dados em si não foi afetado, só o arquivo de conexão.
+
+**Regra daqui pra frente**: qualquer troca futura de branch ou repositório no
+auto-deploy do Hostinger deve ser seguida imediatamente de reupload manual de
+`config.php` — não confiar na preservação automática de arquivos fora do Git.
+
+**Pendência conhecida**: a branch `deploy-hostinger` não é atualizada automaticamente
+quando `main` muda — é um processo manual (rodar `npm run package:hostinger` e
+sobrescrever o conteúdo da branch). Não há CI/automação disso ainda. Detalhes em #19.
