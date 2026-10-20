@@ -7,6 +7,16 @@ Build do React + API PHP, pronto para `public_html`.
 `login.html`, `usuarios.html`, `auth-guard.js`, `acesso.css` e o `config.php` (criado no servidor, fora do Git).
 
 ## Publicação
+Fluxo operacional definido: **Claude/Codex → GitHub (`main`) → Hostinger pelo
+conector/API**. As mudanças devem chegar a `main` por PR; a publicação deve usar
+o commit aprovado dessa branch e registrar seu SHA. O pacote abaixo é uma entrada
+para a integração de publicação, não uma instrução de upload manual como rotina.
+
+Pendência de configuração: em 20/10/2026 a branch padrão remota ainda era
+`claude/youthful-pascal-lkmbs7` e `main` não existia. É necessário alinhar a branch
+e confirmar se o conector recebe referência Git ou um pacote derivado dela antes
+de habilitar publicação. Não há deploy automático configurado neste workflow.
+
 Para preparar os arquivos já compilados, com Node 22+:
 
 ```sh
@@ -16,7 +26,7 @@ npm run typecheck
 npm run package:hostinger
 ```
 
-Envie o **conteúdo** de `dist/hostinger/` para `public_html`, incluindo `.htaccess`.
+O conector/API deve publicar o **conteúdo** de `dist/hostinger/` em `public_html`, incluindo `.htaccess`.
 O pacote inclui também `branding/`. Não envie o repositório inteiro.
 `config.php` e `schema.sql` não entram no pacote: mantenha a configuração existente
 no servidor e use o schema apenas na administração do banco.
@@ -27,7 +37,7 @@ não estão nesta branch. A recuperação do build reproduzível é acompanhada 
 O GitHub Actions valida testes, TypeScript e sintaxe PHP e disponibiliza o artefato
 `krieger-hostinger`, sem credenciais e sem publicar automaticamente.
 
-1. Envie os arquivos acima para a **raiz** do `public_html` do domínio.
+1. Publique pelo conector/API os arquivos acima na **raiz** do `public_html` do domínio, a partir do commit aprovado em `main`.
 2. Copie `config.example.php` para `config.php` e preencha as credenciais do MySQL (hPanel > Bancos de dados).
 3. Importe `schema.sql` no phpMyAdmin (é seguro reimportar: só cria o que não existe).
 4. Crie o primeiro administrador (veja abaixo) e entre em `login.html`.
@@ -49,10 +59,11 @@ validação com PHP/MySQL e navegador.
 
 ## Continuidade entre ferramentas
 
-Use uma branch por issue e abra PR para a branch padrão atual do repositório.
+Use uma branch por issue e abra PR para `main` após o alinhamento da branch padrão.
+Até lá, confira a base explicitamente; os PRs existentes usam a branch padrão antiga.
 Registre no PR o problema, a solução, os testes executados e as limitações; vincule
 as issues com `Refs #N` ou `Closes #N` somente quando todos os critérios forem atendidos.
-Sincronize a branch antes de alternar entre Claude, Lovable e Codex. Mantenha
+Sincronize a branch antes de alternar entre Claude e Codex. Mantenha
 regras de negócio em `domain/` e registre a origem dos assets ao atualizar o frontend.
 
 O roteiro de validação de PDF está em [docs/VALIDACAO-PDF.md](docs/VALIDACAO-PDF.md).
