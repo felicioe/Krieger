@@ -111,7 +111,7 @@ function lerLinha(texto: string): LinhaLida {
 // "073_092026 - Estrelas do Mar - DRE Agosto.pdf" -> codigo "073"
 export function codigoDoArquivo(nome = ''): string | null {
   const m = nome.replace(/^.*[\\/]/, '').match(/^(\d{1,3})(?=[\s_.-])/); // até 3 dígitos: evita confundir ano (2026_...) com código
-  return m ? m[1].padStart(3, '0') : null;
+  return m ? m[1]!.padStart(3, '0') : null;
 }
 
 function cabecalho(linhas: string[], nomeArquivo: string): { condominio: CondominioDoRelatorio; periodo: PeriodoRelatorio; emitidoPor: string | null } {
@@ -119,26 +119,26 @@ function cabecalho(linhas: string[], nomeArquivo: string): { condominio: Condomi
   const cond: CondominioDoRelatorio = { codigo: codigoDoArquivo(nomeArquivo), nome: null, cnpj: null };
   const c = txt.match(/Condom[ií]nio:\s*\((\d+)\)\s*-\s*(.+?)(?:\s+-\s+CNPJ:\s*([\d./-]+))?\s*$/m);
   if (c) {
-    cond.codigo = c[1].padStart(3, '0');
-    cond.nome = c[2].trim();
+    cond.codigo = c[1]!.padStart(3, '0');
+    cond.nome = c[2]!.trim();
     cond.cnpj = c[3] || null;
   } else {
     const idx = linhas.findIndex((l) => /Demonstrativo/i.test(l));
     const antes = linhas.slice(0, Math.max(idx, 0)).map((l) => l.trim()).filter((l) => l && !LIXO.test(l));
-    cond.nome = antes.length ? antes[antes.length - 1] : null; // nulo quando o relatório não traz o nome
+    cond.nome = antes.length ? antes[antes.length - 1]! : null; // nulo quando o relatório não traz o nome
   }
   if (!cond.cnpj) {
     const j = txt.match(/CNPJ[:\s]*([\d]{2}\.[\d]{3}\.[\d]{3}\/[\d]{4}-[\d]{2})/);
-    if (j) cond.cnpj = j[1];
+    if (j) cond.cnpj = j[1]!;
   }
 
   let periodo: PeriodoRelatorio = null;
   const p = txt.match(/Per[ií]odo de\s+(\d{2}\/\d{2}\/\d{4})\s+a\s+(\d{2}\/\d{2}\/\d{4})/);
   const cp = txt.match(/Comparativo Financeiro de\s+(\d{2}\/\d{4})\s+a\s+(\d{2}\/\d{4})/);
-  if (p) periodo = { inicio: dataISO(p[1]), fim: dataISO(p[2]) };
-  else if (cp) periodo = { competenciaInicio: cp[1], competenciaFim: cp[2] };
+  if (p) periodo = { inicio: dataISO(p[1]!), fim: dataISO(p[2]!) };
+  else if (cp) periodo = { competenciaInicio: cp[1]!, competenciaFim: cp[2]! };
   const contab = txt.match(/^\s*(Krieger Assessoria Cont[áa]bil e Condominial Ltda\.)\s*$/im);
-  return { condominio: cond, periodo, emitidoPor: contab ? contab[1] : null };
+  return { condominio: cond, periodo, emitidoPor: contab ? contab[1]! : null };
 }
 
 interface ColunaMes {
@@ -157,7 +157,7 @@ function lerSecao(linhasSecao: string[], colunas: ColunaMes[] | null, porMaiuscu
     if (!colunas) return { valor: nums[0]?.valor ?? null };
     const v: Record<string, number> = {};
     for (const n of nums) {
-      let melhor = colunas[0];
+      let melhor = colunas[0]!;
       for (const c of colunas) if (Math.abs(c.fim - n.fim) < Math.abs(melhor.fim - n.fim)) melhor = c;
       if (['Total', 'Média'].includes(melhor.nome)) {
         (v as Record<string, number>)['_' + (melhor.nome === 'Total' ? 'total' : 'media')] = n.valor;
@@ -178,7 +178,7 @@ function lerSecao(linhasSecao: string[], colunas: ColunaMes[] | null, porMaiuscu
       if (l.nums.length) totais.push(colunas ? (valores(l.nums) as ValoresColuna) : l.nums.map((n) => n.valor));
       return;
     }
-    while (pilha.length && pilha[pilha.length - 1].indent >= l.indent) pilha.pop();
+    while (pilha.length && pilha[pilha.length - 1]!.indent >= l.indent) pilha.pop();
     const prox = L.slice(i + 1).find((x) => x.rotulo);
     const ehGrupo = porMaiusculas ? (!l.nums.length && !/[a-zà-ú]/.test(l.rotulo)) : !!(prox && prox.indent > l.indent);
     if (ehGrupo) {
@@ -253,7 +253,7 @@ export function lerRelatorio(texto: string, nomeArquivo = ''): RelatorioLido {
     }
     if (!atual) continue;
     if (/^\s*RESULTADO DO M[ÊE]S/i.test(l)) {
-      secoes.resultadoMes = [l];
+      secoes['resultadoMes'] = [l];
       atual = null;
       continue;
     }
@@ -261,7 +261,7 @@ export function lerRelatorio(texto: string, nomeArquivo = ''): RelatorioLido {
       atual = null;
       continue;
     }
-    secoes[atual].push(l);
+    secoes[atual]!.push(l);
   }
 
   const out: RelatorioLido = {
@@ -272,13 +272,13 @@ export function lerRelatorio(texto: string, nomeArquivo = ''): RelatorioLido {
   };
   if (colunas) out.meses = colunas.filter((c) => /\//.test(c.nome)).map((c) => c.nome);
   for (const k of [...SECOES.map(([n]) => n), 'resultadoMes']) {
-    if (secoes[k]) (out as Record<string, unknown>)[k] = lerSecao(secoes[k], colunas, out.layout === 'dre_simples');
+    if (secoes[k]) (out as unknown as Record<string, unknown>)[k] = lerSecao(secoes[k]!, colunas, out.layout === 'dre_simples');
   }
 
   const cr = bruto.match(
     /Conta a receber at[ée] a data de\s+(\d{2}\/\d{2}\/\d{4})\s+Quantidade de Unidades:\s*(\d+)\s+Totalizando:[ .]*R\$\s*(-?[\d.]+,\d{2})/i,
   );
-  if (cr) out.contasAReceber = { ate: dataISO(cr[1]), unidades: +cr[2], total: paraNumero(cr[3]) };
+  if (cr) out.contasAReceber = { ate: dataISO(cr[1]!), unidades: +cr[2]!, total: paraNumero(cr[3]!) };
 
   const soma = (s?: SecaoLida) =>
     (s?.itens ?? []).filter((i) => !i.subtotal && i.valor != null).reduce((a, i) => a + (i.valor as number), 0);
