@@ -17,7 +17,14 @@ import { condominioPadrao, nomeParaRelatorio } from "./condominio";
 import { exercicioPadrao } from "./exercicio";
 import { centavos, demonstrativoVazio, recalcularDemonstrativo } from "./demonstrativo";
 import { competenciaMensal, mensalPadrao, periodoDoMes, type Competencia } from "./mensal";
-import { cadastroBasico, type ItemLido, type RelatorioLido, type SecaoLida } from "./pdfParser";
+import {
+  cadastroBasico,
+  type ConsideracoesFinaisLidas,
+  type ItemLido,
+  type PrevisaoSugeridaLida,
+  type RelatorioLido,
+  type SecaoLida,
+} from "./pdfParser";
 import type { Condominio, Demonstrativo, DestinoImportacao, Exercicio, Importacao, LinhaValor, Mensal } from "./types";
 
 export const COLUNA_TOTAL = "total";
@@ -243,6 +250,47 @@ export function mensalImportado(
     },
     competencia,
   };
+}
+
+/**
+ * Aplica o que foi lido de "Considerações finais" e "Previsão orçamentária sugerida" (quando o PDF
+ * trouxer essas páginas) sobre o `consid` de um exercício — administração, contas a receber/pagar,
+ * seguro, manutenções e índices de correção vêm de `cf`; os números da previsão sugerida pelo
+ * Systemar (rateio e índice sugeridos) não substituem o cálculo próprio (domain/previsao.ts), só
+ * ficam registrados em `extras` como referência pro usuário conferir.
+ */
+export function aplicarConsideracoesAoExercicio(
+  consid: Exercicio["consid"],
+  cf: ConsideracoesFinaisLidas | null,
+  pv: PrevisaoSugeridaLida | null,
+): Exercicio["consid"] {
+  let out = consid;
+  if (cf) {
+    out = {
+      ...out,
+      administracao: cf.administracao,
+      contasReceber: cf.contasReceber,
+      contasPagar: cf.contasPagar,
+      seguradora: cf.seguradora ?? out.seguradora,
+      vigenciaSeguro: cf.vigenciaSeguro ?? out.vigenciaSeguro,
+      seguro: cf.seguro.riscoAbsoluto != null || cf.seguro.coberturas.length ? cf.seguro : out.seguro,
+      ultGordura: cf.ultGordura ?? out.ultGordura,
+      ultDedetizacao: cf.ultDedetizacao ?? out.ultDedetizacao,
+      ultCaixaDagua: cf.ultCaixaDagua ?? out.ultCaixaDagua,
+      indices: cf.indices.length ? cf.indices : out.indices,
+    };
+  }
+  if (pv) {
+    const extras: Exercicio["consid"]["extras"] = [...out.extras];
+    const add = (rotulo: string, valor: number | null) => {
+      if (valor != null) extras.push({ rotulo, valor });
+    };
+    add("Rateio mensal sugerido (Systemar)", pv.rateioMensalSugerido);
+    add("Índice sugerido para correção (Systemar)", pv.indiceSugerido);
+    add("Total de despesas consideradas ordinárias (Systemar)", pv.totalOrdinario);
+    out = { ...out, extras };
+  }
+  return out;
 }
 
 /** Prestação de contas nova com o demonstrativo do PDF. */

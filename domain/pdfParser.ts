@@ -326,3 +326,196 @@ export function cadastroBasico(rel: RelatorioLido): CadastroBasico {
     revisar: !nome || !cnpj,
   };
 }
+
+// ---------------------------------------------------------------------------------------------
+// "CONSIDERAÇÕES FINAIS" e "PREVISÃO ORÇAMENTÁRIA ORDINÁRIA SUGERIDA" — duas páginas opcionais
+// que alguns demonstrativos de período único trazem depois do saldo atual. Cada uma é lida por
+// uma função separada (não fazem parte de `lerRelatorio`): o texto completo do PDF entra, e sai
+// `null` quando a seção não está presente. Mapeiam quase 1:1 para `Exercicio.consid`.
+
+const MESES_PT: Record<string, string> = {
+  janeiro: '01', fevereiro: '02', março: '03', marco: '03', abril: '04', maio: '05', junho: '06',
+  julho: '07', agosto: '08', setembro: '09', outubro: '10', novembro: '11', dezembro: '12',
+};
+
+// "outubro/25" ou "dezembro/2025" -> "10/2025" (ano de 2 dígitos vira 20xx).
+function mesAnoPorExtenso(texto: string | undefined): string | null {
+  if (!texto) return null;
+  const m = texto.trim().match(/^([a-zà-ú]+)\/(\d{2,4})$/i);
+  if (!m) return null;
+  const mes = MESES_PT[m[1]!.toLowerCase()];
+  if (!mes) return null;
+  const ano = m[2]!.length === 2 ? `20${m[2]}` : m[2]!;
+  return `${mes}/${ano}`;
+}
+
+export interface MembroAdministracaoLido {
+  cargo: string;
+  nome: string;
+}
+
+export interface CoberturaLida {
+  desc: string;
+  valor: number;
+}
+
+export interface ConsideracoesFinaisLidas {
+  administracao: MembroAdministracaoLido[];
+  contasReceber: number | null;
+  contasPagar: number | null;
+  seguro: { riscoAbsoluto: number | null; coberturas: CoberturaLida[] };
+  seguradora: string | null;
+  /** mm/aaaa */
+  vigenciaSeguro: string | null;
+  manutencaoElevadores: number | null;
+  empresaElevadores: string | null;
+  consumoAguaMedio: number | null;
+  /** mm/aaaa */
+  ultCaixaDagua: string | null;
+  /** mm/aaaa */
+  ultDedetizacao: string | null;
+  /** mm/aaaa */
+  ultGordura: string | null;
+  indices: { ano: number; pct: number }[];
+}
+
+// "Rótulo .......... R$ 1.234,56" -> { rotulo: "Rótulo", valor: 1234.56 }
+function linhaRotuloValor(linha: string): { rotulo: string; valor: number } | null {
+  const m = linha.match(/^\s*(.+?)[.\s]{2,}R\$\s*(-?[\d.]+,\d{2})\s*$/);
+  return m ? { rotulo: m[1]!.trim(), valor: paraNumero(m[2]!) } : null;
+}
+
+function campoValor(texto: string, rotulo: RegExp): number | null {
+  const m = texto.match(rotulo);
+  return m ? paraNumero(m[1]!) : null;
+}
+
+function campoTexto(texto: string, rotulo: RegExp): string | null {
+  const m = texto.match(rotulo);
+  return m ? m[1]!.trim() : null;
+}
+
+/** Membros da administração: "Cargo: Nome"; linhas seguintes sem ":" repetem o último cargo. */
+function lerAdministracao(bloco: string): MembroAdministracaoLido[] {
+  const out: MembroAdministracaoLido[] = [];
+  let cargoAtual = '';
+  for (const linhaBruta of bloco.split(/\r?\n/)) {
+    const linha = linhaBruta.trim();
+    if (!linha) continue;
+    const m = linha.match(/^([^:]+):\s*(.+)$/);
+    if (m) {
+      cargoAtual = m[1]!.trim();
+      out.push({ cargo: cargoAtual, nome: m[2]!.trim() });
+    } else if (cargoAtual) {
+      out.push({ cargo: cargoAtual, nome: linha });
+    }
+  }
+  return out;
+}
+
+export function lerConsideracoesFinais(texto: string): ConsideracoesFinaisLidas | null {
+  const inicio = texto.search(/CONSIDERA[ÇC][ÕO]ES FINAIS/i);
+  if (inicio === -1) return null;
+  const resto = texto.slice(inicio);
+  // Para no fim da seção: emissão ("Cidade, DD de mês de AAAA.") ou início de outra página conhecida.
+  const fimMatch = resto.match(/\n\s*[A-ZÀ-Ú][a-zà-ú]+,\s*\d{1,2}\s+de\s+[a-zà-ú]+\s+de\s+\d{4}\.?/);
+  const bloco = fimMatch ? resto.slice(0, fimMatch.index) : resto;
+
+  const admMatch = bloco.match(/Membros da atual administra[çc][ãa]o:([\s\S]*?)\n\s*0?2\)/i);
+  const administracao = admMatch ? lerAdministracao(admMatch[1]!) : [];
+
+  const coberturas: CoberturaLida[] = [];
+  const segMatch = bloco.match(/Valor do seguro contratado[^\n]*\n([\s\S]*?)\n\s*0?5\)/i);
+  if (segMatch) {
+    for (const linha of segMatch[1]!.split(/\r?\n/)) {
+      const lv = linhaRotuloValor(linha);
+      if (lv) coberturas.push({ desc: lv.rotulo, valor: lv.valor });
+    }
+  }
+
+  const indices: ConsideracoesFinaisLidas['indices'] = [];
+  for (const m of bloco.matchAll(/[ÍI]ndice de corre[çc][ãa]o aplicado no condom[íi]nio em\s*(\d{4})[.\s]*%\s*(-?[\d.]+,\d{2})/gi)) {
+    indices.push({ ano: Number(m[1]!), pct: paraNumero(m[2]!) });
+  }
+
+  return {
+    administracao,
+    contasReceber: campoValor(bloco, /Valor total contas a receber[.\s]*R\$\s*(-?[\d.]+,\d{2})/i),
+    contasPagar: campoValor(bloco, /Valor total contas a pagar[.\s]*R\$\s*(-?[\d.]+,\d{2})/i),
+    seguro: {
+      riscoAbsoluto: campoValor(bloco, /Valor do seguro contratado[\s\S]*?R\$\s*(-?[\d.]+,\d{2})/i),
+      coberturas,
+    },
+    // Captura o resto da linha e tira só o ponto final do relatório — nomes com "S.A." no meio ficam intactos.
+    seguradora: campoTexto(bloco, /Seguradora:\s*([^\n]+?)\s*$/im)?.replace(/\.$/, '') || null,
+    vigenciaSeguro: mesAnoPorExtenso(campoTexto(bloco, /Vig[êe]ncia do seguro[.\s]*([a-zà-ú]+\/\d{2,4})/i) ?? undefined),
+    manutencaoElevadores: campoValor(bloco, /Valor da manuten[çc][ãa]o dos elevadores[.\s]*R\$\s*(-?[\d.]+,\d{2})/i),
+    empresaElevadores: campoTexto(bloco, /Empresa:\s*([^\n]+)/i),
+    consumoAguaMedio: campoValor(bloco, /Valor m[ée]dio do consumo de [áa]gua[.\s]*R\$\s*(-?[\d.]+,\d{2})/i),
+    ultCaixaDagua: mesAnoPorExtenso(campoTexto(bloco, /[Úu]ltima limpeza da caixa d[´'`]?\s*[áa]gua e cisterna[.\s]*([a-zà-ú]+\/\d{2,4})/i) ?? undefined),
+    ultDedetizacao: mesAnoPorExtenso(campoTexto(bloco, /[Úu]ltima dedetiza[çc][ãa]o[.\s]*([a-zà-ú]+\/\d{2,4})/i) ?? undefined),
+    ultGordura: mesAnoPorExtenso(campoTexto(bloco, /[Úu]ltima limpeza da caixa de gordura[.\s]*([a-zà-ú]+\/\d{2,4})/i) ?? undefined),
+    indices,
+  };
+}
+
+export interface CategoriaPrevisaoSugerida {
+  nome: string;
+  anual: number;
+  media: number;
+}
+
+export interface PrevisaoSugeridaLida {
+  rateioMensalAtual: number | null;
+  categorias: CategoriaPrevisaoSugerida[];
+  totalDespesasAno: number | null;
+  totalDespesasMedia: number | null;
+  deducao: number | null;
+  totalOrdinario: number | null;
+  variacaoSugerida: number | null;
+  rateioAnualSugerido: number | null;
+  rateioMensalSugerido: number | null;
+  /** % */
+  indiceSugerido: number | null;
+}
+
+export function lerPrevisaoSugerida(texto: string): PrevisaoSugeridaLida | null {
+  const inicio = texto.search(/PREVIS[ÃA]O OR[ÇC]AMENT[ÁA]RIA ORDIN[ÁA]RIA/i);
+  if (inicio === -1) return null;
+  const resto = texto.slice(inicio);
+  const fimMatch = resto.match(/\n\s*[A-ZÀ-Ú][a-zà-ú]+,\s*\d{1,2}\s+de\s+[a-zà-ú]+\s+de\s+\d{4}\.?/);
+  const bloco = fimMatch ? resto.slice(0, fimMatch.index) : resto;
+
+  const categorias: CategoriaPrevisaoSugerida[] = [];
+  let totalDespesasAno: number | null = null;
+  let totalDespesasMedia: number | null = null;
+  const tabelaMatch = bloco.match(/efetivamente realizado no ano\s+m[ée]dia m[êe]s([\s\S]*?)\n\s*Despesas a deduzir/i);
+  if (tabelaMatch) {
+    for (const linha of tabelaMatch[1]!.split(/\r?\n/)) {
+      const m = linha.match(/^\s*(.+?)[.\s]{2,}R\$\s*(-?[\d.]+,\d{2})\s+R\$\s*(-?[\d.]+,\d{2})\s*$/);
+      if (!m) continue;
+      const nome = m[1]!.trim();
+      const anual = paraNumero(m[2]!);
+      const media = paraNumero(m[3]!);
+      if (/^Total das despesas do per[íi]odo/i.test(nome)) {
+        totalDespesasAno = anual;
+        totalDespesasMedia = media;
+      } else {
+        categorias.push({ nome, anual, media });
+      }
+    }
+  }
+
+  return {
+    rateioMensalAtual: campoValor(bloco, /Valor total do rateio ordin[áa]rio mensal utilizado atualmente[\s\S]*?R\$\s*(-?[\d.]+,\d{2})/i),
+    categorias,
+    totalDespesasAno,
+    totalDespesasMedia,
+    deducao: campoValor(bloco, /Despesas a deduzir[^\n]*R\$\s*(-?[\d.]+,\d{2})/i),
+    totalOrdinario: campoValor(bloco, /Total de despesas consideradas ordin[áa]rias\.?\s*R\$\s*(-?[\d.]+,\d{2})/i),
+    variacaoSugerida: campoValor(bloco, /Varia[çc][ãa]o de despesas sugeridas[^\n]*R\$\s*(-?[\d.]+,\d{2})/i),
+    rateioAnualSugerido: campoValor(bloco, /Sugest[ãa]o de rateio\s+anual\s+ordin[áa]rio[.\s]*R\$\s*(-?[\d.]+,\d{2})/i),
+    rateioMensalSugerido: campoValor(bloco, /Sugest[ãa]o de rateio\s+mensal\s+ordin[áa]rio[.\s]*R\$\s*(-?[\d.]+,\d{2})/i),
+    indiceSugerido: campoValor(bloco, /[ÍI]ndice sugerido para corre[çc][ãa]o do condom[íi]nio[.\s]*(-?[\d.]+,\d{2})\s*%/i),
+  };
+}
