@@ -16,13 +16,18 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
-Os fontes React chegaram em `frontend/` pelos PRs #21/#23. A #16 acompanha build
-reproduzível e integração das regras. O pacote da raiz usa assets versionados;
-não recompila frontend/.
+Os fontes React estão em `frontend/` (PRs #21/#23), sem lógica duplicada — os
+20 arquivos de `frontend/src/domain/` e os 2 de `frontend/src/lib/` (format.ts,
+id.ts) são re-exports de uma linha pra `domain/`/`lib/` da raiz (PR #41).
+O pacote (`npm run package:hostinger`) compila esse frontend de verdade e o
+empacota junto com o backend PHP — ver `## Publicação` abaixo.
 
 ## Arquivos que vão para o servidor
-`index.html`, `assets/`, `branding/`, `favicon.svg`, `icons.svg`, `.htaccess`, `api.php`, `auth.php`, `lib_auth.php`,
-`login.html`, `usuarios.html`, `auth-guard.js`, `acesso.css` e o `config.php` (criado no servidor, fora do Git).
+`index.html`, `assets/` e `favicon.png` (build de `frontend/`), `branding/`, `.htaccess`,
+`api.php`, `auth.php`, `lib_auth.php` e o `config.php` (criado no servidor, fora do Git).
+`login.html`, `usuarios.html`, `auth-guard.js`, `acesso.css`, `favicon.svg` e `icons.svg`
+eram do frontend legado (HTML/JS estático) e não fazem mais parte do pacote — o SPA novo
+cobre login e gestão de usuários como rotas próprias (`#/login`, `#/usuarios`).
 
 ## Publicação
 Fluxo operacional definido: **Claude/Codex → GitHub (`main`) → Hostinger pelo
@@ -41,24 +46,26 @@ npm ci
 npm test
 npm run typecheck
 npm run docs:check
+cd frontend && npm ci && npm run build && cd ..
 npm run package:hostinger
 ```
+
+`npm run package:hostinger` exige que `frontend/.output/public/index.html` já exista
+(passo `cd frontend && npm run build` acima) — ele recusa gerar o pacote sem isso, pra
+não publicar um pacote velho escondendo uma falha de build.
 
 O conector/API deve publicar o **conteúdo** de `dist/hostinger/` em `public_html`, incluindo `.htaccess`.
 O pacote inclui também `branding/`. Não envie o repositório inteiro.
 `config.php` e `schema.sql` não entram no pacote: mantenha a configuração existente
 no servidor e use o schema apenas na administração do banco.
 
-Este comando empacota os assets versionados; não recompila React. Os fontes estão
-em frontend/, mas o build integrado e reproduzível ainda é acompanhado na
-[issue #16](https://github.com/felicioe/Krieger/issues/16).
 O GitHub Actions valida testes, TypeScript e sintaxe PHP e disponibiliza o artefato
 `krieger-hostinger`, sem credenciais e sem publicar automaticamente.
 
 1. Publique pelo conector/API os arquivos acima na **raiz** do `public_html` do domínio, a partir do commit aprovado em `main`.
 2. Copie `config.example.php` para `config.php` e preencha as credenciais do MySQL (hPanel > Bancos de dados).
 3. Na primeira instalação, aplique `schema.sql` no banco. Ele usa CREATE TABLE IF NOT EXISTS e não migra tabelas existentes; alterações futuras exigem plano de migração.
-4. Crie o primeiro administrador (veja abaixo) e entre em `login.html`.
+4. Crie o primeiro administrador (veja abaixo) e entre pela tela de login do próprio sistema (`/#/login`).
 
 ## Controle de acesso
 - Só entram usuários cadastrados em **Usuários** (menu lateral, visível apenas para administradores).
