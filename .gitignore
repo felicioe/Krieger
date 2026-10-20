@@ -1,2 +1,4 @@
 config.php
 .claude/
+node_modules/
+dist/
