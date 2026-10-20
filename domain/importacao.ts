@@ -16,6 +16,7 @@
 import { condominioPadrao, nomeParaRelatorio } from "./condominio";
 import { exercicioPadrao } from "./exercicio";
 import { centavos, demonstrativoVazio, recalcularDemonstrativo } from "./demonstrativo";
+import { formatBRL, formatNumeroBR } from "../lib/format";
 import { competenciaMensal, mensalPadrao, periodoDoMes, type Competencia } from "./mensal";
 import {
   cadastroBasico,
@@ -261,12 +262,25 @@ export function mensalImportado(
   };
 }
 
+// Rótulos dos itens que este módulo acrescenta a `extras`: ao reaplicar (reimportação do mesmo
+// PDF), os antigos são removidos antes de acrescentar os novos, pra não duplicar.
+const ROTULOS_EXTRAS_SYSTEMAR = [
+  "Rateio mensal sugerido (Systemar)",
+  "Índice sugerido para correção (Systemar)",
+  "Total de despesas consideradas ordinárias (Systemar)",
+  "Manutenção dos elevadores (Systemar)",
+  "Empresa dos elevadores (Systemar)",
+  "Consumo médio de água (Systemar)",
+];
+
 /**
  * Aplica o que foi lido de "Considerações finais" e "Previsão orçamentária sugerida" (quando o PDF
  * trouxer essas páginas) sobre o `consid` de um exercício — administração, contas a receber/pagar,
  * seguro, manutenções e índices de correção vêm de `cf`; os números da previsão sugerida pelo
  * Systemar (rateio e índice sugeridos) não substituem o cálculo próprio (domain/previsao.ts), só
- * ficam registrados em `extras` como referência pro usuário conferir.
+ * ficam registrados em `extras`, já formatados, como referência pro usuário conferir. O mesmo vale
+ * pros campos de `cf` sem campo correspondente no cadastro (manutenção/empresa dos elevadores,
+ * consumo médio de água): entram em `extras` em vez de se perderem.
  */
 export function aplicarConsideracoesAoExercicio(
   consid: Exercicio["consid"],
@@ -289,14 +303,21 @@ export function aplicarConsideracoesAoExercicio(
       indices: cf.indices.length ? cf.indices : out.indices,
     };
   }
-  if (pv) {
-    const extras: Exercicio["consid"]["extras"] = [...out.extras];
-    const add = (rotulo: string, valor: number | null) => {
+  if (cf || pv) {
+    const extras: Exercicio["consid"]["extras"] = out.extras.filter((e) => !ROTULOS_EXTRAS_SYSTEMAR.includes(e.rotulo));
+    const add = (rotulo: string, valor: string | null) => {
       if (valor != null) extras.push({ rotulo, valor });
     };
-    add("Rateio mensal sugerido (Systemar)", pv.rateioMensalSugerido);
-    add("Índice sugerido para correção (Systemar)", pv.indiceSugerido);
-    add("Total de despesas consideradas ordinárias (Systemar)", pv.totalOrdinario);
+    if (pv) {
+      add("Rateio mensal sugerido (Systemar)", pv.rateioMensalSugerido != null ? formatBRL(pv.rateioMensalSugerido) : null);
+      add("Índice sugerido para correção (Systemar)", pv.indiceSugerido != null ? `${formatNumeroBR(pv.indiceSugerido)}%` : null);
+      add("Total de despesas consideradas ordinárias (Systemar)", pv.totalOrdinario != null ? formatBRL(pv.totalOrdinario) : null);
+    }
+    if (cf) {
+      add("Manutenção dos elevadores (Systemar)", cf.manutencaoElevadores != null ? formatBRL(cf.manutencaoElevadores) : null);
+      add("Empresa dos elevadores (Systemar)", cf.empresaElevadores);
+      add("Consumo médio de água (Systemar)", cf.consumoAguaMedio != null ? formatBRL(cf.consumoAguaMedio) : null);
+    }
     out = { ...out, extras };
   }
   return out;

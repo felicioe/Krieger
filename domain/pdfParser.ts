@@ -257,7 +257,11 @@ export function lerRelatorio(texto: string, nomeArquivo = ''): RelatorioLido {
       atual = null;
       continue;
     }
-    if (/^\s*(Krieger Assessoria|Alexandre Krieger|Telefones|Conta a receber)/i.test(l)) {
+    if (
+      /^\s*(Krieger Assessoria|Alexandre Krieger|Telefones|Conta a receber|CONSIDERA[ÇC][ÕO]ES FINAIS|PREVIS[ÃA]O OR[ÇC]AMENT[ÁA]RIA)/i.test(
+        l,
+      )
+    ) {
       atual = null;
       continue;
     }
