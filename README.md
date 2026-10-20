@@ -1,9 +1,25 @@
 # Krieger – Sistema de Condomínios (build para Hostinger)
 
-Build do React + API PHP, pronto para `public_html`.
+Sistema de condomínios com frontend React compilado e API PHP/MySQL.
+Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via conector/API.
+
+## Comece aqui
+
+- [Estado atual e próximas tarefas](docs/ESTADO-ATUAL.md)
+- [Instruções compartilhadas para agentes](AGENTS.md) e [entrada do Claude](CLAUDE.md)
+- [Arquitetura e mapa dos arquivos](docs/ARQUITETURA.md)
+- [Ambiente, comandos e contribuição](docs/DESENVOLVIMENTO.md)
+- [Publicação, validação e rollback](docs/PUBLICACAO.md)
+- [Decisões duráveis](docs/DECISOES.md)
+- [Validação de PDF](docs/VALIDACAO-PDF.md)
+- [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
+
+`main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
+Os fontes React ainda precisam ser recuperados (#16); o pacote atual utiliza os
+assets compilados versionados. Não existe comando de build/dev React nesta revisão.
 
 ## Arquivos que vão para o servidor
-`index.html`, `assets/`, `favicon.svg`, `icons.svg`, `.htaccess`, `api.php`, `auth.php`, `lib_auth.php`,
+`index.html`, `assets/`, `branding/`, `favicon.svg`, `icons.svg`, `.htaccess`, `api.php`, `auth.php`, `lib_auth.php`,
 `login.html`, `usuarios.html`, `auth-guard.js`, `acesso.css` e o `config.php` (criado no servidor, fora do Git).
 
 ## Publicação
@@ -12,10 +28,9 @@ conector/API**. As mudanças devem chegar a `main` por PR; a publicação deve u
 o commit aprovado dessa branch e registrar seu SHA. O pacote abaixo é uma entrada
 para a integração de publicação, não uma instrução de upload manual como rotina.
 
-Pendência de configuração: em 20/10/2026 a branch padrão remota ainda era
-`claude/youthful-pascal-lkmbs7` e `main` não existia. É necessário alinhar a branch
-e confirmar se o conector recebe referência Git ou um pacote derivado dela antes
-de habilitar publicação. Não há deploy automático configurado neste workflow.
+Pendente na #19: confirmar conta/domínio e se o conector recebe referência Git
+ou pacote derivado dela, com suporte a PHP e preservação de configuração/dados.
+Não há deploy automático configurado neste workflow.
 
 Para preparar os arquivos já compilados, com Node 22+:
 
@@ -23,6 +38,7 @@ Para preparar os arquivos já compilados, com Node 22+:
 npm ci
 npm test
 npm run typecheck
+npm run docs:check
 npm run package:hostinger
 ```
 
@@ -39,7 +55,7 @@ O GitHub Actions valida testes, TypeScript e sintaxe PHP e disponibiliza o artef
 
 1. Publique pelo conector/API os arquivos acima na **raiz** do `public_html` do domínio, a partir do commit aprovado em `main`.
 2. Copie `config.example.php` para `config.php` e preencha as credenciais do MySQL (hPanel > Bancos de dados).
-3. Importe `schema.sql` no phpMyAdmin (é seguro reimportar: só cria o que não existe).
+3. Na primeira instalação, aplique `schema.sql` no banco. Ele usa CREATE TABLE IF NOT EXISTS e não migra tabelas existentes; alterações futuras exigem plano de migração.
 4. Crie o primeiro administrador (veja abaixo) e entre em `login.html`.
 
 ## Controle de acesso
@@ -59,8 +75,7 @@ validação com PHP/MySQL e navegador.
 
 ## Continuidade entre ferramentas
 
-Use uma branch por issue e abra PR para `main` após o alinhamento da branch padrão.
-Até lá, confira a base explicitamente; os PRs existentes usam a branch padrão antiga.
+Use uma branch por issue e abra PR para `main`. O PR #18 já foi redirecionado para ela.
 Registre no PR o problema, a solução, os testes executados e as limitações; vincule
 as issues com `Refs #N` ou `Closes #N` somente quando todos os critérios forem atendidos.
 Sincronize a branch antes de alternar entre Claude e Codex. Mantenha

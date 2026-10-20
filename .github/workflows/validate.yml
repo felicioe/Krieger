@@ -16,6 +16,7 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
+      - run: npm run docs:check
       - name: Validar sintaxe PHP
         run: find . -maxdepth 1 -name '*.php' -print0 | xargs -0 -n1 php -l
       - run: npm run package:hostinger

@@ -5,6 +5,7 @@
   "scripts": {
     "test": "vitest run",
     "package:hostinger": "node scripts/package-hostinger.mjs",
+    "docs:check": "node scripts/check-docs.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
