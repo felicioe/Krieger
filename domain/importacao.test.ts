@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { lerRelatorio } from "@/domain/pdfParser";
 import { textoComLayout, type ItemTexto } from "@/domain/layoutTexto";
+import type { ConsideracoesFinaisLidas, PrevisaoSugeridaLida } from "@/domain/pdfParser";
 import {
   COLUNA_TOTAL,
   anoDoRelatorio,
@@ -158,9 +159,50 @@ describe("condomínio do relatório", () => {
   it("sem correspondência, vai para o staging como pendente", () => {
     const rel = lerRelatorio(periodoUnico.replace(/^Condomínio:.*$/m, "Demonstrativo"));
     expect(encontrarCondominio(condos, rel.condominio)).toBeNull();
-    const imp = novaImportacao(rel, "x.pdf", "mensais", new Date("2026-10-20T00:00:00Z"));
-    expect(imp).toMatchObject({ status: "pendente", arquivo: "x.pdf", importadoEm: "2026-10-20T00:00:00.000Z", condominioId: null });
+    const imp = novaImportacao(rel, "x.pdf", "mensais", null, null, new Date("2026-10-20T00:00:00Z"));
+    expect(imp).toMatchObject({
+      status: "pendente",
+      arquivo: "x.pdf",
+      importadoEm: "2026-10-20T00:00:00.000Z",
+      condominioId: null,
+      consideracoes: null,
+      previsaoSugerida: null,
+    });
     expect(imp.cadastro.revisar).toBe(true);
     expect(camposFaltando(imp.cadastro)).toEqual(["codigo", "nome", "cnpj"]);
+  });
+
+  it("guarda Considerações finais e Previsão sugerida no staging quando o PDF trouxer essas páginas", () => {
+    const rel = lerRelatorio(periodoUnico.replace(/^Condomínio:.*$/m, "Demonstrativo"));
+    const cf: ConsideracoesFinaisLidas = {
+      administracao: [{ cargo: "Síndico", nome: "Fulano" }],
+      contasReceber: 1000,
+      contasPagar: 500,
+      seguro: { riscoAbsoluto: 2000000, coberturas: [] },
+      seguradora: "Seguradora S.A.",
+      vigenciaSeguro: "12/2026",
+      manutencaoElevadores: null,
+      empresaElevadores: null,
+      consumoAguaMedio: null,
+      ultCaixaDagua: null,
+      ultDedetizacao: null,
+      ultGordura: null,
+      indices: [],
+    };
+    const pv: PrevisaoSugeridaLida = {
+      rateioMensalAtual: 500,
+      categorias: [],
+      totalDespesasAno: 6000,
+      totalDespesasMedia: 500,
+      deducao: null,
+      totalOrdinario: 6000,
+      variacaoSugerida: null,
+      rateioAnualSugerido: 6200,
+      rateioMensalSugerido: 516.67,
+      indiceSugerido: 3.33,
+    };
+    const imp = novaImportacao(rel, "x.pdf", "mensais", cf, pv);
+    expect(imp.consideracoes).toBe(cf);
+    expect(imp.previsaoSugerida).toBe(pv);
   });
 });

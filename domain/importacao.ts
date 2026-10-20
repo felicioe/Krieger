@@ -185,11 +185,18 @@ export function encontrarCondominio<C extends Pick<Condominio, "codigo" | "cnpj"
   );
 }
 
-/** Registro de staging de um relatório de condomínio ainda não cadastrado. */
+/**
+ * Registro de staging de um relatório de condomínio ainda não cadastrado. `cf`/`pv` são o que
+ * `lerConsideracoesFinais`/`lerPrevisaoSugerida` leram do mesmo texto do PDF (ou `null`, se o PDF
+ * não tiver essas páginas) — ficam guardados no registro até a confirmação, quando
+ * `aplicarConsideracoesAoExercicio` os aplica no exercício criado.
+ */
 export function novaImportacao(
   rel: RelatorioLido,
   arquivo: string,
   destino: DestinoImportacao,
+  cf: ConsideracoesFinaisLidas | null = null,
+  pv: PrevisaoSugeridaLida | null = null,
   agora = new Date(),
 ): Omit<Importacao, "id"> {
   return {
@@ -200,6 +207,8 @@ export function novaImportacao(
     cadastro: cadastroBasico(rel),
     condominioId: null,
     destino,
+    consideracoes: cf,
+    previsaoSugerida: pv,
   };
 }
 
