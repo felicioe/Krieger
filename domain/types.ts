@@ -1,4 +1,4 @@
-import type { CadastroBasico, RelatorioLido } from "./pdfParser";
+import type { CadastroBasico, ConsideracoesFinaisLidas, PrevisaoSugeridaLida, RelatorioLido } from "./pdfParser";
 
 /**
  * Tipos de domínio do Sistema Krieger.
@@ -285,6 +285,10 @@ export interface Importacao extends ComId {
   destino?: DestinoImportacao;
   /** Campo novo (opcional): id do relatório gravado ao confirmar. */
   registroId?: string | null;
+  /** Campo novo (opcional): Considerações finais lidas do PDF, se a página existir. */
+  consideracoes?: ConsideracoesFinaisLidas | null;
+  /** Campo novo (opcional): Previsão orçamentária sugerida lida do PDF, só como referência. */
+  previsaoSugerida?: PrevisaoSugeridaLida | null;
 }
 
 // ---------- Configurações ----------
