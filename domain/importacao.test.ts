@@ -95,6 +95,36 @@ describe("importação do PDF Systemar — período único", () => {
     expect(d.totais.saldoAtual).toBe(24500);
     expect(d.saldoAtual.contas.map((c) => c.nome)).toEqual(["Banco do Brasil", "Poupança"]);
   });
+
+  it("não corta a seção de despesas quando uma rubrica se chama Telefones (bate com o rodapé de ofício)", () => {
+    // Achado testando com PDF real do Systemar: "Telefones" é uma rubrica de despesa comum, mas também
+    // era (antes da correção) um dos marcadores de fim de seção (rodapé do escritório), então tudo que
+    // vinha depois dela na mesma seção era descartado silenciosamente.
+    const comTelefones = [
+      "Condomínio: (73) - Estrelas do Mar - CNPJ: 12.345.678/0001-90",
+      "Demonstrativo de Receitas e Despesas - Período de 01/08/2026 a 31/08/2026",
+      "(*) SALDO ANTERIOR",
+      linha("Banco do Brasil", 4, ["10.000,00"], UNICO),
+      linha("", 0, ["10.000,00"], UNICO),
+      "(+) RECEITAS",
+      linha("Taxa condominial", 4, ["20.000,00"], UNICO),
+      linha("", 0, ["20.000,00"], UNICO),
+      "(-) DESPESAS",
+      "  CONSUMO",
+      linha("Telefones", 4, ["300,00"], UNICO),
+      linha("Água", 4, ["2.000,00"], UNICO),
+      linha("", 0, ["2.300,00"], UNICO),
+      "(=) SALDO ATUAL",
+      linha("Banco do Brasil", 4, ["27.700,00"], UNICO),
+      linha("", 0, ["27.700,00"], UNICO),
+    ].join("\n");
+    const rel2 = lerRelatorio(comTelefones, "073_082026 - Estrelas do Mar.pdf");
+    const d = demonstrativoDoRelatorio(rel2, null, "Estrelas do Mar");
+    expect(d.despesas.grupos[0]!.itens.map((i) => i.nome)).toEqual(["Telefones", "Água"]);
+    expect(d.totais.despesas).toBe(2300);
+    expect(d.totais.saldoAtual).toBe(27700);
+    expect(resumoConferencia(rel2).ok).toBe(true);
+  });
 });
 
 describe("importação do PDF Systemar — comparativo", () => {
