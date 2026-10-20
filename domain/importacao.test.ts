@@ -214,8 +214,9 @@ describe("texto com layout a partir dos itens do pdf.js", () => {
 
 describe("condomínio do relatório", () => {
   const condos = [
-    { id: "a", codigo: "73", cnpj: "" },
-    { id: "b", codigo: "", cnpj: "98.765.432/0001-10" },
+    { id: "a", codigo: "73", cnpj: "", nome: "Estrelas do Mar", nomeRelatorio: "" },
+    { id: "b", codigo: "", cnpj: "98.765.432/0001-10", nome: "Jardim das Acácias", nomeRelatorio: "" },
+    { id: "c", codigo: "", cnpj: "", nome: "Urban Classic", nomeRelatorio: "" },
   ];
 
   it("encontra pelo mesmo código (com ou sem zeros à esquerda)", () => {
@@ -224,6 +225,18 @@ describe("condomínio do relatório", () => {
 
   it("encontra pelo mesmo CNPJ", () => {
     expect(encontrarCondominio(condos, { codigo: "999", cnpj: "98765432000110" })?.id).toBe("b");
+  });
+
+  it("sem código nem CNPJ, encontra pelo nome completo (só nesse caso)", () => {
+    expect(encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "Urban Classic" })?.id).toBe("c");
+    expect(encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "URBAN   classic" })?.id).toBe("c");
+    expect(encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "Outro Nome" })).toBeNull();
+  });
+
+  it("não usa o nome como fallback quando código ou CNPJ foram informados mas não bateram", () => {
+    // Evita "corrigir" pro condomínio errado quando o PDF trouxe um código/CNPJ que só não existe
+    // no cadastro ainda — nesse caso é melhor ir pro staging de qualquer jeito.
+    expect(encontrarCondominio(condos, { codigo: "999", cnpj: null, nome: "Urban Classic" })).toBeNull();
   });
 
   it("sem correspondência, vai para o staging como pendente", () => {
