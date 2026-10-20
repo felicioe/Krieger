@@ -27,6 +27,7 @@ const rotulo = <V extends string>(lista: { valor: V; rotulo: string }[], v: stri
   lista.find((o) => o.valor === v)?.rotulo ?? v;
 export const rotuloTipo = (v: string) => rotulo(TIPOS_ASSEMBLEIA, v);
 export const rotuloModalidade = (v: string) => rotulo(MODALIDADES, v);
+export const rotuloEntrega = (v: string) => rotulo(ENTREGAS_CONTAS, v);
 
 /** Quais campos a modalidade usa: local físico (presencial/híbrida) e Zoom (on-line/híbrida). */
 export function camposDaModalidade(m: Assembleia["modalidade"]): { local: boolean; zoom: boolean } {
