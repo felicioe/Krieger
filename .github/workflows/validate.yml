@@ -1,0 +1,27 @@
+name: Validar e empacotar
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - name: Validar sintaxe PHP
+        run: find . -maxdepth 1 -name '*.php' -print0 | xargs -0 -n1 php -l
+      - run: npm run package:hostinger
+      - uses: actions/upload-artifact@v4
+        with:
+          name: krieger-hostinger
+          path: dist/hostinger/
+          include-hidden-files: true
+          if-no-files-found: error
