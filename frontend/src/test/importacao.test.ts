@@ -143,9 +143,19 @@ describe("texto com layout a partir dos itens do pdf.js", () => {
 
 describe("condomínio do relatório", () => {
   const condos = [
-    { id: "a", codigo: "73", cnpj: "" },
-    { id: "b", codigo: "", cnpj: "98.765.432/0001-10" },
+    { id: "a", codigo: "73", cnpj: "", nome: "", nomeRelatorio: "" },
+    { id: "b", codigo: "", cnpj: "98.765.432/0001-10", nome: "", nomeRelatorio: "" },
+    { id: "c", codigo: "", cnpj: "", nome: "Residencial Urban Classic", nomeRelatorio: "" },
   ];
+
+  it("sem código nem CNPJ no PDF, encontra pelo nome completo (sem acento/maiúscula)", () => {
+    expect(encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "RESIDENCIAL  URBAN CLÁSSIC" })?.id).toBe("c");
+    expect(encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "residencial urban classic" })?.id).toBe("c");
+  });
+
+  it("com código informado que não bate, não tenta pelo nome", () => {
+    expect(encontrarCondominio(condos, { codigo: "999", cnpj: null, nome: "Residencial Urban Classic" })).toBeNull();
+  });
 
   it("encontra pelo mesmo código (com ou sem zeros à esquerda)", () => {
     expect(encontrarCondominio(condos, { codigo: "073", cnpj: null })?.id).toBe("a");

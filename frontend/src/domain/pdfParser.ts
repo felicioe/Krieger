@@ -248,7 +248,10 @@ export function lerRelatorio(texto: string, nomeArquivo = ''): RelatorioLido {
     const s = SECOES.find(([, re]) => re.test(l));
     if (s) {
       atual = s[0];
-      secoes[atual] = [];
+      // Em relatórios longos a seção continua em outra página e o cabeçalho se repete (ex.: "(-)
+      // DESPESAS" de novo no topo da página seguinte) — acrescenta aos itens já lidos em vez de
+      // reiniciar, senão perde tudo que veio antes da repetição.
+      secoes[atual] = secoes[atual] ?? [];
       continue;
     }
     if (!atual) continue;
@@ -257,8 +260,18 @@ export function lerRelatorio(texto: string, nomeArquivo = ''): RelatorioLido {
       atual = null;
       continue;
     }
+    // "Conta a receber..." é rodapé que sempre traz um valor monetário (o totalizador da conta), então
+    // fecha a seção mesmo assim. Os demais são texto de rodapé/assinatura/título de página que nunca
+    // trazem valor monetário — só fecham quando a linha não tem um (telefone não é "0,00"), pra não
+    // confundir com um item de despesa real cujo nome bata com o rótulo (ex.: a rubrica "Telefones",
+    // comum em despesas de condomínio).
+    if (/^\s*Conta a receber/i.test(l)) {
+      atual = null;
+      continue;
+    }
     if (
-      /^\s*(Krieger Assessoria|Alexandre Krieger|Telefones|Conta a receber|CONSIDERA[ÇC][ÕO]ES FINAIS|PREVIS[ÃA]O OR[ÇC]AMENT[ÁA]RIA)/i.test(
+      !/-?\d{1,3}(?:\.\d{3})*,\d{2}/.test(l) &&
+      /^\s*(Krieger Assessoria|Alexandre Krieger|Telefones|CONSIDERA[ÇC][ÕO]ES FINAIS|PREVIS[ÃA]O OR[ÇC]AMENT[ÁA]RIA)/i.test(
         l,
       )
     ) {

@@ -171,17 +171,32 @@ const codigoNormal = (s: string | null | undefined) => {
   const d = digitos(s);
   return d ? d.padStart(3, "0") : "";
 };
+const chaveNome = (s: string | null | undefined) =>
+  (s ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 
-/** Condomínio já cadastrado com o mesmo código ou o mesmo CNPJ do relatório. */
-export function encontrarCondominio<C extends Pick<Condominio, "codigo" | "cnpj">>(
+/**
+ * Condomínio já cadastrado com o mesmo código ou o mesmo CNPJ do relatório. Quando o PDF não traz
+ * nem código nem CNPJ (alguns relatórios não têm esses campos), cai para o nome completo — só
+ * nesse caso, e só por igualdade exata (sem acento/maiúscula) do nome ou nome de relatório, pra não
+ * arriscar confundir dois condomínios parecidos quando dá pra identificar com segurança por
+ * código/CNPJ.
+ */
+export function encontrarCondominio<C extends Pick<Condominio, "codigo" | "cnpj" | "nome" | "nomeRelatorio">>(
   condominios: C[],
-  dados: { codigo: string | null; cnpj: string | null },
+  dados: { codigo: string | null; cnpj: string | null; nome?: string | null },
 ): C | null {
   const cod = codigoNormal(dados.codigo);
   const cnpj = digitos(dados.cnpj);
+  const nome = !cod && !cnpj ? chaveNome(dados.nome) : "";
   return (
     (cod ? condominios.find((c) => codigoNormal(c.codigo) === cod) : undefined) ??
     (cnpj ? condominios.find((c) => digitos(c.cnpj) === cnpj) : undefined) ??
+    (nome ? condominios.find((c) => chaveNome(c.nomeRelatorio) === nome || chaveNome(c.nome) === nome) : undefined) ??
     null
   );
 }
