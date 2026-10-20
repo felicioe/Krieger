@@ -143,13 +143,33 @@ describe("aplicarConsideracoesAoExercicio", () => {
     expect(consid.indices).toEqual(cf.indices);
   });
 
-  it("acrescenta os valores sugeridos pelo Systemar em extras, sem mexer no cálculo da previsão", () => {
+  it("acrescenta os valores sugeridos pelo Systemar em extras, já formatados, sem mexer no cálculo da previsão", () => {
     const base = considDoCondominio(condo);
     const consid = aplicarConsideracoesAoExercicio(base, null, pv);
     expect(consid.extras).toEqual([
-      { rotulo: "Rateio mensal sugerido (Systemar)", valor: 14166.67 },
-      { rotulo: "Índice sugerido para correção (Systemar)", valor: 7.5 },
-      { rotulo: "Total de despesas consideradas ordinárias (Systemar)", valor: 160000 },
+      { rotulo: "Rateio mensal sugerido (Systemar)", valor: "R$ 14.166,67" },
+      { rotulo: "Índice sugerido para correção (Systemar)", valor: "7,50%" },
+      { rotulo: "Total de despesas consideradas ordinárias (Systemar)", valor: "R$ 160.000,00" },
     ]);
+  });
+
+  it("acrescenta manutenção/empresa dos elevadores e consumo de água em extras, pois não há campo próprio pra eles", () => {
+    const base = considDoCondominio(condo);
+    const consid = aplicarConsideracoesAoExercicio(base, cf, null);
+    expect(consid.extras).toEqual([
+      { rotulo: "Manutenção dos elevadores (Systemar)", valor: "R$ 1.200,00" },
+      { rotulo: "Empresa dos elevadores (Systemar)", valor: "Elevadores Exemplo Ltda" },
+      { rotulo: "Consumo médio de água (Systemar)", valor: "R$ 3.500,00" },
+    ]);
+  });
+
+  it("reaplicar (reimportação do mesmo PDF) substitui os extras do Systemar em vez de duplicar", () => {
+    const base = considDoCondominio(condo);
+    const primeira = aplicarConsideracoesAoExercicio(base, cf, pv);
+    const extrasManual = { rotulo: "Observação do síndico", valor: "conferir com o conselho" };
+    const comExtraManual = { ...primeira, extras: [...primeira.extras, extrasManual] };
+    const segunda = aplicarConsideracoesAoExercicio(comExtraManual, cf, pv);
+    expect(segunda.extras.filter((e) => e.rotulo === "Rateio mensal sugerido (Systemar)")).toHaveLength(1);
+    expect(segunda.extras).toContainEqual(extrasManual);
   });
 });

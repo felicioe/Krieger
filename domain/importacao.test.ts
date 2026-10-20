@@ -87,6 +87,14 @@ describe("importação do PDF Systemar — período único", () => {
   it("lê as contas a receber", () => {
     expect(rel.contasAReceber).toEqual({ ate: "2026-08-31", unidades: 3, total: 1500 });
   });
+
+  it("não absorve a página de Considerações finais em SALDO ATUAL quando ela vem logo em seguida", () => {
+    const comConsideracoes = [periodoUnico, "CONSIDERAÇÕES FINAIS", "01) Membros da atual administração: ", " Síndico: Fulano de Tal "].join("\n");
+    const rel2 = lerRelatorio(comConsideracoes, "073_082026 - Estrelas do Mar.pdf");
+    const d = demonstrativoDoRelatorio(rel2, null, "Estrelas do Mar");
+    expect(d.totais.saldoAtual).toBe(24500);
+    expect(d.saldoAtual.contas.map((c) => c.nome)).toEqual(["Banco do Brasil", "Poupança"]);
+  });
 });
 
 describe("importação do PDF Systemar — comparativo", () => {
