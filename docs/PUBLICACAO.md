@@ -1,0 +1,85 @@
+# Publicação — GitHub main para Hostinger
+
+## Contrato operacional
+
+Claude/Codex desenvolvem → commits e PRs no GitHub → `main` → conector/API Hostinger.
+O workflow `Validar e empacotar` gera artefatos; não publica. Um push ou merge
+neste repositório não é evidência de deploy. A origem da publicação deve ser um
+SHA de `main`, com CI aprovado nesse SHA e evidência registrada no GitHub.
+
+O projeto combina frontend compilado e PHP/MySQL. A existência de package.json
+para testes não o torna uma aplicação Node de produção. Antes de escolher uma
+operação do conector, confirmar execução PHP e semântica de upload/substituição.
+
+## Estado da integração
+
+`main` foi criada a partir do antigo HEAD e definida como padrão em 20/10/2026.
+Nenhum webhook ou ruleset foi retornado na inspeção autenticada do GitHub.
+Isso não exclui integrações instaladas fora de webhooks. Nesta sessão não havia
+ferramentas Hostinger carregadas para inspecionar conta/domínio/deploy.
+
+Ainda precisam ser confirmados na #19:
+
+- Conta, domínio e diretório de destino existentes na Hostinger.
+- Se o conector busca Git/branch diretamente ou recebe arquivo derivado de `main`.
+- Operação compatível com PHP e preservação de arquivos existentes.
+- Backup, configuração de banco e procedimento real de rollback.
+
+Não há token Hostinger, endpoint inventado nem automação de produção neste repo.
+Seguir as regras e confirmações do conector disponível na sessão de publicação.
+
+## Preparar uma versão
+
+1. Buscar `origin/main` e selecionar o SHA aprovado; conferir árvore limpa.
+2. Executar instalação, testes, typecheck, docs:check, lint PHP e empacotamento.
+3. Usar o artefato do CI desse mesmo SHA ou pacote produzido a partir dele.
+4. Confirmar que `index.html` está na raiz do pacote e `.htaccess` está incluído.
+
+`npm run package:hostinger` escreve `dist/hostinger/` e inclui:
+`index.html`, `assets/`, `branding/`, `favicon.svg`, `icons.svg`, `.htaccess`,
+`api.php`, `auth.php`, `lib_auth.php`, `login.html`, `usuarios.html`,
+`auth-guard.js` e `acesso.css`.
+
+Ficam fora: config.php, schema.sql, fontes, testes, dependências e documentação.
+O comando não recompila React e não comprova a origem dos bundles (#16).
+O artefato de um PR é para revisão; publicar exige versão correspondente em `main`.
+
+## Executar via conector/API
+
+1. Listar o estado atual da Hostinger e resolver conta/domínio pelos dados retornados.
+2. Registrar SHA, ambiente, destino e plano de rollback em issue de publicação.
+3. Conferir backup recuperável dos arquivos e banco. Preservar `config.php` e dados.
+4. Se a operação substituir todo o diretório ou remover arquivos fora do pacote,
+   não prosseguir sem estratégia segura para a configuração existente.
+5. Publicar a versão selecionada pelo mecanismo suportado e acompanhar até concluir.
+6. Validar comportamento e registrar identificação/log não sensível do deploy.
+
+Em primeira instalação, criar config.php no servidor a partir do exemplo, aplicar
+schema.sql por administração do banco e criar administrador conforme README.
+Não incluir configuração real no artefato para contornar limites do conector.
+Atualizações de schema exigem plano próprio; o empacotador nunca as executa.
+
+## Validação e rollback
+
+- Página correta e assets carregam; worker PDF tem MIME JavaScript.
+- Login/logout, troca de senha e permissões admin/user funcionam.
+- API sem sessão nega acesso; config.php e lib_auth.php não são servidos diretamente.
+- Cadastro de teste pode ser salvo e recarregado sem erro.
+- Importação segue `VALIDACAO-PDF.md` no ambiente apropriado.
+
+Falha exige registrar sintoma e interromper a liberação. Republicar pelo conector
+o pacote do último SHA aprovado, mantendo configuração/dados. Se houve mudança de
+banco, usar o plano específico de migração/rollback; restaurar banco sem avaliar
+gravações posteriores pode perder dados. Não presumir rollback automático.
+
+## Registro de publicação na issue
+
+```text
+Commit de main:
+Execução CI / artefato:
+Ambiente e domínio:
+Operação do conector e identificação do deploy:
+Backup / versão anterior (referência sem segredos):
+Validações e resultados:
+Pendências / decisão de rollback:
+```

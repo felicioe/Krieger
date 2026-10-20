@@ -1,12 +1,17 @@
 # Sistema Krieger v2 – especificação
 
+> Especificação funcional com referências históricas ao Lovable. O fluxo atual
+> é Claude/Codex → GitHub main → Hostinger via conector/API. Consulte
+> [arquitetura atual](ARQUITETURA.md), [estado atual](ESTADO-ATUAL.md) e
+> [publicação](PUBLICACAO.md) para implementação e limitações verificadas.
+
 Reconstrução do sistema de prestação de contas e editais de condomínios. O sistema atual (build em `assets/`) foi lido
 para extrair telas, campos e regras; esta versão mantém os mesmos nomes de campos para aceitar os backups antigos.
 
 ## Arquitetura
 | Camada | Tecnologia | Onde fica |
 |---|---|---|
-| Frontend | React + TypeScript + Vite + Tailwind + shadcn/ui, SPA estática (sem Supabase) | Lovable → importado para `frontend/` |
+| Frontend | React + TypeScript + Vite + Tailwind + shadcn/ui, SPA estática (sem Supabase) | Fontes a recuperar (#16); atualmente index.html/assets compilados na raiz |
 | Regras de negócio | TypeScript puro e testado (`domain/`): leitura de PDF, previsão orçamentária, previsto×realizado, atas | este repositório |
 | API | PHP 8 + MySQL (Hostinger): `api.php` (dados), `auth.php` (login/usuários), `lib_auth.php` | este repositório |
 | Publicação | Build do frontend + arquivos PHP em `public_html` | Hostinger |
@@ -53,7 +58,10 @@ O usuário escolhe quais seções incluir; conferência dos totais antes de emit
 Sessão com cookie `HttpOnly`/`SameSite=Lax`, bloqueio após 5 falhas em 15 min, expiração em 8 h sem uso, senha provisória com troca obrigatória,
 último administrador ativo nunca pode ser removido.
 
-## Projeto no Lovable
+## Projeto histórico no Lovable
+
+Referência para recuperação dos fontes; links não foram validados nesta revisão.
+Não é uma etapa obrigatória do fluxo atual de desenvolvimento.
 - Editor: https://lovable.dev/projects/aa3c8b14-19f5-402a-87df-2d6d01f6de4c
 - Prévia: https://id-preview--aa3c8b14-19f5-402a-87df-2d6d01f6de4c.lovable.app (usa adaptador de dados de teste; a API PHP só existe na Hostinger)
 - Entregas: 1) base + login + usuários + condomínios + painel + escritório + backup; 2) prestação de contas e previsão (ajustes +/−);
