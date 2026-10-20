@@ -1,0 +1,334 @@
+import { dataParaBR, formatBRL, formatData, formatNumeroBR } from "@/lib/format";
+import { dataVistoria } from "@/domain/painel";
+import { nomeDeArquivo } from "@/lib/documento/baixar";
+import { barrasSvg, graficoPng, pizzaSvg } from "@/lib/documento/graficos";
+import type { Bloco, Coluna, Documento, LinhaTabela, Texto } from "@/lib/documento/tipos";
+import { pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
+import { nomeParaRelatorio } from "@/domain/condominio";
+import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
+import type { ResultadoComparativo, Situacao, Totais } from "@/domain/previstoRealizado";
+import type { Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
+import { blocosDemonstrativo, localEData, timbreDoEscritorio } from "./comum";
+
+/**
+ * Relatório final da prestação de contas: desenha o que `montarRelatorioFinal` já montou,
+ * na mesma ordem e com o mesmo conteúdo da prévia na tela (PreviaRelatorio).
+ */
+
+const SITUACAO: Record<Situacao, string> = { dentro: "Dentro", acima: "Acima", abaixo: "Abaixo" };
+const VALOR = { titulo: "Valor", largura: 110, alinhamento: "direita" } as const;
+const l = (nome: string, valor: number | null, o: Partial<LinhaTabela> = {}): LinhaTabela => ({ celulas: [nome, formatBRL(valor)], ...o });
+const resumo = (linhas: LinhaTabela[]): Bloco => ({
+  tipo: "tabela",
+  semCabecalho: true,
+  fundo: true,
+  colunas: [{ titulo: "", largura: "*" }, { ...VALOR, largura: 150 }],
+  linhas,
+});
+const vazio = (texto: string): Bloco => ({ tipo: "paragrafo", texto, suave: true });
+
+export async function documentoRelatorioFinal(o: {
+  rel: RelatorioFinal;
+  exercicio: Exercicio;
+  condominio: Condominio | null;
+  escritorio: ConfigEscritorio | null;
+}): Promise<Documento> {
+  const { rel, exercicio: e, condominio, escritorio } = o;
+  const incluidas = SECOES.filter((s) => rel.secoes[s.id]);
+  const numeradas = incluidas.filter((s) => s.id !== "capa" && s.id !== "assinatura");
+  const titulo = (id: SecaoId, texto: string): Bloco => ({ tipo: "titulo", nivel: 2, texto: `${numeradas.findIndex((s) => s.id === id) + 1}. ${texto}` });
+  const nome = condominio ? nomeParaRelatorio(condominio) : e.condoNome;
+  const d = rel.demonstrativo;
+  const b: Bloco[] = [];
+
+  if (rel.secoes.capa) {
+    b.push({ tipo: "espaco", altura: 110 });
+    if (escritorio?.logo) {
+      const ratio = escritorio.logoRatio || 3;
+      b.push({ tipo: "imagem", dataUrl: escritorio.logo, largura: Math.min(220, 64 * ratio), altura: 64 });
+      b.push({ tipo: "espaco", altura: 30 });
+    }
+    b.push(
+      { tipo: "paragrafo", texto: "PRESTAÇÃO DE CONTAS", alinhamento: "centro", suave: true, negrito: true, tamanho: "pequeno" },
+      { tipo: "titulo", nivel: 1, texto: nome, alinhamento: "centro" },
+    );
+    if (condominio?.cnpj) b.push({ tipo: "paragrafo", texto: `CNPJ ${condominio.cnpj}`, alinhamento: "centro", suave: true });
+    b.push({ tipo: "espaco", altura: 14 }, { tipo: "paragrafo", texto: `Exercício ${e.ano}`, alinhamento: "centro", tamanho: "grande" });
+    if (d?.periodo.ini && d.periodo.fim) b.push({ tipo: "paragrafo", texto: `${d.periodo.ini} a ${d.periodo.fim}`, alinhamento: "centro", suave: true });
+    b.push({ tipo: "espaco", altura: 140 });
+    const ld = [e.cidade, e.dataEmissao].filter((x) => x.trim()).join(", ");
+    if (ld) b.push({ tipo: "paragrafo", texto: ld, alinhamento: "centro", suave: true });
+    if (escritorio?.nome) b.push({ tipo: "paragrafo", texto: escritorio.nome, alinhamento: "centro", suave: true, tamanho: "pequeno" });
+    if (incluidas.length > 1) b.push({ tipo: "quebraPagina" });
+  }
+
+  if (rel.secoes.demonstrativo) {
+    b.push(titulo("demonstrativo", "Demonstrativo de receitas e despesas"));
+    b.push(...(d ? blocosDemonstrativo(d) : [vazio("Sem demonstrativo.")]));
+  }
+
+  if (rel.secoes.consideracoes) {
+    b.push(titulo("consideracoes", "Considerações finais"), ...consideracoes(e, rel));
+  }
+
+  if (rel.secoes.previsao) {
+    const p = rel.previsao;
+    b.push(titulo("previsao", `Previsão orçamentária para ${Number(e.ano) + 1}`));
+    b.push({
+      tipo: "tabela",
+      colunas: [
+        { titulo: p.modo === "detalhado" ? "Rubrica" : "Grupo", largura: "*" },
+        { titulo: `Realizado ${e.ano}`, largura: 100, alinhamento: "direita" },
+        { titulo: "Previsto", largura: 100, alinhamento: "direita" },
+      ],
+      linhas: p.linhas.map((x) => ({
+        celulas: [
+          [
+            { texto: x.nome },
+            ...(p.modo === "detalhado" ? [{ texto: ` · ${x.grupo}`, suave: true }] : []),
+            ...(x.deduzida ? [{ texto: " (com dedução)", suave: true }] : []),
+          ],
+          [{ texto: formatBRL(x.realizado), suave: true }],
+          formatBRL(x.previsto),
+        ],
+      })),
+    });
+    if (p.ajustes.length) {
+      b.push({ tipo: "titulo", nivel: 3, texto: "Ajustes" });
+      b.push({
+        tipo: "tabela",
+        semCabecalho: true,
+        colunas: [{ titulo: "", largura: "*" }, VALOR],
+        linhas: p.ajustes.map((a) => l(`${a.sinal === "-" ? "(−)" : "(+)"} ${a.descricao || "Ajuste"}${a.grupo ? ` · ${a.grupo}` : ""}`, a.valor)),
+      });
+    }
+    b.push(
+      resumo([
+        l("Base (despesas realizadas)", p.base),
+        l("(−) Dedução", p.deducao),
+        l(`(+) Variação ${formatNumeroBR(p.variacaoPct)}%`, p.variacaoValor),
+        l("(+) Ajustes", p.ajustesMais),
+        l("(−) Ajustes", p.ajustesMenos),
+        l("Anual ajustado", p.totalAnual, { estilo: "total" }),
+        l("Mensal (÷ 12)", p.mensal),
+        l(`Cota por unidade (÷ ${p.unidades ?? "—"} unidades)`, p.cotaUnidade),
+        l(`(+) Reserva por unidade ${formatNumeroBR(p.fundoReservaPct)}%`, p.reservaUnidade),
+        l("Valor por unidade", p.rateioSugerido, { estilo: "total" }),
+        l("Rateio atual", p.rateioAtual),
+        { celulas: ["Índice de reajuste", pctTexto(p.indice)] },
+        ...(e.rateioAprovado != null ? [l("Rateio aprovado", e.rateioAprovado, { estilo: "total" })] : []),
+      ]),
+    );
+  }
+
+  const c = rel.comparativo;
+  if (rel.secoes.previstoRealizado) {
+    b.push(titulo("previstoRealizado", "Previsto × Realizado"));
+    b.push({
+      tipo: "paragrafo",
+      suave: true,
+      tamanho: "pequeno",
+      texto: `Previsão ${e.ano} × realizado de ${c.meses[0]?.rotulo ?? "—"} a ${c.mesAte.rotulo} (${c.relatoriosUsados} relatório(s) mensal(is)).`,
+    });
+    b.push(
+      resumo([
+        l("Previsto anual", c.total.previstoAnual),
+        l(`Previsto até ${c.mesAte.rotulo}`, c.total.previsto),
+        l(`Realizado até ${c.mesAte.rotulo}`, c.total.realizado),
+        { celulas: ["Diferença", `${formatBRL(c.total.diferenca)} (${pctTexto(c.total.pct)})`], estilo: "total" },
+      ]),
+    );
+    if (c.grupos.length === 0) b.push(vazio("A previsão deste exercício não tem despesas lançadas."));
+    else b.push(tabelaComparativo(rel.comparativo));
+  }
+
+  if (rel.secoes.analise) {
+    b.push(titulo("analise", "Análise gráfica"), { tipo: "titulo", nivel: 3, texto: "Previsto × realizado por grupo" });
+    if (c.grupos.length) {
+      const svg = barrasSvg(
+        c.grupos.map((g) => g.nome || "Sem grupo"),
+        [
+          { nome: "Previsto", cor: "#8fa3c0", valores: c.grupos.map((g) => g.totais.previsto) },
+          { nome: "Realizado", cor: "#0b3a5e", valores: c.grupos.map((g) => g.totais.realizado) },
+        ],
+      );
+      b.push({ tipo: "imagem", dataUrl: await graficoPng(svg, 480, 250), largura: 480, altura: 250 });
+    } else b.push(vazio("Sem dados para o gráfico."));
+    if (e.mostrarPizza !== false) {
+      b.push({ tipo: "titulo", nivel: 3, texto: `Despesas do exercício ${e.ano} por grupo` });
+      if (rel.despesasGrupo.length) {
+        const svg = pizzaSvg(rel.despesasGrupo);
+        b.push({ tipo: "imagem", dataUrl: await graficoPng(svg, 480, 230), largura: 480, altura: 230 });
+      } else b.push(vazio("Sem despesas no demonstrativo."));
+    }
+  }
+
+  if (rel.secoes.inadimplencia) {
+    const inad = rel.inadimplencia;
+    b.push(titulo("inadimplencia", "Inadimplência — contas a receber"));
+    if (inad.linhas.length === 0) b.push(vazio("Nenhum relatório mensal no período."));
+    else {
+      b.push({
+        tipo: "tabela",
+        colunas: [
+          { titulo: "Mês", largura: "*" },
+          { titulo: "Unidades", largura: 80, alinhamento: "direita" },
+          { titulo: "Valor a receber", largura: 110, alinhamento: "direita" },
+        ],
+        linhas: inad.linhas.map((x) => ({ celulas: [x.mes, x.unidades === null ? "—" : String(x.unidades), formatBRL(x.valor)] })),
+      });
+      if (inad.final) {
+        b.push({
+          tipo: "paragrafo",
+          texto: [
+            { texto: `Posição em ${inad.final.mes}: ` },
+            { texto: formatBRL(inad.final.valor), negrito: true },
+            { texto: inad.final.unidades !== null ? ` (${inad.final.unidades} unidades).` : "." },
+          ],
+        });
+      }
+    }
+  }
+
+  if (rel.secoes.notas) {
+    b.push(titulo("notas", "Notas explicativas"));
+    if (rel.notas.length === 0) b.push(vazio("Nenhuma nota explicativa nos relatórios mensais do período."));
+    for (const n of rel.notas) {
+      b.push({
+        tipo: "paragrafo",
+        texto: [
+          { texto: `${n.mes}  ` , suave: true },
+          { texto: n.rubrica || "Nota", negrito: true },
+          ...(n.valor !== null ? [{ texto: `  ·  ${formatBRL(n.valor)}` }] : []),
+        ],
+      });
+      if (n.texto) b.push({ tipo: "paragrafo", texto: n.texto, recuo: true, suave: true, alinhamento: "justificado" });
+    }
+  }
+
+  if (rel.secoes.assinatura) {
+    b.push({ tipo: "espaco", altura: 24 });
+    const ld = localEData(e.cidade, e.dataEmissao);
+    if (ld) b.push({ tipo: "paragrafo", texto: ld, alinhamento: "centro" });
+    const linhas = (escritorio?.assinatura ?? "").split("\n").map((x) => x.trim()).filter(Boolean);
+    b.push({ tipo: "assinaturas", itens: [[...(linhas.length ? linhas : [" "]), ...(escritorio?.nome ? [escritorio.nome] : [])]] });
+  }
+
+  if (b.length === 0) b.push(vazio("Nenhuma seção incluída."));
+
+  return {
+    titulo: `Prestação de contas ${e.ano} — ${nome}`,
+    arquivo: nomeDeArquivo("prestacao-de-contas", condominio?.codigo || nome, e.ano),
+    timbre: timbreDoEscritorio(escritorio),
+    semTimbreNaCapa: rel.secoes.capa,
+    rodape: `${nome} · Prestação de contas ${e.ano}`,
+    blocos: b,
+  };
+}
+
+export function valores(t: Totais): Texto[] {
+  return [
+    [{ texto: formatBRL(t.previstoAnual) }, { texto: `\n${formatBRL(t.previstoMensal)}/mês`, suave: true }],
+    formatBRL(t.previsto),
+    formatBRL(t.realizado),
+    `${t.diferenca > 0 ? "+" : ""}${formatBRL(t.diferenca)}`,
+    pctTexto(t.pct),
+    t.situacao ? SITUACAO[t.situacao] : "—",
+  ];
+}
+
+export function tabelaComparativo(c: ResultadoComparativo): Bloco {
+  const ate = c.mesAte.rotulo;
+  const colunas: Coluna[] = [
+    { titulo: "Rubrica", largura: "*" },
+    { titulo: "Previsto anual / mensal", largura: 72, alinhamento: "direita" },
+    { titulo: `Previsto até ${ate}`, largura: 60, alinhamento: "direita" },
+    { titulo: `Realizado até ${ate}`, largura: 60, alinhamento: "direita" },
+    { titulo: "Diferença", largura: 60, alinhamento: "direita" },
+    { titulo: "%", largura: 44, alinhamento: "direita" },
+    { titulo: "Situação", largura: 42, alinhamento: "centro" },
+  ];
+  const linhas: LinhaTabela[] = [];
+  for (const g of c.grupos) {
+    linhas.push({ celulas: [g.nome || "Sem grupo"], estilo: "grupo" });
+    for (const x of g.linhas) {
+      const nome: Texto = [
+        ...(x.tipo === "ajuste" ? [{ texto: x.sinal === "-" ? "− " : "+ ", negrito: true }] : []),
+        { texto: x.nome || "Sem nome" },
+        ...(x.tipo === "ajuste" ? [{ texto: " (ajuste)", suave: true }] : []),
+        ...(x.tipo === "rubrica" && x.previstoAnual === 0 && x.realizado !== 0 ? [{ texto: " (não prevista)", suave: true }] : []),
+      ];
+      linhas.push({ celulas: [nome, ...valores(x)], recuo: true });
+    }
+    linhas.push({ celulas: [`Total ${g.nome || "sem grupo"}`, ...valores(g.totais)], estilo: "subtotal", recuo: true });
+  }
+  linhas.push({ celulas: ["Total geral", ...valores(c.total)], estilo: "total" });
+  return { tipo: "tabela", pequena: true, colunas, linhas };
+}
+
+/** Considerações finais — mesmos itens da prévia na tela. */
+function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
+  const c = e.consid;
+  const out: Bloco[] = [];
+  const grupo = (titulo: string, itens: { rotulo: string; valor: Texto }[]) => {
+    if (itens.length) out.push({ tipo: "titulo", nivel: 3, texto: titulo }, { tipo: "pares", itens });
+  };
+
+  grupo(
+    "Administração",
+    c.administracao.map((m) => ({
+      rotulo: m.cargo || "—",
+      valor: [{ texto: m.nome }, ...(m.mandatoFim ? [{ texto: ` · mandato até ${m.mandatoFim}`, suave: true }] : [])],
+    })),
+  );
+  if (c.seguradora || c.vigenciaSeguro || c.seguro.coberturas.length > 0) {
+    grupo("Seguro", [
+      ...(c.seguradora ? [{ rotulo: "Seguradora", valor: c.seguradora }] : []),
+      ...(c.vigenciaSeguro ? [{ rotulo: "Vigência até", valor: formatData(c.vigenciaSeguro) }] : []),
+      ...(c.seguro.riscoAbsoluto !== null ? [{ rotulo: "Risco absoluto", valor: formatBRL(c.seguro.riscoAbsoluto) }] : []),
+      ...c.seguro.coberturas.map((cb) => ({ rotulo: cb.desc || "Cobertura", valor: formatBRL(cb.valor) })),
+    ]);
+  }
+  const proxima = dataVistoria(c);
+  grupo("Manutenções e vistorias", [
+    ...(c.vigenciaExtintores ? [{ rotulo: "Recarga dos extintores até", valor: formatData(c.vigenciaExtintores) }] : []),
+    ...(c.ultGordura ? [{ rotulo: "Última limpeza da caixa de gordura", valor: formatData(c.ultGordura) }] : []),
+    ...(c.ultDedetizacao ? [{ rotulo: "Última dedetização", valor: formatData(c.ultDedetizacao) }] : []),
+    ...(c.ultCaixaDagua ? [{ rotulo: "Última limpeza da caixa d'água", valor: formatData(c.ultCaixaDagua) }] : []),
+    ...(c.vistoriaAno
+      ? [
+          {
+            rotulo: "Vistoria técnica",
+            valor: [
+              { texto: String(c.vistoriaAno) },
+              ...(proxima ? [{ texto: ` · próxima em ${dataParaBR(proxima)}`, suave: true }] : []),
+              ...(c.vistoriaLei ? [{ texto: ` · ${c.vistoriaLei}`, suave: true }] : []),
+            ],
+          },
+        ]
+      : []),
+  ]);
+  const receber = typeof c.contasReceber === "number" ? c.contasReceber : null;
+  const pagar = typeof c.contasPagar === "number" ? c.contasPagar : null;
+  grupo("Valores", [
+    ...(receber !== null ? [{ rotulo: "Contas a receber", valor: formatBRL(receber) }] : []),
+    ...(pagar !== null ? [{ rotulo: "Contas a pagar", valor: formatBRL(pagar) }] : []),
+    ...(rel.agua.valor > 0 ? [{ rotulo: "Consumo de água no exercício", valor: formatBRL(rel.agua.valor) }] : []),
+  ]);
+  grupo(
+    "Índices de correção aplicados",
+    c.indices.filter((i) => i.pct !== null).map((i) => ({ rotulo: String(i.ano ?? "—"), valor: `${formatNumeroBR(i.pct)}%` })),
+  );
+  for (const x of c.extras.filter((x) => String(x.rotulo).trim() || String(x.valor).trim())) {
+    out.push({
+      tipo: "paragrafo",
+      alinhamento: "justificado",
+      texto: [
+        ...(String(x.rotulo).trim() ? [{ texto: `${x.rotulo}: `, negrito: true }] : []),
+        { texto: typeof x.valor === "number" ? formatBRL(x.valor) : String(x.valor) },
+      ],
+    });
+  }
+  if (out.length === 0) out.push(vazio("Sem considerações registradas."));
+  return out;
+}
