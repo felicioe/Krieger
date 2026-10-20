@@ -1,4 +1,2 @@
-/** Gera um id curto e único (até 64 caracteres). */
-export function novoId(): string {
-  return (Date.now().toString(36) + Math.random().toString(36).slice(2, 10)).slice(0, 64);
-}
+// Fonte unica: lib/id.ts na raiz do repositorio (nao editar aqui, nao duplicar logica).
+export * from "../../../lib/id";
