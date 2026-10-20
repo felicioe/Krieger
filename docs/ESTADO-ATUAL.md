@@ -25,6 +25,10 @@ Fechadas nesta consolidação: #1, #2, #3, #4, #5, #7, #15, #17, #20, #22. #16 e
 
 ## Limitações conhecidas
 
+- Auditoria técnica [Impeccable de 20/10/2026](auditorias/IMPECCABLE-2026-10-20.md):
+  triagem provisória 11/20, sem correções ou deploy. #29 acompanha #30–#33 e a
+  pendência existente #16; evidências de fontes e bundle publicado estão separadas.
+
 - Testes do domínio não validam navegador/PDF worker, backend/banco ou produção.
 - `frontend/` é um espelho pontual do Lovable, não um build verificado — ver #16.
 - Hostinger foi inspecionada; deploy não realizado. A configuração ainda aponta para

@@ -13,6 +13,7 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Publicação, validação e rollback](docs/PUBLICACAO.md)
 - [Decisões duráveis](docs/DECISOES.md)
 - [Validação de PDF](docs/VALIDACAO-PDF.md)
+- [Auditoria técnica Impeccable — 20/10/2026](docs/auditorias/IMPECCABLE-2026-10-20.md)
 - [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.

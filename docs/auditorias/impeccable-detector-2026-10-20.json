@@ -1,0 +1,18 @@
+{
+  "base": "d9e6aab",
+  "skill": "impeccable 4.7.0",
+  "command": "impeccable.cmd detect --json frontend/src",
+  "normalization": "Caminho absoluto substituído por caminho relativo ao repositório.",
+  "findings": [
+    {
+      "antipattern": "side-tab",
+      "severity": "warning",
+      "category": "slop",
+      "file": "frontend/src/components/app/AppSidebar.tsx",
+      "line": 41,
+      "snippet": "border-l-4",
+      "review": "false-positive",
+      "reason": "Indicador funcional de seleção do menu, previsto na identidade institucional; não é borda decorativa de cartão."
+    }
+  ]
+}
