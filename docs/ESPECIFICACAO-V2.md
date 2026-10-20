@@ -11,7 +11,7 @@ para extrair telas, campos e regras; esta versão mantém os mesmos nomes de cam
 ## Arquitetura
 | Camada | Tecnologia | Onde fica |
 |---|---|---|
-| Frontend | React + TypeScript + Vite + Tailwind + shadcn/ui, SPA estática (sem Supabase) | Fontes a recuperar (#16); atualmente index.html/assets compilados na raiz |
+| Frontend | React + TypeScript + Vite + Tailwind + shadcn/ui, SPA estática (sem Supabase) | Fontes recuperados em frontend/; build integrado pendente (#16); index.html/assets da raiz ainda servem o pacote atual |
 | Regras de negócio | TypeScript puro e testado (`domain/`): leitura de PDF, previsão orçamentária, previsto×realizado, atas | este repositório |
 | API | PHP 8 + MySQL (Hostinger): `api.php` (dados), `auth.php` (login/usuários), `lib_auth.php` | este repositório |
 | Publicação | Build do frontend + arquivos PHP em `public_html` | Hostinger |

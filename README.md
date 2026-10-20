@@ -6,6 +6,7 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 ## Comece aqui
 
 - [Estado atual e próximas tarefas](docs/ESTADO-ATUAL.md)
+- [Conexões verificadas entre as ferramentas](docs/CONEXOES.md)
 - [Instruções compartilhadas para agentes](AGENTS.md) e [entrada do Claude](CLAUDE.md)
 - [Arquitetura e mapa dos arquivos](docs/ARQUITETURA.md)
 - [Ambiente, comandos e contribuição](docs/DESENVOLVIMENTO.md)
@@ -15,8 +16,9 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
-Os fontes React ainda precisam ser recuperados (#16); o pacote atual utiliza os
-assets compilados versionados. Não existe comando de build/dev React nesta revisão.
+Os fontes React chegaram em `frontend/` pelos PRs #21/#23. A #16 acompanha build
+reproduzível e integração das regras. O pacote da raiz usa assets versionados;
+não recompila frontend/.
 
 ## Arquivos que vão para o servidor
 `index.html`, `assets/`, `branding/`, `favicon.svg`, `icons.svg`, `.htaccess`, `api.php`, `auth.php`, `lib_auth.php`,
@@ -28,9 +30,9 @@ conector/API**. As mudanças devem chegar a `main` por PR; a publicação deve u
 o commit aprovado dessa branch e registrar seu SHA. O pacote abaixo é uma entrada
 para a integração de publicação, não uma instrução de upload manual como rotina.
 
-Pendente na #19: confirmar conta/domínio e se o conector recebe referência Git
-ou pacote derivado dela, com suporte a PHP e preservação de configuração/dados.
-Não há deploy automático configurado neste workflow.
+Confirmado na #19: site existente e conector compatível com Git/PHP. A Hostinger
+tem auto-deploy ativo para a branch antiga; falta alinhar com main, preservando
+configuração/dados. Este workflow gera artefato, sem fazer deploy.
 
 Para preparar os arquivos já compilados, com Node 22+:
 
@@ -47,8 +49,8 @@ O pacote inclui também `branding/`. Não envie o repositório inteiro.
 `config.php` e `schema.sql` não entram no pacote: mantenha a configuração existente
 no servidor e use o schema apenas na administração do banco.
 
-Este comando empacota os assets versionados; não recompila React. Os fontes React
-não estão nesta branch. A recuperação do build reproduzível é acompanhada na
+Este comando empacota os assets versionados; não recompila React. Os fontes estão
+em frontend/, mas o build integrado e reproduzível ainda é acompanhado na
 [issue #16](https://github.com/felicioe/Krieger/issues/16).
 O GitHub Actions valida testes, TypeScript e sintaxe PHP e disponibiliza o artefato
 `krieger-hostinger`, sem credenciais e sem publicar automaticamente.

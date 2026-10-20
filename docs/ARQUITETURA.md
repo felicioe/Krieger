@@ -5,7 +5,8 @@ descreve objetivos de produto e deve ser lida junto com este mapa.
 
 | Área | Arquivos | Responsabilidade |
 | --- | --- | --- |
-| Entrada web | `index.html`, `assets/` | SPA React já compilada; sem fontes React nesta revisão |
+| Entrada web | `index.html`, `assets/` | SPA React já compilada, usada pelo pacote da raiz |
+| Fontes frontend | `frontend/` | Fontes incorporados pelos PRs #21/#23; configuração e dependências próprias |
 | Regras | `domain/*.ts` | Cálculos, validações, transformação e montagem de conteúdo |
 | Utilitários | `lib/format.ts`, `lib/id.ts` | Formatação e identificadores |
 | API de dados | `api.php` | CRUD por store e importação/exportação de backup |
@@ -47,5 +48,7 @@ servir o pacote como site puramente estático não basta.
 
 A montagem de dados/textos no domínio não comprova geração de PDF/Word na UI.
 Os testes exercitam TypeScript em Node, sem navegador, extração PDF, PHP ou MySQL.
-O bundle pode ter sido produzido em outra revisão; sua correspondência com o
-domínio precisa ser demonstrada quando os fontes forem recuperados (#16).
+O bundle pode ter sido produzido em outra revisão; sua correspondência com os
+fontes recuperados precisa ser demonstrada (#16). Há regras em frontend/src/domain
+e domain/ na raiz, com instruções locais próprias: centralizar a fonte de verdade
+antes de afirmar que editar domain/ atualiza a UI.

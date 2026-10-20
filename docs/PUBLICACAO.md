@@ -15,17 +15,17 @@ operação do conector, confirmar execução PHP e semântica de upload/substitu
 
 `main` foi criada a partir do antigo HEAD e definida como padrão em 20/10/2026.
 Nenhum webhook ou ruleset foi retornado na inspeção autenticada do GitHub.
-Isso não exclui integrações instaladas fora de webhooks. Nesta sessão não havia
-ferramentas Hostinger carregadas para inspecionar conta/domínio/deploy.
+Isso não exclui integrações instaladas fora de webhooks. A auditoria posterior
+confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
-Ainda precisam ser confirmados na #19:
+Confirmados: domínio krieger.therafinancial.com.br, PHP/MySQL, config.php existente
+e auto-deploy Git ativo para a branch antiga claude/youthful-pascal-lkmbs7.
+O conector suporta main e PHP via hosting_deploy. Pendente na #19: backup,
+preservação de configuração/arquivos locais, confirmação do destino, alinhamento
+da branch e validação/rollback. Nenhum deploy foi executado nesta auditoria.
 
-- Conta, domínio e diretório de destino existentes na Hostinger.
-- Se o conector busca Git/branch diretamente ou recebe arquivo derivado de `main`.
-- Operação compatível com PHP e preservação de arquivos existentes.
-- Backup, configuração de banco e procedimento real de rollback.
-
-Não há token Hostinger, endpoint inventado nem automação de produção neste repo.
+Não há token Hostinger nem workflow de deploy neste repo; a automação existente
+é mantida pela Hostinger e ainda aponta para a branch antiga.
 Seguir as regras e confirmações do conector disponível na sessão de publicação.
 
 ## Preparar uma versão
