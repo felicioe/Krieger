@@ -66,7 +66,12 @@ export interface RegraPreenchimento {
 }
 
 export type Arredondamento = "truncar" | "arredondar" | "centavos";
-export type VariacaoMetodo = "manual" | "percentual" | "mediaIndices";
+/**
+ * "manual"/"percentual"/"mediaIndices": a variação é um percentual aplicado sobre a base líquida.
+ * "valor": a variação é um valor em R$ direto (somado à base líquida, sem multiplicar) — reflete
+ * um ajuste subjetivo da empresa (ex.: previsão de aumento de custo), lido de `variacaoParam`.
+ */
+export type VariacaoMetodo = "manual" | "percentual" | "mediaIndices" | "valor";
 
 export interface Condominio extends ComId {
   codigo: string;

@@ -9,7 +9,8 @@ import type { AjustePrevisao, Arredondamento, Demonstrativo, Exercicio, IndiceCo
  * onde
  *   base      = total das despesas realizadas no demonstrativo;
  *   dedução   = despesas cujo nome (ou grupo) casa com `deducaoRegex`;
- *   variação  = (base − dedução) × variação %.
+ *   variação  = (base − dedução) × variação % — exceto no método "valor", onde variação é um R$
+ *               direto (ajuste subjetivo da empresa), somado sem multiplicar pela base.
  * A partir do anual ajustado (regra do escritório — a reserva NÃO é somada ao mensal antes de dividir):
  *   mensal              = anual ajustado ÷ 12
  *   cota por unidade    = anual ajustado ÷ 12 ÷ unidades
@@ -36,6 +37,7 @@ export interface ResultadoPrevisao {
   deducao: number;
   linhasDeducao: { grupo: string; nome: string; valor: number }[];
   baseLiquida: number;
+  /** 0 quando o método é "valor" (variação em R$ direto, sem percentual associado). */
   variacaoPct: number;
   variacaoValor: number;
   ajustesMais: number;
@@ -82,10 +84,14 @@ export function expressaoDeducao(texto: string | null | undefined): RegExp | nul
   }
 }
 
-/** Percentual de variação conforme o método do exercício. */
+/**
+ * Variação conforme o método do exercício. "valor" devolve `valorFixo` (R$, somado direto à base
+ * líquida, sem percentual) — os demais devolvem `pct` (percentual aplicado sobre a base líquida).
+ */
 export function resolverVariacao(
   p: Pick<ParametrosPrevisao, "variacao" | "variacaoMetodo" | "variacaoParam" | "indices">,
-): { pct: number; aviso?: string } {
+): { pct: number; valorFixo?: number; aviso?: string } {
+  if (p.variacaoMetodo === "valor") return { pct: 0, valorFixo: p.variacaoParam ?? 0 };
   if (p.variacaoMetodo === "percentual") return { pct: p.variacaoParam ?? p.variacao ?? 0 };
   if (p.variacaoMetodo === "mediaIndices") {
     const validos = (p.indices ?? [])
@@ -120,14 +126,18 @@ export function calcularPrevisao(
   const modo = parametros.prev?.modo ?? "tradicional";
   const ajustes = parametros.prev?.ajustes ?? [];
   const re = expressaoDeducao(parametros.deducaoRegex);
-  const { pct, aviso } = resolverVariacao(parametros);
+  const { pct, valorFixo, aviso } = resolverVariacao(parametros);
   if (aviso) avisos.push(aviso);
+  const ehValorFixo = parametros.variacaoMetodo === "valor";
   // Variação fora de uma faixa plausível (ex.: valor em R$ digitado onde se esperava %) produziria
-  // um total sem sentido sem isso — avisa em vez de só calcular silenciosamente.
-  if (Math.abs(pct) > 100) {
+  // um total sem sentido sem isso — avisa em vez de só calcular silenciosamente. Não se aplica ao
+  // método "valor": ali a variação já é um R$ direto, não um percentual.
+  if (!ehValorFixo && Math.abs(pct) > 100) {
     avisos.push(`Variação de ${pct}% é incomum para um reajuste anual — confira se não foi digitado um valor em R$ no lugar do percentual.`);
   }
-  const fator = 1 + pct / 100;
+  // No método "valor" a variação é um acréscimo/redução de R$ sobre o total, não distribuído por
+  // despesa (como os ajustes) — por isso o fator de cada linha/grupo fica em 1 (sem variação).
+  const fator = ehValorFixo ? 1 : 1 + pct / 100;
 
   const grupos = demonstrativo?.despesas.grupos ?? [];
   if (!demonstrativo || grupos.every((g) => g.itens.length === 0)) {
@@ -177,7 +187,7 @@ export function calcularPrevisao(
   base = centavos(base);
   deducao = centavos(deducao);
   const baseLiquida = centavos(base - deducao);
-  const variacaoValor = centavos(baseLiquida * (pct / 100));
+  const variacaoValor = ehValorFixo ? centavos(valorFixo ?? 0) : centavos(baseLiquida * (pct / 100));
   const { mais, menos } = somarAjustes(ajustes);
   const totalAnual = centavos(baseLiquida + variacaoValor + mais - menos);
 
