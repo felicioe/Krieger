@@ -80,3 +80,37 @@ branch deploy-hostinger d0284be. HTML/JS/CSS confirmados no ar. Ver
 Revisão autenticada aguarda login no site publicado; não tratar como critérios
 encerrados. #32/#33 mantêm pendências explícitas. Nenhuma autoria de frontend
 pelo Codex nem mudança em banco/configuração foi feita.
+
+## Previsão orçamentária: novo método "valor" (R$ direto) — 21/10/2026
+
+PR #58 (merge 5604e72, em cima da base de acessibilidade do Codex acima):
+`VariacaoMetodo` ganha `"valor"` — a variação, nesse método, é um R$ direto
+somado à base líquida (sem multiplicar, sem distribuir por despesa/grupo),
+em vez de percentual. Não reinterpreta o método `"manual"` existente (seguiria
+sendo percentual para quem já usa assim); é um método novo, separado. Motivo:
+usuário reportou um condomínio (Solar Juliana) com "Variação 14.000%" —
+confirmado que não é bug de importação (domain/importacao.ts e o fluxo de
+criação de exercício gravam previsão sugerida e variação em campos
+completamente separados); foi um R$ 14.000,00 real do PDF digitado no campo
+de percentual por engano. O método "valor" existe pra esse tipo de ajuste
+subjetivo da empresa poder ser digitado em R$ sem essa confusão.
+
+**Pendente (mensagem já enviada ao Lovable, sem resposta registrada ainda):**
+a tela de Previsão Orçamentária (`PainelPrevisao.tsx`) precisa da opção
+"valor" no seletor de método, um campo de dinheiro (não percentual) pra ela,
+e trocar a exibição "(+) Variação X%" por "(+) Variação R$ X" quando o
+método for "valor", em 3 lugares: `PainelPrevisao.tsx`,
+`PreviaRelatorio.tsx`, `documentos/relatorioFinal.ts`. Até isso ser feito,
+o método novo existe no domínio mas não é selecionável pela tela.
+
+Também enviado ao Lovable (sem resposta registrada ainda): a tabela
+"Previsto × Realizado" no PDF/Word exportado não cabe numa folha pra
+condomínios com muitas rubricas — pedido específico de ajustar
+`lineHeight` das células em `src/lib/documento/pdf.ts` (`word.ts` já faz
+isso, `pdf.ts` não).
+
+Validado antes de publicar: 124 testes raiz (12 novos desde a base de
+acessibilidade), typecheck e docs:check limpos, frontend rebuilado com
+`npm ci` (pegou a dependência nova `@testing-library/user-event` que o
+Codex/Lovable adicionou) — 90 testes de frontend, typecheck limpo.
+Publicação em deploy-hostinger feita logo em seguida a este registro.
