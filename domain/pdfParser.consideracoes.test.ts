@@ -161,4 +161,21 @@ describe("aplicarConsideracoesAoExercicio", () => {
     expect(segunda.extras.filter((e) => e.rotulo === "Manutenção dos elevadores (Systemar)")).toHaveLength(1);
     expect(segunda.extras).toContainEqual(extrasManual);
   });
+
+  it("reimportar um exercício antigo (de antes da previsão sugerida virar campo próprio) limpa os rótulos legados de extras", () => {
+    const base = considDoCondominio(condo);
+    const comExtrasLegados = {
+      ...base,
+      extras: [
+        ...base.extras,
+        { rotulo: "Rateio mensal sugerido (Systemar)", valor: "R$ 14.166,67" },
+        { rotulo: "Índice sugerido para correção (Systemar)", valor: "7,50%" },
+        { rotulo: "Total de despesas consideradas ordinárias (Systemar)", valor: "R$ 160.000,00" },
+      ],
+    };
+    const reimportado = aplicarConsideracoesAoExercicio(comExtrasLegados, cf);
+    expect(reimportado.extras.map((e) => e.rotulo)).not.toContain("Rateio mensal sugerido (Systemar)");
+    expect(reimportado.extras.map((e) => e.rotulo)).not.toContain("Índice sugerido para correção (Systemar)");
+    expect(reimportado.extras.map((e) => e.rotulo)).not.toContain("Total de despesas consideradas ordinárias (Systemar)");
+  });
 });
