@@ -98,14 +98,42 @@ function validar_backup_dados(array $dados, PDO $pdo, bool $substituir, array $s
   ];
 }
 
+function montar_backup(PDO $pdo, array $stores, callable $tabela): array {
+  $o = ['app' => 'krieger-condominios', 'versao' => 1, 'exportadoEm' => date('c')];
+  foreach ($stores as $st) {
+    $linhas = $pdo->query('SELECT dados FROM ' . $tabela($st))->fetchAll();
+    $o[$st] = array_map(fn($r) => json_decode($r['dados'], true), $linhas);
+  }
+  return $o;
+}
+
+// Grava os dados de um backup (já validado) nas tabelas, dentro de uma transação. Usado tanto
+// por 'importar' (arquivo enviado pelo navegador) quanto por 'backup_restaurar' (backup salvo no
+// servidor) — mesma lógica, duas origens diferentes do $dados.
+function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores, callable $tabela): void {
+  $pdo->beginTransaction();
+  try {
+    foreach ($stores as $st) {
+      if ($substituir) $pdo->exec('DELETE FROM ' . $tabela($st));
+      $stmt = $pdo->prepare('REPLACE INTO ' . $tabela($st) . ' (id, dados, atualizado_em) VALUES (?, ?, ?)');
+      $lista = is_array($dados[$st] ?? null) ? $dados[$st] : [];
+      foreach ($lista as $linha) {
+        if (!is_array($linha) || empty($linha['id'])) continue;
+        $id = id_valido($linha['id']);
+        $quando = is_string($linha['atualizadoEm'] ?? null) ? str_replace('T', ' ', substr($linha['atualizadoEm'], 0, 19)) : date('Y-m-d H:i:s');
+        $stmt->execute([$id, json_encode($linha, JSON_UNESCAPED_UNICODE), $quando]);
+      }
+    }
+    $pdo->commit();
+  } catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    throw $e;
+  }
+}
+
 try {
   if ($a === 'exportar') {
-    $o = ['app' => 'krieger-condominios', 'versao' => 1, 'exportadoEm' => date('c')];
-    foreach ($STORES as $st) {
-      $linhas = $pdo->query('SELECT dados FROM ' . $tabela($st))->fetchAll();
-      $o[$st] = array_map(fn($r) => json_decode($r['dados'], true), $linhas);
-    }
-    saida($o);
+    saida(montar_backup($pdo, $STORES, $tabela));
   }
 
   if ($a === 'validar_backup') {
@@ -123,26 +151,57 @@ try {
     $substituir = !empty($corpo['substituir']);
     if (!is_array($dados)) erro('Arquivo de backup inválido.');
     $resumo = validar_backup_dados($dados, $pdo, $substituir, $STORES);
-
-    $pdo->beginTransaction();
-    try {
-      foreach ($STORES as $st) {
-        if ($substituir) $pdo->exec('DELETE FROM ' . $tabela($st));
-        $stmt = $pdo->prepare('REPLACE INTO ' . $tabela($st) . ' (id, dados, atualizado_em) VALUES (?, ?, ?)');
-        $lista = is_array($dados[$st] ?? null) ? $dados[$st] : [];
-        foreach ($lista as $linha) {
-          if (!is_array($linha) || empty($linha['id'])) continue;
-          $id = id_valido($linha['id']);
-          $quando = is_string($linha['atualizadoEm'] ?? null) ? str_replace('T', ' ', substr($linha['atualizadoEm'], 0, 19)) : date('Y-m-d H:i:s');
-          $stmt->execute([$id, json_encode($linha, JSON_UNESCAPED_UNICODE), $quando]);
-        }
-      }
-      $pdo->commit();
-    } catch (Throwable $e) {
-      if ($pdo->inTransaction()) $pdo->rollBack();
-      throw $e;
-    }
+    restaurar_dados($pdo, $dados, $substituir, $STORES, $tabela);
     saida(['ok' => true, 'resumo' => $resumo]);
+  }
+
+  // Backup salvo no servidor (histórico), vinculado a quem gerou. Complementa o download direto
+  // (a=exportar, que o navegador grava num arquivo local/mídia externa) sem substituí-lo.
+  if ($a === 'backup_criar') {
+    $o = montar_backup($pdo, $STORES, $tabela);
+    $id = 'bkp-' . bin2hex(random_bytes(8));
+    $stmt = $pdo->prepare('INSERT INTO kr_backups (id, dados, gerado_por, gerado_por_nome, criado_em) VALUES (?, ?, ?, ?, ?)');
+    $stmt->execute([$id, json_encode($o, JSON_UNESCAPED_UNICODE), $usuario['id'], $usuario['nome'], date('Y-m-d H:i:s')]);
+    $contagens = [];
+    foreach ($STORES as $st) $contagens[$st] = count($o[$st]);
+    saida(['id' => $id, 'geradoPor' => $usuario['id'], 'geradoPorNome' => $usuario['nome'], 'criadoEm' => date('c'), 'contagens' => $contagens]);
+  }
+
+  if ($a === 'backup_listar') {
+    $linhas = $pdo->query('SELECT id, gerado_por_nome, criado_em, LENGTH(dados) AS tamanho FROM kr_backups ORDER BY criado_em DESC')->fetchAll();
+    saida(array_map(fn($r) => [
+      'id' => $r['id'],
+      'geradoPorNome' => $r['gerado_por_nome'],
+      'criadoEm' => str_replace(' ', 'T', $r['criado_em']),
+      'tamanhoBytes' => (int) $r['tamanho'],
+    ], $linhas));
+  }
+
+  if ($a === 'backup_baixar') {
+    $stmt = $pdo->prepare('SELECT dados FROM kr_backups WHERE id = ?');
+    $stmt->execute([id_valido($param('id'))]);
+    $r = $stmt->fetch();
+    if (!$r) erro('Backup não encontrado.', 404);
+    saida(json_decode($r['dados'], true));
+  }
+
+  if ($a === 'backup_restaurar') {
+    if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem restaurar um backup.', 403);
+    $stmt = $pdo->prepare('SELECT dados FROM kr_backups WHERE id = ?');
+    $stmt->execute([id_valido($param('id'))]);
+    $r = $stmt->fetch();
+    if (!$r) erro('Backup não encontrado.', 404);
+    $dados = json_decode($r['dados'], true);
+    $substituir = !empty($corpo['substituir']);
+    $resumo = validar_backup_dados($dados, $pdo, $substituir, $STORES);
+    restaurar_dados($pdo, $dados, $substituir, $STORES, $tabela);
+    saida(['ok' => true, 'resumo' => $resumo]);
+  }
+
+  if ($a === 'backup_excluir') {
+    if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem excluir backups.', 403);
+    $pdo->prepare('DELETE FROM kr_backups WHERE id = ?')->execute([id_valido($param('id'))]);
+    saida(['ok' => true]);
   }
 
   if (!in_array($s, $STORES, true)) erro('Store inválida.');
