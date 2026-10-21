@@ -19,8 +19,9 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 Os fontes React estão em `frontend/` (PRs #21/#23), sem lógica duplicada — os
 20 arquivos de `frontend/src/domain/` e os 2 de `frontend/src/lib/` (format.ts,
 id.ts) são re-exports de uma linha pra `domain/`/`lib/` da raiz (PR #41).
-O pacote (`npm run package:hostinger`) compila esse frontend de verdade e o
-empacota junto com o backend PHP — ver `## Publicação` abaixo.
+O pacote (`npm run package:hostinger`) empacota o build desse frontend (já
+compilado antes, `cd frontend && npm run build`) junto com o backend PHP — ver
+`## Publicação` abaixo.
 
 ## Arquivos que vão para o servidor
 `index.html`, `assets/` e `favicon.png` (build de `frontend/`), `branding/`, `.htaccess`,
@@ -59,8 +60,9 @@ O pacote inclui também `branding/`. Não envie o repositório inteiro.
 `config.php` e `schema.sql` não entram no pacote: mantenha a configuração existente
 no servidor e use o schema apenas na administração do banco.
 
-O GitHub Actions valida testes, TypeScript e sintaxe PHP e disponibiliza o artefato
-`krieger-hostinger`, sem credenciais e sem publicar automaticamente.
+O GitHub Actions valida testes, TypeScript e sintaxe PHP, compila `frontend/` e
+empacota, disponibilizando o artefato `krieger-hostinger` — sem credenciais e
+sem publicar automaticamente.
 
 1. Publique pelo conector/API os arquivos acima na **raiz** do `public_html` do domínio, a partir do commit aprovado em `main`.
 2. Copie `config.example.php` para `config.php` e preencha as credenciais do MySQL (hPanel > Bancos de dados).

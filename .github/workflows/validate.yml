@@ -13,12 +13,20 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
       - run: npm ci
       - run: npm test
       - run: npm run typecheck
       - run: npm run docs:check
       - name: Validar sintaxe PHP
         run: find . -maxdepth 1 -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Instalar e compilar frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
       - run: npm run package:hostinger
       - uses: actions/upload-artifact@v4
         with:
