@@ -72,4 +72,27 @@ describe("relatório final", () => {
     expect(consumoAgua(e)).toEqual({ valor: 1200, manual: false, rubricas: ["Água e esgoto"] });
     expect(consumoAgua({ ...e, consid: { ...e.consid, consumoAguaManual: 999 } }).valor).toBe(999);
   });
+
+  it("sem previsão sugerida (PDF sem essa folha, ou exercício digitado à mão), os campos ficam null", () => {
+    const r = montarRelatorioFinal({ exercicio: exercicio(4000), condominio: condo, escritorio: null, mensais: [] });
+    expect(r.previsaoSugerida).toBeNull();
+    expect(r.previsaoSugeridaPorUnidade).toBeNull();
+  });
+
+  it("com previsão sugerida no exercício, calcula o total e o quadro por unidade (fundo de reserva do prev)", () => {
+    const e: Exercicio = {
+      ...exercicio(4000),
+      prev: { modo: "tradicional", fundoReservaPct: 10 },
+      previsaoSugerida: {
+        rateioMensalAtual: 40000,
+        categorias: [{ nome: "Pessoal", anual: 120000, media: 10000 }],
+        deducoes: [],
+        variacao: { sinal: "+", valor: 0 },
+      },
+    };
+    const r = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
+    expect(r.previsaoSugerida?.rateioMensalSugerido).toBe(10000); // 120000 / 12
+    // unidades = 10 (condo), fundoReservaPct = 10%: cota 1000 + reserva 100 = 1100
+    expect(r.previsaoSugeridaPorUnidade).toEqual({ unidades: 10, cotaUnidade: 1000, reservaUnidade: 100, valorUnidade: 1100 });
+  });
 });

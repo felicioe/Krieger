@@ -137,6 +137,23 @@ export interface AjustePrevisao {
   grupo?: string;
 }
 
+/**
+ * Previsão orçamentária sugerida pelo Systemar (folha "Previsão orçamentária ordinária sugerida"
+ * do PDF). Diferente de `Exercicio.prev` (previsão calculada a partir do demonstrativo do próprio
+ * exercício, com ajustes/fundo de reserva/unidades): esta parte das categorias de despesa já
+ * realizadas conforme o PDF, com linhas de dedução e variação editáveis pelo usuário.
+ */
+export interface PrevisaoSugeridaExercicio {
+  /** Rateio mensal utilizado no ano anterior, lido do PDF — referência para o índice sugerido. */
+  rateioMensalAtual: number | null;
+  /** Despesas realizadas por categoria (como o Systemar agrupa), com a média mensal ao lado. */
+  categorias: { nome: string; anual: number; media: number }[];
+  /** Linhas de dedução (ex.: "Parte água e gás"), + ou -. Uma ou mais, editáveis. */
+  deducoes: AjustePrevisao[];
+  /** Variação de despesas sugeridas, + ou -. */
+  variacao: { sinal: "+" | "-"; valor: number };
+}
+
 export interface Exercicio extends ComId {
   condoId: string;
   condoNome: string;
@@ -172,6 +189,8 @@ export interface Exercicio extends ComId {
     indices: IndiceCorrecao[];
     extras: { rotulo: string; valor: string | number }[];
   };
+  /** Campo novo (opcional): previsão orçamentária sugerida pelo Systemar (menu próprio). */
+  previsaoSugerida?: PrevisaoSugeridaExercicio | null;
   prev?: {
     modo: "tradicional" | "detalhado";
     driver?: unknown;
