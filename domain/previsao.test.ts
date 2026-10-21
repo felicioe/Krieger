@@ -57,6 +57,27 @@ describe("previsão — anual ajustado", () => {
     expect(r.avisos).toEqual([]);
   });
 
+  it("método valor: variação é um R$ direto, somado à base líquida sem multiplicar (não um percentual)", () => {
+    // Pedido do usuário: o campo de variação, apesar de calculado como percentual historicamente,
+    // também precisa servir para um ajuste subjetivo da empresa em R$ direto (ex.: previsão de
+    // aumento de custo) sem reinterpretar o que já está salvo como percentual em outros condomínios
+    // — por isso é um método novo ("valor"), não uma mudança no "manual" existente.
+    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: 14000 }), 25);
+    expect(r.variacaoValor).toBe(14000); // não é 140% de 108.000
+    expect(r.variacaoPct).toBe(0);
+    expect(r.totalAnual).toBe(108000 + 14000 + 5000 - 2000);
+    expect(r.avisos).toEqual([]); // 14000 não é um percentual aqui, não deve disparar o aviso de implausibilidade
+  });
+
+  it("método valor: aceita redução (R$ negativo) e não distribui a variação por despesa/grupo", () => {
+    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: -5000, prev: { modo: "detalhado" } }), 25);
+    expect(r.variacaoValor).toBe(-5000);
+    expect(r.totalAnual).toBe(108000 - 5000);
+    // "detalhado": cada linha mantém o valor realizado como previsto (sem variação distribuída por linha)
+    const salarios = r.linhas.find((l) => l.nome === "Salários");
+    expect(salarios?.previsto).toBe(60000);
+  });
+
   it("a dedução também vale quando o nome do grupo casa com a expressão", () => {
     const d = demo([
       { nome: "Fundo de caixa p/ obras", itens: [{ nome: "Pintura", valor: 5000 }] },
