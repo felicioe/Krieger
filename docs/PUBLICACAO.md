@@ -40,7 +40,7 @@ Seguir as regras e confirmações do conector disponível na sessão de publica�
 `api.php`, `auth.php`, `lib_auth.php`, `login.html`, `usuarios.html`,
 `auth-guard.js` e `acesso.css`.
 
-Ficam fora: config.php, schema.sql, fontes, testes, dependências e documentação.
+Ficam fora: config.php/krieger-config.php, schema.sql, fontes, testes, dependências e documentação.
 O comando não recompila React e não comprova a origem dos bundles (#16).
 O artefato de um PR é para revisão; publicar exige versão correspondente em `main`.
 
@@ -48,22 +48,38 @@ O artefato de um PR é para revisão; publicar exige versão correspondente em `
 
 1. Listar o estado atual da Hostinger e resolver conta/domínio pelos dados retornados.
 2. Registrar SHA, ambiente, destino e plano de rollback em issue de publicação.
-3. Conferir backup recuperável dos arquivos e banco. Preservar `config.php` e dados.
+3. Conferir backup recuperável dos arquivos e banco. A configuração real
+   (`krieger-config.php`) fica fora da pasta publicada do site desde 21/10/2026
+   (ver `## Incidente de config.php` abaixo) — não é mais apagada pelo deploy,
+   mas confira mesmo assim depois de qualquer publicação.
 4. Se a operação substituir todo o diretório ou remover arquivos fora do pacote,
    não prosseguir sem estratégia segura para a configuração existente.
 5. Publicar a versão selecionada pelo mecanismo suportado e acompanhar até concluir.
 6. Validar comportamento e registrar identificação/log não sensível do deploy.
 
-Em primeira instalação, criar config.php no servidor a partir do exemplo, aplicar
-schema.sql por administração do banco e criar administrador conforme README.
+Em primeira instalação, criar `krieger-config.php` no servidor a partir do exemplo
+(fora da pasta publicada — ver README e `## Incidente de config.php` abaixo),
+aplicar schema.sql por administração do banco e criar administrador conforme README.
 Não incluir configuração real no artefato para contornar limites do conector.
 Atualizações de schema exigem plano próprio; o empacotador nunca as executa.
+
+## Incidente de config.php (resolvido em 21/10/2026)
+
+O auto-deploy do Hostinger apaga, a cada push na branch configurada, qualquer
+arquivo dentro da pasta publicada que não esteja no Git — isso derrubou o site
+duas vezes (config.php sumiu), exigindo recriação manual (ver `docs/DECISOES.md`).
+Correção: `lib_auth.php` (`caminho_config()`) agora busca a configuração real em
+`krieger-config.php`, **fora** da pasta publicada do site (dois níveis acima), que
+nenhum deploy desta aplicação toca — só precisa ser criado uma vez. `config.php`
+dentro da pasta publicada não é mais lido por nada; pode ficar ou ser removido,
+tanto faz.
 
 ## Validação e rollback
 
 - Página correta e assets carregam; worker PDF tem MIME JavaScript.
 - Login/logout, troca de senha e permissões admin/user funcionam.
-- API sem sessão nega acesso; config.php e lib_auth.php não são servidos diretamente.
+- API sem sessão nega acesso; config.php, krieger-config.php (fica fora da pasta
+  publicada) e lib_auth.php não são servidos diretamente.
 - Cadastro de teste pode ser salvo e recarregado sem erro.
 - Importação segue `VALIDACAO-PDF.md` no ambiente apropriado.
 

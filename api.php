@@ -17,7 +17,7 @@ $STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'co
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try { $pdo = conectar(); }
-catch (Throwable $e) { error_log('[krieger] ' . $e->getMessage()); erro('Não foi possível conectar ao banco de dados. Confira config.php.', 500); }
+catch (Throwable $e) { error_log('[krieger] ' . $e->getMessage()); erro('Não foi possível conectar ao banco de dados. Confira a configuração (docs/PUBLICACAO.md).', 500); }
 
 checar_origem();
 $usuario = exigir_login($pdo);

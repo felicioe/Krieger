@@ -26,8 +26,9 @@ local antes de editar. O CI atual valida apenas o domínio da raiz; a validaçã
 reproduzível do frontend e sua integração ao pacote continuam na #16.
 
 Para desenvolvimento PHP, criar banco local de teste, aplicar `schema.sql` e
-criar `config.php` a partir do exemplo com credenciais locais. Nunca usar o banco
-de produção em testes. `php -S localhost:8080` pode ajudar a testar PHP, mas não
+criar `config.local.php` (na raiz do repo, ao lado de `config.example.php`) a
+partir do exemplo, com credenciais locais. Nunca usar o banco de produção em
+testes. `php -S localhost:8080` pode ajudar a testar PHP, mas não
 processa `.htaccess`; a validação final exige Apache/Hostinger compatível.
 
 ## Fluxo de trabalho

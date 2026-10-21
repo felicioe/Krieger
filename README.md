@@ -57,15 +57,22 @@ não publicar um pacote velho escondendo uma falha de build.
 
 O conector/API deve publicar o **conteúdo** de `dist/hostinger/` em `public_html`, incluindo `.htaccess`.
 O pacote inclui também `branding/`. Não envie o repositório inteiro.
-`config.php` e `schema.sql` não entram no pacote: mantenha a configuração existente
-no servidor e use o schema apenas na administração do banco.
+`config.php`/`krieger-config.php` e `schema.sql` não entram no pacote: mantenha a
+configuração existente no servidor e use o schema apenas na administração do banco.
 
 O GitHub Actions valida testes, TypeScript e sintaxe PHP, compila `frontend/` e
 empacota, disponibilizando o artefato `krieger-hostinger` — sem credenciais e
 sem publicar automaticamente.
 
 1. Publique pelo conector/API os arquivos acima na **raiz** do `public_html` do domínio, a partir do commit aprovado em `main`.
-2. Copie `config.example.php` para `config.php` e preencha as credenciais do MySQL (hPanel > Bancos de dados).
+2. **Uma única vez**, copie `config.example.php` para `krieger-config.php` e preencha as
+   credenciais do MySQL (hPanel > Bancos de dados) — mas **fora** da pasta publicada do
+   site: dois níveis acima dela (ex.: se o site fica em
+   `.../public_html/krieger`, o arquivo vai em `.../krieger-config.php`, ao lado de
+   `public_html`). O auto-deploy do Hostinger apaga tudo que não está no Git dentro da
+   pasta publicada a cada push; um arquivo fora dela sobrevive a qualquer deploy futuro,
+   então essa cópia nunca mais precisa ser refeita. Ver `lib_auth.php` (`caminho_config()`)
+   para os caminhos aceitos.
 3. Na primeira instalação, aplique `schema.sql` no banco. Ele usa CREATE TABLE IF NOT EXISTS e não migra tabelas existentes; alterações futuras exigem plano de migração.
 4. Crie o primeiro administrador (veja abaixo) e entre pela tela de login do próprio sistema (`/#/login`).
 
@@ -76,7 +83,7 @@ sem publicar automaticamente.
 - Primeiro administrador (rode no phpMyAdmin, aba SQL, trocando o hash por um gerado com `password_hash`):
   `INSERT INTO kr_usuarios (id, login, nome, senha_hash, perfil, ativo, trocar_senha, criado_em) VALUES ('adm00001','admin','Administrador','<HASH>','admin',1,1,NOW());`
 
-`config.php` real não vai para o Git (`.gitignore`).
+`krieger-config.php`/`config.local.php` reais não vão para o Git (`.gitignore`).
 
 Depois da publicação, confira login/logout, permissões de usuário, carregamento
 dos assets e worker PDF, gravação de dados e importação. Faça backup do banco e

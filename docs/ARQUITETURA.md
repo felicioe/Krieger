@@ -30,8 +30,10 @@ o código. Ações incluem listar, obter, salvar, excluir, exportar e importar.
 O backend verifica origem e sessão; operações administrativas verificam perfil.
 Consultar o código antes de adicionar consumidores ou alterar contratos.
 
-`lib_auth.php` carrega `config.php` local, conecta via PDO/MySQL e usa sessão
-`KRSESS`. Credenciais ficam no servidor. `.htaccess` bloqueia arquivos internos,
+`lib_auth.php` carrega a configuração (`config.local.php` localmente, ou
+`krieger-config.php` fora da pasta publicada em produção — `caminho_config()`
+decide), conecta via PDO/MySQL e usa sessão `KRSESS`. Credenciais ficam no
+servidor, fora da pasta publicada do site. `.htaccess` bloqueia arquivos internos,
 desativa listagem e define MIME do worker `.mjs`. O servidor precisa executar PHP:
 servir o pacote como site puramente estático não basta.
 
