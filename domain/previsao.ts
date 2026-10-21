@@ -122,6 +122,11 @@ export function calcularPrevisao(
   const re = expressaoDeducao(parametros.deducaoRegex);
   const { pct, aviso } = resolverVariacao(parametros);
   if (aviso) avisos.push(aviso);
+  // Variação fora de uma faixa plausível (ex.: valor em R$ digitado onde se esperava %) produziria
+  // um total sem sentido sem isso — avisa em vez de só calcular silenciosamente.
+  if (Math.abs(pct) > 100) {
+    avisos.push(`Variação de ${pct}% é incomum para um reajuste anual — confira se não foi digitado um valor em R$ no lugar do percentual.`);
+  }
   const fator = 1 + pct / 100;
 
   const grupos = demonstrativo?.despesas.grupos ?? [];

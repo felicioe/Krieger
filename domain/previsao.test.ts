@@ -45,6 +45,18 @@ describe("previsão — anual ajustado", () => {
     expect(r.totalAnual).toBe(120000 - 12000 + 10800 - 3000);
   });
 
+  it("avisa quando a variação % é implausível (ex.: valor em R$ digitado no lugar do percentual)", () => {
+    // Achado testando com dado real: o cadastro do condomínio tinha variacaoPadrao = 14000 (um
+    // valor em R$ digitado onde se esperava um percentual), e o total saía sem sentido sem aviso.
+    const r = calcularPrevisao(D, params({ variacao: 14000 }), 25);
+    expect(r.avisos).toContain("Variação de 14000% é incomum para um reajuste anual — confira se não foi digitado um valor em R$ no lugar do percentual.");
+  });
+
+  it("não avisa para uma variação dentro da faixa plausível", () => {
+    const r = calcularPrevisao(D, params({ variacao: 10 }), 25);
+    expect(r.avisos).toEqual([]);
+  });
+
   it("a dedução também vale quando o nome do grupo casa com a expressão", () => {
     const d = demo([
       { nome: "Fundo de caixa p/ obras", itens: [{ nome: "Pintura", valor: 5000 }] },

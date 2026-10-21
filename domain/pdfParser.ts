@@ -135,8 +135,12 @@ function cabecalho(linhas: string[], nomeArquivo: string): { condominio: Condomi
   let periodo: PeriodoRelatorio = null;
   const p = txt.match(/Per[ií]odo de\s+(\d{2}\/\d{2}\/\d{4})\s+a\s+(\d{2}\/\d{2}\/\d{4})/);
   const cp = txt.match(/Comparativo Financeiro de\s+(\d{2}\/\d{4})\s+a\s+(\d{2}\/\d{4})/);
+  // "DEMONSTRATIVO GERAL ENCERRADO EM DD/MM/AAAA" (layout da prestação de contas anual): só a data
+  // final; assume 1º de janeiro do mesmo ano como início (convenção de exercício anual).
+  const enc = txt.match(/DEMONSTRATIVO GERAL ENCERRADO EM\s+(\d{2})\/(\d{2})\/(\d{4})/i);
   if (p) periodo = { inicio: dataISO(p[1]!), fim: dataISO(p[2]!) };
   else if (cp) periodo = { competenciaInicio: cp[1]!, competenciaFim: cp[2]! };
+  else if (enc) periodo = { inicio: `${enc[3]}-01-01`, fim: `${enc[3]}-${enc[2]}-${enc[1]}` };
   const contab = txt.match(/^\s*(Krieger Assessoria Cont[áa]bil e Condominial Ltda\.)\s*$/im);
   return { condominio: cond, periodo, emitidoPor: contab ? contab[1]! : null };
 }
@@ -412,6 +416,15 @@ function campoTexto(texto: string, rotulo: RegExp): string | null {
   return m ? m[1]!.trim() : null;
 }
 
+/** "Índice sugerido para correção...": o % vem antes ou depois do número, conforme o exercício. */
+function indiceSugeridoDoBloco(bloco: string): number | null {
+  const m = bloco.match(
+    /[ÍI]ndice sugerido para corre[çc][ãa]o do condom[íi]nio[.\s]*(?:%\s*(-?[\d.]+,\d{2})|(-?[\d.]+,\d{2})\s*%)/i,
+  );
+  if (!m) return null;
+  return paraNumero((m[1] ?? m[2])!);
+}
+
 /** Membros da administração: "Cargo: Nome"; linhas seguintes sem ":" repetem o último cargo. */
 function lerAdministracao(bloco: string): MembroAdministracaoLido[] {
   const out: MembroAdministracaoLido[] = [];
@@ -514,7 +527,8 @@ export function lerPrevisaoSugerida(texto: string): PrevisaoSugeridaLida | null 
       const nome = m[1]!.trim();
       const anual = paraNumero(m[2]!);
       const media = paraNumero(m[3]!);
-      if (/^Total das despesas do per[íi]odo/i.test(nome)) {
+      // O rótulo varia por condomínio/exercício: "do período" ou "do exercício de AAAA/AAAA".
+      if (/^Total das despesas do (per[íi]odo|exerc[íi]cio)/i.test(nome)) {
         totalDespesasAno = anual;
         totalDespesasMedia = media;
       } else {
@@ -529,10 +543,12 @@ export function lerPrevisaoSugerida(texto: string): PrevisaoSugeridaLida | null 
     totalDespesasAno,
     totalDespesasMedia,
     deducao: campoValor(bloco, /Despesas a deduzir[^\n]*R\$\s*(-?[\d.]+,\d{2})/i),
-    totalOrdinario: campoValor(bloco, /Total de despesas consideradas ordin[áa]rias\.?\s*R\$\s*(-?[\d.]+,\d{2})/i),
+    // "de"/"das despesas" varia por condomínio/exercício.
+    totalOrdinario: campoValor(bloco, /Total d(?:e|as) despesas consideradas ordin[áa]rias\.?\s*R\$\s*(-?[\d.]+,\d{2})/i),
     variacaoSugerida: campoValor(bloco, /Varia[çc][ãa]o de despesas sugeridas[^\n]*R\$\s*(-?[\d.]+,\d{2})/i),
     rateioAnualSugerido: campoValor(bloco, /Sugest[ãa]o de rateio\s+anual\s+ordin[áa]rio[.\s]*R\$\s*(-?[\d.]+,\d{2})/i),
     rateioMensalSugerido: campoValor(bloco, /Sugest[ãa]o de rateio\s+mensal\s+ordin[áa]rio[.\s]*R\$\s*(-?[\d.]+,\d{2})/i),
-    indiceSugerido: campoValor(bloco, /[ÍI]ndice sugerido para corre[çc][ãa]o do condom[íi]nio[.\s]*(-?[\d.]+,\d{2})\s*%/i),
+    // O símbolo % vem antes ou depois do número, conforme o condomínio/exercício.
+    indiceSugerido: indiceSugeridoDoBloco(bloco),
   };
 }

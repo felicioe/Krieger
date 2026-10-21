@@ -84,6 +84,15 @@ describe("importação do PDF Systemar — período único", () => {
     expect(anoDoRelatorio(rel, null)).toBe(2026);
   });
 
+  it("lê o período do layout DEMONSTRATIVO GERAL ENCERRADO EM (prestação de contas anual), assumindo 1º de janeiro como início", () => {
+    // Achado testando com PDF real: a prestação de contas anual não usa Período de X a Y, só a
+    // data final (ex.: DEMONSTRATIVO GERAL ENCERRADO EM 31/12/2025) — sem isso, rel.periodo ficava
+    // null e travava a importação como relatório mensal pedindo o mês manualmente.
+    const anual = periodoUnico.replace("Demonstrativo de Receitas e Despesas - Período de 01/08/2026 a 31/08/2026", "DEMONSTRATIVO GERAL ENCERRADO EM 31/12/2026");
+    const relAnual = lerRelatorio(anual, "073_122026 - Estrelas do Mar.pdf");
+    expect(relAnual.periodo).toEqual({ inicio: "2026-01-01", fim: "2026-12-31" });
+  });
+
   it("lê as contas a receber", () => {
     expect(rel.contasAReceber).toEqual({ ate: "2026-08-31", unidades: 3, total: 1500 });
   });
