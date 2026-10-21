@@ -87,3 +87,14 @@ atualização das configurações de auto-deploy), checar se `config.php` ainda 
 pedir ao responsável para recriá-lo pelo Gerenciador de Arquivos do hPanel. O
 Claude/Codex nunca devem digitar ou repassar a senha real do banco — só o
 responsável a insere diretamente no servidor.
+
+## 2026-10-21 — frontend exclusivamente no Lovable
+
+Regra permanente determinada pelo responsável: Codex/ChatGPT nunca edita o
+frontend do Krieger. O Lovable é responsável pelas correções de componentes,
+estilos, layout, assets e comportamento da interface. Pedidos genéricos de
+correção não revogam essa regra. Codex faz auditoria, revisão, testes e
+rastreabilidade no GitHub; backend, integração e publicação continuam sujeitos
+às suas instruções específicas. Não foi feita alteração de frontend nesta etapa.
+As issues #30/#31/#32/#47/#48 devem ser implementadas no Lovable e posteriormente
+revisadas com evidências antes de encerrar os critérios de aceite.
