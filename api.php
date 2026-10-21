@@ -236,9 +236,12 @@ try {
   }
 } catch (Throwable $e) {
   error_log('[krieger] ' . $e->getMessage());
-  // DIAGNOSTICO TEMPORARIO: grava em arquivo local (bloqueado pelo .htaccess, nunca
-  // devolvido ao cliente) so para achar a causa do Erro interno no Backup. Remover
-  // depois de diagnosticado.
-  @file_put_contents(__DIR__ . '/krieger-debug.log', date('c') . ' ' . $e->getMessage() . "\n", FILE_APPEND);
+  // Tabela ausente (schema.sql tem uma tabela que o banco deste servidor ainda não tem,
+  // ex.: uma tabela nova de uma funcionalidade adicionada depois da instalação inicial).
+  // Isso já aconteceu de forma silenciosa (Erro interno genérico, exigiu log manual pra
+  // achar a causa) - avisar direto evita repetir a investigação.
+  if ($e instanceof PDOException && $e->getCode() === '42S02') {
+    erro('Tabela do banco ausente: ' . $e->getMessage() . '. Aplique schema.sql (docs/PUBLICACAO.md).', 500);
+  }
   erro('Erro interno. Tente novamente ou contate o administrador.', 500);
 }
