@@ -56,6 +56,32 @@ describe("previsão — anual ajustado", () => {
   });
 });
 
+describe("previsão — variação em valor fixo (R$)", () => {
+  it("+14.000 é somado à base líquida sem multiplicar e sem percentual", () => {
+    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: 14000, prev: { modo: "tradicional" } }), 25);
+    expect(r.variacaoPct).toBe(0);
+    expect(r.variacaoValor).toBe(14000);
+    expect(r.totalAnual).toBe(108000 + 14000);
+  });
+
+  it("−5.000 reduz a base líquida", () => {
+    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: -5000, prev: { modo: "tradicional" } }), 25);
+    expect(r.variacaoValor).toBe(-5000);
+    expect(r.totalAnual).toBe(108000 - 5000);
+  });
+
+  it("no método valor as linhas por grupo não recebem variação", () => {
+    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: 14000, prev: { modo: "tradicional" } }), 25);
+    expect(r.linhas.find((l) => l.grupo === "Pessoal")?.previsto).toBe(60000);
+  });
+
+  it("percentual acima de 100% no manual gera aviso; valor em R$ não", () => {
+    expect(calcularPrevisao(D, params({ variacao: 14000 }), 25).avisos.some((a) => a.includes("14000%"))).toBe(true);
+    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: 14000 }), 25);
+    expect(r.avisos.some((a) => a.includes("incomum"))).toBe(false);
+  });
+});
+
 describe("previsão — valores derivados do anual ajustado", () => {
   it("reserva é por unidade: 120.000 anual, 100 unidades, 10% → 100,00 + 10,00 = 110,00", () => {
     const d = demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 120000 }] }]);

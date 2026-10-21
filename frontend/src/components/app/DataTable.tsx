@@ -99,7 +99,7 @@ export function DataTable<T>({
                     ? c.render(linha)
                     : String((linha as Record<string, unknown>)[c.chave] ?? "");
                   return (
-                  <TableCell key={c.chave} className={cn(alinhamento(c.alinhar), c.className)}>
+                    <TableCell key={c.chave} className={cn(alinhamento(c.alinhar), c.className)}>
                       {aoClicar && c.chave === chaveAcao ? (
                         <button
                           type="button"
@@ -112,7 +112,7 @@ export function DataTable<T>({
                       ) : (
                         conteudo
                       )}
-                  </TableCell>
+                    </TableCell>
                   );
                 })}
               </TableRow>

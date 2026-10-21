@@ -154,7 +154,10 @@ export function PreviaRelatorio({
             <tbody>
               <Linha nome="Base (despesas realizadas)" valor={rel.previsao.base} />
               <Linha nome="(−) Dedução" valor={rel.previsao.deducao} />
-              <Linha nome={`(+) Variação ${formatNumeroBR(rel.previsao.variacaoPct)}%`} valor={rel.previsao.variacaoValor} />
+              <Linha
+                nome={e.variacaoMetodo === "valor" ? "(+) Variação" : `(+) Variação ${formatNumeroBR(rel.previsao.variacaoPct)}%`}
+                valor={rel.previsao.variacaoValor}
+              />
               <Linha nome="(+) Ajustes" valor={rel.previsao.ajustesMais} />
               <Linha nome="(−) Ajustes" valor={rel.previsao.ajustesMenos} />
               <Linha nome="Anual ajustado" valor={rel.previsao.totalAnual} forte />

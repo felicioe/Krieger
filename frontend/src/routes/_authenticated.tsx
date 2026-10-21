@@ -39,7 +39,7 @@ function LayoutSistema() {
           id={ID_CONTEUDO}
           tabIndex={-1}
           className="mx-auto w-full max-w-6xl px-4 py-6 focus:outline-none sm:px-6 lg:px-10 lg:py-8"
-          >
+        >
           <Outlet />
         </main>
       </div>

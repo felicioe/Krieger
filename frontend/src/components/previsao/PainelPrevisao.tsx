@@ -27,6 +27,7 @@ const METODOS: { valor: VariacaoMetodo; rotulo: string }[] = [
   { valor: "manual", rotulo: "Manual" },
   { valor: "percentual", rotulo: "Percentual fixo" },
   { valor: "mediaIndices", rotulo: "Média dos índices" },
+  { valor: "valor" as const, rotulo: "Valor fixo (R$)" },
 ];
 export const ARREDONDAMENTO: { valor: Arredondamento; rotulo: string }[] = [
   { valor: "truncar", rotulo: "Truncar (sem centavos, para baixo)" },
@@ -86,6 +87,11 @@ export function PainelPrevisao({
             {e.variacaoMetodo === "mediaIndices" && (
               <Field rotulo="Anos na média" dica={`Vazio = todos. Média atual: ${pct(r.variacaoPct)}`} className="sm:col-span-2">
                 <InteiroInput value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} placeholder="Todos" />
+              </Field>
+            )}
+            {e.variacaoMetodo === "valor" && (
+              <Field rotulo="Variação (R$)" dica="Valor fixo somado à base, positivo ou negativo — não é percentual." className="sm:col-span-2">
+                <DinheiroInput value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} />
               </Field>
             )}
             <Field rotulo="Fundo de reserva" dica="Sobre o valor por unidade." className="sm:col-span-2">
@@ -171,7 +177,7 @@ export function PainelPrevisao({
       </div>
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
-        <Resumo r={r} arredondamento={e.arredondamento} aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })} />
+        <Resumo r={r} arredondamento={e.arredondamento} metodo={e.variacaoMetodo} aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })} />
       </aside>
     </div>
   );
@@ -300,7 +306,17 @@ const ROTULO_ARRED: Record<Arredondamento, string> = {
   centavos: "com centavos",
 };
 
-function Resumo({ r, arredondamento, aoAprovar }: { r: ResultadoPrevisao; arredondamento: Arredondamento; aoAprovar: () => void }) {
+function Resumo({
+  r,
+  arredondamento,
+  metodo,
+  aoAprovar,
+}: {
+  r: ResultadoPrevisao;
+  arredondamento: Arredondamento;
+  metodo: VariacaoMetodo;
+  aoAprovar: () => void;
+}) {
   return (
     <section className="rounded-md border bg-card" aria-label="Resumo da previsão">
       <header className="border-b px-5 py-3">
@@ -310,7 +326,10 @@ function Resumo({ r, arredondamento, aoAprovar }: { r: ResultadoPrevisao; arredo
       <div className="px-5 py-4">
         <LinhaResumo rotulo="Base (despesas realizadas)" valor={formatBRL(r.base)} />
         <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
-        <LinhaResumo rotulo={`(+) Variação ${pct(r.variacaoPct)}`} valor={formatBRL(r.variacaoValor)} />
+        <LinhaResumo
+          rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${pct(r.variacaoPct)}`}
+          valor={formatBRL(r.variacaoValor)}
+        />
         <LinhaResumo rotulo="(+) Ajustes" valor={formatBRL(r.ajustesMais)} />
         <LinhaResumo rotulo="(−) Ajustes" valor={formatBRL(r.ajustesMenos)} negativo={r.ajustesMenos > 0} />
         <LinhaResumo rotulo="Anual ajustado" valor={formatBRL(r.totalAnual)} forte className="mt-1 border-t pt-2" />

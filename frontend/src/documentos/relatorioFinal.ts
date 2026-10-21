@@ -112,7 +112,7 @@ export async function documentoRelatorioFinal(o: {
       resumo([
         l("Base (despesas realizadas)", p.base),
         l("(−) Dedução", p.deducao),
-        l(`(+) Variação ${formatNumeroBR(p.variacaoPct)}%`, p.variacaoValor),
+        l(e.variacaoMetodo === "valor" ? "(+) Variação" : `(+) Variação ${formatNumeroBR(p.variacaoPct)}%`, p.variacaoValor),
         l("(+) Ajustes", p.ajustesMais),
         l("(−) Ajustes", p.ajustesMenos),
         l("Anual ajustado", p.totalAnual, { estilo: "total" }),
@@ -234,7 +234,7 @@ export async function documentoRelatorioFinal(o: {
 
 export function valores(t: Totais): Texto[] {
   return [
-    [{ texto: formatBRL(t.previstoAnual) }, { texto: `\n${formatBRL(t.previstoMensal)}/mês`, suave: true }],
+    [{ texto: formatBRL(t.previstoAnual) }, { texto: `  ${formatBRL(t.previstoMensal)}/mês`, suave: true, pequeno: true }],
     formatBRL(t.previsto),
     formatBRL(t.realizado),
     `${t.diferenca > 0 ? "+" : ""}${formatBRL(t.diferenca)}`,
@@ -247,12 +247,13 @@ export function tabelaComparativo(c: ResultadoComparativo): Bloco {
   const ate = c.mesAte.rotulo;
   const colunas: Coluna[] = [
     { titulo: "Rubrica", largura: "*" },
-    { titulo: "Previsto anual / mensal", largura: 72, alinhamento: "direita" },
-    { titulo: `Previsto até ${ate}`, largura: 60, alinhamento: "direita" },
-    { titulo: `Realizado até ${ate}`, largura: 60, alinhamento: "direita" },
-    { titulo: "Diferença", largura: 60, alinhamento: "direita" },
-    { titulo: "%", largura: 44, alinhamento: "direita" },
-    { titulo: "Situação", largura: 42, alinhamento: "centro" },
+    // anual e mensal na mesma linha; colunas numéricas no justo para sobrar largura à rubrica
+    { titulo: "Previsto anual / mensal", largura: 106, alinhamento: "direita" },
+    { titulo: `Previsto até ${ate}`, largura: 50, alinhamento: "direita" },
+    { titulo: `Realizado até ${ate}`, largura: 50, alinhamento: "direita" },
+    { titulo: "Diferença", largura: 52, alinhamento: "direita" },
+    { titulo: "%", largura: 34, alinhamento: "direita" },
+    { titulo: "Situação", largura: 32, alinhamento: "centro" },
   ];
   const linhas: LinhaTabela[] = [];
   for (const g of c.grupos) {

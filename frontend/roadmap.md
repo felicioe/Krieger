@@ -25,3 +25,8 @@
 - [x] #47 menu do celular: Enter/Espaço abre, Escape/Fechar fecha com foco de volta; navegar foca o conteúdo
 - [x] #48 marca: variantes derivadas da logo oficial documentadas em src/assets/MARCA.md; compacta a 32 px
 - [ ] Teste de toque real e leitor de tela — fica com o responsável (não disponível aqui)
+
+## Previsto × Realizado e variação em R$
+- [x] Tabela do comparativo no PDF/Word numa folha só: anual e "/mês" na mesma linha, coluna Rubrica mais larga
+- [x] Opção "Valor fixo (R$)" na previsão pelo demonstrativo (tela, prévia e PDF/Word do Relatório final)
+- [x] Cálculo da variação em R$ (código do Claude em src/domain/previsao.ts) e opção também no cadastro do condomínio

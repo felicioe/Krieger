@@ -58,7 +58,11 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
             bold: ("negrito" in x && x.negrito) || base.negrito || false,
             italics: ("italico" in x && x.italico) || false,
             color: "suave" in x && x.suave ? COR.suave : (base.cor ?? COR.texto),
-            ...(base.tamanho ? { size: meio(base.tamanho) } : {}),
+            ...("pequeno" in x && x.pequeno
+              ? { size: meio((base.tamanho ?? 10) - 1) }
+              : base.tamanho
+                ? { size: meio(base.tamanho) }
+                : {}),
           }),
         ),
       );
@@ -69,12 +73,15 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   let instancia = 0;
   const filhos: (InstanceType<typeof Paragraph> | InstanceType<typeof Table>)[] = [];
 
-  function celula(t: Texto, o: { largura: number; alinhamento?: Alinhamento | undefined; fill?: string; span?: number; recuo?: boolean | undefined } & Base) {
+  function celula(
+    t: Texto,
+    o: { largura: number; alinhamento?: Alinhamento | undefined; fill?: string; span?: number; recuo?: boolean | undefined; lado?: number } & Base,
+  ) {
     return new TableCell({
       width: { size: o.largura, type: WidthType.DXA },
       ...(o.span ? { columnSpan: o.span } : {}),
       ...(o.fill ? { shading: { type: ShadingType.CLEAR, color: "auto", fill: o.fill } } : {}),
-      margins: { top: 40, bottom: 40, left: 100, right: 100 },
+      margins: { top: 40, bottom: 40, left: o.lado ?? 100, right: o.lado ?? 100 },
       verticalAlign: VerticalAlign.CENTER,
       children: [
         new Paragraph({
@@ -87,11 +94,12 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
     });
   }
 
-  function larguras(colunas: Coluna[]): number[] {
-    const fixas = colunas.reduce((s, c) => s + (typeof c.largura === "number" ? tw(c.largura) : 0), 0);
+  /** `extra` (twips) soma às colunas de largura fixa: no PDF a largura é só do texto, sem a margem da célula. */
+  function larguras(colunas: Coluna[], extra = 0): number[] {
+    const fixas = colunas.reduce((s, c) => s + (typeof c.largura === "number" ? tw(c.largura) + extra : 0), 0);
     const livres = colunas.filter((c) => typeof c.largura !== "number").length;
     const resto = livres ? Math.max(600, Math.floor((UTIL - fixas) / livres)) : 0;
-    return colunas.map((c) => (typeof c.largura === "number" ? tw(c.largura) : resto));
+    return colunas.map((c) => (typeof c.largura === "number" ? tw(c.largura) + extra : resto));
   }
 
   function tabela(
@@ -100,7 +108,9 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
     o: { semCabecalho?: boolean; fundo?: boolean; pequena?: boolean; alturaLinha?: number; grade?: boolean },
   ) {
     const altura = o.alturaLinha ? { height: { value: Math.round(o.alturaLinha * 20), rule: HeightRule.ATLEAST } } : {};
-    const ws = larguras(colunas);
+    // tabela pequena (comparativo): mesma margem lateral e mesma largura de texto por coluna que o PDF
+    const lado = o.pequena ? 80 : 100;
+    const ws = larguras(colunas, o.pequena ? 2 * lado : 0);
     const tam = o.pequena ? 7.5 : 9.5;
     const total = ws.reduce((s, w) => s + w, 0);
     const rows: InstanceType<typeof TableRow>[] = [];
@@ -110,7 +120,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
           tableHeader: true,
           cantSplit: true,
           children: colunas.map((c, i) =>
-            celula(c.titulo, { largura: ws[i]!, alinhamento: c.alinhamento, fill: COR.fundo, negrito: true, cor: COR.primaria, tamanho: tam - 0.5 }),
+            celula(c.titulo, { largura: ws[i]!, lado, alinhamento: c.alinhamento, fill: COR.fundo, negrito: true, cor: COR.primaria, tamanho: tam - 0.5 }),
           ),
         }),
       );
@@ -121,7 +131,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
         rows.push(
           new TableRow({
             cantSplit: true,
-            children: [celula(l.celulas[0] ?? "", { largura: total, span: colunas.length, fill: COR.grupo, negrito: true, cor: COR.primaria, tamanho: tam - 1 })],
+            children: [celula(l.celulas[0] ?? "", { largura: total, lado, span: colunas.length, fill: COR.grupo, negrito: true, cor: COR.primaria, tamanho: tam - 1 })],
           }),
         );
         continue;
@@ -133,6 +143,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
           children: colunas.map((c, i) =>
             celula(l.celulas[i] ?? "", {
               largura: ws[i]!,
+              lado,
               alinhamento: c.alinhamento,
               recuo: i === 0 && l.recuo,
               tamanho: estilo === "subtotal" ? tam - 0.5 : tam,

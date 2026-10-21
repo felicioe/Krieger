@@ -67,6 +67,7 @@ const VARIACAO: { valor: VariacaoMetodo; rotulo: string }[] = [
   { valor: "manual", rotulo: "Manual" },
   { valor: "percentual", rotulo: "Percentual fixo" },
   { valor: "mediaIndices", rotulo: "Média dos índices" },
+  { valor: "valor", rotulo: "Valor fixo (R$)" },
 ];
 const MODO_REGRA: { valor: ModoRegra; rotulo: string }[] = [
   { valor: "ultimo", rotulo: "Último valor" },
@@ -323,9 +324,15 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             <Field rotulo="Método da variação">
               <Selecao value={c.variacaoMetodo} onChange={(v) => set("variacaoMetodo", v)} opcoes={VARIACAO} />
             </Field>
-            <Field rotulo="Parâmetro da variação" dica="Percentual ou quantidade de índices, conforme o método.">
-              <NumeroInput value={c.variacaoParam} onChange={(v) => set("variacaoParam", v)} />
-            </Field>
+            {c.variacaoMetodo === "valor" ? (
+              <Field rotulo="Variação (R$)" dica="Valor fixo somado à base, positivo ou negativo — não é percentual.">
+                <DinheiroInput value={c.variacaoParam} onChange={(v) => set("variacaoParam", v)} />
+              </Field>
+            ) : (
+              <Field rotulo="Parâmetro da variação" dica="Percentual ou quantidade de índices, conforme o método.">
+                <NumeroInput value={c.variacaoParam} onChange={(v) => set("variacaoParam", v)} />
+              </Field>
+            )}
           </div>
           <Label className="mb-2 block text-xs font-medium text-muted-foreground">Regras de preenchimento automático</Label>
           <RepeatableList

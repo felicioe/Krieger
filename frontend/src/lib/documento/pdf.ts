@@ -22,13 +22,14 @@ const ALINHA: Record<Alinhamento, "left" | "center" | "right" | "justify"> = {
 };
 const ALINHA_COL = { esquerda: "left", centro: "center", direita: "right" } as const;
 
-function texto(t: Texto): string | Content[] {
+function texto(t: Texto, tamanho = 10): string | Content[] {
   if (typeof t === "string") return t;
   return t.map((x) => ({
     text: x.texto,
     ...(x.negrito ? { bold: true } : {}),
     ...(x.italico ? { italics: true } : {}),
     ...(x.suave ? { color: c(COR.suave) } : {}),
+    ...(x.pequeno ? { fontSize: tamanho - 1 } : {}),
   }));
 }
 
@@ -114,7 +115,7 @@ async function bloco(b: Bloco): Promise<Content[]> {
     case "paragrafo":
       return [
         {
-          text: texto(b.texto),
+          text: texto(b.texto, b.tamanho === "pequeno" ? 8.5 : b.tamanho === "grande" ? 13 : 10),
           alignment: ALINHA[b.alinhamento ?? "esquerda"],
           fontSize: b.tamanho === "pequeno" ? 8.5 : b.tamanho === "grande" ? 13 : 10,
           margin: [b.recuo ? 16 : 0, 0, 0, 6],
@@ -192,6 +193,7 @@ function tabela(
         text: col.titulo,
         bold: true,
         fontSize: tam - 0.5,
+        lineHeight: 1.05,
         color: c(COR.primaria),
         alignment: alin(i),
         fillColor: c(COR.fundo),
@@ -202,15 +204,16 @@ function tabela(
     const estilo = l.estilo ?? "normal";
     if (estilo === "grupo") {
       corpo.push([
-        { text: texto(l.celulas[0] ?? ""), colSpan: n, bold: true, fontSize: tam - 1, color: c(COR.primaria), fillColor: c(COR.grupo), characterSpacing: 0.3 },
+        { text: texto(l.celulas[0] ?? "", tam - 1), colSpan: n, bold: true, fontSize: tam - 1, lineHeight: 1.05, color: c(COR.primaria), fillColor: c(COR.grupo), characterSpacing: 0.3 },
         ...Array.from({ length: n - 1 }, () => ({ text: "" })),
       ]);
       continue;
     }
     corpo.push(
       colunas.map((_, i) => ({
-        text: texto(l.celulas[i] ?? ""),
+        text: texto(l.celulas[i] ?? "", estilo === "subtotal" ? tam - 0.5 : tam),
         alignment: alin(i),
+        lineHeight: 1.05,
         fontSize: estilo === "subtotal" ? tam - 0.5 : tam,
         ...(estilo === "total" ? { bold: true } : {}),
         ...(estilo === "subtotal" ? { color: c(COR.suave), bold: true } : {}),
@@ -234,8 +237,9 @@ function tabela(
       vLineWidth: (i: number) => (o.grade ? (i === 0 || i === n ? 0.6 : 0.4) : 0),
       vLineColor: () => c(COR.linha),
       hLineColor: (i: number) => (totais.has(i) ? c(COR.suave) : c(COR.linha)),
-      paddingLeft: () => 5,
-      paddingRight: () => 5,
+      // tabela pequena (comparativo com muitas colunas): margem lateral menor para caber mais texto por linha
+      paddingLeft: () => (o.pequena ? 4 : 5),
+      paddingRight: () => (o.pequena ? 4 : 5),
       paddingTop: () => 2.5,
       paddingBottom: () => 2.5,
     },

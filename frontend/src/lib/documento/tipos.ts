@@ -12,6 +12,8 @@ export interface Trecho {
   negrito?: boolean;
   italico?: boolean;
   suave?: boolean;
+  /** letra 1 pt menor que a do bloco (ex.: valor secundário ao lado do principal) */
+  pequeno?: boolean;
 }
 
 /** Texto simples ou trechos com estilo. "\n" quebra a linha. */
