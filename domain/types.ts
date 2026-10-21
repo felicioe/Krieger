@@ -311,6 +311,15 @@ export interface ConfigBackup extends ComId {
   em: string;
 }
 
+/** Backup salvo no servidor (histórico), sem o conteúdo (`dados`) — só pra listar/escolher. */
+export interface BackupRegistro {
+  id: string;
+  geradoPorNome: string;
+  /** ISO 8601 */
+  criadoEm: string;
+  tamanhoBytes: number;
+}
+
 /** Conteúdo de um arquivo de backup: um array por store. */
 export type Backup = Partial<Record<Store, unknown[]>> & Record<string, unknown>;
 
