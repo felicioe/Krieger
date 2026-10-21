@@ -19,8 +19,10 @@ explícita do responsável.
 Codex pode auditar e revisar em modo de leitura, documentar achados e critérios
 no GitHub, validar testes/build e cuidar de backend, integração e publicação
 conforme as regras próprias. Correções de frontend devem ser feitas no Lovable;
-não aplicar patches locais concorrentes nem substituir arquivos do frontend
-para contornar essa responsabilidade.
+não implementar patches locais concorrentes para contornar essa responsabilidade.
+A sincronização fiel dos arquivos entre Lovable, Claude e GitHub é permitida e
+necessária, inclusive dos arquivos de hoje. Essa integração não transfere autoria
+do frontend ao Codex. Preservar versões atuais e revisar conflitos antes de integrar.
 
 ## Regras do projeto
 

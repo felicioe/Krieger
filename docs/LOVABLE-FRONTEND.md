@@ -7,10 +7,11 @@ Frontend é exclusivo do Lovable por determinação permanente do responsável
 ou comportamento da interface. Audita, revisa, testa, documenta e coordena a
 integração. Mudanças necessárias após revisão voltam ao Lovable.
 
-O sandbox do Lovable não equivale à árvore atual de main. Nunca substituir
-frontend inteiro para sincronizar: isso pode apagar entregas recentes da Claude.
-Integrar somente alterações produzidas pelo Lovable, com origem e diff
-registrados. Se houver conflito de comportamento ou edição manual necessária,
+A sincronização Lovable ↔ Claude ↔ GitHub é permitida e necessária, inclusive
+dos arquivos de hoje. O sandbox pode divergir de main; comparar versões antes
+de sincronizar para não apagar entregas recentes. Integrar fielmente o frontend
+produzido pelo Lovable, com origem e diff registrados. Levar ao Lovable os
+arquivos canônicos de domain/lib produzidos pela Claude sem reescrever a lógica. Se houver conflito de comportamento ou edição manual necessária,
 devolver o contexto ao Lovable; não reescrever frontend no Codex.
 
 ## Correções em execução — 21/10/2026
@@ -62,3 +63,10 @@ Configuração real é buscada fora da pasta publicada (PUBLICACAO.md). Não inc
 credenciais no Git/pacote nem recriar configuração dentro da pasta sobrescrita.
 Validar página, assets, sessão/API e fluxos corrigidos depois de publicar.
 Não declarar backup/banco ou telas novas validados somente por teste unitário.
+
+## Esclarecimento do responsável — sincronização permitida
+
+A exclusividade do Lovable se refere à autoria das alterações de frontend,
+não à sua sincronização com Claude/GitHub. A orientação anterior do Codex foi
+restritiva demais e foi corrigida no Lovable e neste documento. Sincronizar os
+arquivos atuais, preservando mudanças de ambos os ambientes e revisando conflitos.
