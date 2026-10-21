@@ -51,3 +51,13 @@ As referências anteriores de deploy e estado do banco são snapshots histórico
 não uma revalidação do banco nesta revisão. A configuração real agora é buscada
 fora da pasta publicada conforme PUBLICACAO.md; não voltar ao procedimento
 antigo de manter credenciais dentro do diretório sobrescrito.
+
+## Coordenação das correções — frontend exclusivo no Lovable
+
+Regra permanente integrada no PR #55. Correções #30/#31/#32/#47/#48 solicitadas
+ao Lovable; ver [protocolo e rastreabilidade](LOVABLE-FRONTEND.md). Nenhuma
+correção de UI deve ser implementada localmente pelo Codex. Auditoria #50 já
+integrada. Base 04ebbd4 validada: 122 testes de raiz, 76 de frontend, typecheck,
+docs, build e pacote locais passaram; CI main run 39682696894 aprovado. Esses
+resultados são da base anterior às correções do Lovable, ainda em execução no
+momento deste registro; não comprovam sua entrega ou publicação.
