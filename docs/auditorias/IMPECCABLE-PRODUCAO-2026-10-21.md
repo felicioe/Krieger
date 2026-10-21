@@ -207,8 +207,13 @@ Esta entrega é auditoria/documentação: nenhuma correção de UI ou deploy foi
 
 ## Validação desta entrega documental
 
-Instalação limpa da raiz, 114 testes em 13 arquivos, typecheck e docs:check passaram.
+Instalação limpa da raiz e 114 testes em 13 arquivos passaram na base auditada.
+Durante a entrega main avançou para 1496549 (regras/testes do domínio); essa
+atualização foi incorporada sem sobrescrever o trabalho paralelo. Após o merge,
+117 testes, typecheck e docs:check passaram. Os componentes auditados não mudaram.
 O empacotamento sem build frontend foi executado e falhou com código 1, conforme
-#49. Não foi montado um build artificial só para fazer esse check passar. O CI
-deve registrar o mesmo bloqueio até a correção da cadeia; não declarar a versão
-aprovada para publicação nem fazer merge contornando essa verificação.
+#49. Não foi montado um build artificial só para fazer esse check passar. O
+[CI da primeira revisão](https://github.com/felicioe/Krieger/actions/runs/39600482503)
+confirmou falha no empacotamento; testes, tipos, docs e sintaxe PHP passaram e o
+upload de artefato foi pulado. Não declarar a versão aprovada para publicação
+nem fazer merge contornando essa verificação. O PR permanece em rascunho.
