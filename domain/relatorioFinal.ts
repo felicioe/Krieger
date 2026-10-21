@@ -192,7 +192,32 @@ export function montarRelatorioFinal(entrada: {
   }
 
   if (secoes.previsao) {
-    if (previsao.rateioSugerido === null) {
+    if (previsaoSugerida) {
+      // Com a previsão sugerida (menu próprio, folha do PDF do Systemar), ela é quem manda nesta
+      // conferência — substitui o cálculo antigo a partir do demonstrativo (domain/previsao.ts).
+      const valorUnidade = previsaoSugeridaPorUnidade?.valorUnidade ?? null;
+      if (valorUnidade === null) {
+        c.push({ titulo: "Previsão orçamentária", situacao: "aviso", detalhe: "Sem valor por unidade (faltam unidades no cadastro do condomínio)." });
+      } else if (e.rateioAprovado == null) {
+        c.push({
+          titulo: "Previsão orçamentária",
+          situacao: "aviso",
+          detalhe: `Valor por unidade calculado ${formatBRL(valorUnidade)} (rateio mensal sugerido ${formatBRL(previsaoSugerida.rateioMensalSugerido)}); rateio aprovado ainda não informado.`,
+        });
+      } else if (centavos(e.rateioAprovado) !== centavos(valorUnidade)) {
+        c.push({
+          titulo: "Previsão orçamentária",
+          situacao: "aviso",
+          detalhe: `Rateio aprovado (${formatBRL(e.rateioAprovado)}) diferente do valor por unidade calculado (${formatBRL(valorUnidade)}).`,
+        });
+      } else {
+        c.push({
+          titulo: "Previsão orçamentária",
+          situacao: "ok",
+          detalhe: `Rateio mensal sugerido ${formatBRL(previsaoSugerida.rateioMensalSugerido)}; valor por unidade ${formatBRL(valorUnidade)} = rateio aprovado.`,
+        });
+      }
+    } else if (previsao.rateioSugerido === null) {
       c.push({ titulo: "Previsão orçamentária", situacao: "aviso", detalhe: "Sem valor por unidade (faltam unidades no cadastro do condomínio)." });
     } else if (e.rateioAprovado == null) {
       c.push({ titulo: "Previsão orçamentária", situacao: "aviso", detalhe: `Valor por unidade calculado ${formatBRL(previsao.rateioSugerido)}; rateio aprovado ainda não informado.` });

@@ -278,8 +278,18 @@ export function mensalImportado(
 }
 
 // Rótulos dos itens que este módulo acrescenta a `extras`: ao reaplicar (reimportação do mesmo
-// PDF), os antigos são removidos antes de acrescentar os novos, pra não duplicar.
-const ROTULOS_EXTRAS_SYSTEMAR = ["Manutenção dos elevadores (Systemar)", "Empresa dos elevadores (Systemar)", "Consumo médio de água (Systemar)"];
+// PDF), os antigos são removidos antes de acrescentar os novos, pra não duplicar. Os 3 primeiros
+// são legados (vinham da previsão sugerida antes dela virar campo próprio, `previsaoSugerida`) —
+// continuam na lista só para serem limpos de exercícios já existentes ao reimportar; não são mais
+// recriados aqui.
+const ROTULOS_EXTRAS_SYSTEMAR = [
+  "Rateio mensal sugerido (Systemar)",
+  "Índice sugerido para correção (Systemar)",
+  "Total de despesas consideradas ordinárias (Systemar)",
+  "Manutenção dos elevadores (Systemar)",
+  "Empresa dos elevadores (Systemar)",
+  "Consumo médio de água (Systemar)",
+];
 
 /**
  * Aplica o que foi lido de "Considerações finais" (quando o PDF trouxer essa página) sobre o
