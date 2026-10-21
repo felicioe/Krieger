@@ -274,7 +274,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
               itens={a.presentes}
               onChange={(presentes) => mudar({ presentes })}
               novo={() => ({ unidade: "", nome: "", procurador: false })}
-              colunas="grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[7rem_minmax(0,1fr)_8rem]"
+              colunas="grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[7rem_minmax(0,1fr)_8rem]"
               cabecalhos={["Unidade", "Nome", "Procurador"]}
               rotuloAdicionar="Adicionar presente"
               vazio="Ninguém na lista ainda."
@@ -333,7 +333,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
                     <Field rotulo={`Item ${i + 1}`}>
                       <Input value={item.titulo} onChange={(e) => up({ titulo: e.target.value })} className="font-medium" />
                     </Field>
-                    <div className="grid gap-3 md:grid-cols-2">
+                    <div className="grid gap-3 @2xl:grid-cols-2">
                       <Field rotulo="Discussão">
                         <Textarea value={item.discussao} onChange={(e) => up({ discussao: e.target.value })} rows={3} />
                       </Field>
@@ -341,7 +341,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
                         <Textarea value={item.deliberacao} onChange={(e) => up({ deliberacao: e.target.value })} rows={3} />
                       </Field>
                     </div>
-                    <div className="grid grid-cols-3 items-end gap-3 sm:grid-cols-[8rem_8rem_8rem_minmax(0,1fr)]">
+                    <div className="grid grid-cols-3 items-end gap-3 @2xl:grid-cols-[8rem_8rem_8rem_minmax(0,1fr)]">
                       <Field rotulo="A favor">
                         <InteiroInput value={item.votos.favor} onChange={(v) => up({ votos: { ...item.votos, favor: v ?? 0 } })} />
                       </Field>
@@ -351,7 +351,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
                       <Field rotulo="Abstenções">
                         <InteiroInput value={item.votos.abstencao} onChange={(v) => up({ votos: { ...item.votos, abstencao: v ?? 0 } })} />
                       </Field>
-                      <p className="num col-span-3 pb-2 text-xs text-muted-foreground sm:col-span-1">{total ? `${total} votos` : "Sem votação registrada"}</p>
+                      <p className="num col-span-3 pb-2 text-xs text-muted-foreground @2xl:col-span-1">{total ? `${total} votos` : "Sem votação registrada"}</p>
                     </div>
                   </div>
                 );

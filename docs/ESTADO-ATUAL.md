@@ -61,3 +61,13 @@ integrada. Base 04ebbd4 validada: 122 testes de raiz, 76 de frontend, typecheck,
 docs, build e pacote locais passaram; CI main run 39682696894 aprovado. Esses
 resultados são da base anterior às correções do Lovable, ainda em execução no
 momento deste registro; não comprovam sua entrega ou publicação.
+
+## Correções Lovable integradas para revisão
+
+PR #56 recebe o diff Lovable 39f8a740: tabelas acessíveis, Field/Selecao,
+MenuMovel com foco, layout/alvos móveis e variantes reais da marca. Frontend
+permanece de autoria exclusiva do Lovable. Validação local: 122 testes raiz +
+90 frontend, tipos, docs, build e pacote aprovados. Publicação e verificação na
+Hostinger ainda não comprovadas neste registro; conferir comentários #19/#46/#56.
+#32 mantém limites de checkboxes/switches, toque físico e zoom; #33 não tem medição
+real de Core Web Vitals. Não encerrar essas pendências sem evidência adicional.

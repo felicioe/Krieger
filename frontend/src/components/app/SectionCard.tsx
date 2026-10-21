@@ -16,10 +16,10 @@ export function SectionCard({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-md border bg-card text-card-foreground", className)}>
+    <section className={cn("min-w-0 rounded-md border bg-card text-card-foreground", className)}>
       {(titulo || acoes) && (
         <header className="flex flex-wrap items-start justify-between gap-2 border-b px-5 py-3">
-          <div>
+          <div className="min-w-0">
             {titulo && <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">{titulo}</h2>}
             {descricao && <p className="mt-0.5 text-xs text-muted-foreground">{descricao}</p>}
           </div>

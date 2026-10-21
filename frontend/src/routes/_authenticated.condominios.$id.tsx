@@ -221,7 +221,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             itens={c.administracao}
             onChange={(v) => set("administracao", v)}
             novo={() => ({ cargo: "", nome: "", mandatoFim: "" })}
-            colunas="sm:grid-cols-[12rem_1fr_8rem]"
+            colunas="@2xl:grid-cols-[12rem_1fr_8rem]"
             cabecalhos={["Cargo", "Nome", "Fim do mandato"]}
             rotuloAdicionar="Adicionar membro"
             vazio="Nenhum membro da administração informado."
@@ -255,7 +255,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             itens={c.seguro.coberturas}
             onChange={(v) => set("seguro", { ...c.seguro, coberturas: v })}
             novo={() => ({ desc: "", valor: null })}
-            colunas="sm:grid-cols-[1fr_12rem]"
+            colunas="@2xl:grid-cols-[1fr_12rem]"
             cabecalhos={["Descrição", "Valor"]}
             rotuloAdicionar="Adicionar cobertura"
             vazio="Nenhuma cobertura informada."
@@ -299,7 +299,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             itens={c.indices}
             onChange={(v) => set("indices", v)}
             novo={() => ({ ano: new Date().getFullYear(), pct: null })}
-            colunas="grid-cols-2 sm:grid-cols-[8rem_10rem]"
+            colunas="grid-cols-2 @2xl:grid-cols-[8rem_10rem]"
             cabecalhos={["Ano", "Percentual"]}
             rotuloAdicionar="Adicionar índice"
             vazio="Nenhum índice informado."
@@ -332,7 +332,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             itens={c.regras}
             onChange={(v) => set("regras", v)}
             novo={() => ({ campo: "", rotulo: "", fonte: "", regex: "", modo: "ultimo" as ModoRegra })}
-            colunas="sm:grid-cols-[1fr_1fr_1fr_1.4fr_10rem]"
+            colunas="@2xl:grid-cols-[1fr_1fr_1fr_1.4fr_10rem]"
             cabecalhos={["Campo", "Rótulo", "Fonte", "Expressão (regex)", "Modo"]}
             rotuloAdicionar="Adicionar regra"
             vazio="Nenhuma regra de preenchimento automático."
@@ -367,7 +367,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             itens={c.mapeamento}
             onChange={(v) => set("mapeamento", v)}
             novo={() => ({ de: "", para: "" })}
-            colunas="sm:grid-cols-2"
+            colunas="@2xl:grid-cols-2"
             cabecalhos={["De (como vem no balancete)", "Para (como sai no relatório)"]}
             rotuloAdicionar="Adicionar de-para"
             vazio="Nenhum de-para cadastrado."

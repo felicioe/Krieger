@@ -220,7 +220,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
                 itens={m.notas}
                 onChange={(notas) => mudar({ notas })}
                 novo={() => ({ rubrica: "", texto: "", valor: null })}
-                colunas="grid-cols-[minmax(0,1fr)_9rem] sm:grid-cols-[minmax(0,1fr)_11rem]"
+                colunas="grid-cols-1 @xs:grid-cols-[minmax(0,1fr)_9rem] @2xl:grid-cols-[minmax(0,1fr)_11rem]"
                 cabecalhos={["Rubrica", "Valor"]}
                 rotuloAdicionar="Adicionar nota"
                 vazio="Nenhuma nota explicativa neste mês."

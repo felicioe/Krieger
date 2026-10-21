@@ -114,6 +114,8 @@ function ListaExercicios() {
         dados={linhas}
         chaveLinha={(e) => e.id}
         aoClicar={(e) => navigate({ to: "/prestacao-contas/$id", params: { id: e.id } })}
+        colunaAcao="condoNome"
+        rotuloAcao={(e) => `Abrir prestação de contas de ${e.condoNome}, exercício ${e.ano}`}
         vazio={
           condominios.length === 0
             ? "Cadastre um condomínio antes de criar a prestação de contas."

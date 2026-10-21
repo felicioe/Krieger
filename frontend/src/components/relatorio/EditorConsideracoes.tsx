@@ -48,7 +48,7 @@ export function EditorConsideracoes({
           itens={c.administracao}
           onChange={(v) => set("administracao", v)}
           novo={() => ({ cargo: "", nome: "", mandatoFim: "" })}
-          colunas="grid-cols-2 sm:grid-cols-[10rem_minmax(0,1fr)_8rem]"
+          colunas="grid-cols-2 @2xl:grid-cols-[10rem_minmax(0,1fr)_8rem]"
           cabecalhos={["Cargo", "Nome", "Mandato até"]}
           rotuloAdicionar="Adicionar membro"
           render={(m, up) => (
@@ -78,7 +78,7 @@ export function EditorConsideracoes({
             itens={c.seguro.coberturas}
             onChange={(v) => set("seguro", { ...c.seguro, coberturas: v })}
             novo={() => ({ desc: "", valor: null })}
-            colunas="grid-cols-[minmax(0,1fr)_9rem] sm:grid-cols-[minmax(0,1fr)_11rem]"
+            colunas="grid-cols-1 @xs:grid-cols-[minmax(0,1fr)_9rem] @2xl:grid-cols-[minmax(0,1fr)_11rem]"
             cabecalhos={["Cobertura", "Valor"]}
             rotuloAdicionar="Adicionar cobertura"
             vazio="Nenhuma cobertura."
@@ -160,7 +160,7 @@ export function EditorConsideracoes({
           itens={c.extras.map((x) => ({ rotulo: String(x.rotulo ?? ""), valor: String(x.valor ?? "") }))}
           onChange={(v) => set("extras", v)}
           novo={() => ({ rotulo: "", valor: "" })}
-          colunas="grid-cols-1 sm:grid-cols-[12rem_minmax(0,1fr)]"
+          colunas="grid-cols-1 @2xl:grid-cols-[12rem_minmax(0,1fr)]"
           cabecalhos={["Título", "Texto"]}
           rotuloAdicionar="Adicionar consideração"
           vazio="Nenhuma consideração adicional."

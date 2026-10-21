@@ -24,6 +24,14 @@ A sincronização fiel dos arquivos entre Lovable, Claude e GitHub é permitida 
 necessária, inclusive dos arquivos de hoje. Essa integração não transfere autoria
 do frontend ao Codex. Preservar versões atuais e revisar conflitos antes de integrar.
 
+## Ambiente de revisão visual
+
+O responsável se interessa pela versão publicada na Hostinger. Não abrir o app
+ou preview do Lovable no navegador para acompanhar tarefas ou validar entregas.
+Usar o conector para comunicação/sincronização e testes/build por ferramentas;
+a revisão visual final é no site publicado. Não confundir testes do Lovable com
+validação independente em produção.
+
 ## Regras do projeto
 
 - Comunicação, issues, PRs e documentação em pt-BR.

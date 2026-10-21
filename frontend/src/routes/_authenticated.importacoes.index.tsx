@@ -53,6 +53,8 @@ function ListaImportacoes() {
         dados={linhas}
         chaveLinha={(i) => i.id}
         aoClicar={(i) => navigate({ to: "/importacoes/$id", params: { id: i.id } })}
+        colunaAcao="arquivo"
+        rotuloAcao={(i) => `Abrir importação do arquivo ${i.arquivo}`}
         vazio="Nenhuma importação. Use “Importar PDF” no Relatório mensal ou na Prestação de contas."
       />
     </>

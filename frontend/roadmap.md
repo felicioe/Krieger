@@ -17,3 +17,11 @@
 ## Pendências (aguardando decisão do usuário)
 - [x] Leitura das páginas "Considerações finais" e "Previsão orçamentária sugerida" do PDF (funções do Claude; preenchem as Considerações finais da prestação de contas, aviso na conferência)
 - [x] Backup no servidor na tela de Backup (gerar, histórico com Baixar/Restaurar/Excluir; contrato api.backup.* do Claude) — migração kr_backups no servidor real fica com o usuário
+
+## Auditoria Impeccable #46 (só front-end)
+- [x] #30 tabelas: botão de abrir em cada linha (Tab/Enter/Espaço), foco visível, nome do registro, sem abrir duas vezes
+- [x] #31 Field: dica/erro com ids e aria-describedby, aria-invalid, aria-required; Selecao repassa ao botão da lista
+- [x] #32 toque 44×44 no celular/tela de toque; listas editáveis pela largura disponível; 320/390/768/desktop sem rolagem lateral
+- [x] #47 menu do celular: Enter/Espaço abre, Escape/Fechar fecha com foco de volta; navegar foca o conteúdo
+- [x] #48 marca: variantes derivadas da logo oficial documentadas em src/assets/MARCA.md; compacta a 32 px
+- [ ] Teste de toque real e leitor de tela — fica com o responsável (não disponível aqui)

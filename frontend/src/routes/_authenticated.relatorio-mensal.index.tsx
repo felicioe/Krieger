@@ -143,6 +143,8 @@ function ListaMensais() {
         dados={linhas}
         chaveLinha={(m) => m.id}
         aoClicar={(m) => navigate({ to: "/relatorio-mensal/$id", params: { id: m.id } })}
+        colunaAcao="condoNome"
+        rotuloAcao={(m) => `Abrir relatório mensal de ${m.condoNome}${m.naoFecha ? " (saldo não fecha)" : ""}, ${m.comp}`}
         vazio={
           condominios.length === 0
             ? "Cadastre um condomínio antes de criar relatórios mensais."

@@ -70,3 +70,26 @@ A exclusividade do Lovable se refere à autoria das alterações de frontend,
 não à sua sincronização com Claude/GitHub. A orientação anterior do Codex foi
 restritiva demais e foi corrigida no Lovable e neste documento. Sincronizar os
 arquivos atuais, preservando mudanças de ambos os ambientes e revisando conflitos.
+
+## Entrega integrada — 21/10/2026
+
+Lovable concluiu a auditoria no commit `39f8a740d323654c6b2c1077b0d3f9e059a91b8d`,
+base `7479d036b95649c4c4b084d099f2db47bc77df8e`. Diff obtido pelo conector e
+aplicado incrementalmente com tolerância somente de whitespace. Sem autoria
+local de frontend; mudanças da Claude preservadas. Variantes PNG já existentes
+no Lovable sincronizadas fielmente. Lock npm atualizado para a dependência de
+teste user-event adicionada pelo Lovable; nenhum lock bun reintroduzido.
+
+Validação independente da integração: 90 testes frontend (14 novos), tsc frontend,
+122 testes raiz, typecheck, docs:check, build React e package:hostinger passaram.
+Lint PHP será validado pelo CI. O Lovable informou testes visuais de 18 telas em
+320/390/768/1280 px, sem overflow; isso ainda não é validação em produção.
+Sem leitor de tela/toque físico. Checkboxes e switches não foram ampliados por
+esta entrega: #32 mantém essa limitação para revisão posterior.
+
+Preferência explícita: a revisão visual final é exclusivamente na Hostinger;
+não abrir navegador do Lovable/preview para acompanhar tarefas. Usar conector
+para instruções/sincronização. Publicação ainda precisa ser confirmada por
+commit de main, artefato, commit deploy e revisão do site no registro da #19/#46.
+Último deploy concorrente observado antes da entrega: a6df60d, origem declarada
+main 033a963; este é o ponto de retorno atualizado, preservando o parser da Claude.
