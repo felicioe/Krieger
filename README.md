@@ -13,14 +13,15 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Publicação, validação e rollback](docs/PUBLICACAO.md)
 - [Decisões duráveis](docs/DECISOES.md)
 - [Validação de PDF](docs/VALIDACAO-PDF.md)
+- [Auditoria Impeccable da produção — 21/10/2026](docs/auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md)
 - [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
 Os fontes React estão em `frontend/` (PRs #21/#23), sem lógica duplicada — os
 20 arquivos de `frontend/src/domain/` e os 2 de `frontend/src/lib/` (format.ts,
 id.ts) são re-exports de uma linha pra `domain/`/`lib/` da raiz (PR #41).
-O pacote (`npm run package:hostinger`) compila esse frontend de verdade e o
-empacota junto com o backend PHP — ver `## Publicação` abaixo.
+O frontend deve ser construído antes de `npm run package:hostinger`, que apenas
+empacota a saída junto do backend PHP. O CI ainda precisa dessa etapa (#49).
 
 ## Arquivos que vão para o servidor
 `index.html`, `assets/` e `favicon.png` (build de `frontend/`), `branding/`, `.htaccess`,
@@ -36,8 +37,10 @@ o commit aprovado dessa branch e registrar seu SHA. O pacote abaixo é uma entra
 para a integração de publicação, não uma instrução de upload manual como rotina.
 
 Confirmado na #19: site existente e conector compatível com Git/PHP. A Hostinger
-tem auto-deploy ativo para a branch antiga; falta alinhar com main, preservando
-configuração/dados. Este workflow gera artefato, sem fazer deploy.
+tem auto-deploy ativo para `deploy-hostinger`, derivada de um pacote da main.
+Em 21/10/2026 o React foi confirmado no ar; ver auditoria acima. Não apontar a
+árvore crua de main para public_html. Preservar configuração/dados e registrar
+main → artefato → commit da branch de deploy. O workflow não executa deploy.
 
 Para preparar os arquivos já compilados, com Node 22+:
 
@@ -46,21 +49,24 @@ npm ci
 npm test
 npm run typecheck
 npm run docs:check
-cd frontend && npm ci && npm run build && cd ..
 npm run package:hostinger
 ```
 
-`npm run package:hostinger` exige que `frontend/.output/public/index.html` já exista
-(passo `cd frontend && npm run build` acima) — ele recusa gerar o pacote sem isso, pra
-não publicar um pacote velho escondendo uma falha de build.
+**Pré-requisito antes do último comando:** construir `frontend/` para gerar
+`.output/public`. A #49 deve definir instalação/lock e adicionar esse build ao CI.
+Não usar `npm ci` nessa pasta enquanto não houver lock npm; a árvore auditada tem
+bun.lock, sem package-lock.json. O build anterior foi registrado no PR #39 com
+`npm install && npm run build`; isso não substitui o fluxo reproduzível pendente.
+O empacotador recusa gerar saída sem o index do frontend.
 
 O conector/API deve publicar o **conteúdo** de `dist/hostinger/` em `public_html`, incluindo `.htaccess`.
 O pacote inclui também `branding/`. Não envie o repositório inteiro.
 `config.php` e `schema.sql` não entram no pacote: mantenha a configuração existente
 no servidor e use o schema apenas na administração do banco.
 
-O GitHub Actions valida testes, TypeScript e sintaxe PHP e disponibiliza o artefato
-`krieger-hostinger`, sem credenciais e sem publicar automaticamente.
+O GitHub Actions valida testes, TypeScript e sintaxe PHP. Para disponibilizar o
+artefato `krieger-hostinger`, ainda precisa do build frontend antes de empacotar
+(#49); não registrar como aprovado se essa etapa falhar. Sem credenciais no artefato.
 
 1. Publique pelo conector/API os arquivos acima na **raiz** do `public_html` do domínio, a partir do commit aprovado em `main`.
 2. Copie `config.example.php` para `config.php` e preencha as credenciais do MySQL (hPanel > Bancos de dados).

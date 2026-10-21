@@ -18,31 +18,36 @@ Nenhum webhook ou ruleset foi retornado na inspeção autenticada do GitHub.
 Isso não exclui integrações instaladas fora de webhooks. A auditoria posterior
 confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
-Confirmados: domínio krieger.therafinancial.com.br, PHP/MySQL, config.php existente
-e auto-deploy Git ativo para a branch antiga claude/youthful-pascal-lkmbs7.
-O conector suporta main e PHP via hosting_deploy. Pendente na #19: backup,
-preservação de configuração/arquivos locais, confirmação do destino, alinhamento
-da branch e validação/rollback. Nenhum deploy foi executado nesta auditoria.
+Atualização de 21/10/2026: domínio krieger.therafinancial.com.br, PHP/MySQL e
+auto-deploy ativo para a branch curada `deploy-hostinger`. O React foi confirmado
+no ar, com entrada index-D_dJBo1m.js. Pacote 4d3bfd1 declara origem main 5709184;
+a main auditada já está em 960d6fc. Ver [reauditoria](auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md).
+Esta auditoria não executou deploy. #19 acompanha preservação/backup e rollback;
+#49 acompanha CI e vínculo reproduzível entre fonte, pacote e publicação.
 
 Não há token Hostinger nem workflow de deploy neste repo; a automação existente
-é mantida pela Hostinger e ainda aponta para a branch antiga.
+é mantida pela Hostinger e aponta para deploy-hostinger, não main diretamente.
+Não trocar branch/repositório como atalho: essa operação já apagou config.php
+fora do Git. Seguir o incidente registrado em DECISOES.md.
 Seguir as regras e confirmações do conector disponível na sessão de publicação.
 
 ## Preparar uma versão
 
 1. Buscar `origin/main` e selecionar o SHA aprovado; conferir árvore limpa.
-2. Executar instalação, testes, typecheck, docs:check, lint PHP e empacotamento.
+2. Executar instalação, testes, typecheck, docs:check e lint PHP. Construir frontend
+   antes do empacotamento. A instalação/lock e etapa CI dessa árvore estão pendentes
+   na #49; o empacotador não constrói o frontend sozinho.
 3. Usar o artefato do CI desse mesmo SHA ou pacote produzido a partir dele.
 4. Confirmar que `index.html` está na raiz do pacote e `.htaccess` está incluído.
 
 `npm run package:hostinger` escreve `dist/hostinger/` e inclui:
-`index.html`, `assets/`, `branding/`, `favicon.svg`, `icons.svg`, `.htaccess`,
-`api.php`, `auth.php`, `lib_auth.php`, `login.html`, `usuarios.html`,
-`auth-guard.js` e `acesso.css`.
+`index.html`, `assets/`, `favicon.png`, `robots.txt` do build frontend e
+`branding/`, `.htaccess`, `api.php`, `auth.php`, `lib_auth.php` da raiz.
 
 Ficam fora: config.php, schema.sql, fontes, testes, dependências e documentação.
-O comando não recompila React e não comprova a origem dos bundles (#16).
-O artefato de um PR é para revisão; publicar exige versão correspondente em `main`.
+O comando não recompila React. Registrar o SHA da fonte e do artefato; o artefato
+de PR é para revisão. Publicar exige versão aprovada em main e atualização curada
+de deploy-hostinger, com o SHA dessa atualização registrado junto à validação.
 
 ## Executar via conector/API
 
