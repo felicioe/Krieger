@@ -236,5 +236,5 @@ try {
   }
 } catch (Throwable $e) {
   error_log('[krieger] ' . $e->getMessage());
-  erro('Erro interno. Tente novamente ou contate o administrador.', 500);
+  erro('Erro interno. Tente novamente ou contate o administrador. [diag: ' . $e->getMessage() . ']', 500);
 }
