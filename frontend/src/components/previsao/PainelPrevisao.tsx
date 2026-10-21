@@ -116,7 +116,7 @@ export function PainelPrevisao({
               itens={e.consid.indices}
               onChange={(indices) => onChange({ consid: { ...e.consid, indices } })}
               novo={() => ({ ano: null, pct: null })}
-              colunas="grid-cols-[7rem_9rem]"
+              colunas="grid-cols-1 @xs:grid-cols-[7rem_9rem]"
               cabecalhos={["Ano", "Índice"]}
               rotuloAdicionar="Adicionar índice"
               vazio="Nenhum índice informado."
@@ -139,7 +139,7 @@ export function PainelPrevisao({
             itens={ajustes}
             onChange={(v) => setPrev({ ajustes: v })}
             novo={() => ({ id: novoId(), descricao: "", sinal: "+", valor: 0 })}
-            colunas="grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[5.5rem_minmax(0,1fr)_9.5rem]"
+            colunas="grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[5.5rem_minmax(0,1fr)_9.5rem]"
             cabecalhos={["Sinal", "Descrição e grupo", "Valor anual"]}
             reordenavel={false}
             rotuloAdicionar="Adicionar ajuste"

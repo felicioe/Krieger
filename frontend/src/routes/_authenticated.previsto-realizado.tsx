@@ -173,11 +173,11 @@ function PaginaComparativo() {
           <SectionCard titulo="Fora da comparação" descricao="Despesas retiradas pela dedução da previsão (ex.: fundo de obras).">
             <ul className="divide-y text-sm">
               {r.deduzidas.map((d) => (
-                <li key={`${d.grupo}-${d.nome}`} className="flex items-baseline justify-between gap-3 py-1.5">
-                  <span>
+                <li key={`${d.grupo}-${d.nome}`} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1.5">
+                  <span className="min-w-0">
                     {d.nome} <span className="text-xs text-muted-foreground">· {d.grupo}</span>
                   </span>
-                  <span className="num whitespace-nowrap text-muted-foreground">Realizado até {ate}: {formatBRL(d.realizado)}</span>
+                  <span className="num text-muted-foreground sm:whitespace-nowrap">Realizado até {ate}: {formatBRL(d.realizado)}</span>
                 </li>
               ))}
             </ul>

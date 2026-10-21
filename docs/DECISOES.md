@@ -98,3 +98,11 @@ rastreabilidade no GitHub; backend, integração e publicação continuam sujeit
 às suas instruções específicas. Não foi feita alteração de frontend nesta etapa.
 As issues #30/#31/#32/#47/#48 devem ser implementadas no Lovable e posteriormente
 revisadas com evidências antes de encerrar os critérios de aceite.
+
+## 2026-10-21 — sincronização permitida; exclusividade se refere à autoria
+
+O responsável esclareceu que a sincronização dos arquivos de hoje entre Lovable,
+Claude e GitHub não deve ser proibida. A regra de frontend exclusivo no Lovable
+limita quem implementa a interface, não o transporte fiel dos arquivos produzidos.
+Sincronização é permitida e necessária; comparar versões e preservar avanços,
+sem inventar correções de frontend localmente no Codex.

@@ -82,7 +82,7 @@ export function PainelPrevisaoSugerida({
             itens={p.deducoes}
             onChange={(deducoes) => setP({ deducoes })}
             novo={() => ({ id: novoId(), descricao: "", sinal: "-", valor: 0 })}
-            colunas="grid-cols-[5.5rem_minmax(0,1fr)] sm:grid-cols-[5.5rem_minmax(0,1fr)_9.5rem]"
+            colunas="grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[5.5rem_minmax(0,1fr)_9.5rem]"
             cabecalhos={["Sinal", "Descrição", "Valor anual"]}
             reordenavel={false}
             rotuloAdicionar="Adicionar dedução"

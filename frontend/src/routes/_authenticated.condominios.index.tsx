@@ -76,6 +76,8 @@ function ListaCondominios() {
         dados={filtrados}
         chaveLinha={(c) => c.id}
         aoClicar={(c) => navigate({ to: "/condominios/$id", params: { id: c.id } })}
+        colunaAcao="nome"
+        rotuloAcao={(c) => `Abrir condomínio ${c.nome}`}
         vazio={busca ? "Nenhum condomínio corresponde à busca." : "Nenhum condomínio cadastrado."}
       />
     </>

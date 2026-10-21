@@ -128,6 +128,8 @@ function Painel() {
             dados={proximas}
             chaveLinha={(a) => a.id}
             aoClicar={(a) => navigate({ to: "/editais/$id", params: { id: a.id } })}
+            colunaAcao="condo"
+            rotuloAcao={(a) => `Abrir edital de ${nomeCondo(a.condoId)}, ${formatData(a.data)}`}
             vazio="Nenhuma assembleia agendada."
           />
         </SectionCard>

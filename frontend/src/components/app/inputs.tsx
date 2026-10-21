@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { forwardRef, useEffect, useRef, useState, type InputHTMLAttributes } from "react";
+import { forwardRef, useEffect, useRef, useState, type ComponentPropsWithoutRef, type InputHTMLAttributes } from "react";
 import { Input } from "@/components/ui/input";
 import { formatNumeroBR, mascaraData, mascaraHora, mascaraMesAno, parseNumeroBR } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -134,6 +134,16 @@ export const HoraInput = criarMascara(mascaraHora, "hh:mm", "HoraInput");
 
 // ---- Seleção simples (shadcn Select) ----
 
+type AtributosTrigger = Pick<
+  ComponentPropsWithoutRef<typeof SelectTrigger>,
+  "aria-invalid" | "aria-describedby" | "aria-required" | "aria-label" | "aria-labelledby" | "disabled" | "name" | "title"
+>;
+
+/**
+ * Seleção simples. Os atributos de acessibilidade (id, aria-invalid, aria-describedby,
+ * aria-required, aria-label…) vão para o botão que abre a lista, que é o controle focado —
+ * assim o `Field` consegue ligar rótulo, dica, erro e obrigatoriedade a ele.
+ */
 export function Selecao<V extends string>({
   id,
   value,
@@ -141,6 +151,7 @@ export function Selecao<V extends string>({
   opcoes,
   placeholder = "Selecione",
   className,
+  ...atributos
 }: {
   id?: string;
   value: V | "" | null | undefined;
@@ -148,10 +159,10 @@ export function Selecao<V extends string>({
   opcoes: { valor: V; rotulo: string }[];
   placeholder?: string;
   className?: string;
-}) {
+} & AtributosTrigger) {
   return (
-    <Select {...(value ? { value } : {})} onValueChange={(v) => onChange(v as V)}>
-      <SelectTrigger id={id} className={className}>
+    <Select {...(value ? { value } : {})} onValueChange={(v) => onChange(v as V)} {...(atributos.disabled ? { disabled: true } : {})}>
+      <SelectTrigger id={id} className={className} {...atributos}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

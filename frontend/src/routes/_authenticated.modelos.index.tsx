@@ -60,6 +60,8 @@ function ListaModelos() {
         dados={linhas}
         chaveLinha={(m) => m.id}
         aoClicar={(m) => navigate({ to: "/modelos/$id", params: { id: m.id } })}
+        colunaAcao="nome"
+        rotuloAcao={(m) => `Abrir modelo ${m.nome || "(sem nome)"}`}
         vazio="Nenhum modelo de edital cadastrado."
       />
       <DialogoNovoModelo aberto={novo} aoMudar={setNovo} modelos={normalizados} />

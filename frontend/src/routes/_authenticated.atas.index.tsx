@@ -153,6 +153,8 @@ function ListaAtas() {
         dados={linhas}
         chaveLinha={(a) => a.id}
         aoClicar={(a) => navigate({ to: "/atas/$id", params: { id: a.id } })}
+        colunaAcao="condoNome"
+        rotuloAcao={(a) => `Abrir ata de ${a.condoNome}, ${formatData(a.data)}`}
         vazio={
           condominios.length === 0
             ? "Cadastre um condomínio antes de criar atas."
