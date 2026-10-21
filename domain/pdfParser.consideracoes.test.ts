@@ -143,6 +143,24 @@ describe("lerPrevisaoSugerida", () => {
     ]);
     expect(pv?.totalDespesasAno).toBe(190000);
   });
+
+  it("reconhece as variações de rótulo encontradas em PDFs reais (total do exercício, das despesas, % antes do número)", () => {
+    // Achado testando com PDF real: alguns condomínios/exercícios usam rótulos diferentes dos do
+    // fixture principal. Sem isso, a linha de total virava uma categoria falsa (duplicando a
+    // despesa), totalOrdinario voltava null e indiceSugerido também.
+    const comVariacoes = previsaoSugerida
+      .replace("Total das despesas do período ............ R$ 190.000,00 R$ 15.833,33 ", "Total das despesas do exercício de 2026 .. R$ 190.000,00 R$ 15.833,33 ")
+      .replace("Total de despesas consideradas ordinárias. R$ 160.000,00 ", "Total das despesas consideradas ordinárias R$ 160.000,00 ")
+      .replace("Índice sugerido para correção do condomínio ............... 7,50% ", "Índice sugerido para correção do condomínio................ % 7,50 ");
+    const pv = lerPrevisaoSugerida(comVariacoes);
+    expect(pv?.categorias).toEqual([
+      { nome: "Departamento pessoal", anual: 150000, media: 12500 },
+      { nome: "Manutenções", anual: 40000, media: 3333.33 },
+    ]);
+    expect(pv?.totalDespesasAno).toBe(190000);
+    expect(pv?.totalOrdinario).toBe(160000);
+    expect(pv?.indiceSugerido).toBe(7.5);
+  });
 });
 
 describe("aplicarConsideracoesAoExercicio", () => {
