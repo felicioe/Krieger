@@ -126,3 +126,11 @@ export function mascaraCNPJ(texto: string): string {
   if (d.length > 12) r += "-" + d.slice(12, 14);
   return r;
 }
+
+/** Bytes -> "512 B" / "25,3 KB" / "1,2 MB" */
+export function formatBytes(n: number | null | undefined): string {
+  if (n === null || n === undefined || Number.isNaN(n) || n < 0) return "—";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${formatNumeroBR(n / 1024, 1)} KB`;
+  return `${formatNumeroBR(n / (1024 * 1024), 1)} MB`;
+}
