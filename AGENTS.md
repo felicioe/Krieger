@@ -7,6 +7,21 @@
 3. Leia `docs/DESENVOLVIMENTO.md` antes de editar e `docs/PUBLICACAO.md` antes de publicar.
 4. Confira `git status`, sincronize `origin/main` e trabalhe em branch própria por issue.
 
+## Responsabilidade permanente pelo frontend
+
+Determinação explícita do responsável em 21/10/2026: o frontend pertence
+exclusivamente ao Lovable. Codex/ChatGPT não deve editar componentes, estilos,
+layouts, assets ou comportamento do frontend, inclusive para corrigir auditorias.
+Esta regra vale para todas as sessões futuras; não presumir exceção a partir de
+pedidos genéricos como “corrija tudo”. Mudança desta regra exige instrução
+explícita do responsável.
+
+Codex pode auditar e revisar em modo de leitura, documentar achados e critérios
+no GitHub, validar testes/build e cuidar de backend, integração e publicação
+conforme as regras próprias. Correções de frontend devem ser feitas no Lovable;
+não aplicar patches locais concorrentes nem substituir arquivos do frontend
+para contornar essa responsabilidade.
+
 ## Regras do projeto
 
 - Comunicação, issues, PRs e documentação em pt-BR.
