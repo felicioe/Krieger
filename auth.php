@@ -8,7 +8,7 @@ require __DIR__ . '/lib_auth.php';
 aplicar_cabecalhos_seguranca();
 
 try { $pdo = conectar(); }
-catch (Throwable $e) { error_log('[krieger] ' . $e->getMessage()); json_erro('Não foi possível conectar ao banco de dados. Confira config.php.', 500); }
+catch (Throwable $e) { error_log('[krieger] ' . $e->getMessage()); json_erro('Não foi possível conectar ao banco de dados. Confira a configuração (docs/PUBLICACAO.md).', 500); }
 checar_origem();
 
 $c = json_decode(file_get_contents('php://input') ?: '', true);
