@@ -142,12 +142,12 @@ function PaginasExtras({
           )}
           {pv && (
             <li>
-              <span className="font-medium">Previsão sugerida guardada como referência</span>
-              {pv.rateioMensalSugerido != null && <> (rateio mensal sugerido {formatBRL(pv.rateioMensalSugerido)}</>}
-              {pv.rateioMensalSugerido != null && pv.indiceSugerido != null && <>, índice {formatNumeroBR(pv.indiceSugerido)}%</>}
-              {pv.rateioMensalSugerido != null && <>)</>}.{" "}
+              <span className="font-medium">Previsão orçamentária sugerida lida</span>
+              {pv.categorias.length > 0 && <> ({pv.categorias.length} categoria(s) de despesa</>}
+              {pv.categorias.length > 0 && pv.rateioMensalSugerido != null && <>, rateio mensal sugerido no PDF {formatBRL(pv.rateioMensalSugerido)}</>}
+              {pv.categorias.length > 0 && <>)</>}.{" "}
               {naPrestacao
-                ? "Ela aparece em “Outras considerações” do Relatório final e não substitui a previsão calculada pelo sistema."
+                ? "Ela preenche o menu Previsão orçamentária, onde as deduções e a variação continuam editáveis."
                 : "Ela só é usada na prestação de contas."}
             </li>
           )}

@@ -1,12 +1,11 @@
 import { createFileRoute, Link, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, FileText, Loader2, Save, Trash2 } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
+import { ArrowLeft, Calculator, FileText, Loader2, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -14,18 +13,17 @@ import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DataInput, DinheiroInput, InteiroInput } from "@/components/app/inputs";
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
-import { PainelPrevisao } from "@/components/prestacao/PainelPrevisao";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
 import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
-import { calcularPrevisao } from "@/domain/previsao";
+import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
 import type { Condominio, Exercicio } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
-  head: () => cabecalho("Prestação de contas", "Demonstrativo do exercício e previsão orçamentária ao vivo."),
+  head: () => cabecalho("Prestação de contas", "Dados e demonstrativo do exercício."),
   loader: async ({ params, context: { queryClient } }) => {
     const [e] = await Promise.all([
       queryClient.ensureQueryData(itemQuery<Exercicio>("exercicios", params.id)),
@@ -63,16 +61,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const [erroAno, setErroAno] = useState<string | null>(null);
 
   const condo = condominios.find((c) => c.id === e.condoId);
-  const unidades = condo?.unidades ?? null;
   const demonstrativo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
   const sujo = JSON.stringify(e) !== salvoJson;
-  const temDespesas = demonstrativo.despesas.grupos.some((g) => g.itens.length > 0);
-  const [aba, setAba] = useState(temDespesas ? "previsao" : "demonstrativo");
-
-  const resultado = useMemo(
-    () => calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, unidades),
-    [e, unidades],
-  );
 
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 
@@ -146,13 +136,16 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                 mudar({
                   demonstrativo: r.demonstrativo,
                   origem: origemComArquivo(e.origem, r.arquivo),
-                  ...(r.consideracoes || r.previsaoSugerida
-                    ? { consid: aplicarConsideracoesAoExercicio(e.consid, r.consideracoes, r.previsaoSugerida) }
-                    : {}),
+                  ...(r.consideracoes ? { consid: aplicarConsideracoesAoExercicio(e.consid, r.consideracoes) } : {}),
+                  ...(r.previsaoSugerida ? { previsaoSugerida: previsaoSugeridaDoPdf(r.previsaoSugerida) } : {}),
                 });
-                setAba("demonstrativo");
               }}
             />
+            <Button variant="outline" asChild>
+              <Link to="/previsao-orcamentaria" search={{ exercicio: e.id }}>
+                <Calculator /> Previsão orçamentária
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/previsto-realizado" search={{ exercicio: e.id }}>
                 Previsto × Realizado
@@ -202,29 +195,11 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           </div>
         </SectionCard>
 
-        <Tabs value={aba} onValueChange={setAba}>
-          <TabsList className="h-10 bg-secondary">
-            <TabsTrigger value="previsao" className="px-4">Previsão orçamentária</TabsTrigger>
-            <TabsTrigger value="demonstrativo" className="px-4">Demonstrativo</TabsTrigger>
-          </TabsList>
-          <TabsContent value="previsao" className="mt-4">
-            <PainelPrevisao
-              exercicio={e}
-              resultado={resultado}
-              unidades={unidades}
-              condoId={e.condoId}
-              grupos={demonstrativo.despesas.grupos.map((g) => g.nome)}
-              onChange={mudar}
-            />
-          </TabsContent>
-          <TabsContent value="demonstrativo" className="mt-4">
-            <EditorDemonstrativo
-              valor={demonstrativo}
-              onChange={(d) => mudar({ demonstrativo: d })}
-              descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão."
-            />
-          </TabsContent>
-        </Tabs>
+        <EditorDemonstrativo
+          valor={demonstrativo}
+          onChange={(d) => mudar({ demonstrativo: d })}
+          descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão calculada pelo demonstrativo."
+        />
       </form>
 
       <ConfirmDialog

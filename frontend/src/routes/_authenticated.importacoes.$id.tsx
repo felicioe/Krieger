@@ -32,6 +32,7 @@ import {
   mensalImportado,
 } from "@/domain/importacao";
 import { normalizarMensal, validarMensal } from "@/domain/mensal";
+import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
 import { validarNovoExercicio } from "@/domain/exercicio";
 import type { Condominio, ConfigEscritorio, Exercicio, Importacao, Mensal } from "@/domain/types";
 
@@ -124,7 +125,11 @@ function Conferencia({ imp }: { imp: Importacao }) {
         : normalizarCondominio(await api.salvar<Omit<Condominio, "id"> & { id?: string }>("condominios", (novo as { ok: true; valor: Omit<Condominio, "id"> }).valor));
       const exercicio = () => {
         const base = exercicioImportado(condo, ano!, escritorio?.cidade ?? "", rel, coluna, imp.arquivo);
-        return { ...base, consid: aplicarConsideracoesAoExercicio(base.consid, imp.consideracoes ?? null, imp.previsaoSugerida ?? null) };
+        return {
+          ...base,
+          consid: aplicarConsideracoesAoExercicio(base.consid, imp.consideracoes ?? null),
+          previsaoSugerida: imp.previsaoSugerida ? previsaoSugeridaDoPdf(imp.previsaoSugerida) : null,
+        };
       };
       const salvo =
         destino === "mensais"

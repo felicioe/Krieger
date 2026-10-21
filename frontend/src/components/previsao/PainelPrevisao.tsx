@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { Link } from "@tanstack/react-router";
-import { Minus, Plus, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
+import { SinalToggle } from "./SinalToggle";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +28,7 @@ const METODOS: { valor: VariacaoMetodo; rotulo: string }[] = [
   { valor: "percentual", rotulo: "Percentual fixo" },
   { valor: "mediaIndices", rotulo: "Média dos índices" },
 ];
-const ARREDONDAMENTO: { valor: Arredondamento; rotulo: string }[] = [
+export const ARREDONDAMENTO: { valor: Arredondamento; rotulo: string }[] = [
   { valor: "truncar", rotulo: "Truncar (sem centavos, para baixo)" },
   { valor: "arredondar", rotulo: "Arredondar (sem centavos)" },
   { valor: "centavos", rotulo: "Manter centavos" },
@@ -145,27 +146,7 @@ export function PainelPrevisao({
             vazio="Nenhum ajuste. A previsão usa só a base com a variação."
             render={(a, up) => (
               <>
-                <div className="flex h-9 overflow-hidden rounded-md border" role="group" aria-label="Sinal do ajuste">
-                  {(["+", "-"] as const).map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      aria-pressed={a.sinal === s}
-                      aria-label={s === "+" ? "Acréscimo" : "Redução"}
-                      onClick={() => up({ sinal: s })}
-                      className={cn(
-                        "flex flex-1 items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-                        a.sinal === s
-                          ? s === "+"
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-destructive text-destructive-foreground"
-                          : "bg-card text-muted-foreground hover:bg-muted",
-                      )}
-                    >
-                      {s === "+" ? <Plus className="size-4" /> : <Minus className="size-4" />}
-                    </button>
-                  ))}
-                </div>
+                <SinalToggle valor={a.sinal} onChange={(sinal) => up({ sinal })} rotulo="Sinal do ajuste" />
                 <Input aria-label="Descrição" placeholder="Descrição do ajuste" value={a.descricao} onChange={(ev) => up({ descricao: ev.target.value })} />
                 <div className="col-span-2 sm:col-span-1">
                   <DinheiroInput aria-label="Valor anual" value={a.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
@@ -198,7 +179,7 @@ export function PainelPrevisao({
 
 function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
   if (r.linhas.length === 0) {
-    return <p className="text-sm text-muted-foreground">Lance as despesas na aba Demonstrativo para ver a previsão.</p>;
+    return <p className="text-sm text-muted-foreground">Lance as despesas no demonstrativo da prestação de contas para ver a previsão.</p>;
   }
   const ajustesPorGrupo = (g: string) => (g ? r.ajustes.filter((a) => a.grupo === g) : []);
   const grupos = [...new Set(r.linhas.map((l) => l.grupo))];

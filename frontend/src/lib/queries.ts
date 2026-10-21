@@ -7,6 +7,7 @@ export const chaves = {
   item: (store: Store, id: string) => ["store", store, "item", id] as const,
   store: (store: Store) => ["store", store] as const,
   usuarios: ["auth", "usuarios"] as const,
+  backups: ["backups"] as const,
 };
 
 export const listaQuery = <T>(store: Store) =>
@@ -25,4 +26,10 @@ export const usuariosQuery = () =>
   queryOptions({
     queryKey: chaves.usuarios,
     queryFn: () => api.auth.usuarios(),
+  });
+
+export const backupsQuery = () =>
+  queryOptions({
+    queryKey: chaves.backups,
+    queryFn: () => api.backup.listar(),
   });

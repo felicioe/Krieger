@@ -134,7 +134,7 @@ function PaginaComparativo() {
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
           {r.relatoriosUsados} relatório(s) mensal(is) somado(s).{" "}
-          <Link to="/prestacao-contas/$id" params={{ id: exercicio.id }} className="text-primary underline-offset-2 hover:underline">
+          <Link to="/previsao-orcamentaria" search={{ exercicio: exercicio.id }} className="text-primary underline-offset-2 hover:underline">
             Abrir a previsão do exercício {exercicio.ano}
           </Link>
         </p>

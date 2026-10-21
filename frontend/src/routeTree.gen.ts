@@ -17,6 +17,7 @@ import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEscritorioRouteImport } from './routes/_authenticated.escritorio'
 import { Route as AuthenticatedMinhaSenhaRouteImport } from './routes/_authenticated.minha-senha'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated.painel'
+import { Route as AuthenticatedPrevisaoOrcamentariaRouteImport } from './routes/_authenticated.previsao-orcamentaria'
 import { Route as AuthenticatedPrevistoRealizadoRouteImport } from './routes/_authenticated.previsto-realizado'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated.usuarios'
 import { Route as AuthenticatedAtasIndexRouteImport } from './routes/_authenticated.atas.index'
@@ -74,6 +75,12 @@ const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPrevisaoOrcamentariaRoute =
+  AuthenticatedPrevisaoOrcamentariaRouteImport.update({
+    id: '/previsao-orcamentaria',
+    path: '/previsao-orcamentaria',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPrevistoRealizadoRoute =
   AuthenticatedPrevistoRealizadoRouteImport.update({
     id: '/previsto-realizado',
@@ -180,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
   '/previsto-realizado': typeof AuthenticatedPrevistoRealizadoRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/atas/$id': typeof AuthenticatedAtasIdRoute
@@ -206,6 +214,7 @@ export interface FileRoutesByTo {
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
   '/previsto-realizado': typeof AuthenticatedPrevistoRealizadoRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/atas/$id': typeof AuthenticatedAtasIdRoute
@@ -234,6 +243,7 @@ export interface FileRoutesById {
   '/_authenticated/escritorio': typeof AuthenticatedEscritorioRoute
   '/_authenticated/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
+  '/_authenticated/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
   '/_authenticated/previsto-realizado': typeof AuthenticatedPrevistoRealizadoRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/atas/$id': typeof AuthenticatedAtasIdRoute
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/escritorio'
     | '/minha-senha'
     | '/painel'
+    | '/previsao-orcamentaria'
     | '/previsto-realizado'
     | '/usuarios'
     | '/atas/$id'
@@ -288,6 +299,7 @@ export interface FileRouteTypes {
     | '/escritorio'
     | '/minha-senha'
     | '/painel'
+    | '/previsao-orcamentaria'
     | '/previsto-realizado'
     | '/usuarios'
     | '/atas/$id'
@@ -315,6 +327,7 @@ export interface FileRouteTypes {
     | '/_authenticated/escritorio'
     | '/_authenticated/minha-senha'
     | '/_authenticated/painel'
+    | '/_authenticated/previsao-orcamentaria'
     | '/_authenticated/previsto-realizado'
     | '/_authenticated/usuarios'
     | '/_authenticated/atas/$id'
@@ -397,6 +410,13 @@ declare module '@tanstack/react-router' {
       path: '/painel'
       fullPath: '/painel'
       preLoaderRoute: typeof AuthenticatedPainelRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/previsao-orcamentaria': {
+      id: '/_authenticated/previsao-orcamentaria'
+      path: '/previsao-orcamentaria'
+      fullPath: '/previsao-orcamentaria'
+      preLoaderRoute: typeof AuthenticatedPrevisaoOrcamentariaRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/previsto-realizado': {
@@ -526,6 +546,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEscritorioRoute: typeof AuthenticatedEscritorioRoute
   AuthenticatedMinhaSenhaRoute: typeof AuthenticatedMinhaSenhaRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedPrevisaoOrcamentariaRoute: typeof AuthenticatedPrevisaoOrcamentariaRoute
   AuthenticatedPrevistoRealizadoRoute: typeof AuthenticatedPrevistoRealizadoRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedAtasIdRoute: typeof AuthenticatedAtasIdRoute
@@ -550,6 +571,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEscritorioRoute: AuthenticatedEscritorioRoute,
   AuthenticatedMinhaSenhaRoute: AuthenticatedMinhaSenhaRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedPrevisaoOrcamentariaRoute:
+    AuthenticatedPrevisaoOrcamentariaRoute,
   AuthenticatedPrevistoRealizadoRoute: AuthenticatedPrevistoRealizadoRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedAtasIdRoute: AuthenticatedAtasIdRoute,

@@ -12,5 +12,8 @@
 
 - [x] PDF e Word: edital (blocos do modelo via modeloTexto.ts do usuário, timbrado opcional), ata (timbrada, rascunho com marca d'água), relatório mensal, relatório final (emitido pela conferência), Previsto × Realizado avulso; variáveis do edital formatadas e condições e/ou (modeloTexto.ts do Claude); próxima vistoria via dataVistoria; lista de presença e procuração (lógica do Claude) no botão "Gerar documentos" do edital
 
+- [x] Menu Previsão orçamentária (previsão sugerida do Systemar editável: deduções, variação, resultado e quadro por unidade; aba da previsão pelo demonstrativo saiu da Prestação de contas e foi para esse menu; Relatório final usa a sugerida quando existe)
+
 ## Pendências (aguardando decisão do usuário)
 - [x] Leitura das páginas "Considerações finais" e "Previsão orçamentária sugerida" do PDF (funções do Claude; preenchem as Considerações finais da prestação de contas, aviso na conferência)
+- [x] Backup no servidor na tela de Backup (gerar, histórico com Baixar/Restaurar/Excluir; contrato api.backup.* do Claude) — migração kr_backups no servidor real fica com o usuário

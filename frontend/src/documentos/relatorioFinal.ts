@@ -7,7 +7,8 @@ import { pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type { ResultadoComparativo, Situacao, Totais } from "@/domain/previstoRealizado";
-import type { Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
+import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
+import type { Condominio, ConfigEscritorio, Exercicio, PrevisaoSugeridaExercicio } from "@/domain/types";
 import { blocosDemonstrativo, localEData, timbreDoEscritorio } from "./comum";
 
 /**
@@ -71,9 +72,14 @@ export async function documentoRelatorioFinal(o: {
     b.push(titulo("consideracoes", "Considerações finais"), ...consideracoes(e, rel));
   }
 
-  if (rel.secoes.previsao) {
+  if (rel.secoes.previsao && e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade) {
+    b.push(titulo("previsao", `Previsão orçamentária — Exercício ${e.ano}`));
+    if (d?.periodo.ini && d.periodo.fim) b.push({ tipo: "paragrafo", texto: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.`, suave: true, tamanho: "pequeno" });
+    b.push(...blocosPrevisaoSugerida(e, e.previsaoSugerida, rel.previsaoSugerida, rel.previsaoSugeridaPorUnidade));
+  } else if (rel.secoes.previsao) {
     const p = rel.previsao;
-    b.push(titulo("previsao", `Previsão orçamentária para ${Number(e.ano) + 1}`));
+    b.push(titulo("previsao", `Previsão orçamentária — Exercício ${e.ano}`));
+    if (d?.periodo.ini && d.periodo.fim) b.push({ tipo: "paragrafo", texto: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.`, suave: true, tamanho: "pequeno" });
     b.push({
       tipo: "tabela",
       colunas: [
@@ -331,4 +337,47 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
   }
   if (out.length === 0) out.push(vazio("Sem considerações registradas."));
   return out;
+}
+
+/** Previsão orçamentária sugerida pelo Systemar (com as edições do usuário) e o quadro por unidade. */
+function blocosPrevisaoSugerida(
+  e: Exercicio,
+  p: PrevisaoSugeridaExercicio,
+  r: ResultadoPrevisaoSugerida,
+  u: ResultadoPrevisaoSugeridaPorUnidade,
+): Bloco[] {
+  const fundo = e.prev?.fundoReservaPct ?? 0;
+  const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
+  return [
+    {
+      tipo: "tabela",
+      colunas: [
+        { titulo: "Categoria de despesa", largura: "*" },
+        { titulo: "Anual", largura: 100, alinhamento: "direita" },
+        { titulo: "Média mês", largura: 100, alinhamento: "direita" },
+      ],
+      linhas: [
+        ...p.categorias.map((c) => ({ celulas: [c.nome, formatBRL(c.anual), [{ texto: formatBRL(c.media), suave: true }]] })),
+        { celulas: ["Total das despesas", formatBRL(r.totalDespesasAno), formatBRL(r.totalDespesasMedia)], estilo: "total" },
+      ] as LinhaTabela[],
+    },
+    resumo([
+      l("Total das despesas do ano", r.totalDespesasAno),
+      ...p.deducoes.map((x) => l(`${sinal(x.sinal)} ${x.descricao || "Dedução"}`, Math.abs(x.valor))),
+      l("Total ordinário", r.totalOrdinario, { estilo: "total" }),
+      l(`${sinal(p.variacao.sinal)} Variação de despesas sugeridas`, Math.abs(p.variacao.valor)),
+      l("Total final (anual)", r.totalFinal, { estilo: "total" }),
+      l("Rateio mensal sugerido (÷ 12)", r.rateioMensalSugerido, { estilo: "total" }),
+      l("Rateio mensal atual", r.rateioMensalAtual),
+      { celulas: ["Índice sugerido para correção", pctTexto(r.indiceSugerido)] },
+      ...(e.rateioAprovado != null ? [l("Rateio aprovado", e.rateioAprovado, { estilo: "total" })] : []),
+    ]),
+    { tipo: "titulo", nivel: 3, texto: "Previsão orçamentária por unidade" },
+    resumo([
+      { celulas: ["Unidades", u.unidades != null ? String(u.unidades) : "—"] },
+      l("Cota por unidade", u.cotaUnidade),
+      l(`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`, u.reservaUnidade),
+      l("Valor por unidade", u.valorUnidade, { estilo: "total" }),
+    ]),
+  ];
 }

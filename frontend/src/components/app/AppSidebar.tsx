@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Briefcase,
   Building2,
+  Calculator,
   CalendarRange,
   DatabaseBackup,
   FileSpreadsheet,
@@ -28,6 +29,7 @@ export const ITENS_MENU: Item[] = [
   { titulo: "Painel", to: "/painel", icone: LayoutDashboard },
   { titulo: "Condomínios", to: "/condominios", icone: Building2 },
   { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet },
+  { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator },
   { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows },
   { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange },
   { titulo: "Editais", to: "/editais", icone: Megaphone },
