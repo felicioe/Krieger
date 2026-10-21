@@ -217,3 +217,28 @@ O empacotamento sem build frontend foi executado e falhou com código 1, conform
 confirmou falha no empacotamento; testes, tipos, docs e sintaxe PHP passaram e o
 upload de artefato foi pulado. Não declarar a versão aprovada para publicação
 nem fazer merge contornando essa verificação. O PR permanece em rascunho.
+
+## Adendo — revisão posterior das correções em 21/10/2026
+
+O relatório acima preserva a auditoria original. Revisão de main 59ba487 e da
+branch de publicação 205d3e0 (origem declarada 59ba487). Navegador autenticado
+carregou index-Doxn9lA8.js, igual ao index da branch de publicação.
+
+| Issue | Resultado da revisão |
+| --- | --- |
+| #49 | Correção do pipeline integrada pelo PR #51, commit 6fd9483. Lock npm presente; build antes do pacote. CI do head b0651b7 aprovado no run 39634221490. Falta fechar a cadeia do artefato e publicação; não encerrar a issue integralmente. |
+| #30 | Persiste: duas linhas sem controles interativos, tabIndex -1; Tab da busca leva a BODY. |
+| #31 | Persiste: formulário vazio tem dicas sem aria-describedby e nome obrigatório sem required; Field permanece sem propagar esses atributos. |
+| #32 | Persiste: campos ~36 px e botão móvel ~36×36. Não houve overflow global na amostra; sem teste de gesto físico/zoom. |
+| #47 | Persiste: Enter abre, foco inicial Close; Escape fecha e foco fica em BODY. Código do Sheet/acionador não mudou. |
+| #48 | Persiste: imagem compacta 1600×901 renderizada ~49,69×27,99, mesmo asset da marca completa. |
+| #33 | Pendente medição de rede/Core Web Vitals; tamanhos anteriores pertencem à versão anterior e não são baseline desta versão. |
+
+Viewport móvel solicitado 390×844, efetivo DOM 416×937 nesta sessão. Não comparar
+pixel a pixel com os tamanhos efetivos da auditoria anterior. Nenhum formulário
+foi salvo, nenhum backup gerado e nenhum dado real foi anexado. Não foram
+retestados todos os novos fluxos de previsão/backup/PDF. Mantida a avaliação
+provisória anterior sem recalcular pontuação com escopo de revisão mais estreito.
+
+O PR #50 foi sincronizado com main, resolvendo conflitos de documentação e
+preservando as entregas da Claude. A revisão não alterou UI nem publicou.

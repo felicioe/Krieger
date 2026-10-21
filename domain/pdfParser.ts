@@ -506,7 +506,7 @@ export function lerPrevisaoSugerida(texto: string): PrevisaoSugeridaLida | null 
   const categorias: CategoriaPrevisaoSugerida[] = [];
   let totalDespesasAno: number | null = null;
   let totalDespesasMedia: number | null = null;
-  const tabelaMatch = bloco.match(/efetivamente realizado no ano\s+m[ée]dia m[êe]s([\s\S]*?)\n\s*Despesas a deduzir/i);
+  const tabelaMatch = bloco.match(/efetivamente realizado\s+no ano\s+m[ée]dia m[êe]s([\s\S]*?)\n\s*Despesas a deduzir/i);
   if (tabelaMatch) {
     for (const linha of tabelaMatch[1]!.split(/\r?\n/)) {
       const m = linha.match(/^\s*(.+?)[.\s]{2,}R\$\s*(-?[\d.]+,\d{2})\s+R\$\s*(-?[\d.]+,\d{2})\s*$/);

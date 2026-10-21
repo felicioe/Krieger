@@ -64,3 +64,26 @@ auto-deploy do Hostinger deve ser seguida imediatamente de reupload manual de
 **Pendência conhecida**: a branch `deploy-hostinger` não é atualizada automaticamente
 quando `main` muda — é um processo manual (rodar `npm run package:hostinger` e
 sobrescrever o conteúdo da branch). Não há CI/automação disso ainda. Detalhes em #19.
+
+## 2026-10-21 — frontend React novo em produção; config.php some em qualquer push, não só na troca de branch
+
+Decisão do responsável: publicar o frontend React (build de `frontend/`) em produção,
+substituindo o sistema legado (HTML/JS estático). Commit publicado: `10a40ca` (main) →
+pacote gerado por `npm run package:hostinger` → branch `deploy-hostinger` em `b784b74`.
+Essa publicação trouxe a tela "Previsão Orçamentária" (menu próprio, lê/edita a folha
+do Systemar) e o backup com histórico no servidor (gerar/baixar/restaurar/excluir).
+
+**Correção à regra registrada em 2026-10-20**: na época, o `config.php` sumir foi
+atribuído à troca de branch/repositório do auto-deploy. Hoje, um push normal à mesma
+branch já configurada (`deploy-hostinger`, sem trocar nada na configuração) também
+apagou `config.php`. Ou seja, **qualquer deploy pelo auto-deploy do Hostinger (troca
+de configuração OU push novo na branch já configurada) limpa a pasta do site antes de
+aplicar o novo conteúdo**, não preservando arquivos fora do Git — a regra vale pra
+_todo_ deploy, não só pra trocas de configuração.
+
+**Regra atualizada**: depois de qualquer publicação via `deploy-hostinger` (push ou
+atualização das configurações de auto-deploy), checar se `config.php` ainda existe
+(`hosting_files_list-website-and-directories` na raiz do site) e, se não existir,
+pedir ao responsável para recriá-lo pelo Gerenciador de Arquivos do hPanel. O
+Claude/Codex nunca devem digitar ou repassar a senha real do banco — só o
+responsável a insere diretamente no servidor.

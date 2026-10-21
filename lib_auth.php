@@ -29,8 +29,27 @@ function json_erro(string $msg, int $codigo = 400, array $extra = []): never {
   exit;
 }
 
+/**
+ * Onde fica a configuração real (credenciais do MySQL), em ordem de preferência:
+ * 1. config.local.php nesta mesma pasta — não versionado, para rodar localmente.
+ * 2. krieger-config.php dois níveis acima desta pasta — fora da pasta publicada do
+ *    site. O auto-deploy do Hostinger apaga tudo que não está no Git dentro da pasta
+ *    publicada a cada push; um arquivo fora dela sobrevive a qualquer deploy, então só
+ *    precisa ser criado uma vez. Ver docs/PUBLICACAO.md.
+ */
+function caminho_config(): string {
+  $candidatos = [
+    __DIR__ . '/config.local.php',
+    dirname(__DIR__, 2) . '/krieger-config.php',
+  ];
+  foreach ($candidatos as $caminho) {
+    if (is_file($caminho)) return $caminho;
+  }
+  throw new RuntimeException('Nenhum arquivo de configuração encontrado (veja docs/PUBLICACAO.md).');
+}
+
 function conectar(): PDO {
-  $cfg = require __DIR__ . '/config.php';
+  $cfg = require caminho_config();
   $dsn = $cfg['dsn'] ?? "mysql:host={$cfg['host']};dbname={$cfg['dbname']};charset=utf8mb4";
   return new PDO($dsn, $cfg['user'] ?? null, $cfg['pass'] ?? null,
     [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);

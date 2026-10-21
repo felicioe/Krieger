@@ -7,7 +7,8 @@ import { dataVistoria } from "@/domain/painel";
 import { cn } from "@/lib/utils";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
-import type { Condominio, ConfigEscritorio, Exercicio, LinhaValor } from "@/domain/types";
+import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
+import type { Condominio, ConfigEscritorio, Exercicio, LinhaValor, PrevisaoSugeridaExercicio } from "@/domain/types";
 
 /** Prévia na tela do documento montado (sem PDF). Só as seções incluídas, numeradas na ordem. */
 export function PreviaRelatorio({
@@ -102,7 +103,15 @@ export function PreviaRelatorio({
       )}
 
       {rel.secoes.previsao && (
-        <Secao n={numero("previsao")} titulo={`Previsão orçamentária para ${Number(e.ano) + 1}`}>
+        <Secao
+          n={numero("previsao")}
+          titulo={`Previsão orçamentária — Exercício ${e.ano}`}
+          {...(d?.periodo.ini && d.periodo.fim ? { sub: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.` } : {})}
+        >
+          {e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade ? (
+            <PrevisaoSugeridaPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} u={rel.previsaoSugeridaPorUnidade} />
+          ) : (
+            <>
           <table className="w-full">
             <thead>
               <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
@@ -161,6 +170,8 @@ export function PreviaRelatorio({
               {e.rateioAprovado != null && <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />}
             </tbody>
           </table>
+            </>
+          )}
         </Secao>
       )}
 
@@ -416,5 +427,78 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
         </div>
       )}
     </div>
+  );
+}
+
+/** Previsão orçamentária sugerida pelo Systemar (com as edições do usuário) e o quadro por unidade. */
+function PrevisaoSugeridaPrevia({
+  e,
+  previsao: p,
+  r,
+  u,
+}: {
+  e: Exercicio;
+  previsao: PrevisaoSugeridaExercicio;
+  r: ResultadoPrevisaoSugerida;
+  u: ResultadoPrevisaoSugeridaPorUnidade;
+}) {
+  const fundo = e.prev?.fundoReservaPct ?? 0;
+  const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
+  return (
+    <>
+      <table className="w-full">
+        <thead>
+          <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+            <th className="py-1 text-left font-semibold">Categoria de despesa</th>
+            <th className="py-1 text-right font-semibold">Anual</th>
+            <th className="py-1 text-right font-semibold">Média mês</th>
+          </tr>
+        </thead>
+        <tbody>
+          {p.categorias.map((c, i) => (
+            <tr key={i} className="border-b border-dashed last:border-0">
+              <td className="py-1">{c.nome}</td>
+              <td className="num py-1 text-right">{formatBRL(c.anual)}</td>
+              <td className="num py-1 text-right text-muted-foreground">{formatBRL(c.media)}</td>
+            </tr>
+          ))}
+          <tr className="font-semibold">
+            <td className="py-1">Total das despesas</td>
+            <td className="num py-1 text-right">{formatBRL(r.totalDespesasAno)}</td>
+            <td className="num py-1 text-right">{formatBRL(r.totalDespesasMedia)}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table className="mt-4 w-full rounded-sm bg-muted/50">
+        <tbody>
+          <Linha nome="Total das despesas do ano" valor={r.totalDespesasAno} />
+          {p.deducoes.map((x) => (
+            <Linha key={x.id} nome={`${sinal(x.sinal)} ${x.descricao || "Dedução"}`} valor={Math.abs(x.valor)} />
+          ))}
+          <Linha nome="Total ordinário" valor={r.totalOrdinario} forte />
+          <Linha nome={`${sinal(p.variacao.sinal)} Variação de despesas sugeridas`} valor={Math.abs(p.variacao.valor)} />
+          <Linha nome="Total final (anual)" valor={r.totalFinal} forte />
+          <Linha nome="Rateio mensal sugerido (÷ 12)" valor={r.rateioMensalSugerido} forte />
+          <Linha nome="Rateio mensal atual" valor={r.rateioMensalAtual} />
+          <tr>
+            <td className="px-3 py-1">Índice sugerido para correção</td>
+            <td className="num px-3 py-1 text-right">{pctTexto(r.indiceSugerido)}</td>
+          </tr>
+          {e.rateioAprovado != null && <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />}
+        </tbody>
+      </table>
+      <h4 className="mb-1 mt-5 font-semibold">Previsão orçamentária por unidade</h4>
+      <table className="w-full rounded-sm bg-muted/50">
+        <tbody>
+          <tr>
+            <td className="px-3 py-1">Unidades</td>
+            <td className="num px-3 py-1 text-right">{u.unidades ?? "—"}</td>
+          </tr>
+          <Linha nome="Cota por unidade" valor={u.cotaUnidade} />
+          <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`} valor={u.reservaUnidade} />
+          <Linha nome="Valor por unidade" valor={u.valorUnidade} forte />
+        </tbody>
+      </table>
+    </>
   );
 }

@@ -17,7 +17,7 @@ $STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'co
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try { $pdo = conectar(); }
-catch (Throwable $e) { error_log('[krieger] ' . $e->getMessage()); erro('Não foi possível conectar ao banco de dados. Confira config.php.', 500); }
+catch (Throwable $e) { error_log('[krieger] ' . $e->getMessage()); erro('Não foi possível conectar ao banco de dados. Confira a configuração (docs/PUBLICACAO.md).', 500); }
 
 checar_origem();
 $usuario = exigir_login($pdo);
@@ -236,5 +236,12 @@ try {
   }
 } catch (Throwable $e) {
   error_log('[krieger] ' . $e->getMessage());
+  // Tabela ausente (schema.sql tem uma tabela que o banco deste servidor ainda não tem,
+  // ex.: uma tabela nova de uma funcionalidade adicionada depois da instalação inicial).
+  // Isso já aconteceu de forma silenciosa (Erro interno genérico, exigiu log manual pra
+  // achar a causa) - avisar direto evita repetir a investigação.
+  if ($e instanceof PDOException && $e->getCode() === '42S02') {
+    erro('Tabela do banco ausente: ' . $e->getMessage() . '. Aplique schema.sql (docs/PUBLICACAO.md).', 500);
+  }
   erro('Erro interno. Tente novamente ou contate o administrador.', 500);
 }

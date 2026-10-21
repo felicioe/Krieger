@@ -21,7 +21,7 @@
 - Reusable UI building blocks live in `src/components/app/` (DataTable, RepeatableList, Field, SectionCard, ConfirmDialog, money/date/percent inputs); reuse them for new screens.
 - Brazilian formatting helpers (R$ 1.234,56, dd/mm/aaaa, masks) live in `src/lib/format.ts`; never format money/dates ad hoc.
 - Brand images (logo variants) are bundled from `src/assets/` via ES imports, not Lovable CDN pointers, because production runs on external PHP hosting where CDN-relative URLs would not resolve; the favicon lives in `public/`.
-- Screen-specific composite components live in `src/components/<area>/` (e.g. `prestacao/`, `mensal/`); domain editors shared by several screens (e.g. `demonstrativo/EditorDemonstrativo`) get their own area folder; `src/components/app/` stays for generic building blocks.
+- Screen-specific composite components live in `src/components/<area>/` (e.g. `previsao/`, `mensal/`); domain editors shared by several screens (e.g. `demonstrativo/EditorDemonstrativo`) get their own area folder; `src/components/app/` stays for generic building blocks.
 - Edital and ata forms edit `data` as dd/mm/aaaa and convert back to aaaa-mm-dd only on save (atas copy the edital date as-is), because the stored format is fixed by existing data while the UI must show Brazilian dates.
 - Generated documents (PDF and Word): each document is described once as `Documento` blocks (`src/lib/documento/tipos.ts`) by a presentation-only builder in `src/documentos/` that only lays out data from domain functions; `src/lib/documento/pdf.ts` (pdfmake) and `word.ts` (docx) draw the same blocks and are imported lazily on download, and charts are SVG rasterized to PNG, so both formats stay identical and the libraries never weigh on normal pages.
 

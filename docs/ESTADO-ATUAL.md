@@ -1,39 +1,34 @@
 # Estado atual e passagem de contexto
 
-Snapshot atualizado em 21/10/2026 após reauditoria do site publicado. Conferir issues/PRs online antes de continuar.
+Snapshot de 21/10/2026 (atualizado após publicar o frontend React novo em produção, substituindo o sistema legado). Conferir issues/PRs online antes de continuar.
 
 ## O que existe
 
 - `main` é a branch padrão e de integração (commit atual: `git log -1 origin/main`). Branches de trabalho são temporárias por issue, apagadas (local e remota) depois do merge.
-- Domínio TypeScript (`domain/`+`lib/`) com 117 testes aprovados em 21/10/2026 após incorporar main 1496549, `tsc --noEmit` limpo; instalação da raiz reportou zero vulnerabilidades.
-- **`frontend/` compila de verdade agora** (PR #39): `npm install && npm run build` completam sem erro (Node v26.12.0), gerando `.output/public/index.html` + `assets/*.js` — SPA estática compatível com a hospedagem PHP atual (confirma o `spa.enabled`/prerender do `vite.config.ts`). Testado localmente servindo o build: login, painel, condomínios, prestação de contas, previsão orçamentária (bate com `domain/previsao.ts`) e relatório final renderizam certo, sem erro de console. Importação de PDF real já validada pelo responsável (issue #6, fechada).
-- **Duplicação `domain/`↔`frontend/src/domain` eliminada** (PR #41): os 20 arquivos de `frontend/src/domain/` e os 2 de `frontend/src/lib/` (format.ts, id.ts) agora são re-exports de uma linha pra raiz (`export * from`), não cópias de conteúdo. `domain/`+`lib/` na raiz é a única fonte real no repositório GitHub. Isso não muda o projeto Lovable ao vivo (sandbox isolado, só vê os próprios arquivos) — colar conteúdo atualizado no chat do Lovable continua sendo a única forma de manter o preview deles sincronizado.
-- `frontend/` é o espelho do projeto Lovable ao vivo (project_id `aa3c8b14-19f5-402a-87df-2d6d01f6de4c`); mantido manualmente (sem automação) sempre que o Lovable muda (exceto `src/domain`/`src/lib/format.ts`/`id.ts`, que agora são shims e não precisam de re-sincronização).
-- **Publicação em produção usa uma branch dedicada `deploy-hostinger`** (órfã, raiz = exatamente `npm run package:hostinger`), não `main` diretamente — `main` tem a árvore inteira do repo, inadequada pra publicar direto. Atualizar essa branch ainda é manual (rodar o empacotamento e sobrescrever o conteúdo dela); não há CI pra isso ainda.
-- **Produção já serve o frontend React**, confirmado por DOM e navegação em 21/10/2026. Branch deploy-hostinger no commit 4d3bfd1, com origem declarada main 5709184; main auditada 960d6fc. O backend continua PHP/MySQL. A auditoria não realizou a publicação.
-- **Incidente registrado**: trocar a branch/repositório do auto-deploy do Hostinger apaga arquivos fora do Git (não preserva como a API sugere) — `config.php` foi apagado e recriado manualmente. Ver `docs/DECISOES.md`. Banco de dados não foi afetado.
+- Domínio TypeScript (`domain/`+`lib/`) com 117 testes, `tsc --noEmit` limpo, `npm audit` sem vulnerabilidades.
+- **`frontend/` compila de verdade** (PR #39): `npm run build` gera `.output/public/index.html` + `assets/*.js` — SPA estática compatível com a hospedagem PHP (hash routing `#/login`, `#/painel` etc.). 76 testes de frontend passando.
+- **Duplicação `domain/`↔`frontend/src/domain` eliminada** (PR #41): os arquivos de `frontend/src/domain/` e de `frontend/src/lib/` (format.ts, id.ts) são re-exports de uma linha pra raiz (`export * from`), não cópias de conteúdo. `domain/`+`lib/` na raiz é a única fonte real no repositório GitHub. Isso não muda o projeto Lovable ao vivo (sandbox isolado, só vê os próprios arquivos) — colar conteúdo atualizado no chat do Lovable continua sendo a única forma de manter o preview deles sincronizado, e puxar de volta pra `frontend/` (sync manual, arquivo por arquivo via MCP do Lovable) continua sendo o único jeito de levar as mudanças deles pro Git.
+- **Previsão orçamentária sugerida** (`domain/previsaoSugerida.ts`, PR #45 + sync de 21/10/2026): campo próprio no exercício (`Exercicio.previsaoSugerida`), populado ao importar a folha do PDF do Systemar, editável (deduções +/-, variação +/-), com menu dedicado no frontend (`_authenticated.previsao-orcamentaria.tsx`) e consolidado no Relatório Final — inclusive na conferência (compara o rateio aprovado com o valor por unidade dessa previsão quando ela existir; sem ela, cai pro cálculo antigo a partir do demonstrativo).
+- **Backup com histórico no servidor** (PR #44 + tela refeita em 21/10/2026): gerar/baixar/restaurar/excluir backups gravados em `kr_backups` (MySQL), vinculados a quem gerou. Tabela `kr_backups` **ainda não foi aplicada no banco de produção** — precisa rodar o `CREATE TABLE` do `schema.sql` via phpMyAdmin antes da função funcionar contra a API real.
+- **Frontend React novo publicado em produção em 21/10/2026**, substituindo o sistema legado (HTML/JS estático): commit `main` 10a40ca → `npm run package:hostinger` → branch `deploy-hostinger` em `b784b74`, auto-deploy do Hostinger aplicou.
+- **Incidente de `config.php` se repetiu em 21/10/2026**: dessa vez não foi troca de branch/configuração, foi um push normal à branch já configurada — mesmo assim o `config.php` sumiu de novo. Conclusão atualizada: **qualquer** publicação via auto-deploy do Hostinger limpa arquivos fora do Git, não só trocas de configuração. Ver `docs/DECISOES.md` (entrada de 21/10/2026). Checar sempre depois de publicar.
+- **CI corrigido em 21/10/2026** (PR #51, issue #49): `validate.yml` vinha falhando em todo push/PR (silenciosamente, ninguém checava `gh run list`) porque nunca compilava `frontend/` antes de `npm run package:hostinger`, que exige o build já pronto. Agora instala e compila o frontend antes de empacotar. Removido `frontend/bun.lock` (nunca usado pra instalar nada aqui; npm + `frontend/package-lock.json` é o real). Verificar `gh run list` depois de cada push a partir de agora — isso deveria ter sido pego antes.
 
 ## Pendências e sequência sugerida
 
 | Issue | Estado | Próxima ação |
 | --- | --- | --- |
-| [#19](https://github.com/felicioe/Krieger/issues/19) | React publicado em deploy-hostinger; config.php recuperado no incidente anterior | Formalizar rollback e vínculo de SHAs; alterações futuras passam por GitHub antes de publicar |
-| [#46](https://github.com/felicioe/Krieger/issues/46) | Reauditoria da produção | Acompanhar #30/#31/#32/#47/#48 e medição #33 |
-| [#49](https://github.com/felicioe/Krieger/issues/49) | CI sem build frontend antes do pacote | Definir instalação/lock, construir e empacotar no runner |
+| [#19](https://github.com/felicioe/Krieger/issues/19) | Frontend novo publicado em produção; config.php precisou ser recriado de novo | Confirmar com o responsável que o `config.php` foi restaurado; aplicar `CREATE TABLE kr_backups` no banco de produção; registrar plano formal de rollback |
+| [#49](https://github.com/felicioe/Krieger/issues/49) | CI corrigido (PR #51), verde pela primeira vez nesta sessão | Falta só registrar a cadeia SHA main → artefato → deploy-hostinger → validação em produção |
 
-Fechadas anteriormente: #1, #2, #3, #4, #5, #6, #7, #15, #16, #17, #20, #22. Há pendências abertas de integração e auditoria; a lista online prevalece sobre este snapshot.
+Fechadas: #1, #2, #3, #4, #5, #6, #7, #15, #16, #17, #20, #22. #19 e #49 seguem abertas (checklists de validação pós-deploy/CI).
 
 ## Limitações conhecidas
 
-- Reauditoria [Impeccable em produção em 21/10/2026](auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md),
-  issue #46: React efetivamente publicado em deploy-hostinger (4d3bfd1, origem
-  declarada main 5709184), entrada index-D_dJBo1m.js. Isso atualiza a observação
-  anterior de produção legada. Main consultada 960d6fc; achados seguem em
-  #30–#33/#47–#49. Nenhuma correção de UI ou deploy feito na auditoria.
-
 - Testes do domínio não validam navegador/PDF worker, backend/banco ou produção.
 - Atualizar a branch `deploy-hostinger` depois de mudanças relevantes em `main` é manual; esquecer isso deixa a produção desatualizada silenciosamente.
-- Trocar branch/repositório no auto-deploy do Hostinger não preserva arquivos fora do Git (ex.: `config.php`) — reupload manual é necessário toda vez que isso acontecer de novo.
+- **Qualquer** publicação pelo auto-deploy do Hostinger (push ou atualização de configuração) não preserva arquivos fora do Git (ex.: `config.php`) — checar e, se preciso, reupload manual depois de toda publicação.
+- Backup no servidor depende da tabela `kr_backups`, ainda não criada no banco de produção.
 
 ## Ao retomar
 
@@ -44,3 +39,15 @@ a partir de `main`, apagando a branch (local e remota) depois do merge — uma d
 se estiver apagando várias, o classificador bloqueia exclusões em lote/rápidas demais.
 Atualizar este snapshot quando uma limitação estrutural for resolvida e registrar
 evidências na issue correspondente. Nunca depender apenas de mensagens de chat.
+
+## Revisão das pendências da auditoria — 21/10/2026
+
+Main revisada 59ba487; deploy-hostinger 205d3e0 declara essa origem, e o runtime
+observado index-Doxn9lA8.js coincide com seu index.html. PR #51 corrigiu o build
+no CI (run 39634221490 aprovado). #49 permanece parcialmente pendente pela
+rastreabilidade completa do artefato/publicação. #30/#31/#32/#47/#48 persistem
+na produção; #33 exige medição. Ver [relatório e adendo de revisão](auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md).
+As referências anteriores de deploy e estado do banco são snapshots históricos,
+não uma revalidação do banco nesta revisão. A configuração real agora é buscada
+fora da pasta publicada conforme PUBLICACAO.md; não voltar ao procedimento
+antigo de manter credenciais dentro do diretório sobrescrito.

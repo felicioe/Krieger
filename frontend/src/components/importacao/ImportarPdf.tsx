@@ -32,6 +32,7 @@ import {
   receberDoRelatorio,
 } from "@/domain/importacao";
 import { normalizarMensal, validarMensal } from "@/domain/mensal";
+import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
 import { validarNovoExercicio } from "@/domain/exercicio";
 import type { Condominio, ConfigEscritorio, Demonstrativo, DestinoImportacao, Exercicio, Importacao, Mensal } from "@/domain/types";
 
@@ -251,7 +252,11 @@ function PassoNovo({ destino, condominios, lido, coluna, setColuna, fechar }: Ex
       const v = validarNovoExercicio(condo.id, ano, exercicios);
       if (!v.ok || !ano) throw new Error(v.ok ? "Informe o ano do exercício." : v.erro);
       const base = exercicioImportado(condo, ano, escritorio?.cidade ?? "", lido.relatorio, coluna, lido.arquivo);
-      const registro = { ...base, consid: aplicarConsideracoesAoExercicio(base.consid, lido.consideracoes, lido.previsaoSugerida) };
+      const registro = {
+        ...base,
+        consid: aplicarConsideracoesAoExercicio(base.consid, lido.consideracoes),
+        previsaoSugerida: lido.previsaoSugerida ? previsaoSugeridaDoPdf(lido.previsaoSugerida) : null,
+      };
       return api.salvar<Omit<Exercicio, "id"> & { id?: string }>("exercicios", registro);
     },
     onSuccess: (salvo) => {

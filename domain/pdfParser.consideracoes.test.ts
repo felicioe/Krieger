@@ -127,6 +127,22 @@ describe("lerPrevisaoSugerida", () => {
   it("devolve null quando a seção não existe no PDF", () => {
     expect(lerPrevisaoSugerida("Demonstrativo qualquer sem essa seção")).toBeNull();
   });
+
+  it("lê as categorias mesmo com o cabeçalho da tabela bem espaçado (colunas alinhadas à direita, como em PDFs reais)", () => {
+    // Achado testando com PDF real: "no ano"/"média mês" ficam bem afastados de "efetivamente
+    // realizado" (alinhados à direita, acima dos valores), não com espaço único como no fixture
+    // acima — o regex do cabeçalho não casava e `categorias` voltava vazio.
+    const comCabecalhoEspacado = previsaoSugerida.replace(
+      "efetivamente realizado no ano média mês ",
+      "efetivamente realizado                          no ano         média mês ",
+    );
+    const pv = lerPrevisaoSugerida(comCabecalhoEspacado);
+    expect(pv?.categorias).toEqual([
+      { nome: "Departamento pessoal", anual: 150000, media: 12500 },
+      { nome: "Manutenções", anual: 40000, media: 3333.33 },
+    ]);
+    expect(pv?.totalDespesasAno).toBe(190000);
+  });
 });
 
 describe("aplicarConsideracoesAoExercicio", () => {

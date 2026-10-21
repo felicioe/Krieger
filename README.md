@@ -13,15 +13,16 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Publicação, validação e rollback](docs/PUBLICACAO.md)
 - [Decisões duráveis](docs/DECISOES.md)
 - [Validação de PDF](docs/VALIDACAO-PDF.md)
-- [Auditoria Impeccable da produção — 21/10/2026](docs/auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md)
+- [Auditoria Impeccable e revisão das pendências](docs/auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md)
 - [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
 Os fontes React estão em `frontend/` (PRs #21/#23), sem lógica duplicada — os
 20 arquivos de `frontend/src/domain/` e os 2 de `frontend/src/lib/` (format.ts,
 id.ts) são re-exports de uma linha pra `domain/`/`lib/` da raiz (PR #41).
-O frontend deve ser construído antes de `npm run package:hostinger`, que apenas
-empacota a saída junto do backend PHP. O CI ainda precisa dessa etapa (#49).
+O pacote (`npm run package:hostinger`) empacota o build desse frontend (já
+compilado antes, `cd frontend && npm run build`) junto com o backend PHP — ver
+`## Publicação` abaixo.
 
 ## Arquivos que vão para o servidor
 `index.html`, `assets/` e `favicon.png` (build de `frontend/`), `branding/`, `.htaccess`,
@@ -37,10 +38,9 @@ o commit aprovado dessa branch e registrar seu SHA. O pacote abaixo é uma entra
 para a integração de publicação, não uma instrução de upload manual como rotina.
 
 Confirmado na #19: site existente e conector compatível com Git/PHP. A Hostinger
-tem auto-deploy ativo para `deploy-hostinger`, derivada de um pacote da main.
-Em 21/10/2026 o React foi confirmado no ar; ver auditoria acima. Não apontar a
-árvore crua de main para public_html. Preservar configuração/dados e registrar
-main → artefato → commit da branch de deploy. O workflow não executa deploy.
+tem auto-deploy para `deploy-hostinger`, cuja raiz recebe o pacote gerado de um
+SHA de `main`. Não publicar a árvore crua de main. O workflow gera artefato sem
+fazer deploy. Configuração real fora da pasta publicada; ver PUBLICACAO.md.
 
 Para preparar os arquivos já compilados, com Node 22+:
 
@@ -49,27 +49,32 @@ npm ci
 npm test
 npm run typecheck
 npm run docs:check
+cd frontend && npm ci && npm run build && cd ..
 npm run package:hostinger
 ```
 
-**Pré-requisito antes do último comando:** construir `frontend/` para gerar
-`.output/public`. A #49 deve definir instalação/lock e adicionar esse build ao CI.
-Não usar `npm ci` nessa pasta enquanto não houver lock npm; a árvore auditada tem
-bun.lock, sem package-lock.json. O build anterior foi registrado no PR #39 com
-`npm install && npm run build`; isso não substitui o fluxo reproduzível pendente.
-O empacotador recusa gerar saída sem o index do frontend.
+`npm run package:hostinger` exige que `frontend/.output/public/index.html` já exista
+(passo `cd frontend && npm run build` acima) — ele recusa gerar o pacote sem isso, pra
+não publicar um pacote velho escondendo uma falha de build.
 
 O conector/API deve publicar o **conteúdo** de `dist/hostinger/` em `public_html`, incluindo `.htaccess`.
 O pacote inclui também `branding/`. Não envie o repositório inteiro.
-`config.php` e `schema.sql` não entram no pacote: mantenha a configuração existente
-no servidor e use o schema apenas na administração do banco.
+`config.php`/`krieger-config.php` e `schema.sql` não entram no pacote: mantenha a
+configuração existente no servidor e use o schema apenas na administração do banco.
 
-O GitHub Actions valida testes, TypeScript e sintaxe PHP. Para disponibilizar o
-artefato `krieger-hostinger`, ainda precisa do build frontend antes de empacotar
-(#49); não registrar como aprovado se essa etapa falhar. Sem credenciais no artefato.
+O GitHub Actions valida testes, TypeScript e sintaxe PHP, compila `frontend/` e
+empacota, disponibilizando o artefato `krieger-hostinger` — sem credenciais e
+sem publicar automaticamente.
 
 1. Publique pelo conector/API os arquivos acima na **raiz** do `public_html` do domínio, a partir do commit aprovado em `main`.
-2. Copie `config.example.php` para `config.php` e preencha as credenciais do MySQL (hPanel > Bancos de dados).
+2. **Uma única vez**, copie `config.example.php` para `krieger-config.php` e preencha as
+   credenciais do MySQL (hPanel > Bancos de dados) — mas **fora** da pasta publicada do
+   site: dois níveis acima dela (ex.: se o site fica em
+   `.../public_html/krieger`, o arquivo vai em `.../krieger-config.php`, ao lado de
+   `public_html`). O auto-deploy do Hostinger apaga tudo que não está no Git dentro da
+   pasta publicada a cada push; um arquivo fora dela sobrevive a qualquer deploy futuro,
+   então essa cópia nunca mais precisa ser refeita. Ver `lib_auth.php` (`caminho_config()`)
+   para os caminhos aceitos.
 3. Na primeira instalação, aplique `schema.sql` no banco. Ele usa CREATE TABLE IF NOT EXISTS e não migra tabelas existentes; alterações futuras exigem plano de migração.
 4. Crie o primeiro administrador (veja abaixo) e entre pela tela de login do próprio sistema (`/#/login`).
 
@@ -80,7 +85,7 @@ artefato `krieger-hostinger`, ainda precisa do build frontend antes de empacotar
 - Primeiro administrador (rode no phpMyAdmin, aba SQL, trocando o hash por um gerado com `password_hash`):
   `INSERT INTO kr_usuarios (id, login, nome, senha_hash, perfil, ativo, trocar_senha, criado_em) VALUES ('adm00001','admin','Administrador','<HASH>','admin',1,1,NOW());`
 
-`config.php` real não vai para o Git (`.gitignore`).
+`krieger-config.php`/`config.local.php` reais não vão para o Git (`.gitignore`).
 
 Depois da publicação, confira login/logout, permissões de usuário, carregamento
 dos assets e worker PDF, gravação de dados e importação. Faça backup do banco e

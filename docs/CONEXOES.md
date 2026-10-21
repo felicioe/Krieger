@@ -42,8 +42,10 @@ Operação suportada para alinhar com main:
 
 Parâmetros de hosting_deploy; static também cobre PHP. A operação publica agora
 e a cada push posterior. O schema adverte sobrescrita de conteúdo: não é somente
-trocar uma preferência. Antes de executar: confirmar domínio/conta, backup
-recuperável e preservação de config.php/arquivos locais. Seguir confirmações da
+trocar uma preferência. Antes de executar: confirmar domínio/conta e backup
+recuperável. Desde 21/10/2026 a configuração real (`krieger-config.php`) fica
+fora da pasta publicada, então não é mais apagada pelo deploy — ver
+`docs/PUBLICACAO.md` (`## Incidente de config.php`). Seguir confirmações da
 skill/conector da sessão. Não contornar hosting_deploy com operações de baixo nível.
 
 Depois, conferir main/is_enabled em hosting_get-deployment e executar as

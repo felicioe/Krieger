@@ -18,57 +18,67 @@ Nenhum webhook ou ruleset foi retornado na inspeção autenticada do GitHub.
 Isso não exclui integrações instaladas fora de webhooks. A auditoria posterior
 confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
-Atualização de 21/10/2026: domínio krieger.therafinancial.com.br, PHP/MySQL e
-auto-deploy ativo para a branch curada `deploy-hostinger`. O React foi confirmado
-no ar, com entrada index-D_dJBo1m.js. Pacote 4d3bfd1 declara origem main 5709184;
-a main auditada já está em 960d6fc. Ver [reauditoria](auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md).
-Esta auditoria não executou deploy. #19 acompanha preservação/backup e rollback;
-#49 acompanha CI e vínculo reproduzível entre fonte, pacote e publicação.
+Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
+`deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
+referência Git observada: 205d3e0, cuja mensagem declara origem main 59ba487.
+O runtime observado index-Doxn9lA8.js coincide com seu index.html; isso não é
+atestado criptográfico do artefato nem comprova todos os fluxos da aplicação.
 
-Não há token Hostinger nem workflow de deploy neste repo; a automação existente
-é mantida pela Hostinger e aponta para deploy-hostinger, não main diretamente.
-Não trocar branch/repositório como atalho: essa operação já apagou config.php
-fora do Git. Seguir o incidente registrado em DECISOES.md.
-Seguir as regras e confirmações do conector disponível na sessão de publicação.
+O CI instala/compila frontend antes do pacote desde o PR #51. Não há workflow
+de deploy neste repositório. Preservar configuração fora da pasta publicada e
+seguir as regras do conector na sessão de publicação. Refs #19/#49.
 
 ## Preparar uma versão
 
 1. Buscar `origin/main` e selecionar o SHA aprovado; conferir árvore limpa.
-2. Executar instalação, testes, typecheck, docs:check e lint PHP. Construir frontend
-   antes do empacotamento. A instalação/lock e etapa CI dessa árvore estão pendentes
-   na #49; o empacotador não constrói o frontend sozinho.
+2. Executar instalação, testes, typecheck, docs:check, lint PHP e empacotamento.
 3. Usar o artefato do CI desse mesmo SHA ou pacote produzido a partir dele.
 4. Confirmar que `index.html` está na raiz do pacote e `.htaccess` está incluído.
 
-`npm run package:hostinger` escreve `dist/hostinger/` e inclui:
-`index.html`, `assets/`, `favicon.png`, `robots.txt` do build frontend e
-`branding/`, `.htaccess`, `api.php`, `auth.php`, `lib_auth.php` da raiz.
-
-Ficam fora: config.php, schema.sql, fontes, testes, dependências e documentação.
-O comando não recompila React. Registrar o SHA da fonte e do artefato; o artefato
-de PR é para revisão. Publicar exige versão aprovada em main e atualização curada
-de deploy-hostinger, com o SHA dessa atualização registrado junto à validação.
+Antes do pacote, executar `npm ci && npm run build` em `frontend/` (npm e
+package-lock.json versionado). `npm run package:hostinger` escreve
+`dist/hostinger/` com index.html, assets/, favicon.png e robots.txt do build,
+branding/, .htaccess, api.php, auth.php e lib_auth.php da raiz.
+Ficam fora configuração real, schema, fontes, testes, dependências e docs.
+O empacotador não compila o React nem aplica migrações.
+O artefato de um PR é para revisão; publicar exige versão correspondente em `main`.
 
 ## Executar via conector/API
 
 1. Listar o estado atual da Hostinger e resolver conta/domínio pelos dados retornados.
 2. Registrar SHA, ambiente, destino e plano de rollback em issue de publicação.
-3. Conferir backup recuperável dos arquivos e banco. Preservar `config.php` e dados.
+3. Conferir backup recuperável dos arquivos e banco. A configuração real
+   (`krieger-config.php`) fica fora da pasta publicada do site desde 21/10/2026
+   (ver `## Incidente de config.php` abaixo) — não é mais apagada pelo deploy,
+   mas confira mesmo assim depois de qualquer publicação.
 4. Se a operação substituir todo o diretório ou remover arquivos fora do pacote,
    não prosseguir sem estratégia segura para a configuração existente.
 5. Publicar a versão selecionada pelo mecanismo suportado e acompanhar até concluir.
 6. Validar comportamento e registrar identificação/log não sensível do deploy.
 
-Em primeira instalação, criar config.php no servidor a partir do exemplo, aplicar
-schema.sql por administração do banco e criar administrador conforme README.
+Em primeira instalação, criar `krieger-config.php` no servidor a partir do exemplo
+(fora da pasta publicada — ver README e `## Incidente de config.php` abaixo),
+aplicar schema.sql por administração do banco e criar administrador conforme README.
 Não incluir configuração real no artefato para contornar limites do conector.
 Atualizações de schema exigem plano próprio; o empacotador nunca as executa.
+
+## Incidente de config.php (resolvido em 21/10/2026)
+
+O auto-deploy do Hostinger apaga, a cada push na branch configurada, qualquer
+arquivo dentro da pasta publicada que não esteja no Git — isso derrubou o site
+duas vezes (config.php sumiu), exigindo recriação manual (ver `docs/DECISOES.md`).
+Correção: `lib_auth.php` (`caminho_config()`) agora busca a configuração real em
+`krieger-config.php`, **fora** da pasta publicada do site (dois níveis acima), que
+nenhum deploy desta aplicação toca — só precisa ser criado uma vez. `config.php`
+dentro da pasta publicada não é mais lido por nada; pode ficar ou ser removido,
+tanto faz.
 
 ## Validação e rollback
 
 - Página correta e assets carregam; worker PDF tem MIME JavaScript.
 - Login/logout, troca de senha e permissões admin/user funcionam.
-- API sem sessão nega acesso; config.php e lib_auth.php não são servidos diretamente.
+- API sem sessão nega acesso; config.php, krieger-config.php (fica fora da pasta
+  publicada) e lib_auth.php não são servidos diretamente.
 - Cadastro de teste pode ser salvo e recarregado sem erro.
 - Importação segue `VALIDACAO-PDF.md` no ambiente apropriado.
 
