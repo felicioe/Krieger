@@ -71,3 +71,12 @@ permanece de autoria exclusiva do Lovable. Validação local: 122 testes raiz +
 Hostinger ainda não comprovadas neste registro; conferir comentários #19/#46/#56.
 #32 mantém limites de checkboxes/switches, toque físico e zoom; #33 não tem medição
 real de Core Web Vitals. Não encerrar essas pendências sem evidência adicional.
+
+## Publicado: correções da auditoria
+
+PR #56 integrado; main 4aec83a publicada via artefato CI 39686204575 e
+branch deploy-hostinger d0284be. HTML/JS/CSS confirmados no ar. Ver
+[registro de publicação e limites](auditorias/PUBLICACAO-CORRECOES-2026-10-21.md).
+Revisão autenticada aguarda login no site publicado; não tratar como critérios
+encerrados. #32/#33 mantêm pendências explícitas. Nenhuma autoria de frontend
+pelo Codex nem mudança em banco/configuração foi feita.
