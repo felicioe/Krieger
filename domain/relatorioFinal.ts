@@ -2,6 +2,12 @@ import { formatBRL } from "../lib/format";
 import { centavos } from "./demonstrativo";
 import { normalizarMensal, competenciaMensal, ordemCompetencia, rotuloCompetencia } from "./mensal";
 import { calcularPrevisao, expressaoDeducao, type ResultadoPrevisao } from "./previsao";
+import {
+  calcularPrevisaoSugerida,
+  calcularPrevisaoSugeridaPorUnidade,
+  type ResultadoPrevisaoSugerida,
+  type ResultadoPrevisaoSugeridaPorUnidade,
+} from "./previsaoSugerida";
 import { compararPrevistoRealizado, type ResultadoComparativo } from "./previstoRealizado";
 import type { Condominio, ConfigEscritorio, Demonstrativo, Exercicio, Mensal } from "./types";
 
@@ -125,6 +131,14 @@ export interface RelatorioFinal {
   secoes: Secoes;
   demonstrativo: Demonstrativo | null;
   previsao: ResultadoPrevisao;
+  /**
+   * Previsão orçamentária sugerida (folha do PDF do Systemar, menu próprio — ver
+   * domain/previsaoSugerida.ts). `null` quando o exercício não tem essa folha (não veio do PDF, ou
+   * o PDF não trazia essa página) — nesse caso a seção "Previsão orçamentária" do relatório mostra
+   * só `previsao` (cálculo a partir do demonstrativo do próprio exercício).
+   */
+  previsaoSugerida: ResultadoPrevisaoSugerida | null;
+  previsaoSugeridaPorUnidade: ResultadoPrevisaoSugeridaPorUnidade | null;
   comparativo: ResultadoComparativo;
   mensais: Mensal[];
   inadimplencia: ReturnType<typeof inadimplencia>;
@@ -146,6 +160,10 @@ export function montarRelatorioFinal(entrada: {
   const secoes = secoesIncluidas(e);
   const unidades = condominio?.unidades ?? null;
   const previsao = calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, unidades);
+  const previsaoSugerida = e.previsaoSugerida ? calcularPrevisaoSugerida(e.previsaoSugerida) : null;
+  const previsaoSugeridaPorUnidade = previsaoSugerida
+    ? calcularPrevisaoSugeridaPorUnidade(previsaoSugerida.rateioMensalSugerido, unidades, e.prev?.fundoReservaPct ?? 0, e.arredondamento)
+    : null;
   const comparativo = compararPrevistoRealizado(e, entrada.mensais, {
     condominio,
     mesAte: e.relatorioFinal?.prAte ?? null,
@@ -230,6 +248,8 @@ export function montarRelatorioFinal(entrada: {
     secoes,
     demonstrativo: d,
     previsao,
+    previsaoSugerida,
+    previsaoSugeridaPorUnidade,
     comparativo,
     mensais,
     inadimplencia: inad,
