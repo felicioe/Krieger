@@ -170,5 +170,8 @@ try {
   }
 } catch (Throwable $e) {
   error_log('[krieger] ' . $e->getMessage());
+  if ($e instanceof PDOException && $e->getCode() === '42S02') {
+    json_erro('Tabela do banco ausente: ' . $e->getMessage() . '. Aplique schema.sql (docs/PUBLICACAO.md).', 500);
+  }
   json_erro('Erro interno. Tente novamente ou contate o administrador.', 500);
 }
