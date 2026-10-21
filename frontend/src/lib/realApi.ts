@@ -1,4 +1,4 @@
-import type { Backup, Store, Usuario, UsuarioAdmin } from "@/domain/types";
+import type { Backup, BackupRegistro, Store, Usuario, UsuarioAdmin } from "@/domain/types";
 import { ApiError, type ApiAdapter } from "./apiTypes";
 
 /**
@@ -81,6 +81,23 @@ export const realApi: ApiAdapter = {
   },
   async importar(dados: Backup, substituir: boolean) {
     return post("api.php?a=importar", { dados, substituir });
+  },
+  backup: {
+    async criar() {
+      return post<BackupRegistro>("api.php?a=backup_criar", {});
+    },
+    async listar() {
+      return lista<BackupRegistro>(await req("api.php?a=backup_listar"));
+    },
+    async baixar(id: string) {
+      return (await req<Backup>(`api.php?a=backup_baixar&id=${enc(id)}`)) ?? ({} as Backup);
+    },
+    async restaurar(id: string, substituir: boolean) {
+      return post(`api.php?a=backup_restaurar&id=${enc(id)}`, { substituir });
+    },
+    async excluir(id: string) {
+      await post(`api.php?a=backup_excluir&id=${enc(id)}`, {});
+    },
   },
   auth: {
     async eu() {

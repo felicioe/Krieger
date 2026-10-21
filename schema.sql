@@ -69,3 +69,14 @@ CREATE TABLE IF NOT EXISTS kr_atas (
   dados LONGTEXT NOT NULL,
   atualizado_em DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Backups gerados no servidor (histórico, com o usuário que gerou cada um). Guarda uma cópia
+-- completa dos dados (mesmo formato do backup exportado em arquivo); o download pra mídia
+-- externa (a=backup_baixar) lê daqui, não precisa reexportar do zero.
+CREATE TABLE IF NOT EXISTS kr_backups (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  gerado_por VARCHAR(32) NOT NULL,
+  gerado_por_nome VARCHAR(120) NOT NULL,
+  criado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

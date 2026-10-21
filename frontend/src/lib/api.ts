@@ -55,6 +55,13 @@ export const api = {
   excluir: (store: Store, id: string) => guarda(() => impl().excluir(store, id)),
   exportar: () => guarda(() => impl().exportar()),
   importar: (dados: Backup, substituir: boolean) => guarda(() => impl().importar(dados, substituir)),
+  backup: {
+    criar: () => guarda(() => impl().backup.criar()),
+    listar: () => guarda(() => impl().backup.listar()),
+    baixar: (id: string) => guarda(() => impl().backup.baixar(id)),
+    restaurar: (id: string, substituir: boolean) => guarda(() => impl().backup.restaurar(id, substituir)),
+    excluir: (id: string) => guarda(() => impl().backup.excluir(id)),
+  },
   auth: {
     eu: () => impl().auth.eu(),
     /** 401 aqui significa credenciais inválidas: não redireciona. */

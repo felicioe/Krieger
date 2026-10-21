@@ -1,4 +1,4 @@
-import type { Backup, Store, Usuario, UsuarioAdmin, UsuarioSalvar } from "@/domain/types";
+import type { Backup, BackupRegistro, Store, Usuario, UsuarioAdmin, UsuarioSalvar } from "@/domain/types";
 
 /** Erro devolvido pela API ({erro: "mensagem"} + status HTTP). */
 export class ApiError extends Error {
@@ -20,6 +20,16 @@ export interface ApiAdapter {
   excluir(store: Store, id: string): Promise<void>;
   exportar(): Promise<Backup>;
   importar(dados: Backup, substituir: boolean): Promise<unknown>;
+  /** Backups salvos no servidor (histórico, vinculado a quem gerou) — além do arquivo baixado na hora. */
+  backup: {
+    /** Gera um novo backup no servidor com os dados atuais, vinculado ao usuário logado. */
+    criar(): Promise<BackupRegistro>;
+    listar(): Promise<BackupRegistro[]>;
+    /** Conteúdo completo, pra baixar como arquivo (mídia externa) ou conferir antes de restaurar. */
+    baixar(id: string): Promise<Backup>;
+    restaurar(id: string, substituir: boolean): Promise<unknown>;
+    excluir(id: string): Promise<void>;
+  };
   auth: {
     /** null quando não autenticado (401). */
     eu(): Promise<Usuario | null>;

@@ -3,7 +3,7 @@
  * Guarda tudo no localStorage e imita as regras e mensagens da API PHP.
  * Usuário semente: admin / admin123 (perfil admin).
  */
-import { STORES, type Assembleia, type Backup, type Condominio, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
+import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
 import { condominioPadrao, normalizarCondominio } from "@/domain/condominio";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
@@ -23,6 +23,7 @@ const CHAVE_EXEMPLO_MENSAIS = "krieger-mock-exemplo-mensais-v2";
 const CHAVE_EXEMPLO_EDITAIS = "krieger-mock-exemplo-editais-v1";
 const CHAVE_EXEMPLO_ATAS = "krieger-mock-exemplo-atas-v1";
 const CHAVE_EXEMPLO_MODELO_V2 = "krieger-mock-exemplo-modelo-v2";
+const CHAVE_BACKUPS = "krieger-mock-backups-v1";
 const MAX_TENTATIVAS = 5;
 const BLOQUEIO_MIN = 15;
 
@@ -433,6 +434,10 @@ function dados(): Dados {
 }
 const usuarios = () => ler<UsuarioMock[]>(CHAVE_USUARIOS, usuariosSemente);
 
+type BackupRegistroMock = BackupRegistro & { dados: Backup };
+const backups = () => ler<BackupRegistroMock[]>(CHAVE_BACKUPS, () => []);
+const semDados = ({ dados: _dados, ...r }: BackupRegistroMock): BackupRegistro => r;
+
 function publico(u: UsuarioMock): UsuarioAdmin {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { senha, ...resto } = u;
@@ -518,6 +523,51 @@ export const mockApi: ApiAdapter = {
     }
     gravar(CHAVE_DADOS, d);
     return { ok: true, total };
+  },
+  backup: {
+    async criar() {
+      await espera(200);
+      const eu = sessao();
+      const dadosAtuais = { ...clone(dados()), _exportadoEm: new Date().toISOString(), _versao: 1 } as Backup;
+      const reg: BackupRegistroMock = {
+        id: novoId(),
+        geradoPorNome: eu.nome,
+        criadoEm: new Date().toISOString(),
+        tamanhoBytes: new Blob([JSON.stringify(dadosAtuais)]).size,
+        dados: dadosAtuais,
+      };
+      const lista = backups();
+      lista.unshift(reg);
+      gravar(CHAVE_BACKUPS, lista);
+      return semDados(reg);
+    },
+    async listar() {
+      await espera();
+      sessao();
+      return backups().map(semDados);
+    },
+    async baixar(id: string) {
+      await espera();
+      sessao();
+      const r = backups().find((x) => x.id === id);
+      if (!r) throw new ApiError("Backup não encontrado.", 404);
+      return clone(r.dados);
+    },
+    async restaurar(id: string, substituir: boolean) {
+      await espera(300);
+      exigirAdmin();
+      const r = backups().find((x) => x.id === id);
+      if (!r) throw new ApiError("Backup não encontrado.", 404);
+      return mockApi.importar(r.dados, substituir);
+    },
+    async excluir(id: string) {
+      await espera();
+      exigirAdmin();
+      gravar(
+        CHAVE_BACKUPS,
+        backups().filter((x) => x.id !== id),
+      );
+    },
   },
   auth: {
     async eu() {
