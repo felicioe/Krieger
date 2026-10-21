@@ -39,3 +39,15 @@ a partir de `main`, apagando a branch (local e remota) depois do merge — uma d
 se estiver apagando várias, o classificador bloqueia exclusões em lote/rápidas demais.
 Atualizar este snapshot quando uma limitação estrutural for resolvida e registrar
 evidências na issue correspondente. Nunca depender apenas de mensagens de chat.
+
+## Revisão das pendências da auditoria — 21/10/2026
+
+Main revisada 59ba487; deploy-hostinger 205d3e0 declara essa origem, e o runtime
+observado index-Doxn9lA8.js coincide com seu index.html. PR #51 corrigiu o build
+no CI (run 39634221490 aprovado). #49 permanece parcialmente pendente pela
+rastreabilidade completa do artefato/publicação. #30/#31/#32/#47/#48 persistem
+na produção; #33 exige medição. Ver [relatório e adendo de revisão](auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md).
+As referências anteriores de deploy e estado do banco são snapshots históricos,
+não uma revalidação do banco nesta revisão. A configuração real agora é buscada
+fora da pasta publicada conforme PUBLICACAO.md; não voltar ao procedimento
+antigo de manter credenciais dentro do diretório sobrescrito.

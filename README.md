@@ -13,6 +13,7 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Publicação, validação e rollback](docs/PUBLICACAO.md)
 - [Decisões duráveis](docs/DECISOES.md)
 - [Validação de PDF](docs/VALIDACAO-PDF.md)
+- [Auditoria Impeccable e revisão das pendências](docs/auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md)
 - [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
@@ -37,8 +38,9 @@ o commit aprovado dessa branch e registrar seu SHA. O pacote abaixo é uma entra
 para a integração de publicação, não uma instrução de upload manual como rotina.
 
 Confirmado na #19: site existente e conector compatível com Git/PHP. A Hostinger
-tem auto-deploy ativo para a branch antiga; falta alinhar com main, preservando
-configuração/dados. Este workflow gera artefato, sem fazer deploy.
+tem auto-deploy para `deploy-hostinger`, cuja raiz recebe o pacote gerado de um
+SHA de `main`. Não publicar a árvore crua de main. O workflow gera artefato sem
+fazer deploy. Configuração real fora da pasta publicada; ver PUBLICACAO.md.
 
 Para preparar os arquivos já compilados, com Node 22+:
 

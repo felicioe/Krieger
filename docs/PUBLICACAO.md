@@ -18,15 +18,15 @@ Nenhum webhook ou ruleset foi retornado na inspeção autenticada do GitHub.
 Isso não exclui integrações instaladas fora de webhooks. A auditoria posterior
 confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
-Confirmados: domínio krieger.therafinancial.com.br, PHP/MySQL, config.php existente
-e auto-deploy Git ativo para a branch antiga claude/youthful-pascal-lkmbs7.
-O conector suporta main e PHP via hosting_deploy. Pendente na #19: backup,
-preservação de configuração/arquivos locais, confirmação do destino, alinhamento
-da branch e validação/rollback. Nenhum deploy foi executado nesta auditoria.
+Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
+`deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
+referência Git observada: 205d3e0, cuja mensagem declara origem main 59ba487.
+O runtime observado index-Doxn9lA8.js coincide com seu index.html; isso não é
+atestado criptográfico do artefato nem comprova todos os fluxos da aplicação.
 
-Não há token Hostinger nem workflow de deploy neste repo; a automação existente
-é mantida pela Hostinger e ainda aponta para a branch antiga.
-Seguir as regras e confirmações do conector disponível na sessão de publicação.
+O CI instala/compila frontend antes do pacote desde o PR #51. Não há workflow
+de deploy neste repositório. Preservar configuração fora da pasta publicada e
+seguir as regras do conector na sessão de publicação. Refs #19/#49.
 
 ## Preparar uma versão
 
@@ -35,13 +35,12 @@ Seguir as regras e confirmações do conector disponível na sessão de publica�
 3. Usar o artefato do CI desse mesmo SHA ou pacote produzido a partir dele.
 4. Confirmar que `index.html` está na raiz do pacote e `.htaccess` está incluído.
 
-`npm run package:hostinger` escreve `dist/hostinger/` e inclui:
-`index.html`, `assets/`, `branding/`, `favicon.svg`, `icons.svg`, `.htaccess`,
-`api.php`, `auth.php`, `lib_auth.php`, `login.html`, `usuarios.html`,
-`auth-guard.js` e `acesso.css`.
-
-Ficam fora: config.php/krieger-config.php, schema.sql, fontes, testes, dependências e documentação.
-O comando não recompila React e não comprova a origem dos bundles (#16).
+Antes do pacote, executar `npm ci && npm run build` em `frontend/` (npm e
+package-lock.json versionado). `npm run package:hostinger` escreve
+`dist/hostinger/` com index.html, assets/, favicon.png e robots.txt do build,
+branding/, .htaccess, api.php, auth.php e lib_auth.php da raiz.
+Ficam fora configuração real, schema, fontes, testes, dependências e docs.
+O empacotador não compila o React nem aplica migrações.
 O artefato de um PR é para revisão; publicar exige versão correspondente em `main`.
 
 ## Executar via conector/API
