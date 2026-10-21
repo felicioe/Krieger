@@ -236,5 +236,9 @@ try {
   }
 } catch (Throwable $e) {
   error_log('[krieger] ' . $e->getMessage());
+  // DIAGNOSTICO TEMPORARIO: grava em arquivo local (bloqueado pelo .htaccess, nunca
+  // devolvido ao cliente) so para achar a causa do Erro interno no Backup. Remover
+  // depois de diagnosticado.
+  @file_put_contents(__DIR__ . '/krieger-debug.log', date('c') . ' ' . $e->getMessage() . "\n", FILE_APPEND);
   erro('Erro interno. Tente novamente ou contate o administrador.', 500);
 }
