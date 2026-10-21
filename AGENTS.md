@@ -18,7 +18,7 @@
 - Regras de negócio em `domain/` (TypeScript sem React); formatação compartilhada em `lib/`.
 - Não editar bundles minificados em `assets/` para implementar funcionalidades. Recuperar/recompilar os fontes (issue #16).
 - Não criar um frontend paralelo, novo backend ou migrar banco sem justificar a decisão na issue.
-- Não versionar `config.php`, tokens, backups ou PDFs reais. Usar fixtures fictícias/anonimizadas.
+- Não versionar `config.php`/`krieger-config.php`/`config.local.php`, tokens, backups ou PDFs reais. Usar fixtures fictícias/anonimizadas.
 - Não apagar branches antigas enquanto a origem dos fontes não estiver esclarecida.
 - Não encerrar issues com critérios pendentes; registrar explicitamente o que falta.
 
