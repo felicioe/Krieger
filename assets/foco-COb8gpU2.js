@@ -1,1 +1,0 @@
-var e=`conteudo`;function t(t){t.catch(()=>void 0).then(()=>new Promise(t=>requestAnimationFrame(()=>{let n=document.activeElement;(!n||n===document.body||!n.isConnected)&&document.getElementById(e)?.focus({preventScroll:!0}),t()})))}export{t as n,e as t};
