@@ -60,8 +60,17 @@ function confirmar_importacao(PDO $pdo, array $pedido): array {
     // Nunca sobrescrever um relatório já existente por um id fornecido pelo cliente.
     if ($ler($destino, $registroId)) throw new RuntimeException('Identificador de relatório já utilizado.', 409);
     $linhas = $pdo->query('SELECT dados FROM kr_' . $destino)->fetchAll(PDO::FETCH_COLUMN);
-    $periodo = static fn(array $r) => substr((string)($r['demonstrativo']['periodo']['fim'] ?? ''), 3);
-    if ($destino === 'exercicios' && (!is_numeric($registro['ano'] ?? null) || (int)$registro['ano'] < 1900 || (int)$registro['ano'] > 2200)) throw new InvalidArgumentException('Ano do exercício inválido.');
+    $periodo = static function (array $r): string {
+      foreach (['fim', 'ini'] as $campo) {
+        $data = trim((string)($r['demonstrativo']['periodo'][$campo] ?? ''));
+        if (preg_match('/^(?:[0-9]{1,2}\/)?([0-9]{1,2})\/([0-9]{4})$/', $data, $m)
+          && (int)$m[1] >= 1 && (int)$m[1] <= 12 && (int)$m[2] >= 1900 && (int)$m[2] <= 2999) {
+          return sprintf('%02d/%s', (int)$m[1], $m[2]);
+        }
+      }
+      return '';
+    };
+    if ($destino === 'exercicios' && (!preg_match('/^[0-9]{4}$/', (string)($registro['ano'] ?? '')) || (int)$registro['ano'] < 1900 || (int)$registro['ano'] > 2999)) throw new InvalidArgumentException('Ano do exercício inválido.');
     if ($destino === 'mensais' && !preg_match('/^(0[1-9]|1[0-2])\/[0-9]{4}$/', $periodo($registro))) throw new InvalidArgumentException('Competência mensal inválida.');
     foreach ($linhas as $json) {
       $outro = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
