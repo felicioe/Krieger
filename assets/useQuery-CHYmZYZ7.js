@@ -1,1 +1,0 @@
-import{c as e,s as t}from"./queries-CtzZKt9P.js";function n(n,r){return t(n,e,r)}export{n as t};
