@@ -7,6 +7,7 @@ import {
   anoDoRelatorio,
   camposFaltando,
   colunaPadrao,
+  condominiosParecidos,
   demonstrativoDoRelatorio,
   divergenciasImportacao,
   encontrarCondominio,
@@ -264,6 +265,27 @@ describe("condomínio do relatório", () => {
     // Evita "corrigir" pro condomínio errado quando o PDF trouxe um código/CNPJ que só não existe
     // no cadastro ainda — nesse caso é melhor ir pro staging de qualquer jeito.
     expect(encontrarCondominio(condos, { codigo: "999", cnpj: null, nome: "Urban Classic" })).toBeNull();
+  });
+
+  it("sugere o condomínio parecido quando não houve correspondência exata (nome com palavra a mais)", () => {
+    // Sem código/CNPJ bater, encontrarCondominio devolveria null; condominiosParecidos dá a pista
+    // pro usuário antes de tratar como cadastro novo, em vez de arriscar duplicar. "Residencial" é
+    // único ao nome do PDF, então bate 2 de 3 palavras (urban, classic) com o cadastro "Urban Classic".
+    const parecidos = condominiosParecidos(condos, { nome: "Residencial Urban Classic" });
+    expect(parecidos).toEqual([{ condominio: condos[2], pontuacao: 2 / 3 }]);
+  });
+
+  it("não sugere nada quando o nome não tem palavra relevante em comum com nenhum cadastro", () => {
+    expect(condominiosParecidos(condos, { nome: "Edifício Completamente Diferente" })).toEqual([]);
+  });
+
+  it("ordena do mais parecido pro menos parecido e respeita o limiar", () => {
+    const base = [
+      { id: "a", codigo: "", cnpj: "", nome: "Residencial Jardim das Palmeiras", nomeRelatorio: "" },
+      { id: "b", codigo: "", cnpj: "", nome: "Jardim das Flores", nomeRelatorio: "" },
+    ];
+    const parecidos = condominiosParecidos(base, { nome: "Jardim das Palmeiras" });
+    expect(parecidos.map((p) => p.condominio.id)).toEqual(["a"]);
   });
 
   it("sem correspondência, vai para o staging como pendente", () => {
