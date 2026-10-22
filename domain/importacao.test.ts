@@ -8,10 +8,12 @@ import {
   camposFaltando,
   colunaPadrao,
   demonstrativoDoRelatorio,
+  divergenciasImportacao,
   encontrarCondominio,
   novaImportacao,
   resumoConferencia,
 } from "@/domain/importacao";
+import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
 
 /** Linha com rótulo recuado e valores alinhados à direita nas colunas indicadas (posição do último caractere). */
 function linha(rotulo: string, recuo: number, valores: (string | null)[], fins: number[]): string {
@@ -311,5 +313,57 @@ describe("condomínio do relatório", () => {
     const imp = novaImportacao(rel, "x.pdf", "mensais", cf, pv);
     expect(imp.consideracoes).toBe(cf);
     expect(imp.previsaoSugerida).toBe(pv);
+  });
+});
+
+describe("auditoria: divergência entre o importado e o gravado", () => {
+  const base = recalcularDemonstrativo({
+    ...demonstrativoVazio("Estrelas do Mar"),
+    saldoAnterior: { contas: [{ nome: "Banco", valor: 10000 }], total: 0 },
+    receitas: { itens: [{ nome: "Taxa condominial", valor: 20000 }], subtotal: 0, totalComSaldo: 0 },
+    despesas: { grupos: [{ nome: "Despesas", itens: [{ nome: "Limpeza", valor: 8000 }] }], subtotal: 0, saldoRestante: 0 },
+    saldoAtual: { contas: [{ nome: "Banco", valor: 22000 }], total: 0 },
+  });
+
+  it("sem edição após a importação, não há divergência", () => {
+    expect(divergenciasImportacao(base, base)).toEqual([]);
+  });
+
+  it("aponta cada total que mudou em relação ao importado, com a diferença percentual", () => {
+    const editado = recalcularDemonstrativo({
+      ...base,
+      despesas: { ...base.despesas, grupos: [{ nome: "Despesas", itens: [{ nome: "Limpeza", valor: 1120000 }] }] },
+    });
+    const divergencias = divergenciasImportacao(base, editado);
+    expect(divergencias).toEqual([
+      { campo: "despesas", rotulo: "Despesas", importado: 8000, atual: 1120000, diferencaPct: 13900 },
+      // saldoRestante muda junto (despesas entram na conta), então "saldoAtual" não diverge aqui —
+      // só os 4 totais top-level de demonstrativoDoRelatorio são comparados, não o saldo calculado.
+    ]);
+  });
+
+  it("edição que corrige de volta o valor importado some da lista de divergências", () => {
+    const comDigitoAMais = recalcularDemonstrativo({
+      ...base,
+      receitas: { ...base.receitas, itens: [{ nome: "Taxa condominial", valor: 200000 }] },
+    });
+    expect(divergenciasImportacao(base, comDigitoAMais)).toEqual([
+      { campo: "receitas", rotulo: "Receitas", importado: 20000, atual: 200000, diferencaPct: 900 },
+    ]);
+    const corrigido = recalcularDemonstrativo({
+      ...comDigitoAMais,
+      receitas: { ...comDigitoAMais.receitas, itens: [{ nome: "Taxa condominial", valor: 20000 }] },
+    });
+    expect(divergenciasImportacao(base, corrigido)).toEqual([]);
+  });
+
+  it("quando o importado é zero, a diferença percentual fica indefinida (null) em vez de Infinity", () => {
+    const semReceita = recalcularDemonstrativo({ ...base, receitas: { itens: [], subtotal: 0, totalComSaldo: 0 } });
+    const comReceitaNova = recalcularDemonstrativo({
+      ...semReceita,
+      receitas: { itens: [{ nome: "Receita extra", valor: 5000 }], subtotal: 0, totalComSaldo: 0 },
+    });
+    const divergencias = divergenciasImportacao(semReceita, comReceitaNova);
+    expect(divergencias).toEqual([{ campo: "receitas", rotulo: "Receitas", importado: 0, atual: 5000, diferencaPct: null }]);
   });
 });
