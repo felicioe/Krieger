@@ -26,6 +26,8 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
+          npm test
+          npx tsc --noEmit
           npm run build
       - run: npm run package:hostinger
       - uses: actions/upload-artifact@v4
