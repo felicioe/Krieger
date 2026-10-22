@@ -114,3 +114,11 @@ acessibilidade), typecheck e docs:check limpos, frontend rebuilado com
 `npm ci` (pegou a dependência nova `@testing-library/user-event` que o
 Codex/Lovable adicionou) — 90 testes de frontend, typecheck limpo.
 Publicação em deploy-hostinger feita logo em seguida a este registro.
+
+## Continuidade em22/10/2026 — contraste e UX
+
+Crítica independente26/40 e auditoria sequencial foram consolidadas em
+[auditoria/continuidade](auditorias/IMPECCABLE-CRITIQUE-AUDIT-2026-10-22.md).
+Issues #59–#62 e resíduos #32/#47 foram encaminhados ao Lovable. Sincronização
+permitida, preservando reordenação acessível em execução e mudanças da Claude.
+Não presumir implementação concluída: consultar GitHub e status do Lovable.
