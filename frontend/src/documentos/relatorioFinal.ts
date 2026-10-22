@@ -4,6 +4,7 @@ import { nomeDeArquivo } from "@/lib/documento/baixar";
 import { barrasSvg, blocoGrafico, pizzaSvg } from "@/lib/documento/graficos";
 import type { Bloco, Coluna, Documento, LinhaTabela, Texto } from "@/lib/documento/tipos";
 import { legendaSituacao, marcaSituacao, pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
+import { semRealizado, textoSemRealizado } from "@/components/previsto-realizado/semRealizado";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type { ResultadoComparativo, Totais } from "@/domain/previstoRealizado";
@@ -27,6 +28,7 @@ const resumo = (linhas: LinhaTabela[]): Bloco => ({
   linhas,
 });
 const vazio = (texto: string): Bloco => ({ tipo: "paragrafo", texto, suave: true });
+const avisoSemRealizado = (c: ResultadoComparativo): Bloco => ({ tipo: "paragrafo", texto: textoSemRealizado(c), negrito: true });
 
 export async function documentoRelatorioFinal(o: {
   rel: RelatorioFinal;
@@ -140,17 +142,24 @@ export async function documentoRelatorioFinal(o: {
       resumo([
         l("Previsto anual", c.total.previstoAnual),
         l(`Previsto até ${c.mesAte.rotulo}`, c.total.previsto),
-        l(`Realizado até ${c.mesAte.rotulo}`, c.total.realizado),
-        { celulas: ["Diferença", `${formatBRL(c.total.diferenca)} (${pctTexto(c.total.pct)})`], estilo: "total" },
+        // Sem relatório no período não há realizado nem diferença a mostrar (só a mensagem abaixo).
+        ...(semRealizado(c)
+          ? []
+          : [
+              l(`Realizado até ${c.mesAte.rotulo}`, c.total.realizado),
+              { celulas: ["Diferença", `${formatBRL(c.total.diferenca)} (${pctTexto(c.total.pct)})`], estilo: "total" as const },
+            ]),
       ]),
     );
     if (c.grupos.length === 0) b.push(vazio("A previsão deste exercício não tem despesas lançadas."));
+    else if (semRealizado(c)) b.push(avisoSemRealizado(c));
     else b.push(...tabelaComparativo(rel.comparativo));
   }
 
   if (rel.secoes.analise) {
     b.push(titulo("analise", "Análise gráfica"), { tipo: "titulo", nivel: 3, texto: "Previsto × realizado por grupo" });
-    if (c.grupos.length) {
+    if (c.grupos.length && semRealizado(c)) b.push(avisoSemRealizado(c));
+    else if (c.grupos.length) {
       const grafico = barrasSvg(
         c.grupos.map((g) => g.nome || "Sem grupo"),
         [

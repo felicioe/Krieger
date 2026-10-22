@@ -1,10 +1,13 @@
 import { Fragment, type ReactNode } from "react";
 import { GraficoComparativo } from "@/components/previsto-realizado/GraficoComparativo";
 import { TabelaComparativo, pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
+import { AvisoSemRealizado } from "@/components/previsto-realizado/AvisoSemRealizado";
+import { semRealizado } from "@/components/previsto-realizado/semRealizado";
 import { GraficoPizza } from "@/components/relatorio/GraficoPizza";
 import { dataParaBR, formatBRL, formatData, formatNumeroBR } from "@/lib/format";
 import { dataVistoria } from "@/domain/painel";
 import { cn } from "@/lib/utils";
+import { RolagemTabela } from "@/components/ui/table";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
@@ -33,9 +36,9 @@ export function PreviaRelatorio({
   }
 
   return (
-    <article className="mx-auto max-w-[52rem] rounded-sm border bg-card px-6 py-8 text-sm shadow-sm sm:px-12 sm:py-12" aria-label="Prévia do relatório final">
+    <article className="@container mx-auto max-w-[52rem] break-words rounded-sm border bg-card px-6 py-8 text-sm shadow-sm sm:px-12 sm:py-12" aria-label="Prévia do relatório final">
       {rel.secoes.capa && (
-        <section className="flex min-h-[28rem] flex-col items-center justify-center border-b pb-12 text-center">
+        <section className="flex min-h-[28rem] flex-col items-center justify-center border-b pb-12 text-center [&>*]:max-w-full">
           {escritorio?.logo && <img src={escritorio.logo} alt={escritorio.nome || "Logo do escritório"} className="mb-10 max-h-20 w-auto" />}
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Prestação de contas</p>
           <h1 className="mt-3 text-2xl font-semibold text-primary">{nomeCondo}</h1>
@@ -61,7 +64,7 @@ export function PreviaRelatorio({
               <Bloco titulo="Receitas" linhas={d.receitas.itens} total={d.totais.receitas} />
               <div>
                 <h4 className="mb-1 font-semibold">Despesas</h4>
-                <table className="w-full">
+                <RolagemTabela className=""><table className="w-full">
                   <tbody>
                     {d.despesas.grupos.map((g) => {
                       const sub = g.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
@@ -81,17 +84,17 @@ export function PreviaRelatorio({
                     })}
                     <Linha nome="Total das despesas" valor={d.totais.despesas} forte />
                   </tbody>
-                </table>
+                </table></RolagemTabela>
               </div>
               <Bloco titulo="Saldo atual" linhas={d.saldoAtual.contas} total={d.totais.saldoAtual} />
-              <table className="w-full rounded-sm bg-muted/50">
+              <RolagemTabela className=""><table className="w-full rounded-sm bg-muted/50">
                 <tbody>
                   <Linha nome="Saldo anterior" valor={d.totais.saldoAnterior} />
                   <Linha nome="(+) Receitas" valor={d.totais.receitas} />
                   <Linha nome="(−) Despesas" valor={d.totais.despesas} />
                   <Linha nome="(=) Saldo atual" valor={d.totais.saldoAtual} forte />
                 </tbody>
-              </table>
+              </table></RolagemTabela>
             </div>
           )}
         </Secao>
@@ -113,7 +116,7 @@ export function PreviaRelatorio({
             <PrevisaoSugeridaPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} u={rel.previsaoSugeridaPorUnidade} />
           ) : (
             <>
-          <table className="w-full">
+          <RolagemTabela className=""><table className="w-full">
             <thead>
               <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="py-1 text-left font-semibold">{rel.previsao.modo === "detalhado" ? "Rubrica" : "Grupo"}</th>
@@ -134,11 +137,11 @@ export function PreviaRelatorio({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></RolagemTabela>
           {rel.previsao.ajustes.length > 0 && (
             <div className="mt-4">
               <h4 className="mb-1 font-semibold">Ajustes</h4>
-              <table className="w-full">
+              <RolagemTabela className=""><table className="w-full">
                 <tbody>
                   {rel.previsao.ajustes.map((a) => (
                     <Linha
@@ -148,10 +151,10 @@ export function PreviaRelatorio({
                     />
                   ))}
                 </tbody>
-              </table>
+              </table></RolagemTabela>
             </div>
           )}
-          <table className="mt-4 w-full rounded-sm bg-muted/50">
+          <RolagemTabela className="mt-4"><table className="w-full rounded-sm bg-muted/50">
             <tbody>
               <Linha nome="Base (despesas realizadas)" valor={rel.previsao.base} />
               <Linha nome="(−) Dedução" valor={rel.previsao.deducao} />
@@ -173,7 +176,7 @@ export function PreviaRelatorio({
               </tr>
               {e.rateioAprovado != null && <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />}
             </tbody>
-          </table>
+          </table></RolagemTabela>
             </>
           )}
         </Secao>
@@ -185,27 +188,41 @@ export function PreviaRelatorio({
           titulo="Previsto × Realizado"
           sub={`Previsão ${e.ano} × realizado de ${rel.comparativo.meses[0]?.rotulo} a ${rel.comparativo.mesAte.rotulo} (${contagem(rel.comparativo.relatoriosUsados, "relatório mensal", "relatórios mensais")}).`}
         >
-          <table className="mb-4 w-full rounded-sm bg-muted/50">
+          <RolagemTabela className="mb-4"><table className="w-full rounded-sm bg-muted/50">
             <tbody>
               <Linha nome="Previsto anual" valor={rel.comparativo.total.previstoAnual} />
               <Linha nome={`Previsto até ${rel.comparativo.mesAte.rotulo}`} valor={rel.comparativo.total.previsto} />
-              <Linha nome={`Realizado até ${rel.comparativo.mesAte.rotulo}`} valor={rel.comparativo.total.realizado} />
-              <tr className="font-semibold">
-                <td className="px-3 py-1">Diferença</td>
-                <td className="num px-3 py-1 text-right">
-                  {formatBRL(rel.comparativo.total.diferenca)} ({pctTexto(rel.comparativo.total.pct)})
-                </td>
-              </tr>
+              {!semRealizado(rel.comparativo) && (
+                <>
+                  <Linha nome={`Realizado até ${rel.comparativo.mesAte.rotulo}`} valor={rel.comparativo.total.realizado} />
+                  <tr className="font-semibold">
+                    <td className="px-3 py-1">Diferença</td>
+                    <td className="num px-3 py-1 text-right">
+                      {formatBRL(rel.comparativo.total.diferenca)} ({pctTexto(rel.comparativo.total.pct)})
+                    </td>
+                  </tr>
+                </>
+              )}
             </tbody>
-          </table>
-          <TabelaComparativo r={rel.comparativo} compacta />
+          </table></RolagemTabela>
+          {rel.comparativo.grupos.length > 0 && semRealizado(rel.comparativo) ? (
+            <AvisoSemRealizado r={rel.comparativo} />
+          ) : (
+            <TabelaComparativo r={rel.comparativo} compacta />
+          )}
         </Secao>
       )}
 
       {rel.secoes.analise && (
         <Secao n={numero("analise")} titulo="Análise gráfica">
           <h4 className="mb-2 font-semibold">Previsto × realizado por grupo</h4>
-          {rel.comparativo.grupos.length ? <GraficoComparativo r={rel.comparativo} /> : <Vazio>Sem dados para o gráfico.</Vazio>}
+          {!rel.comparativo.grupos.length ? (
+            <Vazio>Sem dados para o gráfico.</Vazio>
+          ) : semRealizado(rel.comparativo) ? (
+            <AvisoSemRealizado r={rel.comparativo} />
+          ) : (
+            <GraficoComparativo r={rel.comparativo} />
+          )}
           {e.mostrarPizza !== false && (
             <>
               <h4 className="mb-2 mt-6 font-semibold">Despesas do exercício {e.ano} por grupo</h4>
@@ -221,7 +238,7 @@ export function PreviaRelatorio({
             <Vazio>Nenhum relatório mensal no período.</Vazio>
           ) : (
             <>
-              <table className="w-full">
+              <RolagemTabela className=""><table className="w-full">
                 <thead>
                   <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
                     <th className="py-1 text-left font-semibold">Mês</th>
@@ -238,7 +255,7 @@ export function PreviaRelatorio({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></RolagemTabela>
               {rel.inadimplencia.final && (
                 <p className="mt-3 rounded-sm bg-muted/50 px-3 py-2">
                   Posição em <span className="num">{rel.inadimplencia.final.mes}</span>:{" "}
@@ -256,14 +273,14 @@ export function PreviaRelatorio({
           {rel.notas.length === 0 ? (
             <Vazio>Nenhuma nota explicativa nos relatórios mensais do período.</Vazio>
           ) : (
-            <ol className="space-y-3">
+            <ol className="@container space-y-3">
               {rel.notas.map((n, i) => (
-                <li key={i} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-2">
+                <li key={i} className="grid grid-cols-1 gap-x-2 gap-y-0.5 @min-[16rem]:grid-cols-[3.5rem_minmax(0,1fr)]">
                   <span className="num text-muted-foreground">{n.mes}</span>
-                  <div>
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="font-medium">{n.rubrica || "Nota"}</span>
-                      {n.valor !== null && <span className="num whitespace-nowrap">{formatBRL(n.valor)}</span>}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+                      <span className="min-w-0 break-words font-medium">{n.rubrica || "Nota"}</span>
+                      {n.valor !== null && <span className="num">{formatBRL(n.valor)}</span>}
                     </div>
                     {n.texto && <p className="mt-0.5 whitespace-pre-line text-muted-foreground">{n.texto}</p>}
                   </div>
@@ -319,14 +336,14 @@ function Bloco({ titulo, linhas, total }: { titulo: string; linhas: LinhaValor[]
   return (
     <div>
       <h4 className="mb-1 font-semibold">{titulo}</h4>
-      <table className="w-full">
+      <RolagemTabela className=""><table className="w-full">
         <tbody>
           {linhas.map((l, i) => (
             <Linha key={i} nome={l.nome} valor={l.valor} recuo />
           ))}
           <Linha nome={`Total ${titulo.toLowerCase()}`} valor={total} forte />
         </tbody>
-      </table>
+      </table></RolagemTabela>
     </div>
   );
 }
@@ -334,8 +351,9 @@ function Bloco({ titulo, linhas, total }: { titulo: string; linhas: LinhaValor[]
 function Item({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   return (
     // minmax(min-content,…) no valor: em 320 px o rótulo (até 14rem) é que quebra, e o valor
-    // (R$ 8.500.000,00, datas) fica inteiro sem passar da página.
-    <div className="grid grid-cols-[minmax(0,14rem)_minmax(min-content,1fr)] gap-3 py-0.5">
+    // (R$ 8.500.000,00, datas) fica inteiro sem passar da página. Com texto ampliado (prévia
+    // estreita), rótulo e valor ficam um embaixo do outro.
+    <div className="grid grid-cols-1 gap-x-3 py-0.5 @min-[12rem]:grid-cols-[minmax(0,14rem)_minmax(min-content,1fr)]">
       <dt className="break-words text-muted-foreground">{rotulo}</dt>
       <dd>{children}</dd>
     </div>
@@ -450,7 +468,7 @@ function PrevisaoSugeridaPrevia({
   const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
   return (
     <>
-      <table className="w-full">
+      <RolagemTabela className=""><table className="w-full">
         <thead>
           <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
             <th className="py-1 text-left font-semibold">Categoria de despesa</th>
@@ -472,8 +490,8 @@ function PrevisaoSugeridaPrevia({
             <td className="num py-1 text-right">{formatBRL(r.totalDespesasMedia)}</td>
           </tr>
         </tbody>
-      </table>
-      <table className="mt-4 w-full rounded-sm bg-muted/50">
+      </table></RolagemTabela>
+      <RolagemTabela className="mt-4"><table className="w-full rounded-sm bg-muted/50">
         <tbody>
           <Linha nome="Total das despesas do ano" valor={r.totalDespesasAno} />
           {p.deducoes.map((x) => (
@@ -490,9 +508,9 @@ function PrevisaoSugeridaPrevia({
           </tr>
           {e.rateioAprovado != null && <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />}
         </tbody>
-      </table>
+      </table></RolagemTabela>
       <h4 className="mb-1 mt-5 font-semibold">Previsão orçamentária por unidade</h4>
-      <table className="w-full rounded-sm bg-muted/50">
+      <RolagemTabela className=""><table className="w-full rounded-sm bg-muted/50">
         <tbody>
           <tr>
             <td className="px-3 py-1">Unidades</td>
@@ -502,7 +520,7 @@ function PrevisaoSugeridaPrevia({
           <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`} valor={u.reservaUnidade} />
           <Linha nome="Valor por unidade" valor={u.valorUnidade} forte />
         </tbody>
-      </table>
+      </table></RolagemTabela>
     </>
   );
 }

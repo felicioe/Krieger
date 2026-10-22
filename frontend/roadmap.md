@@ -67,6 +67,8 @@
 ## Importador único
 - [x] Menu "Importador" (Financeiro) com cards Relatório mensal e Prestação de contas; listas trocaram o importador por um atalho para ele; "Importar PDF" dentro do registro aberto continua
 - [x] Card "Comparativo Financeiro": valida o layout comparativo, escolhe a prestação (condomínio + exercício), grava em anexos_importacao com o PDF original; lista na prestação com Baixar/Excluir (qualquer usuário logado)
+- [x] Excluir a prestação de contas exclui junto os anexos dela (anexos primeiro)
+- [x] PDF anexado limitado a 10 MB, conferido ao escolher o arquivo
 - [ ] Gravação real em `kr_anexos_importacao` pela API PHP — conferir na produção (aqui só a prévia)
 
 ## Rodapé do login e versão (#77)
@@ -87,6 +89,9 @@
 - [x] #82 Painel sem rolagem lateral em 320 px com texto 200% (selo de prazo, cartões de contagem, logo do celular, botão do aviso)
 - [x] #65 Vite 8.3.5 (empacotador interno 1.2.15); npm audit: 0 vulnerabilidades; testes/tipos/build ok
 - [x] Revisão focal #59–62/#31/#32/#47/#48: seleções sem nome, verde dos selos, link sublinhado, fatias do gráfico, tabelas roláveis pelo teclado, toque 44 px, 320 px no Relatório final
-- [ ] Telas de edição (prestação, mensal, previsão, comparativo, edital, ata, modelo, relatório final) ainda rolam para o lado em 320 px **com texto 200%** (em 320 px com texto normal estão ok) — pede reorganização dos editores; aguarda decisão do responsável
+- [x] Telas de edição (prestação, mensal, previsão, comparativo, edital, ata, modelo, relatório final) sem rolagem lateral da página em 320/390 px com texto 200%; só tabelas rolam dentro da própria área (critério do responsável, WCAG 1.4.10)
 - [x] #33 medido no laboratório (LCP, bytes, PDF/Word continuam sob demanda)
 - [ ] #33 medição na produção — fica com o Codex
+
+- [x] Previsto × Realizado sem relatório mensal no período: mensagem no lugar da tabela e das barras (tela, prévia, PDF/Word); valores na ponta das barras e legenda da pizza na tela com valor e %
+- [x] Importação: sugestão de condomínio de nome parecido já cadastrado (função do Claude `condominiosParecidos`), com "Usar este cadastro" e "Não é este, é um condomínio novo"

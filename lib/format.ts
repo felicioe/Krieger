@@ -134,3 +134,8 @@ export function formatBytes(n: number | null | undefined): string {
   if (n < 1024 * 1024) return `${formatNumeroBR(n / 1024, 1)} KB`;
   return `${formatNumeroBR(n / (1024 * 1024), 1)} MB`;
 }
+
+/** Valor curto para rótulos de gráfico: 12.345,67 → "12,3 mil"; o valor exato fica na tabela. */
+export function formatValorCurto(v: number): string {
+  return Math.abs(v) >= 1000 ? `${formatNumeroBR(v / 1000, 1)} mil` : formatNumeroBR(v, 0);
+}

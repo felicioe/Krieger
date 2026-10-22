@@ -243,7 +243,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
 
       <form id="form-edital" onSubmit={enviar} className="space-y-6" noValidate>
         <SectionCard titulo="Assembleia">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field rotulo="Condomínio" obrigatorio erro={erros.condoId ?? null} className="sm:col-span-2">
               <Selecao value={a.condoId} onChange={(v) => mudar({ condoId: v })} opcoes={opcoesCondo} placeholder="Escolha o condomínio" />
             </Field>
@@ -280,7 +280,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
           titulo={campos.zoom && campos.local ? "Local e videoconferência" : campos.zoom ? "Videoconferência" : "Local"}
           descricao="Os campos mudam conforme a modalidade escolhida."
         >
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {campos.local && (
               <Field rotulo="Local" className="sm:col-span-3">
                 <Input value={a.local} onChange={(e) => mudar({ local: e.target.value })} placeholder="Ex.: Salão de festas do condomínio" />
@@ -335,9 +335,9 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
           />
         </SectionCard>
 
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <SectionCard titulo="Prestação de contas">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field rotulo="Exercício" dica="Ano das contas apresentadas.">
                 <Input value={a.exercicio} onChange={(e) => mudar({ exercicio: e.target.value })} className="num" inputMode="numeric" placeholder="aaaa" />
               </Field>
@@ -348,7 +348,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
           </SectionCard>
 
           <SectionCard titulo="Emissão e assinatura">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field rotulo="Cidade">
                 <Input value={a.cidade} onChange={(e) => mudar({ cidade: e.target.value })} />
               </Field>
@@ -366,7 +366,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
               </Field>
               <div className="flex items-center gap-3 self-end pb-2">
                 <Switch id="timbrado" checked={a.timbrado} onCheckedChange={(v) => mudar({ timbrado: v })} />
-                <Label htmlFor="timbrado" className="text-sm font-normal">
+                <Label htmlFor="timbrado" className="min-w-0 break-words text-sm font-normal">
                   Papel timbrado
                 </Label>
               </div>

@@ -78,7 +78,7 @@ export function TabelaComparativo({ r, compacta = false }: { r: ResultadoCompara
   const ate = r.mesAte.rotulo;
   const nColunas = compacta ? 6 : 7;
   const tabela = (
-    <div className={compacta ? "overflow-x-auto" : "-mx-5 -mb-5 overflow-x-auto"}>
+    <div className={compacta ? "overflow-x-auto" : "-mx-5 -mb-5 overflow-x-auto @max-[14rem]:-mx-3 @max-[14rem]:-mb-3"}>
       <Table className={compacta ? "text-xs [&_td]:px-1.5 [&_td]:py-1.5 [&_th]:px-1.5" : undefined}>
         <TableHeader>
           <TableRow className="bg-muted/60 hover:bg-muted/60">

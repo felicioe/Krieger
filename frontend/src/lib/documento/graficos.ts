@@ -1,4 +1,4 @@
-import { formatBRL, formatNumeroBR } from "@/lib/format";
+import { formatBRL, formatNumeroBR, formatValorCurto } from "@/lib/format";
 import { svgParaPng } from "./imagens";
 import type { Bloco } from "./tipos";
 
@@ -122,33 +122,39 @@ export interface Serie {
 function legendaSeries(series: Serie[], x0: number, partes: string[]) {
   let lx = x0;
   for (const s of series) {
-    partes.push(`<rect x="${lx}" y="8" width="9" height="9" fill="${s.cor}" rx="1.5"/>`);
-    partes.push(`<text x="${lx + 13}" y="16" font-size="9" fill="#1f2933">${esc(s.nome)}</text>`);
-    lx += 13 + larguraTexto(s.nome, 9) + 16;
+    partes.push(`<rect x="${lx}" y="7" width="11" height="11" fill="${s.cor}" rx="2"/>`);
+    partes.push(`<text x="${lx + 15}" y="16.5" font-size="10" fill="#1f2933">${esc(s.nome)}</text>`);
+    lx += 15 + larguraTexto(s.nome, 10) + 18;
   }
 }
 
+/** Valor curto escrito na ponta da barra (o valor exato fica na tabela). */
+const valorCurto = formatValorCurto;
+
 /**
  * Barras horizontais agrupadas por categoria (ex.: previsto × realizado por grupo).
- * As categorias ficam à esquerda, com o nome quebrado em até 3 linhas.
+ * As categorias ficam à esquerda, com o nome quebrado em até 3 linhas; cada barra traz o
+ * valor escrito na ponta, então uma barra zerada aparece como "0", não como um vazio.
  */
 export function barrasSvg(categorias: string[], series: Serie[], largura = 480): Grafico {
   const FONTE_ROT = 8.5;
+  const FONTE_VALOR = 7.5;
   const colRotulo = 150;
-  const m = { esq: colRotulo + 8, dir: 14, topo: 30, base: 22 };
+  const todos = series.flatMap((s) => s.valores);
+  const colValor = Math.ceil(Math.max(0, ...todos.map((v) => larguraTexto(valorCurto(v), FONTE_VALOR)))) + 6;
+  const m = { esq: colRotulo + 8, dir: Math.max(14, colValor + 4), topo: 30, base: 22 };
   const w = largura - m.esq - m.dir;
-  const barra = 9;
+  const barra = 10;
   const rotulos = categorias.map((c) => {
     const fonte = fonteQueCabe(c, colRotulo, FONTE_ROT);
     return { fonte, linhas: quebrarTexto(c, colRotulo, fonte) };
   });
   const alturas = rotulos.map((r) =>
-    Math.max(series.length * (barra + 1) + 10, r.linhas.length * (r.fonte + 1.5) + 8),
+    Math.max(series.length * (barra + 1.5) + 10, r.linhas.length * (r.fonte + 1.5) + 8),
   );
   const h = alturas.reduce((s, a) => s + a, 0);
   const altura = Math.ceil(m.topo + h + m.base);
 
-  const todos = series.flatMap((s) => s.valores);
   const maxBruto = Math.max(0, ...todos);
   const minBruto = Math.min(0, ...todos);
   const passo = passoBonito(maxBruto - minBruto, 5);
@@ -169,13 +175,18 @@ export function barrasSvg(categorias: string[], series: Serie[], largura = 480):
   categorias.forEach((_, i) => {
     const alt = alturas[i]!;
     const meio = y0 + alt / 2;
-    const yb = meio - (series.length * (barra + 1)) / 2;
+    const yb = meio - (series.length * (barra + 1.5)) / 2;
     series.forEach((s, k) => {
       const v = s.valores[i] ?? 0;
       const esq = Math.min(x(v), x(0));
       const larg = Math.abs(x(v) - x(0));
+      const yk = yb + k * (barra + 1.5);
       partes.push(
-        `<rect x="${esq}" y="${yb + k * (barra + 1)}" width="${Math.max(0.5, larg)}" height="${barra}" fill="${s.cor}" rx="1.5"/>`,
+        `<rect x="${esq}" y="${yk}" width="${Math.max(0.5, larg)}" height="${barra}" fill="${s.cor}" rx="1.5"/>`,
+      );
+      // Positivo: depois da ponta da barra. Negativo: à direita do eixo zero, para não invadir os nomes.
+      partes.push(
+        `<text x="${(v >= 0 ? x(v) : x(0)) + 3}" y="${yk + barra * 0.78}" font-size="${FONTE_VALOR}" fill="#1f2933">${esc(valorCurto(v))}</text>`,
       );
     });
     const { fonte, linhas } = rotulos[i]!;

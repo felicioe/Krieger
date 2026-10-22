@@ -23,7 +23,7 @@ export function SinalToggle({
           aria-label={s === "+" ? "Acréscimo" : "Redução"}
           onClick={() => onChange(s)}
           className={cn(
-            "flex flex-1 items-center justify-center transition-colors max-md:min-h-11 max-md:min-w-11 pointer-coarse:min-h-11 pointer-coarse:min-w-11 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            "flex flex-1 items-center justify-center transition-colors max-md:min-h-11 max-md:min-w-[44px] pointer-coarse:min-h-11 pointer-coarse:min-w-[44px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             valor === s
               ? s === "+"
                 ? "bg-primary text-primary-foreground"

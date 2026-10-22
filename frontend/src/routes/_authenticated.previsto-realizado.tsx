@@ -10,6 +10,8 @@ import { Field } from "@/components/app/Field";
 import { PercentualInput, Selecao } from "@/components/app/inputs";
 import { GraficoComparativo } from "@/components/previsto-realizado/GraficoComparativo";
 import { SituacaoBadge, TabelaComparativo, pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
+import { AvisoSemRealizado } from "@/components/previsto-realizado/AvisoSemRealizado";
+import { periodoComparacao, semRealizado } from "@/components/previsto-realizado/semRealizado";
 import { itemQuery, listaQuery } from "@/lib/queries";
 import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
 import { documentoPrevistoRealizado } from "@/documentos/previstoRealizado";
@@ -103,6 +105,7 @@ function PaginaComparativo() {
   }));
   const ate = r.mesAte.rotulo;
   const mesesTexto = r.mesAte.posicao === 1 ? "1 mês" : `${r.mesAte.posicao} meses`;
+  const semDados = semRealizado(r);
 
   return (
     <>
@@ -118,7 +121,7 @@ function PaginaComparativo() {
       />
 
       <SectionCard titulo="Parâmetros">
-        <div className="grid gap-4 sm:grid-cols-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
           <Field rotulo="Previsão (prestação de contas)" className="sm:col-span-3">
             <Selecao value={exercicio.id} onChange={(id) => navigate({ search: { exercicio: id }, replace: true })} opcoes={opcoesExercicio} />
           </Field>
@@ -141,11 +144,15 @@ function PaginaComparativo() {
         </p>
       </SectionCard>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Indicador rotulo="Previsto anual" valor={formatBRL(r.total.previstoAnual)} detalhe={`${formatBRL(r.total.previstoMensal)} por mês`} />
         <Indicador rotulo={`Previsto até ${ate}`} valor={formatBRL(r.total.previsto)} detalhe={mesesTexto} />
-        <Indicador rotulo={`Realizado até ${ate}`} valor={formatBRL(r.total.realizado)} detalhe={r.relatoriosUsados === 0 ? "nenhum relatório mensal" : contagem(r.relatoriosUsados, "relatório mensal", "relatórios mensais")} />
-        <IndicadorDiferenca t={r.total} />
+        <Indicador
+          rotulo={`Realizado até ${ate}`}
+          valor={semDados ? "—" : formatBRL(r.total.realizado)}
+          detalhe={semDados ? "nenhum relatório mensal" : contagem(r.relatoriosUsados, "relatório mensal", "relatórios mensais")}
+        />
+        {semDados ? <Indicador rotulo="Diferença" valor="—" detalhe="sem realizado para comparar" /> : <IndicadorDiferenca t={r.total} />}
       </div>
 
       {r.avisos.length > 0 && (
@@ -162,13 +169,21 @@ function PaginaComparativo() {
       )}
 
       <div className="mt-6 space-y-6">
-        <SectionCard titulo="Por grupo" descricao={`Previsto e realizado acumulados até ${ate}.`}>
-          <GraficoComparativo r={r} />
-        </SectionCard>
+        {semDados && r.grupos.length > 0 ? (
+          <SectionCard titulo="Por grupo e rubrica" descricao={`Período de comparação: ${periodoComparacao(r)}.`}>
+            <AvisoSemRealizado r={r} />
+          </SectionCard>
+        ) : (
+          <>
+            <SectionCard titulo="Por grupo" descricao={`Previsto e realizado acumulados até ${ate}.`}>
+              <GraficoComparativo r={r} />
+            </SectionCard>
 
-        <SectionCard titulo="Por rubrica" descricao={`Diferença = realizado − previsto até ${ate}. Tolerância de ${pctTexto(r.tolerancia).replace("+", "")}.`}>
-          <TabelaComparativo r={r} />
-        </SectionCard>
+            <SectionCard titulo="Por rubrica" descricao={`Diferença = realizado − previsto até ${ate}. Tolerância de ${pctTexto(r.tolerancia).replace("+", "")}.`}>
+              <TabelaComparativo r={r} />
+            </SectionCard>
+          </>
+        )}
 
         {r.deduzidas.length > 0 && (
           <SectionCard titulo="Fora da comparação" descricao="Despesas retiradas pela dedução da previsão (ex.: fundo de obras).">
@@ -178,7 +193,7 @@ function PaginaComparativo() {
                   <span className="min-w-0">
                     {d.nome} <span className="text-xs text-muted-foreground">· {d.grupo}</span>
                   </span>
-                  <span className="num text-muted-foreground sm:whitespace-nowrap">Realizado até {ate}: {formatBRL(d.realizado)}</span>
+                  <span className="num text-muted-foreground sm:whitespace-nowrap">{semDados ? "Sem relatório mensal no período" : `Realizado até ${ate}: ${formatBRL(d.realizado)}`}</span>
                 </li>
               ))}
             </ul>
@@ -191,7 +206,7 @@ function PaginaComparativo() {
 
 function Indicador({ rotulo, valor, detalhe, className }: { rotulo: string; valor: string; detalhe?: string; className?: string }) {
   return (
-    <div className={cn("rounded-md border bg-card px-5 py-4", className)}>
+    <div className={cn("min-w-0 break-words rounded-md border bg-card px-4 py-4 sm:px-5", className)}>
       <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{rotulo}</div>
       <div className="num mt-1 text-xl font-semibold text-primary">{valor}</div>
       {detalhe && <div className="mt-0.5 text-xs text-muted-foreground">{detalhe}</div>}
@@ -201,8 +216,8 @@ function Indicador({ rotulo, valor, detalhe, className }: { rotulo: string; valo
 
 function IndicadorDiferenca({ t }: { t: Totais }) {
   return (
-    <div className="rounded-md border bg-card px-5 py-4">
-      <div className="flex items-center justify-between gap-2">
+    <div className="min-w-0 break-words rounded-md border bg-card px-4 py-4 sm:px-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Diferença</span>
         <SituacaoBadge situacao={t.situacao} />
       </div>

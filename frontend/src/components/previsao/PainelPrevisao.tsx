@@ -85,7 +85,7 @@ export function PainelPrevisao({
   });
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)]">
       <div className="min-w-0 space-y-6">
         <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
         <SectionCard titulo="Parâmetros da previsão">
@@ -166,7 +166,7 @@ export function PainelPrevisao({
             itens={ajustes}
             onChange={(v) => setPrev({ ajustes: v })}
             novo={() => ({ id: novoId(), descricao: "", sinal: "+", valor: 0 })}
-            colunas="grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[5.5rem_minmax(0,1fr)_9.5rem]"
+            colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)] @2xl:grid-cols-[5.75rem_minmax(0,1fr)_9.5rem]"
             cabecalhos={["Sinal", "Descrição e grupo", "Valor anual"]}
             reordenavel={false}
             rotuloAdicionar="Adicionar ajuste"
@@ -175,10 +175,10 @@ export function PainelPrevisao({
               <>
                 <SinalToggle valor={a.sinal} onChange={(sinal) => up({ sinal })} rotulo="Sinal do ajuste" />
                 <Input aria-label="Descrição" placeholder="Descrição do ajuste" value={a.descricao} onChange={(ev) => up({ descricao: ev.target.value })} />
-                <div className="col-span-2 sm:col-span-1">
+                <div className="col-span-full sm:col-span-1">
                   <DinheiroInput aria-label="Valor anual" value={a.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
                 </div>
-                <div className="col-span-2 mb-2 flex items-center gap-2 sm:col-start-2">
+                <div className="col-span-full mb-2 flex items-center gap-2 sm:col-start-2">
                   <span className="text-xs text-muted-foreground">Grupo</span>
                   <Selecao
                     aria-label="Grupo do ajuste"
@@ -238,7 +238,7 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
   );
 
   return (
-    <div className="-mx-5 -mb-5 overflow-x-auto">
+    <div className="-mx-5 -mb-5 overflow-x-auto @max-[14rem]:-mx-3 @max-[14rem]:-mb-3">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/60 hover:bg-muted/60">
@@ -329,7 +329,7 @@ function LinhaResumo({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-baseline justify-between gap-3 py-1 text-sm", forte && "font-semibold text-primary", className)}>
+    <div className={cn("flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1 text-sm", forte && "font-semibold text-primary", className)}>
       <span className={cn(!forte && "text-muted-foreground")}>{rotulo}</span>
       <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
     </div>

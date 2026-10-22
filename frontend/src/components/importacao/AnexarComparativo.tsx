@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
 import { focarConteudoApos } from "@/components/app/foco";
-import { textoCondominioLido, textoPeriodo } from "./anexos";
+import { ERRO_PDF_GRANDE, LIMITE_PDF_ANEXO, textoCondominioLido, textoPeriodo } from "./anexos";
 import { api, mensagemErro } from "@/lib/api";
 import { novoId } from "@/lib/id";
 import { lerComoDataUrl } from "@/lib/arquivo";
@@ -40,9 +40,15 @@ export function AnexarComparativo({ condominios, rotulo = "Anexar comparativo fi
   async function escolher(arquivo: File | undefined) {
     if (!arquivo) return;
     setAberto(true);
-    setLendo(true);
     setErro(null);
     setLido(null);
+    // Limite de 10 MB conferido antes de ler ou gravar qualquer coisa.
+    if (arquivo.size > LIMITE_PDF_ANEXO) {
+      setErro(ERRO_PDF_GRANDE);
+      if (entrada.current) entrada.current.value = "";
+      return;
+    }
+    setLendo(true);
     try {
       const { extrairTextoPdf } = await import("@/lib/pdfTexto");
       const texto = await extrairTextoPdf(arquivo);
