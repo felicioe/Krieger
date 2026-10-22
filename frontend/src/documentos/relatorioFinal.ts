@@ -1,12 +1,12 @@
 import { dataParaBR, formatBRL, formatData, formatNumeroBR } from "@/lib/format";
 import { dataVistoria } from "@/domain/painel";
 import { nomeDeArquivo } from "@/lib/documento/baixar";
-import { barrasSvg, graficoPng, pizzaSvg } from "@/lib/documento/graficos";
+import { barrasSvg, blocoGrafico, pizzaSvg } from "@/lib/documento/graficos";
 import type { Bloco, Coluna, Documento, LinhaTabela, Texto } from "@/lib/documento/tipos";
-import { pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
+import { legendaSituacao, marcaSituacao, pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
-import type { ResultadoComparativo, Situacao, Totais } from "@/domain/previstoRealizado";
+import type { ResultadoComparativo, Totais } from "@/domain/previstoRealizado";
 import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio, PrevisaoSugeridaExercicio } from "@/domain/types";
 import { blocosDemonstrativo, localEData, timbreDoEscritorio } from "./comum";
@@ -17,7 +17,6 @@ import { contagem } from "@/components/app/textos";
  * na mesma ordem e com o mesmo conteúdo da prévia na tela (PreviaRelatorio).
  */
 
-const SITUACAO: Record<Situacao, string> = { dentro: "Dentro", acima: "Acima", abaixo: "Abaixo" };
 const VALOR = { titulo: "Valor", largura: 110, alinhamento: "direita" } as const;
 const l = (nome: string, valor: number | null, o: Partial<LinhaTabela> = {}): LinhaTabela => ({ celulas: [nome, formatBRL(valor)], ...o });
 const resumo = (linhas: LinhaTabela[]): Bloco => ({
@@ -146,26 +145,25 @@ export async function documentoRelatorioFinal(o: {
       ]),
     );
     if (c.grupos.length === 0) b.push(vazio("A previsão deste exercício não tem despesas lançadas."));
-    else b.push(tabelaComparativo(rel.comparativo));
+    else b.push(...tabelaComparativo(rel.comparativo));
   }
 
   if (rel.secoes.analise) {
     b.push(titulo("analise", "Análise gráfica"), { tipo: "titulo", nivel: 3, texto: "Previsto × realizado por grupo" });
     if (c.grupos.length) {
-      const svg = barrasSvg(
+      const grafico = barrasSvg(
         c.grupos.map((g) => g.nome || "Sem grupo"),
         [
           { nome: "Previsto", cor: "#8fa3c0", valores: c.grupos.map((g) => g.totais.previsto) },
           { nome: "Realizado", cor: "#0b3a5e", valores: c.grupos.map((g) => g.totais.realizado) },
         ],
       );
-      b.push({ tipo: "imagem", dataUrl: await graficoPng(svg, 480, 250), largura: 480, altura: 250 });
+      b.push(await blocoGrafico(grafico));
     } else b.push(vazio("Sem dados para o gráfico."));
     if (e.mostrarPizza !== false) {
       b.push({ tipo: "titulo", nivel: 3, texto: `Despesas do exercício ${e.ano} por grupo` });
       if (rel.despesasGrupo.length) {
-        const svg = pizzaSvg(rel.despesasGrupo);
-        b.push({ tipo: "imagem", dataUrl: await graficoPng(svg, 480, 230), largura: 480, altura: 230 });
+        b.push(await blocoGrafico(pizzaSvg(rel.despesasGrupo)));
       } else b.push(vazio("Sem despesas no demonstrativo."));
     }
   }
@@ -235,27 +233,32 @@ export async function documentoRelatorioFinal(o: {
 
 export function valores(t: Totais): Texto[] {
   return [
-    [{ texto: formatBRL(t.previstoAnual) }, { texto: `  ${formatBRL(t.previstoMensal)}/mês`, suave: true, pequeno: true }],
+    formatBRL(t.previstoAnual),
     formatBRL(t.previsto),
     formatBRL(t.realizado),
     `${t.diferenca > 0 ? "+" : ""}${formatBRL(t.diferenca)}`,
-    pctTexto(t.pct),
-    t.situacao ? SITUACAO[t.situacao] : "—",
+    // a situação (fora da tolerância) vira o marcador "*" ao lado do percentual, explicado na legenda
+    `${pctTexto(t.pct)}${marcaSituacao(t.situacao)}`,
   ];
 }
 
-export function tabelaComparativo(c: ResultadoComparativo): Bloco {
-  const ate = c.mesAte.rotulo;
-  const colunas: Coluna[] = [
+/**
+ * Colunas do comparativo no PDF/Word. Larguras fixas (pt, só o texto) dimensionadas para valores até
+ * R$ 9.999.999,99 em fonte 7,5; o resto da página fica para a Rubrica (conferido em src/test/documentosLargura.test.ts).
+ */
+export function colunasComparativo(ate: string): Coluna[] {
+  return [
     { titulo: "Rubrica", largura: "*" },
-    // anual e mensal na mesma linha; colunas numéricas no justo para sobrar largura à rubrica
-    { titulo: "Previsto anual / mensal", largura: 106, alinhamento: "direita" },
-    { titulo: `Previsto até ${ate}`, largura: 50, alinhamento: "direita" },
-    { titulo: `Realizado até ${ate}`, largura: 50, alinhamento: "direita" },
-    { titulo: "Diferença", largura: 52, alinhamento: "direita" },
-    { titulo: "%", largura: 34, alinhamento: "direita" },
-    { titulo: "Situação", largura: 32, alinhamento: "centro" },
+    { titulo: "Previsto anual", largura: 56, alinhamento: "direita" },
+    { titulo: `Previsto até ${ate}`, largura: 56, alinhamento: "direita" },
+    { titulo: `Realizado até ${ate}`, largura: 56, alinhamento: "direita" },
+    { titulo: "Diferença", largura: 60, alinhamento: "direita" },
+    { titulo: "%", largura: 40, alinhamento: "direita" },
   ];
+}
+
+/** Tabela por rubrica e grupo + legenda do marcador de situação. */
+export function tabelaComparativo(c: ResultadoComparativo): Bloco[] {
   const linhas: LinhaTabela[] = [];
   for (const g of c.grupos) {
     linhas.push({ celulas: [g.nome || "Sem grupo"], estilo: "grupo" });
@@ -271,7 +274,10 @@ export function tabelaComparativo(c: ResultadoComparativo): Bloco {
     linhas.push({ celulas: [`Total ${g.nome || "sem grupo"}`, ...valores(g.totais)], estilo: "subtotal", recuo: true });
   }
   linhas.push({ celulas: ["Total geral", ...valores(c.total)], estilo: "total" });
-  return { tipo: "tabela", pequena: true, colunas, linhas };
+  return [
+    { tipo: "tabela", pequena: true, colunas: colunasComparativo(c.mesAte.rotulo), linhas },
+    { tipo: "paragrafo", texto: legendaSituacao(c.tolerancia), suave: true, tamanho: "pequeno" },
+  ];
 }
 
 /** Considerações finais — mesmos itens da prévia na tela. */

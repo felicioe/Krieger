@@ -1,6 +1,6 @@
 import { formatBRL } from "@/lib/format";
 import { nomeDeArquivo } from "@/lib/documento/baixar";
-import { barrasSvg, graficoPng } from "@/lib/documento/graficos";
+import { barrasSvg, blocoGrafico } from "@/lib/documento/graficos";
 import type { Bloco, Documento } from "@/lib/documento/tipos";
 import { pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
 import { nomeParaRelatorio } from "@/domain/condominio";
@@ -44,8 +44,8 @@ export async function documentoPrevistoRealizado(o: {
   if (c.grupos.length === 0) {
     b.push({ tipo: "paragrafo", texto: "A previsão deste exercício não tem despesas lançadas.", suave: true });
   } else {
-    b.push({ tipo: "titulo", nivel: 2, texto: "Por rubrica e grupo" }, tabelaComparativo(c));
-    const svg = barrasSvg(
+    b.push({ tipo: "titulo", nivel: 2, texto: "Por rubrica e grupo" }, ...tabelaComparativo(c));
+    const grafico = barrasSvg(
       c.grupos.map((g) => g.nome || "Sem grupo"),
       [
         { nome: "Previsto", cor: "#8fa3c0", valores: c.grupos.map((g) => g.totais.previsto) },
@@ -54,7 +54,7 @@ export async function documentoPrevistoRealizado(o: {
     );
     b.push(
       { tipo: "titulo", nivel: 2, texto: "Previsto × realizado por grupo" },
-      { tipo: "imagem", dataUrl: await graficoPng(svg, 480, 250), largura: 480, altura: 250 },
+      await blocoGrafico(grafico),
     );
   }
   return {

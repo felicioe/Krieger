@@ -1,5 +1,5 @@
 import type { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
-import { COR, PAGINA, type Alinhamento, type Bloco, type Coluna, type Documento, type LinhaTabela, type Texto } from "./tipos";
+import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, type Alinhamento, type Bloco, type Coluna, type Documento, type LinhaTabela, type Texto } from "./tipos";
 import { carregarPng, paraPng } from "./imagens";
 
 /** Desenha o documento em PDF (pdfmake, carregado sob demanda). */
@@ -217,7 +217,7 @@ function tabela(
         fontSize: estilo === "subtotal" ? tam - 0.5 : tam,
         ...(estilo === "total" ? { bold: true } : {}),
         ...(estilo === "subtotal" ? { color: c(COR.suave), bold: true } : {}),
-        ...(i === 0 && l.recuo ? { margin: [10, 0, 0, 0] } : {}),
+        ...(i === 0 && l.recuo ? { margin: [RECUO_CELULA, 0, 0, 0] } : {}),
         ...(o.fundo ? { fillColor: c(COR.fundo) } : {}),
       })),
     );
@@ -238,8 +238,8 @@ function tabela(
       vLineColor: () => c(COR.linha),
       hLineColor: (i: number) => (totais.has(i) ? c(COR.suave) : c(COR.linha)),
       // tabela pequena (comparativo com muitas colunas): margem lateral menor para caber mais texto por linha
-      paddingLeft: () => (o.pequena ? 4 : 5),
-      paddingRight: () => (o.pequena ? 4 : 5),
+      paddingLeft: () => (o.pequena ? MARGEM_CELULA.pequena : MARGEM_CELULA.normal),
+      paddingRight: () => (o.pequena ? MARGEM_CELULA.pequena : MARGEM_CELULA.normal),
       paddingTop: () => 2.5,
       paddingBottom: () => 2.5,
     },

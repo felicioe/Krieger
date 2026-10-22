@@ -101,6 +101,14 @@ export const COR = {
 /** Área útil da página A4 com margens de 56 pt. */
 export const PAGINA = { largura: 595.28, altura: 841.89, margem: 56, util: 595.28 - 2 * 56 } as const;
 
+/**
+ * Margem interna lateral de cada célula de tabela (pt, de cada lado), igual no PDF e no Word.
+ * A largura de uma coluna fixa é só a do texto; a margem soma por fora.
+ */
+export const MARGEM_CELULA = { pequena: 4, normal: 5 } as const;
+/** Recuo da primeira célula nas linhas com `recuo` (pt). */
+export const RECUO_CELULA = 10;
+
 export function textoPlano(t: Texto): string {
   return typeof t === "string" ? t : t.map((x) => x.texto).join("");
 }

@@ -47,6 +47,11 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-9: var(--chart-9);
+  --color-chart-10: var(--chart-10);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-muted: var(--sidebar-muted);
@@ -99,6 +104,16 @@
   --chart-3: oklch(0.71 0.048 257.6);
   --chart-4: oklch(0.72 0.15 70);
   --chart-5: oklch(0.53 0.19 27);
+  /*
+   * Categorias 6 a 10 (gráficos com muitos grupos, ex.: pizza de despesas).
+   * Matizes e luminosidades afastados de 1–5 para nenhuma fatia parecer igual à outra;
+   * a partir da 11ª categoria, corDoGrafico() gera cores novas.
+   */
+  --chart-6: oklch(0.56 0.11 150);
+  --chart-7: oklch(0.47 0.1 330);
+  --chart-8: oklch(0.84 0.07 90);
+  --chart-9: oklch(0.42 0.06 55);
+  --chart-10: oklch(0.62 0.015 250);
   /* Menu lateral */
   --sidebar: oklch(0.338 0.08 246.9);
   --sidebar-foreground: oklch(0.94 0.012 250);
