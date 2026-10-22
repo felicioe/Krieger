@@ -81,7 +81,10 @@ export interface CadastroBasico {
 }
 
 const NUM = /-?\d{1,3}(?:\.\d{3})*,\d{2}/g;
-const LIXO = /Sistema de Condom[ií]nios|KRIEGER ASSESSORIA|Systemar|^\s*P[áa]gina \d|^[\s_]+$/i;
+// "Comparativo Financeiro de X a Y" repete como cabeçalho em toda página do layout comparativo,
+// com espaçamento largo entre as palavras (colunas) — sem \s+ entre elas aqui, vaza como item de
+// despesa vazio (sem valores, mas polui a lista).
+const LIXO = /Sistema de Condom[ií]nios|KRIEGER ASSESSORIA|Systemar|^\s*P[áa]gina \d|^[\s_]+$|Comparativo\s+Financeiro\s+de\s+\d{2}\/\d{4}\s+a\s+\d{2}\/\d{4}/i;
 const SECOES: [string, RegExp][] = [
   ['saldoAnterior', /^\s*\(\s*\*\s*\)\s*SALDO ANTERIOR/i],
   ['receitas', /^\s*\(\s*\+\s*\)\s*RECEITAS/i],
@@ -134,7 +137,7 @@ function cabecalho(linhas: string[], nomeArquivo: string): { condominio: Condomi
 
   let periodo: PeriodoRelatorio = null;
   const p = txt.match(/Per[ií]odo de\s+(\d{2}\/\d{2}\/\d{4})\s+a\s+(\d{2}\/\d{2}\/\d{4})/);
-  const cp = txt.match(/Comparativo Financeiro de\s+(\d{2}\/\d{4})\s+a\s+(\d{2}\/\d{4})/);
+  const cp = txt.match(/Comparativo\s+Financeiro\s+de\s+(\d{2}\/\d{4})\s+a\s+(\d{2}\/\d{4})/);
   // "DEMONSTRATIVO GERAL ENCERRADO EM DD/MM/AAAA" (layout da prestação de contas anual): só a data
   // final; assume 1º de janeiro do mesmo ano como início (convenção de exercício anual).
   const enc = txt.match(/DEMONSTRATIVO GERAL ENCERRADO EM\s+(\d{2})\/(\d{2})\/(\d{4})/i);

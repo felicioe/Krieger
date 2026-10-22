@@ -188,6 +188,21 @@ describe("importação do PDF Systemar — comparativo", () => {
     expect(colunaPadrao(rel, "mensais")).toBe("08/2026");
     expect(colunaPadrao(rel, "exercicios")).toBe(COLUNA_TOTAL);
   });
+
+  it("lê o período mesmo com o cabeçalho bem espaçado (colunas), e não deixa a linha repetida do cabeçalho vazar como despesa", () => {
+    // Achado testando com PDF real: "Comparativo Financeiro de X a Y" se repete em toda página
+    // (layout multi-mês), com espaçamento bem mais largo entre as palavras do que o fixture
+    // acima — nem o período era reconhecido, nem a linha repetida era filtrada (vazava como um
+    // item de despesa vazio, sem valores, em cada página).
+    const comEspacamentoLargo = comparativo.replace(
+      "Comparativo Financeiro de 07/2026 a 08/2026",
+      "Comparativo         Financeiro         de        07/2026  a       08/2026\nComparativo         Financeiro         de        07/2026  a       08/2026",
+    );
+    const rel2 = lerRelatorio(comEspacamentoLargo);
+    expect(rel2.periodo).toEqual({ competenciaInicio: "07/2026", competenciaFim: "08/2026" });
+    const d = demonstrativoDoRelatorio(rel2, "08/2026");
+    expect(d.despesas.grupos.flatMap((g) => g.itens).some((i) => /Comparativo/i.test(i.nome))).toBe(false);
+  });
 });
 
 describe("texto com layout a partir dos itens do pdf.js", () => {
