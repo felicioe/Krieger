@@ -196,10 +196,35 @@ snapshot de exercício único.
   funcionar contra a API real (mesmo passo que faltou pra `kr_atas`
   anteriormente). `domain/importacao.ts` ganha `novoAnexoImportado(...)`
   pra montar o registro.
-- **Menu "Importador" (hub único):** desenhado, ainda não enviado ao Lovable —
-  nova rota reunindo os pontos de entrada hoje espalhados (Relatório mensal,
-  Prestação de contas, e o novo Comparativo Financeiro), sem mudar onde os
-  relatórios já processados vivem.
+- **Menu "Importador" (hub único):** pedido enviado ao Lovable em 22/10/2026
+  (fila normal) — nova rota reunindo os pontos de entrada hoje espalhados
+  (Relatório mensal, Prestação de contas, e o novo Comparativo Financeiro
+  como anexo), sem mudar onde os relatórios já processados vivem.
 
 Validado: 130 testes raiz, typecheck e docs:check limpos, `php -l api.php`
 sem erro de sintaxe.
+
+## Tabela Previsto × Realizado compacta e gráficos robustos — publicado em 22/10/2026
+
+PR #76 (merge 54bae8b): sincronizado do sandbox do Lovable. `TabelaComparativo`
+ganha prop `compacta` (preview do Relatório Final: sem "/mês", sem coluna
+Situação → marcador `*` com legenda, já que depende da tolerância de ±5% e
+não dá pra inferir só pela cor). PDF/Word redistribui as 6 colunas da tabela
+comparativo com folga pra Rubrica. Gráficos: barras horizontais (escalam pra
+qualquer quantidade/tamanho de nome de grupo), legenda de todo gráfico do
+sistema quebra linha em vez de cortar, paleta de cor ganha `--chart-6` a
+`--chart-10` + geração algorítmica a partir da 11ª categoria — nunca repete
+cor na mesma pizza/gráfico. Teste novo `documentosLargura.test.ts` confere
+automaticamente que toda tabela de todo documento gerado (Relatório final,
+Previsto × Realizado avulso, Relatório mensal, Edital, Ata etc.) cabe na
+página A4.
+
+Publicado: commit `54bae8b` → `deploy-hostinger` `6b814f1`, confirmado no ar
+(assets `relatorioFinal-w7UqQxmU.js`, `styles-D4-nGTCj.css` batendo com os
+hashes do commit).
+
+Também nesta sessão: as issues #68–#71 (estados da conferência de
+importação, confirmação atômica, divergência, foco) foram implementadas e
+publicadas pelo Codex (PR #74, commit `9c0c1c1` → `deploy-hostinger`
+`204bb76`) — já estava no ar antes deste registro, só não estava confirmado
+aqui (corrigido acima).
