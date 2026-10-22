@@ -1,5 +1,18 @@
 # Estado atual e passagem de contexto
 
+## Revisão dos achados restantes — 22/10/2026
+
+Pedido de corrigir os erros encontrados e publicar. Triagem atual em
+[FECHAMENTO-ACHADOS-2026-10-22.md](auditorias/FECHAMENTO-ACHADOS-2026-10-22.md).
+Várias issues antigas correspondem a código já corrigido; não reimplementar
+nem reabrir o escopo concorrente de anexos/Importador. Vite vulnerável e
+overflow extremo do Painel estão com o Lovable. Orçamento inicial de JS de
+250 KiB acrescentado ao CI; medição real reproduzível em PERFORMANCE.md.
+Histórico de backups real carregou em 22/10 e mostrou backup de hoje; o
+snapshot antigo que diz “tabela kr_backups não aplicada” é histórico e não
+descreve mais a situação observada. Restauração real não foi executada.
+Leitor de tela real/toque físico/métricas de campo continuam não comprovados.
+
 ## Login e versionamento — 22/10/2026, issue #77
 
 O login exibe autoria Therafinancial e versão 1.0. O Registro de Alterações

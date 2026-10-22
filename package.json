@@ -8,7 +8,8 @@
     "docs:check": "node scripts/check-docs.mjs",
     "typecheck": "tsc --noEmit",
     "changelog:gerar": "node scripts/changelog.mjs",
-    "changelog:check": "node scripts/changelog.mjs --check"
+    "changelog:check": "node scripts/changelog.mjs --check",
+    "bundle:check": "node scripts/check-bundle-budget.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
