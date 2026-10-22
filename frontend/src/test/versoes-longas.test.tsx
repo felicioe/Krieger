@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -19,15 +20,26 @@ const historico = vi.hoisted(() => {
 });
 vi.mock("@/data/versoes.json", () => ({ default: historico }));
 
-const { RodapeLogin } = await import("@/components/login/RodapeLogin");
+const { DialogoRegistroAlteracoes } = await import("@/components/versoes/RegistroAlteracoes");
+
+function Abridor() {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <>
+      <button type="button" onClick={() => setAberto(true)}>
+        Abrir registro
+      </button>
+      <DialogoRegistroAlteracoes aberto={aberto} aoMudar={setAberto} />
+    </>
+  );
+}
 
 describe("registro de alterações com muitas versões e textos longos", () => {
   it("lista todas as versões e fecha pelo teclado com o foco de volta", async () => {
     const user = userEvent.setup();
-    render(<RodapeLogin />);
-    expect(screen.getByText("Versão 1.30")).toBeInTheDocument();
+    render(<Abridor />);
 
-    const botao = screen.getByRole("button", { name: "Registro de Alterações" });
+    const botao = screen.getByRole("button", { name: "Abrir registro" });
     await user.click(botao);
     const janela = await screen.findByRole("dialog", { name: "Registro de Alterações" });
     const lista = within(janela).getByRole("list", { name: "Versões do Sistema Krieger" });
@@ -37,10 +49,10 @@ describe("registro de alterações com muitas versões e textos longos", () => {
         .getByText(/\(versão atual\)/)
         .closest("h3"),
     ).toHaveTextContent(/^Versão 1\.30 —/);
+    // Ao abrir, o foco vai para a lista (as setas rolam o histórico).
+    expect(lista).toHaveFocus();
 
-    // O "Fechar" do fim da lista continua alcançável pelo Tab dentro da janela.
-    const fechar = within(janela).getAllByRole("button", { name: "Fechar" });
-    expect(fechar.length).toBeGreaterThanOrEqual(1);
+    expect(within(janela).getAllByRole("button", { name: "Fechar" }).length).toBeGreaterThanOrEqual(1);
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(botao).toHaveFocus();

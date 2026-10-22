@@ -71,3 +71,34 @@ Limite reportado: histórico muito longo em 320 px com texto 200% pode exigir
 rolagem para o Fechar textual; X e Escape permanecem. Não houve teste em
 leitor de tela real nem toque físico. Publicação será registrada no PR/issue.
 
+## Mudança posterior de escopo — issue #81
+
+Antes da publicação do hardening, o responsável pediu o Registro de Alterações
+somente dentro do sistema após login, no menu inferior do usuário recolhível.
+O login fica com autoria e versão. Essa localização substitui o aceite inicial
+da #77. O relatório acima descreve a interface efetivamente observada naquele
+momento; sua nota não avalia o novo menu. Testes e publicação do novo escopo
+serão registrados no PR #80 e na #81, preservando a evidência histórica.
+
+Entrega Lovable: base `aa97b80013a28e2a1f87c3dc7ba4dbd9fc6f9af9` →
+`6c29269c895746464768f302721230cf90a09499`; diff por mensagem e por SHA
+confirmados idênticos. Somente contexto do importador não presente em main
+foi omitido do patch (linha FileUp de contexto, sem mudança funcional);
+roadmap concorrente preservado. Regras compartilhadas foram movidas para
+`frontend/src/components/app/AGENTS.md`, sem remoção de contratos de UI.
+
+Menu começa fechado, usa Collapsible com estado acessível e mantém opções de
+administração somente para admin. O histórico é provido no layout autenticado,
+fora da gaveta; a gaveta fecha antes de abrir a janela e o foco retorna a
+“Abrir menu”. No desktop retorna ao acionador do histórico. Rodapé sem ação.
+158 testes frontend passaram independentemente em Node 22, incluindo perfil,
+recolhimento, teclado, navegação/saída simulada, preservação de rascunho e uma
+única janela móvel sem bloqueio residual do ponteiro.
+
+O Lovable reportou verificação visual em 320/390/768/1280 px e texto 200%.
+Limites: em 320 px/texto 200% o título pode quebrar no meio de uma palavra;
+uma possível largura extra de cartões do Painel, relatada pelo fornecedor,
+ficou na #82 para reprodução independente, sem alterar outra tela por hipótese.
+Leitor real e toque físico continuam não testados. Evidências da publicação
+final e da sessão autenticada serão registradas no PR/issue, sem dados reais.
+

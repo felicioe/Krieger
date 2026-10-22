@@ -25,6 +25,15 @@ obrigatoriedade/erros/foco, ocupado e histórico longo. Validação local:
 153 testes frontend, tipos e build aprovados. Aguardar evidência de publicação
 no PR/issue antes de considerar essa etapa disponível na Hostinger.
 
+Pedido posterior #81, implementado no Lovable e aguardando publicação: Registro de Alterações
+somente após login, dentro do menu inferior do usuário recolhível, fechado por
+padrão. O login mantém apenas autoria e versão. PR #80 aguarda essa integração
+antes de ser publicado. Essa decisão substitui a localização pública inicial,
+sem reescrever a evidência histórica da crítica já realizada. Diff de autoria
+Lovable: `aa97b80` → `6c29269`, incluindo reorganização das instruções de UI.
+Contextos de Importador não presentes em main e o roadmap concorrente não
+foram importados; somente o diff funcional solicitado foi sincronizado.
+
 Snapshot de 21/10/2026 (atualizado após publicar o frontend React novo em produção, substituindo o sistema legado). Conferir issues/PRs online antes de continuar.
 
 ## O que existe

@@ -36,6 +36,11 @@ CHANGELOG.md é gerado; não editar separadamente. O CI falha se ele divergir
 da fonte única ou se versão atual/histórico forem inválidos. Registro público
 não substitui documentação técnica, critérios de aceite e evidências no GitHub.
 
-O login deve expor a autoria “Feito pela Therafinancial”, versão e acesso ao
-histórico sem exigir sessão. Abrir/fechar o histórico não apaga o formulário;
-teclado e retorno de foco devem funcionar. Isso não altera autenticação.
+O login deve expor somente a autoria “Feito pela Therafinancial” e a versão.
+Decisão posterior do responsável em 22/10/2026, issue #81: o Registro de
+Alterações fica dentro do sistema, após login, no menu recolhível do usuário.
+Essa decisão substitui o acesso sem sessão previsto inicialmente na #77.
+O menu fica fechado por padrão e abre sob demanda; mantém troca de senha,
+saída e opções de administração conforme as permissões existentes.
+Abrir/fechar o histórico não apaga dados da tela atual; teclado e retorno
+de foco devem funcionar. Isso não altera autenticação.

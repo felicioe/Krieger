@@ -1,5 +1,16 @@
 # Decisões do projeto
 
+## 2026-10-22 — Histórico interno e menu do usuário recolhível (#81)
+
+O responsável determinou que o Registro de Alterações fique dentro do sistema,
+após login, e que o bloco inferior do usuário abra sob demanda para economizar
+espaço. O login conserva autoria Therafinancial e versão. Essa decisão substitui
+a localização pública inicialmente solicitada na #77; não altera a evidência
+da crítica já realizada sobre a tela então publicada. O menu mantém permissões,
+troca de senha e saída existentes. Autoria frontend Lovable; integração, testes,
+PR e publicação Hostinger pelo fluxo documentado. Entrega Lovable #81 integrada
+ao PR #80, com publicação condicionada ao CI do SHA final.
+
 ## 2026-10-20 — conexões separadas da publicação
 
 Auditoria #24 confirmou acesso Codex/GitHub/Hostinger e Claude Code autenticado
