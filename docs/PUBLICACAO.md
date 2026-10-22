@@ -38,7 +38,8 @@ seguir as regras do conector na sessão de publicação. Refs #19/#49.
 Antes do pacote, executar `npm ci && npm run build` em `frontend/` (npm e
 package-lock.json versionado). `npm run package:hostinger` escreve
 `dist/hostinger/` com index.html, assets/, favicon.png e robots.txt do build,
-branding/, .htaccess, api.php, auth.php e lib_auth.php da raiz.
+branding/, .htaccess, api.php, auth.php, lib_auth.php, lib_importacao.php e
+lib_backup.php da raiz.
 Ficam fora configuração real, schema, fontes, testes, dependências e docs.
 O empacotador não compila o React nem aplica migrações.
 O artefato de um PR é para revisão; publicar exige versão correspondente em `main`.

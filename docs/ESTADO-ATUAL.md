@@ -146,7 +146,8 @@ rollback entre etapas, retry e proteção contra descarte atrasado.
 
 Frontend sincronizado fielmente do Lovable: entrega UX acumulada até aaefd0c
 e correções de importação até ace43b3. O domínio duplicado do Lovable não
-substituiu os shims/código canônico. 132 testes raiz passaram; frontend126 e
+substituiu os shims/código canônico. 133 testes raiz passaram após incorporar
+a PR73 da Claude; frontend126 e
 typecheck passaram com Node22, runtime do CI. Node26 local apresentou
 incompatibilidade de localStorage no ambiente de três testes; não ocultar essa
 limitação. Não foi demonstrada falha equivalente no navegador de produção.
@@ -155,6 +156,11 @@ A entrega anterior de contraste/UX (#59–#62, resíduos #32/#47) está incluíd
 na mesma branch, superando o estado de espera registrado acima. Revisão final
 é no domínio Hostinger; não abrir Lovable no navegador. Após publicar, executar
 critique independente e depois harden, já autorizados pelo responsável.
+
+A dependência da tabela de anexos da PR73 está acompanhada na #75. A publicação
+das correções mantém backup legado compatível sem essa tabela opcional;
+restauração que contém anexos exige a migração e não ignora dados. Não declarar
+o recurso de anexos/hub Importador pronto por causa desta integração.
 
 ## Comparativo Financeiro, auditoria de importação e menu "Importador" — 22/10/2026
 
