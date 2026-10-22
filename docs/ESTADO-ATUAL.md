@@ -1,5 +1,32 @@
 # Estado atual e passagem de contexto
 
+## Fechamento geral — 22/10/2026 (fim de sessão)
+
+A pedido do usuário ("garanta que tudo foi corrigido, publique tudo, deixe o
+GitHub sem nada em aberto"): mergeados PR #85 (fechamento das auditorias +
+orçamento de JS no CI, Codex), #86 (Importador completo), #87 (Vite 8.3.5).
+Fechadas com evidência: #19, #24, #29, #31, #32, #33, #46, #47, #48, #49,
+#59–#62, #65, #67, #68–#71, #82. PR #34 fechado sem merge (conteúdo
+preservado, substituído pelo relatório histórico recuperado no PR #85).
+23 branches órfãs (já mergeadas) e as 2 branches das PRs fechadas removidas.
+
+**Único item que continua aberto, de propósito:** issue #75 — a tabela
+`kr_anexos_importacao` está aplicada e a integração de frontend está
+publicada, mas falta uma verificação manual única (anexar um Comparativo
+Financeiro real pela tela publicada e confirmar que persiste e que o
+download sai idêntico) que exige login real de produção — este agente não
+manuseia credenciais de produção por política de segurança. Fecha a issue
+quem fizer esse teste.
+
+Decisões finais enviadas ao Lovable (fila, ainda sem confirmação de entrega):
+excluir uma prestação de contas exclui os anexos dela em cascata; limite de
+10 MB no PDF anexado; telas de edição não podem rolar de lado inteiras em
+320px/texto 200% (só o componente tabular, não a página).
+
+Publicado: commit `847d58f` → `deploy-hostinger` `58e8e74`, confirmado ao
+vivo. `npm run bundle:check` (novo, do PR #85) mede 181.408 de 256.000 bytes
+gzip reais contra produção — dentro do orçamento.
+
 ## Revisão dos achados restantes — 22/10/2026
 
 Pedido de corrigir os erros encontrados e publicar. Triagem atual em
