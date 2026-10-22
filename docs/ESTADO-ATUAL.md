@@ -277,3 +277,18 @@ importação, confirmação atômica, divergência, foco) foram implementadas e
 publicadas pelo Codex (PR #74, commit `9c0c1c1` → `deploy-hostinger`
 `204bb76`) — já estava no ar antes deste registro, só não estava confirmado
 aqui (corrigido acima).
+
+## Faxina de PRs/issues/branches perdidas — 22/10/2026
+
+A pedido do usuário: 23 branches remotas já mergeadas em `main` (nunca
+apagadas após o merge) foram removidas. PR #34 (auditoria Impeccable de
+20/10, em conflito com os docs atuais) foi fechado sem merge — seu conteúdo
+já tinha sido recuperado pelo PR #85 do Codex sem sobrescrever a
+documentação atual, então mergeá-lo agora só reintroduziria um snapshot de
+2 dias atrás. Issues fechadas com evidência (publicado/confirmado):
+#19, #24, #29, #47, #48, #49, #67 (e as sub-issues #68–#71, já fechadas pelo
+Codex). Issues #46 e #75 receberam comentário de status (só falta #33 na
+#46; só falta a integração de frontend do Comparativo Financeiro na #75) —
+continuam abertas de propósito. Restam abertas: #31, #32, #33, #46, #59–#62,
+#65, #75, #82 — todas com trabalho ativo em andamento (revisão focal pedida
+pelo usuário ao Lovable, ou PR #85 do Codex).
