@@ -37,15 +37,24 @@ export function RodapeLogin() {
               Registro de Alterações
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
+          {/*
+            wrap-anywhere: versão/título/alteração sem espaços quebram em vez de alargar a janela.
+            Só a lista rola (e recebe o foco ao abrir, para as setas rolarem); título, "X" e
+            "Fechar" ficam sempre à vista. Se nem isso couber, a janela inteira rola.
+          */}
+          <DialogContent className="flex max-h-[85vh] flex-col overflow-y-auto wrap-anywhere">
+            <DialogHeader className="shrink-0">
               <DialogTitle>Registro de Alterações</DialogTitle>
               <DialogDescription>
                 Versão atual: {versaoAtual}. Uma versão nova só é registrada em marcos importantes
                 do sistema.
               </DialogDescription>
             </DialogHeader>
-            <ol className="grid gap-4" aria-label="Versões do Sistema Krieger">
+            <ol
+              tabIndex={0}
+              className="grid min-h-24 gap-4 overflow-y-auto rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+              aria-label="Versões do Sistema Krieger"
+            >
               {versoes.map((v) => (
                 <li key={v.versao} className="rounded-md border bg-card p-4">
                   <h3 className="text-sm font-semibold text-foreground">
@@ -56,15 +65,13 @@ export function RodapeLogin() {
                   </h3>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-foreground">
                     {v.alteracoes.map((a, i) => (
-                      <li key={i} className="break-words">
-                        {a}
-                      </li>
+                      <li key={i}>{a}</li>
                     ))}
                   </ul>
                 </li>
               ))}
             </ol>
-            <DialogFooter>
+            <DialogFooter className="shrink-0">
               <DialogClose asChild>
                 <Button variant="outline">Fechar</Button>
               </DialogClose>

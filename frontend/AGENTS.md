@@ -26,7 +26,7 @@
 - Edital and ata forms edit `data` as dd/mm/aaaa and convert back to aaaa-mm-dd only on save (atas copy the edital date as-is), because the stored format is fixed by existing data while the UI must show Brazilian dates.
 - Generated documents (PDF/Word) and their charts follow `src/lib/documento/AGENTS.md`, also for builders in `src/documentos/`.
 
-- Subdirectories have their own `AGENTS.md` (e.g. `src/domain/AGENTS.md`); read it before changing files there.
+- Subdirectories have their own `AGENTS.md` (e.g. `src/domain/`, `src/components/login/`); read it before changing files there.
 - Form-control boundaries (input, select trigger, textarea, sign toggle, unchecked switch) use the `--control` token (≥ 3:1), while cards/tables keep the decorative `--border`; states and exceptions are documented in `docs/CONTRASTE.md`.
 - Calculation warnings from domain results are only placed, never re-derived: `tipoAviso` in `src/components/previsao/AvisosPrevisao.tsx` maps each warning text to its field/action, and "resultado parcial" means the domain returned `null` for the per-unit value.
 - Long forms keep the essential section always open and put the rest in `SecaoRecolhivel` (Radix Collapsible, content stays mounted but `hidden`), so collapsing never loses typed values.

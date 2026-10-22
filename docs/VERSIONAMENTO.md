@@ -1,19 +1,19 @@
 # Versões e Registro de Alterações
 
-Decisão do responsável em22/10/2026, issue #77: a versão inicial é **1.0**,
+Decisão do responsável em 22/10/2026, issue #77: a versão inicial é **1.0**,
 com o marco **Implantação do sistema**. Ela representa o conjunto implantado;
 não reconstruir versões antigas a partir dos commits de ajustes anteriores.
 
 ## Quando criar uma versão
 
-Registrar nova versão, como1.01, somente para mudança estrutural ou importante
+Registrar nova versão, como 1.01, somente para mudança estrutural ou importante
 para quem usa o sistema: recurso relevante, mudança de fluxo, cálculo/regra,
 segurança ou modelo de dados com impacto significativo. Pequenos ajustes de
 texto, espaçamento, cor, manutenção interna e correções rotineiras ficam nas
 issues/PRs/commits, sem novo marco público por padrão. A importância é uma
 decisão de revisão do release; nenhum script aumenta a versão automaticamente.
 
-Versões são strings:1.0,1.01,1.02 e assim por diante. Não interpretar como
+Versões são strings: 1.0, 1.01, 1.02 e assim por diante. Não interpretar como
 número decimal nem impor SemVer de três partes. Não publicar entradas futuras
 ou um marco ainda não entregue. Mudança grande proposta vai para a issue/PR
 antes de aparecer como versão publicada.
