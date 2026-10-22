@@ -50,5 +50,20 @@
 - [x] #69 confirmação da importação numa chamada única (`api.confirmarImportacao`), ids gerados antes, repetir não duplica; simulado do preview equivalente
 - [x] #70 trava de divergência: quatro totais (PDF/atual/diferença), "Voltar e revisar", referência só some depois de salvar com sucesso; também no registro recém-criado por PDF
 - [x] #71 foco volta ao "Importar PDF" (Cancelar/Escape/Fechar/erro); ao trocar de página vai para o conteúdo; janelas de confirmação devolvem o foco a quem as abriu
-- [ ] #68 estados da conferência do PDF: tela pronta para verificado/parcial/não verificado/divergente — aguardando `estado`/`comparacoes`/`esperadas` no `resumoConferencia` do domínio (Codex)
+- [x] #68 estados da conferência do PDF: verificado/parcial/não verificado/divergente — `estado`/`comparacoes`/`esperadas` já publicados no `resumoConferencia` do domínio (Codex)
 - [ ] Leitor de tela real e toque físico — ficam com o responsável
+
+## Tabela Previsto × Realizado apertada (prévia e PDF/Word)
+- [x] Prévia do Relatório final: tabela compacta (sem "/mês", sem coluna Situação → marcador "*" com legenda), células justas); tela cheia igual
+- [x] PDF/Word: 6 colunas, Rubrica com ~167 pt; valores até R$ 9.999.999,99 sem quebrar
+- [x] Conferência automática: todas as tabelas de todos os documentos cabem na página
+
+## Gráficos com muitos grupos (Relatório final, Previsto × Realizado)
+- [x] Barras previsto × realizado deitadas (grupos à esquerda, nome em até 3 linhas), na tela e no PDF/Word; altura cresce com os grupos
+- [x] Legenda dos gráficos quebra linha (componente compartilhado); legenda da pizza do PDF quebra o nome em vez de encostar no valor
+- [x] Cores sem repetir na pizza: 10 cores do tema (--chart-1 a --chart-10) e cores geradas a partir da 11ª; mesmo cuidado no PDF/Word
+- [ ] Word com 8 grupos não aberto no Word real (mesma imagem do PDF)
+
+## Importador único e anexo do Comparativo Financeiro
+- [x] Anexo de relatório só-leitura (Comparativo Financeiro) a um exercício já existente: domínio e tabela `kr_anexos_importacao` publicados (Claude), aguardando tela de anexar/visualizar
+- [ ] Menu "Importador" (hub único reunindo Relatório mensal, Prestação de contas e Comparativo Financeiro) — ainda não pedido ao Lovable

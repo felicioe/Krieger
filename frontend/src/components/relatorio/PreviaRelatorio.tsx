@@ -198,9 +198,7 @@ export function PreviaRelatorio({
               </tr>
             </tbody>
           </table>
-          <div className="-mx-2 sm:-mx-6 [&_td]:px-1.5 [&_td]:text-xs [&_th]:px-1.5">
-            <TabelaComparativo r={rel.comparativo} />
-          </div>
+          <TabelaComparativo r={rel.comparativo} compacta />
         </Secao>
       )}
 

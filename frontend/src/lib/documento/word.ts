@@ -1,5 +1,5 @@
 import type { Bloco, Coluna, Documento, LinhaTabela, Texto, Alinhamento } from "./tipos";
-import { COR, PAGINA } from "./tipos";
+import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA } from "./tipos";
 import { bytesDe, carregarPng } from "./imagens";
 
 /** Desenha o documento em Word (.docx, biblioteca docx carregada sob demanda). */
@@ -87,7 +87,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
         new Paragraph({
           alignment: al(o.alinhamento),
           spacing: { after: 0, line: 252 },
-          ...(o.recuo ? { indent: { left: 200 } } : {}),
+          ...(o.recuo ? { indent: { left: RECUO_CELULA * 20 } } : {}),
           children: runs(t, o),
         }),
       ],
@@ -109,7 +109,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   ) {
     const altura = o.alturaLinha ? { height: { value: Math.round(o.alturaLinha * 20), rule: HeightRule.ATLEAST } } : {};
     // tabela pequena (comparativo): mesma margem lateral e mesma largura de texto por coluna que o PDF
-    const lado = o.pequena ? 80 : 100;
+    const lado = (o.pequena ? MARGEM_CELULA.pequena : MARGEM_CELULA.normal) * 20;
     const ws = larguras(colunas, o.pequena ? 2 * lado : 0);
     const tam = o.pequena ? 7.5 : 9.5;
     const total = ws.reduce((s, w) => s + w, 0);

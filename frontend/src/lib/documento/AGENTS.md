@@ -1,0 +1,4 @@
+# Document engine rules (also apply to builders in `src/documentos/`)
+
+- Generated documents (PDF and Word): each document is described once as `Documento` blocks (`tipos.ts`) by a presentation-only builder in `src/documentos/` that only lays out data from domain functions; `pdf.ts` (pdfmake) and `word.ts` (docx) draw the same blocks and are imported lazily on download, and charts are SVG rasterized to PNG, so both formats stay identical and the libraries never weigh on normal pages; every table must fit `PAGINA.util` (`src/test/documentosLargura.test.ts`).
+- Document charts (`graficos.ts`) return their own size and go through `blocoGrafico`: category charts grow in height with the number of groups (horizontal bars, wrapping legend names), are scaled down evenly only when taller than the page, and take colors from `corDocumento`, so no category ever shares a color or loses its label however many groups a condominium has.
