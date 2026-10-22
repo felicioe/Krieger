@@ -12,7 +12,7 @@ const output = path.join(root, 'dist', 'hostinger');
 // esconder uma falha de build atrás do empacotamento.
 const fromFrontend = ['index.html', 'assets', 'favicon.png', 'robots.txt'];
 // Backend PHP e config estática, inalterados pela troca de frontend.
-const fromRoot = ['branding', '.htaccess', 'api.php', 'auth.php', 'lib_auth.php'];
+const fromRoot = ['branding', '.htaccess', 'api.php', 'auth.php', 'lib_auth.php', 'lib_importacao.php'];
 
 try {
   await access(path.join(feOutput, 'index.html'));

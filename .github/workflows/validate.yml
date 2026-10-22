@@ -7,6 +7,17 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: krieger-ci-only
+          MYSQL_DATABASE: krieger_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -pkrieger-ci-only"
+          --health-interval=10s --health-timeout=5s --health-retries=10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,6 +33,11 @@ jobs:
       - run: npm run docs:check
       - name: Validar sintaxe PHP
         run: find . -maxdepth 1 -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Testar confirmação atômica com falhas intermediárias
+        env:
+          KRIEGER_TEST_DSN: mysql:host=127.0.0.1;port=3306;dbname=krieger_test;charset=utf8mb4
+          KRIEGER_TEST_PASSWORD: krieger-ci-only
+        run: php scripts/test-confirmacao.php
       - name: Instalar e compilar frontend
         working-directory: frontend
         run: |

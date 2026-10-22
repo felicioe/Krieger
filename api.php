@@ -4,6 +4,7 @@
 // tudo de uma vez (usado no Backup). Exige usuário logado (ver auth.php). Front-end: ver src/db.js.
 declare(strict_types=1);
 require __DIR__ . '/lib_auth.php';
+require __DIR__ . '/lib_importacao.php';
 aplicar_cabecalhos_seguranca();
 
 function erro(string $msg, int $codigo = 400): never { json_erro($msg, $codigo); }
@@ -132,6 +133,16 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
 }
 
 try {
+  if ($a === 'confirmar_importacao') {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST para confirmar a importação.', 405);
+    try { $resultado = confirmar_importacao($pdo, $corpo); }
+    catch (InvalidArgumentException $e) { erro($e->getMessage()); }
+    catch (RuntimeException $e) {
+      if (in_array($e->getCode(), [404, 409], true)) erro($e->getMessage(), $e->getCode());
+      throw $e;
+    }
+    saida($resultado);
+  }
   if ($a === 'exportar') {
     saida(montar_backup($pdo, $STORES, $tabela));
   }
