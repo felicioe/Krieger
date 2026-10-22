@@ -38,9 +38,11 @@ pacote curado e nega acesso direto. Configuração e dados não integram o pacot
 
 O CI usa MySQL8 efêmero, banco krieger_test, sem acesso à produção.
 `scripts/test-confirmacao.php` exige DSN de loopback com esse nome exato.
-Triggers de teste provocam falhas depois do condomínio e depois do relatório;
+Triggers de teste provocam falhas na criação do condomínio, depois dele e depois do relatório;
 os testes verificam rollback, retry sem duplicação, recuperação após rollback,
-status descartado, referência, período duplicado e destino divergente.
+status descartado, referência, período duplicado e destino divergente. Também
+verificam competência pela data inicial, cadastro existente sem sobrescrita e
+prestação de contas no limite de ano aceito pelo domínio (2999).
 Credencial do serviço CI é descartável e não corresponde à hospedagem.
 
 PHP local tem sintaxe validada; sem driver PDO MySQL local, integração é
