@@ -388,16 +388,18 @@ export function aplicarConsideracoesAoExercicio(consid: Exercicio["consid"], cf:
 
 /**
  * Anexo de um relatório "só leitura" (ex.: Comparativo Financeiro) a uma Prestação de Contas já
- * existente — guarda o relatório lido na íntegra, sem virar lançamento no demonstrativo.
+ * existente — guarda o relatório lido na íntegra e o PDF original (`arquivoDataUrl`, pra permitir
+ * baixar/reexibir), sem virar lançamento no demonstrativo.
  */
 export function novoAnexoImportado(
   exercicioId: string,
   tipo: TipoAnexoImportacao,
   rel: RelatorioLido,
   arquivo: string,
+  arquivoDataUrl: string,
   agora = new Date(),
 ): Omit<AnexoImportado, "id"> {
-  return { exercicioId, tipo, arquivo, importadoEm: agora.toISOString(), relatorio: rel };
+  return { exercicioId, tipo, arquivo, arquivoDataUrl, importadoEm: agora.toISOString(), relatorio: rel };
 }
 
 /** Prestação de contas nova com o demonstrativo do PDF. */

@@ -334,6 +334,8 @@ export interface AnexoImportado extends ComId {
   exercicioId: string;
   tipo: TipoAnexoImportacao;
   arquivo: string;
+  /** data URL (igual ao logo do escritório) — permite baixar/reexibir o PDF original. */
+  arquivoDataUrl: string;
   /** ISO 8601 */
   importadoEm: string;
   relatorio: RelatorioLido;
