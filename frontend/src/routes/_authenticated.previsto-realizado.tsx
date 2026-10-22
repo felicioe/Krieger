@@ -206,7 +206,7 @@ function PaginaComparativo() {
 
 function Indicador({ rotulo, valor, detalhe, className }: { rotulo: string; valor: string; detalhe?: string; className?: string }) {
   return (
-    <div className={cn("min-w-0 break-words rounded-md border bg-card px-4 py-4 sm:px-5", className)}>
+    <div className={cn("min-w-0 break-words rounded-md border bg-card px-4 py-4 sm:px-5 shadow-sm", className)}>
       <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{rotulo}</div>
       <div className="num mt-1 text-xl font-semibold text-primary">{valor}</div>
       {detalhe && <div className="mt-0.5 text-xs text-muted-foreground">{detalhe}</div>}
@@ -216,7 +216,7 @@ function Indicador({ rotulo, valor, detalhe, className }: { rotulo: string; valo
 
 function IndicadorDiferenca({ t }: { t: Totais }) {
   return (
-    <div className="min-w-0 break-words rounded-md border bg-card px-4 py-4 sm:px-5">
+    <div className="min-w-0 break-words rounded-md border bg-card px-4 py-4 sm:px-5 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Diferença</span>
         <SituacaoBadge situacao={t.situacao} />

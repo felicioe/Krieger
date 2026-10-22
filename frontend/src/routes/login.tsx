@@ -38,7 +38,7 @@ function Login() {
             <div className="mb-8 md:hidden">
               <Marca fundo="claro" className="mx-auto max-w-[14rem]" />
             </div>
-            <div className="rounded-md border bg-card p-6 sm:p-8">
+            <div className="rounded-md border bg-card p-6 sm:p-8 shadow-sm">
               <div className="mb-6 flex items-center gap-3">
                 <span className="flex size-9 items-center justify-center rounded-md bg-secondary text-primary">
                   <LockKeyhole className="size-4" />

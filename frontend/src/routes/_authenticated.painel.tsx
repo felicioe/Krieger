@@ -33,7 +33,7 @@ function Indicador({ titulo, valor, icone: Icone, to }: { titulo: string; valor:
   // #82: com texto 200% em 320 px a palavra "CONDOMÍNIOS" + ícone + p-5 passavam da coluna;
   // o ícone pode descer de linha e o respiro lateral é menor só abaixo de sm.
   return (
-    <Link to={to} className="group min-w-0 rounded-md border bg-card p-4 transition-colors hover:border-sidebar-indicator sm:p-5">
+    <Link to={to} className="group min-w-0 rounded-md border bg-card p-4 shadow-sm transition-colors hover:border-sidebar-indicator sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
         <span className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titulo}</span>
         <Icone className="size-4 shrink-0 text-sidebar-indicator" aria-hidden />
