@@ -258,6 +258,47 @@ export function encontrarCondominio<C extends Pick<Condominio, "codigo" | "cnpj"
   );
 }
 
+const PALAVRAS_IGNORADAS = new Set(["de", "da", "do", "das", "dos", "e"]);
+const tokensNome = (s: string) => chaveNome(s).split(" ").filter((t) => t.length > 2 && !PALAVRAS_IGNORADAS.has(t));
+
+/** Proporção de palavras em comum entre dois nomes (Jaccard sobre tokens), tolerante a ordem/formatação diferentes. */
+function semelhancaNomes(a: string, b: string): number {
+  const ta = new Set(tokensNome(a));
+  const tb = new Set(tokensNome(b));
+  if (!ta.size || !tb.size) return 0;
+  let comuns = 0;
+  for (const t of ta) if (tb.has(t)) comuns++;
+  return comuns / new Set([...ta, ...tb]).size;
+}
+
+export interface CondominioParecido<C> {
+  condominio: C;
+  pontuacao: number;
+}
+
+/**
+ * Condomínios já cadastrados com nome parecido ao do relatório (ordenados do mais parecido),
+ * para usar quando `encontrarCondominio` não achou correspondência exata — evita cadastrar de novo
+ * um condomínio que já existe só porque o PDF trouxe o nome em ordem/formatação diferente, ou um
+ * código/CNPJ com erro de digitação/OCR. Limiar padrão de 0,4 (ex.: "Residencial Urban Classic" vs
+ * "Urban Classic" bate 2 de 2 palavras relevantes em comum = 1,0; nomes sem nada em comum ficam de fora).
+ */
+export function condominiosParecidos<C extends Pick<Condominio, "codigo" | "cnpj" | "nome" | "nomeRelatorio">>(
+  condominios: C[],
+  dados: { nome?: string | null },
+  limiar = 0.4,
+): CondominioParecido<C>[] {
+  const nome = dados.nome ?? "";
+  if (!chaveNome(nome)) return [];
+  return condominios
+    .map((c) => ({
+      condominio: c,
+      pontuacao: Math.max(semelhancaNomes(nome, c.nome), semelhancaNomes(nome, c.nomeRelatorio)),
+    }))
+    .filter((x) => x.pontuacao >= limiar)
+    .sort((a, b) => b.pontuacao - a.pontuacao);
+}
+
 /**
  * Registro de staging de um relatório de condomínio ainda não cadastrado. `cf`/`pv` são o que
  * `lerConsideracoesFinais`/`lerPrevisaoSugerida` leram do mesmo texto do PDF (ou `null`, se o PDF
