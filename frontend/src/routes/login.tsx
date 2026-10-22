@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Field } from "@/components/app/Field";
 import { Marca } from "@/components/app/Marca";
+import { RodapeLogin } from "@/components/login/RodapeLogin";
 import { api, mensagemErro, usandoMock } from "@/lib/api";
 import { definirUsuario, garantirSessao } from "@/lib/auth";
 import { cabecalho } from "@/lib/head";
@@ -56,7 +57,8 @@ function Login() {
         <p className="text-xs text-sidebar-muted">Krieger Assessoria Contábil e Condominial</p>
       </aside>
 
-      <main className="flex items-center justify-center bg-background px-4 py-12">
+      <div className="flex min-h-screen flex-col bg-background">
+        <main className="flex flex-1 items-center justify-center px-4 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-8 md:hidden">
             <Marca fundo="claro" className="mx-auto max-w-[14rem]" />
@@ -102,11 +104,14 @@ function Login() {
           </div>
           {usandoMock() && (
             <p className="mt-4 text-center text-xs text-muted-foreground">
-              Modo demonstração (dados locais): usuário <strong>admin</strong>, senha <strong>admin123</strong>.
+                Modo demonstração (dados locais): usuário <strong>admin</strong>, senha{" "}
+                <strong>admin123</strong>.
             </p>
           )}
         </div>
       </main>
+        <RodapeLogin />
+      </div>
     </div>
   );
 }

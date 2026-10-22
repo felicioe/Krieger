@@ -6,6 +6,7 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 ## Comece aqui
 
 - [Estado atual e próximas tarefas](docs/ESTADO-ATUAL.md)
+- [Registro de Alterações](CHANGELOG.md) e [política de versões](docs/VERSIONAMENTO.md)
 - [Conexões verificadas entre as ferramentas](docs/CONEXOES.md)
 - [Instruções compartilhadas para agentes](AGENTS.md) e [entrada do Claude](CLAUDE.md)
 - [Arquitetura e mapa dos arquivos](docs/ARQUITETURA.md)

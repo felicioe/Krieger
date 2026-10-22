@@ -6,7 +6,9 @@
     "test": "vitest run",
     "package:hostinger": "node scripts/package-hostinger.mjs",
     "docs:check": "node scripts/check-docs.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "changelog:gerar": "node scripts/changelog.mjs",
+    "changelog:check": "node scripts/changelog.mjs --check"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

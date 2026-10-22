@@ -38,6 +38,9 @@ validação independente em produção.
 - Desenvolvimento na Claude ou Codex → PR no GitHub → `main` → Hostinger via conector/API.
 - `main` é a branch padrão. Não usar branches antigas `claude/*` como base de novos trabalhos.
 - Registre problema, critérios de aceite, decisões, testes e limitações no GitHub.
+- Versão e histórico públicos vêm de frontend/src/data/versoes.json (autoria Lovable).
+  Seguir docs/VERSIONAMENTO.md; gerar CHANGELOG.md com npm run changelog:gerar.
+  Não incrementar versão por pequenos ajustes ou a cada commit.
 - Toda mudança de comportamento, configuração ou processo deve atualizar a documentação relacionada no mesmo PR.
 - Não declarar um recurso pronto porque existe no domínio: conferir ligação ao frontend e comportamento no ambiente real.
 - Regras de negócio em `domain/` (TypeScript sem React); formatação compartilhada em `lib/`.
