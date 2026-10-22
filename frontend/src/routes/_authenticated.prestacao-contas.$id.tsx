@@ -16,6 +16,7 @@ import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { AnexosPrestacao, anexosQuery } from "@/components/importacao/AnexosPrestacao";
+import { excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
@@ -96,12 +97,17 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
     },
   });
 
+  const { data: anexos } = useSuspenseQuery(anexosQuery());
+  const qtdAnexos = anexos.filter((a) => a.exercicioId === e.id).length;
+
   const excluir = useMutation({
-    mutationFn: () => api.excluir("exercicios", e.id),
-    onSuccess: () => {
+    // Cascata: os anexos de referência desta prestação saem junto.
+    mutationFn: () => excluirPrestacaoComAnexos(e.id),
+    onSettled: () => queryClient.invalidateQueries({ queryKey: chaves.store("anexos_importacao") }),
+    onSuccess: (n) => {
       liberado.current = true;
       queryClient.invalidateQueries({ queryKey: chaves.store("exercicios") });
-      toast.success("Prestação de contas excluída.");
+      toast.success(n > 0 ? `Prestação de contas e ${n === 1 ? "1 anexo excluídos" : `${n} anexos excluídos`}.` : "Prestação de contas excluída.");
       navigate({ to: "/prestacao-contas" });
     },
   });
@@ -225,7 +231,9 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         aberto={confirmarExclusao}
         aoMudar={setConfirmarExclusao}
         titulo="Excluir prestação de contas?"
-        descricao={`O exercício ${e.ano} de ${e.condoNome} será excluído. Esta ação não pode ser desfeita.`}
+        descricao={`O exercício ${e.ano} de ${e.condoNome} será excluído${
+          qtdAnexos > 0 ? `, junto com ${qtdAnexos === 1 ? "o anexo de referência" : `os ${qtdAnexos} anexos de referência`} desta prestação` : ""
+        }. Esta ação não pode ser desfeita.`}
         rotuloConfirmar="Excluir"
         destrutivo
         aoConfirmar={() => excluir.mutateAsync()}

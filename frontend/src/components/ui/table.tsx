@@ -22,19 +22,32 @@ function useRolavel() {
   return { ref, rolavel };
 }
 
+/**
+ * Área de rolagem própria para uma tabela simples (`<table>` sem os estilos de Table): em tela
+ * estreita só a tabela rola para o lado, nunca a página.
+ */
+function RolagemTabela({ children, className }: { children: React.ReactNode; className?: string }) {
+  const { ref: area, rolavel } = useRolavel();
+  return (
+    <div
+      ref={area}
+      tabIndex={rolavel ? 0 : undefined}
+      className={cn(
+        "relative w-full overflow-auto rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
+
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => {
-    const { ref: area, rolavel } = useRolavel();
-    return (
-      <div
-        ref={area}
-        tabIndex={rolavel ? 0 : undefined}
-        className="relative w-full overflow-auto rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
-      </div>
-    );
-  },
+  ({ className, ...props }, ref) => (
+    <RolagemTabela>
+      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+    </RolagemTabela>
+  ),
 );
 Table.displayName = "Table";
 
@@ -118,4 +131,4 @@ const TableCaption = React.forwardRef<
 ));
 TableCaption.displayName = "TableCaption";
 
-export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption };
+export { RolagemTabela, Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption };

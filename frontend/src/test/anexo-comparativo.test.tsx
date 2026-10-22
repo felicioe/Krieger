@@ -4,8 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AnexarComparativo, ERRO_NAO_COMPARATIVO } from "@/components/importacao/AnexarComparativo";
+import { ERRO_PDF_GRANDE, excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
 import { mockApi } from "@/lib/mockApi";
-import type { AnexoImportado, Condominio } from "@/domain/types";
+import type { AnexoImportado, Condominio, Exercicio } from "@/domain/types";
 
 const leitura = vi.hoisted(() => ({ texto: "" }));
 vi.mock("@/lib/pdfTexto", () => ({ extrairTextoPdf: async () => leitura.texto }));
@@ -103,5 +104,50 @@ describe("Importador: anexar Comparativo Financeiro", () => {
       relatorio: { layout: "comparativo" },
     });
     expect(gravados[0]!.arquivoDataUrl).toMatch(/^data:application\/pdf;base64,/);
+  });
+
+  it("PDF maior que 10 MB é recusado antes de ler e não grava nada", async () => {
+    leitura.texto = COMPARATIVO;
+    const u = userEvent.setup();
+    await montar();
+    const grande = pdf("grande.pdf");
+    Object.defineProperty(grande, "size", { value: 10 * 1024 * 1024 + 1 });
+    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), grande);
+    expect(await screen.findByText(ERRO_PDF_GRANDE)).toBeInTheDocument();
+    expect(ERRO_PDF_GRANDE).toBe("PDF maior que 10 MB — escolha um arquivo menor.");
+    expect(screen.queryByRole("button", { name: "Anexar à prestação de contas" })).not.toBeInTheDocument();
+    expect(await mockApi.listar("anexos_importacao")).toEqual([]);
+  });
+
+  it("PDF de exatamente 10 MB é aceito", async () => {
+    leitura.texto = COMPARATIVO;
+    const u = userEvent.setup();
+    await montar();
+    const limite = pdf("limite.pdf");
+    Object.defineProperty(limite, "size", { value: 10 * 1024 * 1024 });
+    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), limite);
+    expect(await screen.findByRole("button", { name: "Anexar à prestação de contas" })).toBeInTheDocument();
+    expect(screen.queryByText(ERRO_PDF_GRANDE)).not.toBeInTheDocument();
+  });
+});
+
+describe("Excluir prestação de contas leva os anexos junto", () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    await mockApi.auth.entrar("admin", "admin123");
+  });
+
+  it("apaga só os anexos daquela prestação e depois a prestação", async () => {
+    const base = { tipo: "comparativo_financeiro" as const, arquivo: "c.pdf", arquivoDataUrl: "data:application/pdf;base64,", importadoEm: "2026-01-01T00:00:00.000Z", relatorio: {} as AnexoImportado["relatorio"] };
+    await mockApi.salvar("anexos_importacao", { ...base, id: "a1", exercicioId: "exe-acacias-2025" });
+    await mockApi.salvar("anexos_importacao", { ...base, id: "a2", exercicioId: "exe-acacias-2025" });
+    await mockApi.salvar("anexos_importacao", { ...base, id: "a3", exercicioId: "outra-prestacao" });
+
+    expect(await excluirPrestacaoComAnexos("exe-acacias-2025")).toBe(2);
+
+    const restantes = await mockApi.listar<AnexoImportado>("anexos_importacao");
+    expect(restantes.map((a) => a.id)).toEqual(["a3"]);
+    const exercicios = await mockApi.listar<Exercicio>("exercicios");
+    expect(exercicios.some((x) => x.id === "exe-acacias-2025")).toBe(false);
   });
 });

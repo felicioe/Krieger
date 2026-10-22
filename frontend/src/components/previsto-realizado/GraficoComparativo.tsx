@@ -1,4 +1,4 @@
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
 import {
   ChartContainer,
   ChartLegend,
@@ -8,7 +8,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatBRL, formatNumeroBR } from "@/lib/format";
+import { formatBRL, formatNumeroBR, formatValorCurto } from "@/lib/format";
 import type { ResultadoComparativo } from "@/domain/previstoRealizado";
 
 const config = {
@@ -75,13 +75,29 @@ function RotuloGrupo(props: {
   const passo = fonte + 2;
   const inicio = y - ((linhas.length - 1) * passo) / 2;
   return (
-    <text x={x - 6} y={inicio} textAnchor="end" dominantBaseline="central" fontSize={fonte}>
+    <text x={x - 6} y={inicio} textAnchor="end" dominantBaseline="central" fontSize={fonte} className="fill-foreground">
       <title>{nome}</title>
       {linhas.map((l, i) => (
         <tspan key={i} x={x - 6} dy={i === 0 ? 0 : passo}>
           {l}
         </tspan>
       ))}
+    </text>
+  );
+}
+
+/** Valor curto na ponta da barra (zero aparece como "0", não como vazio); o exato fica no tooltip e na tabela. */
+function ValorNaBarra(props: { x?: number | string; y?: number | string; width?: number | string; height?: number | string; value?: number | string }) {
+  const x = Number(props.x ?? 0);
+  const y = Number(props.y ?? 0);
+  const w = Number(props.width ?? 0);
+  const h = Number(props.height ?? 0);
+  const v = Number(props.value ?? 0);
+  // Ponta direita da barra: o fim, se positiva; o eixo zero, se negativa (não invade os nomes dos grupos).
+  const pos = Math.max(x, x + w) + 4;
+  return (
+    <text x={pos} y={y + h / 2} dominantBaseline="central" fontSize={11} className="fill-foreground num" aria-hidden>
+      {formatValorCurto(v)}
     </text>
   );
 }
@@ -106,7 +122,7 @@ export function GraficoComparativo({ r }: { r: ResultadoComparativo }) {
       <BarChart
         data={dados}
         layout="vertical"
-        margin={{ top: 4, right: 12, left: 4, bottom: 0 }}
+        margin={{ top: 4, right: movel ? 52 : 64, left: 4, bottom: 0 }}
         barCategoryGap="22%"
         barGap={2}
       >
@@ -150,13 +166,17 @@ export function GraficoComparativo({ r }: { r: ResultadoComparativo }) {
           fill="var(--color-previsto)"
           radius={[0, 3, 3, 0]}
           maxBarSize={16}
-        />
+        >
+          <LabelList dataKey="previsto" content={<ValorNaBarra />} />
+        </Bar>
         <Bar
           dataKey="realizado"
           fill="var(--color-realizado)"
           radius={[0, 3, 3, 0]}
           maxBarSize={16}
-        />
+        >
+          <LabelList dataKey="realizado" content={<ValorNaBarra />} />
+        </Bar>
       </BarChart>
     </ChartContainer>
   );

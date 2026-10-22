@@ -224,7 +224,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
               ) : undefined
             }
           >
-            <dl className="grid gap-4 text-sm sm:grid-cols-3">
+            <dl className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
               <div>
                 <dt className="text-xs font-medium text-muted-foreground">Condomínio</dt>
                 <dd className="mt-1 font-medium">{condo?.nomeRelatorio || condo?.nome || "—"}</dd>
@@ -241,7 +241,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
           </SectionCard>
 
           <SectionCard titulo="Reunião">
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Field rotulo="Tipo">
                 <Selecao value={a.tipo} onChange={(v) => mudar({ tipo: v })} opcoes={OPCOES_TIPO} />
               </Field>
@@ -274,7 +274,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
               itens={a.presentes}
               onChange={(presentes) => mudar({ presentes })}
               novo={() => ({ unidade: "", nome: "", procurador: false })}
-              colunas="grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[7rem_minmax(0,1fr)_8rem]"
+              colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[7rem_minmax(0,1fr)_8rem]"
               cabecalhos={["Unidade", "Nome", "Procurador"]}
               rotuloAdicionar="Adicionar presente"
               vazio="Ninguém na lista ainda."
@@ -283,9 +283,9 @@ function FormAta({ inicial }: { inicial: Ata }) {
                 <>
                   <Input aria-label={`Unidade do presente ${i + 1}`} placeholder="Unidade" value={p.unidade} onChange={(e) => up({ unidade: e.target.value })} />
                   <Input aria-label={`Nome do presente ${i + 1}`} placeholder="Nome" value={p.nome} onChange={(e) => up({ nome: e.target.value })} />
-                  <label className="col-span-2 flex h-9 items-center gap-2 pl-1.5 text-sm max-md:h-11 max-md:gap-3 pointer-coarse:h-11 pointer-coarse:gap-3 sm:col-span-1">
+                  <label className="col-span-full flex min-h-9 min-w-0 items-center gap-2 pl-1.5 text-sm max-md:min-h-11 max-md:gap-3 pointer-coarse:min-h-11 pointer-coarse:gap-3 sm:col-span-1">
                     <Checkbox checked={p.procurador} onCheckedChange={(v) => up({ procurador: v === true })} aria-label={`Presente ${i + 1} é procurador`} />
-                    Procurador
+                    <span className="min-w-0 break-words">Procurador</span>
                   </label>
                 </>
               )}
@@ -329,11 +329,11 @@ function FormAta({ inicial }: { inicial: Ata }) {
               render={(item, up, i) => {
                 const total = item.votos.favor + item.votos.contra + item.votos.abstencao;
                 return (
-                  <div className="grid gap-3 rounded-md border bg-card p-3">
+                  <div className="grid grid-cols-1 gap-3 rounded-md border bg-card p-3 @max-[10rem]:p-2">
                     <Field rotulo={`Item ${i + 1}`}>
                       <Input value={item.titulo} onChange={(e) => up({ titulo: e.target.value })} className="font-medium" />
                     </Field>
-                    <div className="grid gap-3 @2xl:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
                       <Field rotulo="Discussão">
                         <Textarea value={item.discussao} onChange={(e) => up({ discussao: e.target.value })} rows={3} />
                       </Field>
@@ -341,7 +341,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
                         <Textarea value={item.deliberacao} onChange={(e) => up({ deliberacao: e.target.value })} rows={3} />
                       </Field>
                     </div>
-                    <div className="grid grid-cols-3 items-end gap-3 @2xl:grid-cols-[8rem_8rem_8rem_minmax(0,1fr)]">
+                    <div className="grid grid-cols-1 items-end gap-3 @min-[14rem]:grid-cols-3 @2xl:grid-cols-[8rem_8rem_8rem_minmax(0,1fr)]">
                       <Field rotulo="A favor">
                         <InteiroInput value={item.votos.favor} onChange={(v) => up({ votos: { ...item.votos, favor: v ?? 0 } })} />
                       </Field>
@@ -351,7 +351,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
                       <Field rotulo="Abstenções">
                         <InteiroInput value={item.votos.abstencao} onChange={(v) => up({ votos: { ...item.votos, abstencao: v ?? 0 } })} />
                       </Field>
-                      <p className="num col-span-3 pb-2 text-xs text-muted-foreground @2xl:col-span-1">{total ? `${total} votos` : "Sem votação registrada"}</p>
+                      <p className="num col-span-full pb-2 text-xs text-muted-foreground @2xl:col-span-1">{total ? `${total} votos` : "Sem votação registrada"}</p>
                     </div>
                   </div>
                 );
@@ -359,7 +359,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
             />
           </SectionCard>
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <SectionCard titulo="Encerramento">
               <Textarea aria-label="Encerramento" value={a.encerramento} onChange={(e) => mudar({ encerramento: e.target.value })} rows={5} />
             </SectionCard>

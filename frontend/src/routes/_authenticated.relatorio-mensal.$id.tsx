@@ -200,7 +200,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
 
           <TabsContent value="receber" className="mt-4">
             <SectionCard titulo="Contas a receber" descricao={`Inadimplência do condomínio ao fim de ${rotuloCompetencia(competencia)}.`}>
-              <div className="grid max-w-lg gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 max-w-lg gap-4 sm:grid-cols-2">
                 <Field rotulo="Unidades inadimplentes" {...(condo?.unidades ? { dica: `De ${condo.unidades} unidades.` } : {})}>
                   <InteiroInput
                     value={m.receber.unidades}
@@ -245,7 +245,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
                       value={n.texto}
                       onChange={(e) => up({ texto: e.target.value })}
                       rows={2}
-                      className="col-span-2 mb-2"
+                      className="col-span-full mb-2"
                     />
                   </>
                 )}

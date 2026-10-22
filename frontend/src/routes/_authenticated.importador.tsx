@@ -33,7 +33,7 @@ function CartaoImportacao({
     <section className="flex min-w-0 flex-col rounded-md border bg-card p-5 text-card-foreground">
       <div className="flex items-center gap-2">
         <Icone className="size-5 shrink-0 text-primary" aria-hidden />
-        <h2 className="text-base font-semibold text-primary">{titulo}</h2>
+        <h2 className="min-w-0 break-words text-base font-semibold text-primary">{titulo}</h2>
       </div>
       <div className="mt-2 flex-1 space-y-2 text-sm text-muted-foreground">{children}</div>
       <div className="mt-4">{acao}</div>
@@ -87,7 +87,7 @@ function Importador() {
             Anexa o PDF do Comparativo Financeiro a uma prestação de contas que já existe, como referência para consulta e
             download. Não altera o demonstrativo.
           </p>
-          <p>Os anexos aparecem no fim da tela da prestação de contas.</p>
+          <p>PDF de até 10 MB. Os anexos aparecem no fim da tela da prestação de contas.</p>
         </CartaoImportacao>
       </div>
       <p className="mt-4 text-sm text-muted-foreground">

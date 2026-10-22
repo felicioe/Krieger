@@ -45,7 +45,7 @@ export function Field({
 
   return (
     <div className={cn("grid min-w-0 content-start gap-1.5", className)}>
-      <Label htmlFor={id} className="text-xs font-medium text-muted-foreground">
+      <Label htmlFor={id} className="break-words text-xs font-medium text-muted-foreground">
         {rotulo}
         {obrigatorio && (
           <span className="ml-0.5 text-destructive" aria-hidden="true">

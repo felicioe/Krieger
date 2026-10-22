@@ -46,8 +46,8 @@ function ListaValores({
 
 function Total({ rotulo, valor, destaque }: { rotulo: string; valor: number; destaque?: boolean }) {
   return (
-    <div className={cn("mt-3 flex items-center justify-between border-t pt-3 text-sm", destaque && "font-semibold text-primary")}>
-      <span className="text-muted-foreground">{rotulo}</span>
+    <div className={cn("mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 border-t pt-3 text-sm", destaque && "font-semibold text-primary")}>
+      <span className="min-w-0 break-words text-muted-foreground">{rotulo}</span>
       <span className="num font-medium text-foreground">{formatBRL(valor)}</span>
     </div>
   );
@@ -134,7 +134,7 @@ export function EditorDemonstrativo({
         ) : (
           <div className="space-y-5">
             {grupos.map((g, i) => (
-              <div key={i} className="rounded-md border bg-muted/30 p-4">
+              <div key={i} className="rounded-md border bg-muted/30 p-4 @max-[14rem]:p-2">
                 <div className="mb-3 flex items-end gap-2">
                   <Field rotulo="Grupo" className="flex-1">
                     <Input
@@ -178,7 +178,7 @@ export function EditorDemonstrativo({
             ["(=) Saldo calculado", d.despesas.saldoRestante],
             ["Saldo atual informado", d.totais.saldoAtual],
           ].map(([r, v]) => (
-            <div key={r as string} className="flex justify-between gap-4">
+            <div key={r as string} className="flex flex-wrap justify-between gap-x-4 gap-y-0.5">
               <dt className="text-muted-foreground">{r}</dt>
               <dd className="num font-medium">{formatBRL(v as number)}</dd>
             </div>

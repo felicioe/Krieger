@@ -360,7 +360,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             itens={c.indices}
             onChange={(v) => set("indices", v)}
             novo={() => ({ ano: new Date().getFullYear(), pct: null })}
-            colunas="grid-cols-2 @2xl:grid-cols-[8rem_10rem]"
+            colunas="grid-cols-1 @min-[12rem]:grid-cols-2 @2xl:grid-cols-[8rem_10rem]"
             cabecalhos={["Ano", "Percentual"]}
             rotuloAdicionar="Adicionar índice"
             vazio="Nenhum índice informado."

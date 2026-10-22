@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field } from "@/components/app/Field";
 import { InteiroInput } from "@/components/app/inputs";
 import { ResumoImportacao } from "./ResumoImportacao";
+import { SugestaoParecidos } from "./SugestaoParecidos";
 import { marcarCriadoPorPdf } from "./criadoPorPdf";
 import { focarConteudoApos } from "@/components/app/foco";
 import { api, mensagemErro } from "@/lib/api";
@@ -27,6 +28,7 @@ import {
   aplicarConsideracoesAoExercicio,
   colunaPadrao,
   demonstrativoDoRelatorio,
+  condominiosParecidos,
   encontrarCondominio,
   exercicioImportado,
   mensalImportado,
@@ -273,8 +275,23 @@ function PassoNovo({
   const { data: exercicios = [] } = useQuery({ ...listaQuery<Exercicio>("exercicios"), enabled: destino === "exercicios" });
   const { data: escritorio } = useQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
   const [ano, setAno] = useState<number | null>(() => anoDoRelatorio(lido.relatorio, coluna));
-  const existente = encontrarCondominio(condominios, lido.relatorio.condominio);
+  const exato = encontrarCondominio(condominios, lido.relatorio.condominio);
+  // Sem correspondência exata, o usuário pode escolher um cadastro de nome parecido (o cadastro não muda).
+  const [escolhidoId, setEscolhidoId] = useState<string | null>(null);
+  const parecidos = useMemo(
+    () => (exato ? [] : condominiosParecidos(condominios, lido.relatorio.condominio)),
+    [exato, condominios, lido.relatorio.condominio],
+  );
+  const escolhido = !exato && escolhidoId ? (parecidos.find((x) => x.condominio.id === escolhidoId)?.condominio ?? null) : null;
+  const existente = exato ?? escolhido;
   const condo = existente ? normalizarCondominio(existente) : null;
+  const refCadastro = useRef<HTMLDivElement>(null);
+  const refSugestao = useRef<HTMLDivElement>(null);
+  const escolher = (id: string | null) => {
+    setEscolhidoId(id);
+    // O botão clicado some; o foco vai para o bloco que o substitui.
+    requestAnimationFrame(() => (id ? refCadastro : refSugestao).current?.focus());
+  };
   const demonstrativo = useMemo(() => demonstrativoDoRelatorio(lido.relatorio, coluna, condo?.nome ?? ""), [lido, coluna, condo?.nome]);
   const rotulo = destino === "mensais" ? "relatório mensal" : "prestação de contas";
 
@@ -337,10 +354,18 @@ function PassoNovo({
         previsaoSugerida={lido.previsaoSugerida}
       />
       {condo ? (
-        <div className="grid gap-3 rounded-md border p-3 text-sm">
+        <div ref={refCadastro} tabIndex={-1} className="grid gap-3 rounded-md border p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <p>
             Condomínio cadastrado: <span className="font-medium">{condo.codigo ? `${condo.codigo} · ` : ""}{condo.nome}</span>
           </p>
+          {escolhido && (
+            <p className="text-xs text-muted-foreground">
+              Escolhido pela semelhança do nome; o cadastro do condomínio não é alterado.{" "}
+              <Button variant="link" className="h-auto p-0 text-xs" onClick={() => escolher(null)} disabled={ocupado}>
+                Não é este, é um condomínio novo
+              </Button>
+            </p>
+          )}
           {destino === "exercicios" && (
             <Field rotulo="Ano do exercício" obrigatorio className="max-w-[10rem]">
               <InteiroInput value={ano} onChange={setAno} maxLength={4} />
@@ -348,12 +373,22 @@ function PassoNovo({
           )}
         </div>
       ) : (
-        <Alert variant="warning">
-          <TriangleAlert />
-          <AlertDescription>
-            Nenhum condomínio cadastrado com este código ou CNPJ. Confira o cadastro básico lido do PDF; ao confirmar, o condomínio é criado e o {rotulo} é gravado.
-          </AlertDescription>
-        </Alert>
+        <div ref={refSugestao} tabIndex={-1} className="grid gap-3 outline-none">
+          <Alert variant="warning">
+            <TriangleAlert />
+            <AlertDescription>
+              {parecidos.length > 0
+                ? `Nenhum condomínio cadastrado com este código ou CNPJ. Se for um condomínio novo, confira o cadastro básico lido do PDF; ao confirmar, o condomínio é criado e o ${rotulo} é gravado.`
+                : `Nenhum condomínio cadastrado com este código ou CNPJ. Confira o cadastro básico lido do PDF; ao confirmar, o condomínio é criado e o ${rotulo} é gravado.`}
+            </AlertDescription>
+          </Alert>
+          <SugestaoParecidos
+            nomeLido={lido.relatorio.condominio.nome}
+            parecidos={parecidos}
+            aoEscolher={(c) => escolher(c.id)}
+            desabilitado={ocupado}
+          />
+        </div>
       )}
       <DialogFooter>
         <Button variant="outline" onClick={fechar} disabled={ocupado}>
@@ -367,7 +402,7 @@ function PassoNovo({
         ) : (
           <Button onClick={() => conferir.mutate()} disabled={ocupado}>
             {conferir.isPending && <Loader2 className="animate-spin" />}
-            Conferir cadastro
+            {parecidos.length > 0 ? "Conferir cadastro novo" : "Conferir cadastro"}
           </Button>
         )}
       </DialogFooter>

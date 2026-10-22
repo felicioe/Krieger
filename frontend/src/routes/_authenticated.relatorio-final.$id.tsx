@@ -166,8 +166,8 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
           </TabsList>
 
           <TabsContent value="previa" className="mt-4">
-            <div className="grid gap-6 2xl:grid-cols-[18rem_minmax(0,1fr)]">
-              <aside className="grid content-start gap-4 md:grid-cols-3 2xl:sticky 2xl:top-4 2xl:grid-cols-1 2xl:self-start">
+            <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[18rem_minmax(0,1fr)]">
+              <aside className="grid min-w-0 grid-cols-1 content-start gap-4 md:grid-cols-3 2xl:sticky 2xl:top-4 2xl:grid-cols-1 2xl:self-start">
                 <SectionCard titulo="Seções">
                   <ul className="space-y-2.5 max-md:space-y-0 pointer-coarse:space-y-0">
                     {SECOES.map((s) => (
@@ -178,14 +178,14 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                             checked={rel.secoes[s.id]}
                             onCheckedChange={(v) => mudar(alternarSecao(e, s.id, v === true))}
                           />
-                          <Label htmlFor={`secao-${s.id}`} className="text-sm font-normal">
+                          <Label htmlFor={`secao-${s.id}`} className="min-w-0 break-words text-sm font-normal">
                             {s.titulo}
                           </Label>
                         </div>
                         {s.id === "analise" && rel.secoes.analise && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox id="secao-pizza" checked={e.mostrarPizza !== false} onCheckedChange={(v) => mudar({ mostrarPizza: v === true })} />
-                            <Label htmlFor="secao-pizza" className="text-xs font-normal text-muted-foreground">
+                            <Label htmlFor="secao-pizza" className="min-w-0 break-words text-xs font-normal text-muted-foreground">
                               Pizza das despesas por grupo
                             </Label>
                           </div>
@@ -196,7 +196,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                 </SectionCard>
 
                 <SectionCard titulo="Capa e assinatura">
-                  <div className="grid gap-3">
+                  <div className="grid grid-cols-1 gap-3">
                     <Field rotulo="Cidade">
                       <Input value={e.cidade} onChange={(ev) => mudar({ cidade: ev.target.value })} />
                     </Field>

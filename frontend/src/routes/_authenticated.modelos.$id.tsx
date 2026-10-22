@@ -195,7 +195,7 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
             vazio="Nenhum bloco. Adicione o título, os parágrafos e o bloco da pauta."
             render={(b, up, i) => (
               <div className="grid gap-2 rounded-md border bg-card p-3 sm:grid-cols-[11rem_minmax(0,1fr)]">
-                <div className="grid content-start gap-2">
+                <div className="grid grid-cols-1 content-start gap-2">
                   <span className="num text-xs font-medium text-muted-foreground">Bloco {i + 1}</span>
                   <Selecao aria-label={`Tipo do bloco ${i + 1}`} value={b.tipo} onChange={(tipo) => up({ tipo })} opcoes={TIPOS_BLOCO} />
                   <Input

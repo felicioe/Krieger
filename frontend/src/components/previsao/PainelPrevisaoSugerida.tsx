@@ -56,14 +56,14 @@ export function PainelPrevisaoSugerida({
     : [];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
       <div className="min-w-0 space-y-6">
         <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
         <SectionCard titulo="Categorias de despesa" descricao="Efetivamente realizado no ano, como veio do PDF do Systemar.">
           {p.categorias.length === 0 ? (
             <p className="text-sm text-muted-foreground">O PDF não trouxe categorias de despesa.</p>
           ) : (
-            <div className="-mx-5 -mb-5 overflow-x-auto">
+            <div className="-mx-5 -mb-5 overflow-x-auto @max-[14rem]:-mx-3 @max-[14rem]:-mb-3">
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/60 hover:bg-muted/60">
@@ -98,7 +98,7 @@ export function PainelPrevisaoSugerida({
             itens={p.deducoes}
             onChange={(deducoes) => setP({ deducoes })}
             novo={() => ({ id: novoId(), descricao: "", sinal: "-", valor: 0 })}
-            colunas="grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[5.5rem_minmax(0,1fr)_9.5rem]"
+            colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)] @2xl:grid-cols-[5.75rem_minmax(0,1fr)_9.5rem]"
             cabecalhos={["Sinal", "Descrição", "Valor anual"]}
             reordenavel={false}
             rotuloAdicionar="Adicionar dedução"
@@ -107,7 +107,7 @@ export function PainelPrevisaoSugerida({
               <>
                 <SinalToggle valor={d.sinal} onChange={(sinal) => up({ sinal })} rotulo="Sinal da dedução" />
                 <Input aria-label="Descrição" placeholder="Descrição da dedução" value={d.descricao} onChange={(ev) => up({ descricao: ev.target.value })} />
-                <div className="col-span-2 sm:col-span-1">
+                <div className="col-span-full sm:col-span-1">
                   <DinheiroInput aria-label="Valor anual" value={d.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
                 </div>
               </>
@@ -116,13 +116,15 @@ export function PainelPrevisaoSugerida({
         </SectionCard>
 
         <SectionCard titulo="Variação de despesas sugeridas" descricao="Valor anual somado (+) ou subtraído (−) do total ordinário.">
-          <div className="grid max-w-md grid-cols-[5.5rem_minmax(0,1fr)] gap-2">
-            <SinalToggle valor={p.variacao.sinal} onChange={(sinal) => setP({ variacao: { ...p.variacao, sinal } })} rotulo="Sinal da variação" />
-            <DinheiroInput
-              aria-label="Valor da variação"
-              value={p.variacao.valor}
-              onChange={(v) => setP({ variacao: { ...p.variacao, valor: Math.abs(v ?? 0) } })}
-            />
+          <div className="@container max-w-md">
+            <div className="grid grid-cols-1 gap-2 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)]">
+              <SinalToggle valor={p.variacao.sinal} onChange={(sinal) => setP({ variacao: { ...p.variacao, sinal } })} rotulo="Sinal da variação" />
+              <DinheiroInput
+                aria-label="Valor da variação"
+                value={p.variacao.valor}
+                onChange={(v) => setP({ variacao: { ...p.variacao, valor: Math.abs(v ?? 0) } })}
+              />
+            </div>
           </div>
         </SectionCard>
       </div>

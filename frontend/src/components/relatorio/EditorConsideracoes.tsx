@@ -48,7 +48,7 @@ export function EditorConsideracoes({
           itens={c.administracao}
           onChange={(v) => set("administracao", v)}
           novo={() => ({ cargo: "", nome: "", mandatoFim: "" })}
-          colunas="grid-cols-2 @2xl:grid-cols-[10rem_minmax(0,1fr)_8rem]"
+          colunas="grid-cols-1 @min-[14rem]:grid-cols-2 @2xl:grid-cols-[10rem_minmax(0,1fr)_8rem]"
           cabecalhos={["Cargo", "Nome", "Mandato até"]}
           rotuloAdicionar="Adicionar membro"
           render={(m, up) => (
@@ -62,7 +62,7 @@ export function EditorConsideracoes({
       </SectionCard>
 
       <SectionCard titulo="Seguro">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field rotulo="Seguradora">
             <Input value={c.seguradora} onChange={(e) => set("seguradora", e.target.value)} />
           </Field>
@@ -93,7 +93,7 @@ export function EditorConsideracoes({
       </SectionCard>
 
       <SectionCard titulo="Manutenções e vistorias">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field rotulo="Recarga dos extintores até">
             <DataInput value={c.vigenciaExtintores} onChange={(v) => set("vigenciaExtintores", v)} />
           </Field>
@@ -119,7 +119,7 @@ export function EditorConsideracoes({
       </SectionCard>
 
       <SectionCard titulo="Valores">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field
             rotulo="Contas a receber"
             {...(receberMensais?.valor != null ? { dica: `Relatório de ${receberMensais.mes}: ${formatBRL(receberMensais.valor)}.` } : {})}
