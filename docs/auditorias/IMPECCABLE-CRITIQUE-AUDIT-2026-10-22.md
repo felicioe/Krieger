@@ -52,6 +52,12 @@ Prioridades da crítica:
 
 ## Auditoria de contraste e espaçamento
 
+Reteste em 22/10, runtime publicado index-DxG3-lFZ.js: o cadastro vazio ainda
+usa borda oklch(0.88 0.015 251.6). Menu móvel Novo condomínio → Painel altera
+a URL e fecha o drawer; após estabilização, h1=Painel e foco=MAIN. A amostra
+anterior foi prematura durante a transição. Issue #47 recebeu essa evidência;
+regressão com loader lento continua pendente. Nenhum dado foi salvo.
+
 Medição por cores computadas do navegador na produção, OKLCH→sRGB, composição
 alpha e luminância relativa WCAG. Não é leitura de pixels nem certificação.
 

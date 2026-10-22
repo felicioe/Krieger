@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -6,6 +7,7 @@ import { DataTable } from "@/components/app/DataTable";
 import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
 import { MenuMovel } from "@/components/app/MenuMovel";
+import { RepeatableList } from "@/components/app/RepeatableList";
 
 type Condo = { id: string; nome: string; codigo: string };
 const CONDOS: Condo[] = [
@@ -239,5 +241,66 @@ describe("#47 Menu do celular: teclado e retorno do foco", () => {
     await user.click(within(gaveta).getByRole("button", { name: "Condomínios" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(document.getElementById("conteudo-teste")).toHaveFocus();
+  });
+});
+
+function ListaDeTeste({ inicial, reordenavel = true }: { inicial: string[]; reordenavel?: boolean }) {
+  const [itens, setItens] = useState(inicial.map((texto) => ({ texto })));
+  return (
+    <>
+      <RepeatableList<{ texto: string }>
+        itens={itens}
+        onChange={setItens}
+        novo={() => ({ texto: "" })}
+        reordenavel={reordenavel}
+        render={(it, up, i) => (
+          <input aria-label={`Texto ${i + 1}`} value={it.texto} onChange={(e) => up({ texto: e.target.value })} />
+        )}
+      />
+      <output data-testid="ordem">{itens.map((i) => i.texto).join(",")}</output>
+    </>
+  );
+}
+
+describe("RepeatableList: reordenar pela alça sem mouse", () => {
+  it("Tab chega na alça e a seta para baixo troca a linha de posição, mantendo o foco nela", async () => {
+    const user = userEvent.setup();
+    render(<ListaDeTeste inicial={["A", "B", "C"]} />);
+
+    await user.tab(); // campo da linha 1
+    await user.tab();
+    const alca = screen.getByRole("button", { name: "Reordenar linha 1" });
+    expect(alca).toHaveFocus();
+
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByTestId("ordem")).toHaveTextContent("B,A,C");
+    expect(screen.getByRole("button", { name: "Reordenar linha 2" })).toHaveFocus();
+    expect(screen.getByLabelText("Texto 2")).toHaveValue("A");
+
+    await user.keyboard("{ArrowDown}");
+    expect(screen.getByTestId("ordem")).toHaveTextContent("B,C,A");
+    await user.keyboard("{ArrowUp}{ArrowUp}");
+    expect(screen.getByTestId("ordem")).toHaveTextContent("A,B,C");
+    expect(screen.getByRole("button", { name: "Reordenar linha 1" })).toHaveFocus();
+  });
+
+  it("nas pontas a seta não move e avisa o leitor de tela", async () => {
+    const user = userEvent.setup();
+    render(<ListaDeTeste inicial={["A", "B"]} />);
+    screen.getByRole("button", { name: "Reordenar linha 1" }).focus();
+    await user.keyboard("{ArrowUp}");
+    expect(screen.getByTestId("ordem")).toHaveTextContent("A,B");
+    expect(screen.getByText("A linha já é a primeira.")).toBeInTheDocument();
+  });
+
+  it("a alça tem instruções de teclado em português e lista não reordenável não mostra alça", () => {
+    const { unmount } = render(<ListaDeTeste inicial={["A", "B"]} />);
+    const alca = screen.getByRole("button", { name: "Reordenar linha 1" });
+    expect(alca).toHaveAccessibleDescription(/setas para cima e para baixo/);
+    unmount();
+
+    render(<ListaDeTeste inicial={["A", "B"]} reordenavel={false} />);
+    expect(screen.queryByRole("button", { name: /Reordenar/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Remover linha 1" })).toBeInTheDocument();
   });
 });
