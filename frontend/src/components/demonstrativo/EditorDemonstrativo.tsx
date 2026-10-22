@@ -29,7 +29,8 @@ function ListaValores({
       itens={itens}
       onChange={onChange}
       novo={() => ({ nome: "", valor: 0 })}
-      colunas="grid-cols-1 @xs:grid-cols-[minmax(0,1fr)_9rem] @2xl:grid-cols-[minmax(0,1fr)_11rem]"
+      compacta
+      colunas="grid-cols-1 @xs:grid-cols-[minmax(0,1fr)_9rem] @md:grid-cols-[minmax(0,1fr)_9rem] @2xl:grid-cols-[minmax(0,1fr)_11rem]"
       cabecalhos={[rotuloNome, "Valor"]}
       rotuloAdicionar={rotuloAdicionar}
       vazio={vazio}

@@ -172,7 +172,7 @@ export function PainelPrevisao({
         </SectionCard>
 
         <SectionCard titulo={r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}>
-          <TabelaLinhas r={r} />
+          <TabelaLinhas r={r} metodo={e.variacaoMetodo} />
         </SectionCard>
       </div>
 
@@ -183,7 +183,7 @@ export function PainelPrevisao({
   );
 }
 
-function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
+function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMetodo }) {
   if (r.linhas.length === 0) {
     return <p className="text-sm text-muted-foreground">Lance as despesas no demonstrativo da prestação de contas para ver a previsão.</p>;
   }
@@ -269,8 +269,14 @@ function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
             <TableCell className="font-semibold text-primary">Anual ajustado</TableCell>
             <TableCell className="num whitespace-nowrap text-right">{formatBRL(r.base)}</TableCell>
             <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.totalAnual)}</TableCell>
-            <TableCell className="num text-right text-xs">
-              {r.base ? pct(Math.round((r.totalAnual / r.base - 1) * 10000) / 100, true) : "—"}
+            <TableCell className="num whitespace-nowrap text-right text-xs">
+              {metodo === "valor"
+                ? r.variacaoValor
+                  ? `${r.variacaoValor < 0 ? "−" : "+"}${formatBRL(Math.abs(r.variacaoValor))}`
+                  : "—"
+                : r.base
+                  ? pct(Math.round((r.totalAnual / r.base - 1) * 10000) / 100, true)
+                  : "—"}
             </TableCell>
           </TableRow>
         </TableFooter>

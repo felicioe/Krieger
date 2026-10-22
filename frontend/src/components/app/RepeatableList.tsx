@@ -21,6 +21,7 @@ export function RepeatableList<T>({
   rotuloAdicionar = "Adicionar linha",
   vazio = "Nenhum item cadastrado.",
   reordenavel = true,
+  compacta = false,
 }: {
   itens: T[];
   onChange: (itens: T[]) => void;
@@ -31,6 +32,8 @@ export function RepeatableList<T>({
   rotuloAdicionar?: string;
   vazio?: string;
   reordenavel?: boolean;
+  /** Linhas curtas (ex.: nome + valor): botões ficam ao lado a partir de `@md` (28rem). Use `@md:` em `colunas`. */
+  compacta?: boolean;
 }) {
   const atualizar = (i: number, parcial: Partial<T>) =>
     onChange(itens.map((it, j) => (j === i ? { ...it, ...parcial } : it)));
@@ -55,7 +58,7 @@ export function RepeatableList<T>({
       ) : (
         <>
           {cabecalhos && (
-            <div className="hidden items-center gap-2 @2xl:flex">
+            <div className={cn("hidden items-center gap-2", compacta ? "@md:flex" : "@2xl:flex")}>
               <div className={cn("grid min-w-0 flex-1 gap-2", colunas)}>
                 {cabecalhos.map((c) => (
                   <span key={c} className="text-xs font-medium text-muted-foreground">
@@ -74,7 +77,12 @@ export function RepeatableList<T>({
           {itens.map((item, i) => (
             <div
               key={i}
-              className="flex flex-col gap-2 rounded-md border bg-muted/40 p-2 @2xl:flex-row @2xl:items-start @2xl:border-0 @2xl:bg-transparent @2xl:p-0"
+              className={cn(
+                "flex flex-col gap-2 rounded-md border bg-muted/40 p-2",
+                compacta
+                  ? "@md:flex-row @md:items-start @md:border-0 @md:bg-transparent @md:p-0"
+                  : "@2xl:flex-row @2xl:items-start @2xl:border-0 @2xl:bg-transparent @2xl:p-0",
+              )}
             >
               <div className={cn("grid min-w-0 flex-1 gap-2", colunas)}>
                 {render(item, (p) => atualizar(i, p), i)}
