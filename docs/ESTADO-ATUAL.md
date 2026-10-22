@@ -134,4 +134,24 @@ forçada de dependências sem revisão pelo Lovable.
 O método valor e a compactação PDF citados acima como pendentes já receberam
 implementação nos commits 11ad02e/0f376e8. Preservá-los nas próximas integrações.
 Reteste móvel publicado confirmou URL/h1/foco do menu após estabilização;
-evidência na #47. Correções #59–#62 ainda aguardam entrega final do Lovable.
+evidência na #47. Correções #59–#62 aguardavam entrega final do Lovable nessa data.
+
+## Correções de importação — PR #74 (22/10/2026)
+
+Issues #68–#71 implementadas na branch codex/issue-68-71-importacao, aguardando
+CI final e publicação. Domínio representa cobertura da conferência; endpoint
+confirmar_importacao é transacional e idempotente, com contrato em
+[CONFIRMACAO-IMPORTACAO.md](CONFIRMACAO-IMPORTACAO.md). CI MySQL efêmero verifica
+rollback entre etapas, retry e proteção contra descarte atrasado.
+
+Frontend sincronizado fielmente do Lovable: entrega UX acumulada até aaefd0c
+e correções de importação até ace43b3. O domínio duplicado do Lovable não
+substituiu os shims/código canônico. 132 testes raiz passaram; frontend126 e
+typecheck passaram com Node22, runtime do CI. Node26 local apresentou
+incompatibilidade de localStorage no ambiente de três testes; não ocultar essa
+limitação. Não foi demonstrada falha equivalente no navegador de produção.
+
+A entrega anterior de contraste/UX (#59–#62, resíduos #32/#47) está incluída
+na mesma branch, superando o estado de espera registrado acima. Revisão final
+é no domínio Hostinger; não abrir Lovable no navegador. Após publicar, executar
+critique independente e depois harden, já autorizados pelo responsável.
