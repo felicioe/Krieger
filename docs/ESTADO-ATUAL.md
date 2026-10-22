@@ -11,8 +11,28 @@ Frontend de autoria Lovable (mensagem `umsg_01m5jaqmn5fzk8y3sayz84bgt2`,
 diff base `38178ac` → `a688fb0`; diff por mensagem confirmado idêntico).
 O roadmap concorrente do Claude foi preservado, sem substituir seu estado
 do Importador/anexos pelo snapshot desatualizado do Lovable.
-Publicação e verificação final serão registradas no PR/issue #77.
-Crítica e hardening posteriores ainda não são considerados concluídos.
+Publicado pelo PR #78: main `c930a84` → CI `39825154179` aprovado →
+artefato `krieger-hostinger` → deploy-hostinger `048e732` → conector
+Hostinger. HTML público idêntico ao artefato (SHA256
+`579BA54261C84D80C753831E6B10C4DF5272C82851D4DFC4662A60BF2B0A1CC7`).
+Rollback `6b814f1`. Sem migração de banco/configuração.
+Crítica independente do login/histórico: 31/40, zero achados do detector,
+duas prioridades P2, nenhuma P0/P1 demonstrada. Relatório em
+[auditorias/IMPECCABLE-LOGIN-2026-10-22.md](auditorias/IMPECCABLE-LOGIN-2026-10-22.md).
+Hardening das prioridades via Lovable na issue #79 implementado (diff base
+`20be9fe` → `aa97b80`): orientação de acesso, mostrar/ocultar senha,
+obrigatoriedade/erros/foco, ocupado e histórico longo. Validação local:
+153 testes frontend, tipos e build aprovados. Aguardar evidência de publicação
+no PR/issue antes de considerar essa etapa disponível na Hostinger.
+
+Pedido posterior #81, implementado no Lovable e aguardando publicação: Registro de Alterações
+somente após login, dentro do menu inferior do usuário recolhível, fechado por
+padrão. O login mantém apenas autoria e versão. PR #80 aguarda essa integração
+antes de ser publicado. Essa decisão substitui a localização pública inicial,
+sem reescrever a evidência histórica da crítica já realizada. Diff de autoria
+Lovable: `aa97b80` → `6c29269`, incluindo reorganização das instruções de UI.
+Contextos de Importador não presentes em main e o roadmap concorrente não
+foram importados; somente o diff funcional solicitado foi sincronizado.
 
 Snapshot de 21/10/2026 (atualizado após publicar o frontend React novo em produção, substituindo o sistema legado). Conferir issues/PRs online antes de continuar.
 

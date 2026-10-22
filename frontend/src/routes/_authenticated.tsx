@@ -4,6 +4,7 @@ import { Marca } from "@/components/app/Marca";
 import { MenuMovel } from "@/components/app/MenuMovel";
 import { Carregando } from "@/components/app/Carregando";
 import { ID_CONTEUDO } from "@/components/app/foco";
+import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
 import { garantirSessao } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -17,12 +18,12 @@ export const Route = createFileRoute("/_authenticated")({
   component: LayoutSistema,
 });
 
-
 function LayoutSistema() {
   const caminho = useRouterState({ select: (s) => s.location.pathname });
   const carregando = useRouterState({ select: (s) => s.status === "pending" });
 
   return (
+    <ProvedorRegistroAlteracoes>
     <div className="min-h-screen bg-background">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 md:block">
         <ConteudoMenu />
@@ -35,7 +36,9 @@ function LayoutSistema() {
           topo={<Marca compacta />}
           destinoFoco={() => document.getElementById(ID_CONTEUDO)}
         >
-          {(aoNavegar) => <ConteudoMenu aoNavegar={aoNavegar} />}
+            {(aoNavegar, depoisDeFechar) => (
+              <ConteudoMenu aoNavegar={aoNavegar} depoisDeFechar={depoisDeFechar} />
+            )}
         </MenuMovel>
         <main
           id={ID_CONTEUDO}
@@ -46,5 +49,6 @@ function LayoutSistema() {
         </main>
       </div>
     </div>
+    </ProvedorRegistroAlteracoes>
   );
 }

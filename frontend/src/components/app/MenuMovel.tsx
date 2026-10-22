@@ -16,6 +16,9 @@ import {
  *   (`destinoFoco`), em vez de voltar ao botão ou ficar num item escondido — mas só depois que a
  *   página nova terminou de carregar (`carregando` falso), para o leitor de tela não ler a página
  *   anterior. Se o conteúdo for trocado durante a carga, o foco é refeito no elemento novo.
+ * - `depoisDeFechar(acao)` (ex.: abrir uma janela a partir do menu): fecha a gaveta, deixa o foco
+ *   voltar ao "Abrir menu" e só então roda a ação — nunca duas camadas abertas ao mesmo tempo,
+ *   e a janela aberta devolve o foco a um botão que continua na tela.
  */
 export function MenuMovel({
   topo,
@@ -26,8 +29,11 @@ export function MenuMovel({
 }: {
   /** Conteúdo ao lado do botão (ex.: a marca compacta). */
   topo?: ReactNode;
-  /** Conteúdo da gaveta; chame `aoNavegar` quando um item levar a outra página. */
-  children: (aoNavegar: () => void) => ReactNode;
+  /**
+   * Conteúdo da gaveta; chame `aoNavegar` quando um item levar a outra página e
+   * `depoisDeFechar(acao)` para rodar algo (ex.: abrir uma janela) só depois que ela fechar.
+   */
+  children: (aoNavegar: () => void, depoisDeFechar: (acao: () => void) => void) => ReactNode;
   /** Elemento que recebe o foco depois de navegar pelo menu (precisa aceitar foco, ex.: tabIndex={-1}). */
   destinoFoco: () => HTMLElement | null;
   /** Caminho atual: a gaveta fecha sozinha quando ele muda. */
@@ -38,6 +44,7 @@ export function MenuMovel({
   const [aberto, setAberto] = useState(false);
   const navegou = useRef(false);
   const focoPendente = useRef(false);
+  const acaoPendente = useRef<(() => void) | null>(null);
   const carregandoRef = useRef(carregando);
   carregandoRef.current = carregando;
 
@@ -66,11 +73,20 @@ export function MenuMovel({
     setAberto(false);
   };
 
+  const depoisDeFechar = (acao: () => void) => {
+    navegou.current = false;
+    acaoPendente.current = acao;
+    setAberto(false);
+  };
+
   return (
     <Sheet
       open={aberto}
       onOpenChange={(v) => {
-        if (v) navegou.current = false;
+        if (v) {
+          navegou.current = false;
+          acaoPendente.current = null;
+        }
         setAberto(v);
       }}
     >
@@ -88,9 +104,16 @@ export function MenuMovel({
       </header>
       <SheetContent
         side="left"
-        className="w-72 border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+        className="w-72 max-w-[85vw] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
         fecharClassName="text-sidebar-foreground hover:bg-sidebar-accent focus-visible:ring-sidebar-ring"
         onCloseAutoFocus={(e) => {
+          const acao = acaoPendente.current;
+          if (acao) {
+            // Deixa o foco voltar ao "Abrir menu" (padrão) e roda a ação no quadro seguinte.
+            acaoPendente.current = null;
+            requestAnimationFrame(acao);
+            return;
+          }
           if (!navegou.current) return; // Escape / Fechar / tocar fora: o foco volta ao "Abrir menu".
           navegou.current = false;
             e.preventDefault();
@@ -100,7 +123,7 @@ export function MenuMovel({
       >
         <SheetTitle className="sr-only">Menu</SheetTitle>
         <SheetDescription className="sr-only">Navegação principal do sistema</SheetDescription>
-        {children(aoNavegar)}
+        {children(aoNavegar, depoisDeFechar)}
       </SheetContent>
     </Sheet>
   );

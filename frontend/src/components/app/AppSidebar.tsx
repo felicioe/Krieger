@@ -4,10 +4,12 @@ import {
   Building2,
   Calculator,
   CalendarRange,
+  ChevronDown,
   DatabaseBackup,
   FileSpreadsheet,
   FileText,
   GitCompareArrows,
+  History,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -17,8 +19,10 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import { useId, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { useAbrirRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
 import { Marca } from "./Marca";
 import { sair, useUsuario } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -89,17 +93,31 @@ function BotaoMenu({ icone: Icone, children, onClick }: { icone: LucideIcon; chi
   return (
     <button type="button" onClick={onClick} className={cn(classeItem, "text-left")}>
       <Icone className="size-4 shrink-0 opacity-90" />
-      <span>{children}</span>
+      <span className="min-w-0 break-words">{children}</span>
     </button>
   );
 }
 
-/** Conteúdo do menu lateral (usado fixo no desktop e em gaveta no celular). */
-export function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
+/**
+ * Conteúdo do menu lateral (usado fixo no desktop e em gaveta no celular).
+ * O bloco da conta, embaixo, começa recolhido: um botão com nome, perfil e seta abre/fecha
+ * (Radix Collapsible: `aria-expanded`/`aria-controls`; recolhido, as opções nem estão na página,
+ * então não recebem foco). Expandir só mostra as opções — não navega nem sai.
+ */
+export function ConteudoMenu({
+  aoNavegar,
+  depoisDeFechar,
+}: {
+  aoNavegar?: () => void;
+  /** Na gaveta do celular: fecha a gaveta antes de rodar a ação (ex.: abrir uma janela). */
+  depoisDeFechar?: (acao: () => void) => void;
+}) {
   const usuario = useUsuario();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const idMenu = useId();
+  const abrirRegistro = useAbrirRegistroAlteracoes();
+  const [contaAberta, setContaAberta] = useState(false);
 
   async function encerrar() {
     aoNavegar?.();
@@ -109,11 +127,11 @@ export function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
   }
 
   return (
-    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="px-6 pb-5 pt-7">
-        <Marca className="max-w-[12rem]" />
+    <div className="flex h-full flex-col overflow-y-auto overflow-x-hidden bg-sidebar text-sidebar-foreground">
+      <div className="shrink-0 px-6 pb-5 pt-7">
+        <Marca className="max-w-[min(12rem,100%)]" />
       </div>
-      <nav className="flex-1 overflow-y-auto pb-2" aria-label="Menu principal">
+      <nav className="min-h-28 flex-1 overflow-y-auto overflow-x-hidden pb-2" aria-label="Menu principal">
         {GRUPOS_MENU.map((g, i) => {
           const idTitulo = `${idMenu}-grupo-${i}`;
           return (
@@ -134,24 +152,49 @@ export function ConteudoMenu({ aoNavegar }: { aoNavegar?: () => void }) {
           );
         })}
       </nav>
-      <div className="border-t border-sidebar-border py-3">
-        <div className="flex items-center gap-3 px-5 pb-3 pt-1">
-          <UserRound className="size-4 shrink-0 text-sidebar-muted" />
-          <div className="min-w-0">
-            <div className="truncate text-sm font-medium">{usuario?.nome || usuario?.login}</div>
-            <div className="text-xs text-sidebar-muted">
+      <Collapsible open={contaAberta} onOpenChange={setContaAberta} className="shrink-0 border-t border-sidebar-border">
+        <CollapsibleTrigger className={cn(classeItem, "py-3 text-left")}>
+          <UserRound className="size-4 shrink-0 text-sidebar-muted" aria-hidden="true" />
+          <span className="min-w-0 flex-1">
+            <span className="sr-only">Conta: </span>
+            <span className="block text-sm font-medium wrap-anywhere">{usuario?.nome || usuario?.login}</span>
+            <span className="block text-xs text-sidebar-muted">
               {usuario?.perfil === "admin" ? "Administrador" : "Usuário"}
-            </div>
-          </div>
-        </div>
+            </span>
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={cn("size-4 shrink-0 transition-transform", contaAberta && "rotate-180")}
+          />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <ul aria-label="Opções da conta" className="pb-2">
         {usuario?.perfil === "admin" && (
+              <li>
           <ItemMenu item={{ titulo: "Usuários", to: "/usuarios", icone: Users }} aoNavegar={aoNavegar} />
+              </li>
         )}
+            <li>
         <ItemMenu item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }} aoNavegar={aoNavegar} />
+            </li>
+            {abrirRegistro && (
+              <li>
+                <BotaoMenu
+                  icone={History}
+                  onClick={() => (depoisDeFechar ? depoisDeFechar(abrirRegistro) : abrirRegistro())}
+                >
+                  Registro de Alterações
+                </BotaoMenu>
+              </li>
+            )}
+            <li>
         <BotaoMenu icone={LogOut} onClick={encerrar}>
           Sair
         </BotaoMenu>
-      </div>
+            </li>
+          </ul>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }
