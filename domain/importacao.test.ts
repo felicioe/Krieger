@@ -11,6 +11,7 @@ import {
   divergenciasImportacao,
   encontrarCondominio,
   novaImportacao,
+  novoAnexoImportado,
   resumoConferencia,
 } from "@/domain/importacao";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
@@ -365,5 +366,19 @@ describe("auditoria: divergência entre o importado e o gravado", () => {
     });
     const divergencias = divergenciasImportacao(semReceita, comReceitaNova);
     expect(divergencias).toEqual([{ campo: "receitas", rotulo: "Receitas", importado: 0, atual: 5000, diferencaPct: null }]);
+  });
+});
+
+describe("anexo de relatório só leitura (Comparativo Financeiro)", () => {
+  it("guarda o relatório lido na íntegra, vinculado ao exercício, sem id", () => {
+    const rel = lerRelatorio(periodoUnico.replace(/^Condomínio:.*$/m, "Demonstrativo"));
+    const anexo = novoAnexoImportado("ex-1", "comparativo_financeiro", rel, "comparativo.pdf", new Date("2026-10-22T00:00:00Z"));
+    expect(anexo).toEqual({
+      exercicioId: "ex-1",
+      tipo: "comparativo_financeiro",
+      arquivo: "comparativo.pdf",
+      importadoEm: "2026-10-22T00:00:00.000Z",
+      relatorio: rel,
+    });
   });
 });
