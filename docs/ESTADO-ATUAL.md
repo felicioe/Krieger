@@ -1,5 +1,39 @@
 # Estado atual e passagem de contexto
 
+## Achados reais de um PDF de produção (Urban Classic) — 22/10/2026
+
+Usuário anexou o Comparativo Financeiro do Urban Classic pela tela publicada
+e baixou o Relatório Final gerado — primeiro teste de ponta a ponta do
+Importador com dado real. Ao revisar o PDF (extração local com pypdf/Pillow,
+arquivo apagado do scratchpad depois), achados:
+
+- Gráfico Previsto × Realizado parecia "quebrado" (barras de Realizado
+  somem). Diagnóstico: não é bug de período malformado (caso antigo do
+  Solar Juliana) — o exercício 01/09/2025–31/08/2026 está correto, mas a
+  comparação olha pro ano seguinte (09/2026–08/2027), que mal começou e
+  ainda não tem relatório mensal importado (`relatoriosUsados: 0`). O
+  cálculo está certo, só a apresentação era enganosa.
+- PR #90 (merge 4ecb0d3): Lovable tratou isso com `AvisoSemRealizado` (mensagem
+  clara em vez de tabela/gráfico cheios de -100%, na prévia e no PDF/Word),
+  mais `formatValorCurto` (rótulos de eixo mais curtos, nova em `lib/format.ts`
+  raiz — Lovable tinha duplicado localmente, replicada no canônico).
+- Pedido novo do usuário, resolvido no mesmo PR: sugestão de condomínio
+  parecido na importação (`condominiosParecidos`, PR #88) quando não há
+  correspondência exata por código/CNPJ — evita cadastro duplicado por nome
+  em ordem diferente ou erro de OCR. "Usar este cadastro" / "Não é este, é
+  um condomínio novo", sem esconder a opção de cadastro novo.
+- Confirmado (sem pedir ação): os botões "Importar PDF" fora do Importador
+  já tinham sido removidos das listas (Relatório mensal, Prestação de
+  contas) desde o PR #86 — só o Importador cria registros novos; dentro de
+  um registro já aberto o botão de reimportar continua (função diferente:
+  atualizar dados existentes, não criar novo — usuário confirmou que deve
+  ficar assim).
+- Decisões já resolvidas no mesmo lote: exclusão em cascata dos anexos ao
+  excluir uma prestação de contas; limite de 10 MB no PDF anexado.
+
+Publicado: commit `4ecb0d3` → `deploy-hostinger` `6ee7216`, confirmado ao
+vivo. `npm run bundle:check`: 181.588 de 256.000 bytes gzip reais.
+
 ## Fechamento geral — 22/10/2026 (fim de sessão)
 
 A pedido do usuário ("garanta que tudo foi corrigido, publique tudo, deixe o
