@@ -5,6 +5,7 @@
 declare(strict_types=1);
 require __DIR__ . '/lib_auth.php';
 require __DIR__ . '/lib_importacao.php';
+require __DIR__ . '/lib_backup.php';
 aplicar_cabecalhos_seguranca();
 
 function erro(string $msg, int $codigo = 400): never { json_erro($msg, $codigo); }
@@ -102,8 +103,7 @@ function validar_backup_dados(array $dados, PDO $pdo, bool $substituir, array $s
 function montar_backup(PDO $pdo, array $stores, callable $tabela): array {
   $o = ['app' => 'krieger-condominios', 'versao' => 1, 'exportadoEm' => date('c')];
   foreach ($stores as $st) {
-    $linhas = $pdo->query('SELECT dados FROM ' . $tabela($st))->fetchAll();
-    $o[$st] = array_map(fn($r) => json_decode($r['dados'], true), $linhas);
+    $o[$st] = ler_colecao_backup($pdo, $st);
   }
   return $o;
 }
@@ -112,6 +112,7 @@ function montar_backup(PDO $pdo, array $stores, callable $tabela): array {
 // por 'importar' (arquivo enviado pelo navegador) quanto por 'backup_restaurar' (backup salvo no
 // servidor) — mesma lógica, duas origens diferentes do $dados.
 function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores, callable $tabela): void {
+  $stores = stores_restauraveis($pdo, $dados, $stores);
   $pdo->beginTransaction();
   try {
     foreach ($stores as $st) {
@@ -255,6 +256,7 @@ try {
       erro('Ação inválida.');
   }
 } catch (Throwable $e) {
+  if ($e instanceof RuntimeException && $e->getCode() === 409) erro($e->getMessage(), 409);
   error_log('[krieger] ' . $e->getMessage());
   // Tabela ausente (schema.sql tem uma tabela que o banco deste servidor ainda não tem,
   // ex.: uma tabela nova de uma funcionalidade adicionada depois da instalação inicial).

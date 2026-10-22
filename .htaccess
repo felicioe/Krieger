@@ -15,6 +15,6 @@ RedirectMatch 404 "(^|/)\.git(/|$)"
 RedirectMatch 404 "^/(krieger|importador)(/|$)"
 
 # Bloqueia o acesso direto a arquivos internos, configurações, scripts e documentos sensíveis.
-<FilesMatch "(\.(sql|md|log|env|bak|old|json|lock)$|^\.git|^lib_(auth|importacao)\.php$|^config\.php$|^config\..*\.php$)">
+<FilesMatch "(\.(sql|md|log|env|bak|old|json|lock)$|^\.git|^lib_(auth|importacao|backup)\.php$|^config\.php$|^config\..*\.php$)">
   Require all denied
 </FilesMatch>

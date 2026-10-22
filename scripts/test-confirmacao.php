@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__) . '/lib_importacao.php';
+require dirname(__DIR__) . '/lib_backup.php';
 // Somente o serviço efêmero do CI; nunca apontar este script para produção.
 $dsn = getenv('KRIEGER_TEST_DSN') ?: '';
 if ($dsn !== 'mysql:host=127.0.0.1;port=3306;dbname=krieger_test;charset=utf8mb4') throw new RuntimeException('DSN deve apontar ao banco efêmero krieger_test em loopback.');
@@ -67,5 +68,14 @@ $novo=salvar_staging_importacao($pdo,['id'=>'staging-novo','status'=>'pendente']
 $assert($novo['status']==='pendente', 'Novo staging falhou.');
 $descartado=salvar_staging_importacao($pdo,['id'=>'staging-novo','status'=>'descartado']);
 $assert($descartado['status']==='descartado', 'Descarte normal falhou.');
+$assert(ler_colecao_backup($pdo,'anexos_importacao')===[], 'Backup legado falhou sem tabela opcional.');
+$assert(stores_restauraveis($pdo,[],['condominios','anexos_importacao'])===['condominios'], 'Restauração legada exige tabela opcional.');
+try {
+  stores_restauraveis($pdo,['anexos_importacao'=>[['id'=>'anexo-teste']]],['anexos_importacao']);
+  throw new LogicException('Anexos seriam ignorados silenciosamente.');
+} catch (RuntimeException $e) { $assert($e->getCode()===409,'Backup com anexos sem migração não foi recusado.'); }
+$pdo->exec('CREATE TABLE kr_anexos_importacao (id VARCHAR(64) PRIMARY KEY, dados LONGTEXT NOT NULL, atualizado_em DATETIME NOT NULL) ENGINE=InnoDB');
+$pdo->exec("INSERT INTO kr_anexos_importacao VALUES ('anexo-teste', '{\"id\":\"anexo-teste\"}', NOW())");
+$assert(ler_colecao_backup($pdo,'anexos_importacao')[0]['id']==='anexo-teste', 'Backup perdeu anexo existente.');
 echo "Confirmação MySQL: sucesso, retry, rollback entre etapas, recuperação, descartado, referência, duplicidade e destino aprovados.\n";
 

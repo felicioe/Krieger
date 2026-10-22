@@ -54,3 +54,13 @@ PHP local tem sintaxe validada; sem driver PDO MySQL local, integração é
 confirmada pelo CI. Não declarar persistência em produção com base nesses
 testes. Validação visual no site usa PDFs fictícios até prévia; gravação e
 falhas de banco exigem ambiente apropriado.
+
+## Compatibilidade com a PR73 concorrente
+
+A main passou a incluir anexos_importacao durante esta integração. A migração
+desse recurso permanece na issue #75; não foi executado SQL na hospedagem.
+lib_backup.php mantém backup legado funcionando quando a tabela opcional falta.
+Um backup com anexos não pode ser restaurado sem a tabela: falha antes de
+alterar dados, evitando perda silenciosa. Se a tabela existe, seus dados são
+incluídos normalmente. O CI cobre os dois estados. O frontend de anexos e o
+hub Importador continuam sob o trabalho específico da Claude/Lovable.
