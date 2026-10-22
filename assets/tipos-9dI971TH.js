@@ -1,1 +1,0 @@
-var e={primaria:`0B3A5E`,texto:`1F2933`,suave:`5F6B7A`,linha:`D9E0E8`,fundo:`F4F6F9`,grupo:`E9EEF4`},t={largura:595.28,altura:841.89,margem:56,util:483.28};export{t as n,e as t};
