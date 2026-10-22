@@ -47,7 +47,7 @@ export type ImportacaoAplicada = {
   previsaoSugerida: PrevisaoSugeridaLida | null;
 };
 
-type Props =
+type Props = (
   | {
       /** Preenche o editor aberto (nada é gravado até o usuário salvar). */
       modo: "editor";
@@ -61,7 +61,11 @@ type Props =
       modo: "novo";
       destino: DestinoImportacao;
       condominios: Condominio[];
-    };
+    }
+) & {
+  /** Texto do botão (padrão "Importar PDF"); use um nome próprio quando houver vários na mesma tela. */
+  rotulo?: string;
+};
 
 type Lido = {
   arquivo: string;
@@ -113,7 +117,7 @@ export function ImportarPdf(props: Props) {
   return (
     <>
       <Button ref={botao} type="button" variant="outline" onClick={() => entrada.current?.click()}>
-        <FileUp /> Importar PDF
+        <FileUp /> {props.rotulo ?? "Importar PDF"}
       </Button>
       <input
         ref={entrada}

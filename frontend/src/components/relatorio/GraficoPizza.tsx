@@ -53,7 +53,12 @@ export function GraficoPizza({ dados }: { dados: { nome: string; valor: number }
           strokeWidth={2}
         >
           {dados.map((d, i) => (
-            <Cell key={d.nome} fill={corDoGrafico(i)} />
+            // Cada fatia é exposta como imagem: o nome e o valor dão a ela um nome acessível.
+            <Cell
+              key={d.nome}
+              fill={corDoGrafico(i)}
+              aria-label={`${d.nome}: ${formatBRL(d.valor)} (${total ? formatNumeroBR((d.valor / total) * 100, 1) : "0"}%)`}
+            />
           ))}
         </Pie>
         <ChartLegend content={<ChartLegendContent nameKey="nome" />} />

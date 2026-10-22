@@ -126,7 +126,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
     <>
       <PageHeader
         voltar={
-          <Button variant="link" className="h-auto p-0 text-muted-foreground" asChild>
+          <Button variant="link" className="h-auto min-h-0 p-0 text-muted-foreground" asChild>
             <Link to="/prestacao-contas/$id" params={{ id: e.id }}>
               <ArrowLeft /> Prestação de contas {e.ano}
             </Link>
@@ -205,7 +205,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                     </Field>
                     <p className="text-xs text-muted-foreground">
                       Nome, assinatura e logo vêm do{" "}
-                      <Link to="/escritorio" className="text-primary underline-offset-2 hover:underline">
+                      <Link to="/escritorio" className="text-primary underline underline-offset-2 hover:decoration-2">
                         cadastro do Escritório
                       </Link>
                       .

@@ -1,12 +1,11 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { FileUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
-import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { Selecao } from "@/components/app/inputs";
 import { DialogoNovoMensal } from "@/components/mensal/DialogoNovoMensal";
@@ -85,7 +84,11 @@ function ListaMensais() {
         descricao="Demonstrativo do mês, contas a receber e notas explicativas de cada condomínio."
         acoes={
           <>
-            <ImportarPdf modo="novo" destino="mensais" condominios={condominios} />
+            <Button variant="outline" asChild>
+              <Link to="/importador">
+                <FileUp /> Importar PDF
+              </Link>
+            </Button>
             <Button onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
               <Plus /> Novo relatório mensal
             </Button>
@@ -95,6 +98,7 @@ function ListaMensais() {
       <AvisoImportacoesPendentes />
       <div className="mb-4 max-w-sm">
         <Selecao
+          aria-label="Filtrar por condomínio"
           value={condo}
           onChange={(v) => {
             setCondo(v);

@@ -181,6 +181,7 @@ export function PainelPrevisao({
                 <div className="col-span-2 mb-2 flex items-center gap-2 sm:col-start-2">
                   <span className="text-xs text-muted-foreground">Grupo</span>
                   <Selecao
+                    aria-label="Grupo do ajuste"
                     value={a.grupo || SEM_GRUPO}
                     onChange={(v) => up({ grupo: v === SEM_GRUPO ? "" : v })}
                     opcoes={opcoesGrupo}
@@ -458,7 +459,7 @@ export function CaixaUnidades({ unidades, condoId, className }: { unidades: numb
           <Link
             to="/condominios/$id"
             params={{ id: condoId }}
-            className={cn("text-xs underline-offset-2 hover:underline", falta ? "font-medium underline" : "text-primary")}
+            className={cn("alvo-toque text-xs underline underline-offset-2", falta ? "font-medium" : "text-primary")}
             aria-label={falta ? "Informar unidades no cadastro do condomínio" : "Alterar unidades no cadastro do condomínio"}
           >
             {falta ? "informar" : "alterar"}

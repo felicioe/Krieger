@@ -50,11 +50,11 @@
 - [x] #69 confirmação da importação numa chamada única (`api.confirmarImportacao`), ids gerados antes, repetir não duplica; simulado do preview equivalente
 - [x] #70 trava de divergência: quatro totais (PDF/atual/diferença), "Voltar e revisar", referência só some depois de salvar com sucesso; também no registro recém-criado por PDF
 - [x] #71 foco volta ao "Importar PDF" (Cancelar/Escape/Fechar/erro); ao trocar de página vai para o conteúdo; janelas de confirmação devolvem o foco a quem as abriu
-- [x] #68 estados da conferência do PDF: verificado/parcial/não verificado/divergente — `estado`/`comparacoes`/`esperadas` já publicados no `resumoConferencia` do domínio (Codex)
+- [ ] #68 estados da conferência do PDF: tela pronta para verificado/parcial/não verificado/divergente — aguardando `estado`/`comparacoes`/`esperadas` no `resumoConferencia` do domínio (Codex)
 - [ ] Leitor de tela real e toque físico — ficam com o responsável
 
 ## Tabela Previsto × Realizado apertada (prévia e PDF/Word)
-- [x] Prévia do Relatório final: tabela compacta (sem "/mês", sem coluna Situação → marcador "*" com legenda), células justas); tela cheia igual
+- [x] Prévia do Relatório final: tabela compacta (sem "/mês", sem coluna Situação → marcador "*" com legenda, células justas); tela cheia igual
 - [x] PDF/Word: 6 colunas, Rubrica com ~167 pt; valores até R$ 9.999.999,99 sem quebrar
 - [x] Conferência automática: todas as tabelas de todos os documentos cabem na página
 
@@ -64,6 +64,29 @@
 - [x] Cores sem repetir na pizza: 10 cores do tema (--chart-1 a --chart-10) e cores geradas a partir da 11ª; mesmo cuidado no PDF/Word
 - [ ] Word com 8 grupos não aberto no Word real (mesma imagem do PDF)
 
-## Importador único e anexo do Comparativo Financeiro
-- [x] Anexo de relatório só-leitura (Comparativo Financeiro) a um exercício já existente: domínio e tabela `kr_anexos_importacao` publicados (Claude), aguardando tela de anexar/visualizar
-- [ ] Menu "Importador" (hub único reunindo Relatório mensal, Prestação de contas e Comparativo Financeiro) — ainda não pedido ao Lovable
+## Importador único
+- [x] Menu "Importador" (Financeiro) com cards Relatório mensal e Prestação de contas; listas trocaram o importador por um atalho para ele; "Importar PDF" dentro do registro aberto continua
+- [x] Card "Comparativo Financeiro": valida o layout comparativo, escolhe a prestação (condomínio + exercício), grava em anexos_importacao com o PDF original; lista na prestação com Baixar/Excluir (qualquer usuário logado)
+- [ ] Gravação real em `kr_anexos_importacao` pela API PHP — conferir na produção (aqui só a prévia)
+
+## Rodapé do login e versão (#77)
+- [x] Rodapé "Feito pela Therafinancial · Versão · Registro de Alterações" na tela de entrada; versão e histórico lidos de `src/data/versoes.json` (só a 1.0 — Implantação do sistema)
+- [ ] CHANGELOG.md gerado do mesmo arquivo e conferido no CI — fica com o Codex
+
+## Harden do login (#79, só front-end)
+- [x] Orientação de acesso/senha esquecida (sem contato ou recuperação inventados); Mostrar/Ocultar senha; obrigatoriedade e erros ligados aos campos; foco na senha após falha
+- [x] Registro de Alterações: textos longos quebram, só a lista rola, Fechar/X à vista; testes de versão sem fixar "só 1.0"
+- [ ] Leitor de tela real e toque físico — ficam com o responsável
+
+## Registro de Alterações dentro do sistema (#81, substitui o acesso pelo login de #77/#79)
+- [x] Login mostra só "Feito pela Therafinancial" e a versão atual
+- [x] Bloco da conta no pé do menu recolhível (fechado por padrão) com Usuários (admin), Minha senha, Registro de Alterações e Sair
+- [x] Na gaveta do celular: fecha a gaveta antes de abrir o registro; foco volta ao "Abrir menu"
+
+## Correções finais antes da publicação (#82, #65, revisão #59–62/#31/#32/#47/#48, #33)
+- [x] #82 Painel sem rolagem lateral em 320 px com texto 200% (selo de prazo, cartões de contagem, logo do celular, botão do aviso)
+- [x] #65 Vite 8.3.5 (empacotador interno 1.2.15); npm audit: 0 vulnerabilidades; testes/tipos/build ok
+- [x] Revisão focal #59–62/#31/#32/#47/#48: seleções sem nome, verde dos selos, link sublinhado, fatias do gráfico, tabelas roláveis pelo teclado, toque 44 px, 320 px no Relatório final
+- [ ] Telas de edição (prestação, mensal, previsão, comparativo, edital, ata, modelo, relatório final) ainda rolam para o lado em 320 px **com texto 200%** (em 320 px com texto normal estão ok) — pede reorganização dos editores; aguarda decisão do responsável
+- [x] #33 medido no laboratório (LCP, bytes, PDF/Word continuam sob demanda)
+- [ ] #33 medição na produção — fica com o Codex

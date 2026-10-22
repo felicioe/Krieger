@@ -89,6 +89,7 @@ function ListaAtas() {
       />
       <div className="mb-4 grid max-w-2xl gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
         <Selecao
+          aria-label="Filtrar por condomínio"
           value={condo}
           onChange={(v) => filtrar({ condo: v })}
           opcoes={[
@@ -98,6 +99,7 @@ function ListaAtas() {
           className="bg-card"
         />
         <Selecao
+          aria-label="Filtrar por situação"
           value={status}
           onChange={(v) => filtrar({ status: v })}
           opcoes={[

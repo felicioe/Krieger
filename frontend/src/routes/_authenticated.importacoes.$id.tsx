@@ -132,13 +132,13 @@ function Conferencia({ imp }: { imp: Importacao }) {
         destino === "mensais"
           ? { ...mensalImportado(condo, rel, coluna, imp.arquivo).registro, id: ids.registro }
           : (() => {
-        const base = exercicioImportado(condo, ano!, escritorio?.cidade ?? "", rel, coluna, imp.arquivo);
-        return {
-          ...base,
-          consid: aplicarConsideracoesAoExercicio(base.consid, imp.consideracoes ?? null),
-          previsaoSugerida: imp.previsaoSugerida ? previsaoSugeridaDoPdf(imp.previsaoSugerida) : null,
+              const base = exercicioImportado(condo, ano!, escritorio?.cidade ?? "", rel, coluna, imp.arquivo);
+              return {
+                ...base,
+                consid: aplicarConsideracoesAoExercicio(base.consid, imp.consideracoes ?? null),
+                previsaoSugerida: imp.previsaoSugerida ? previsaoSugeridaDoPdf(imp.previsaoSugerida) : null,
                 id: ids.registro,
-        };
+              };
             })();
       return api.confirmarImportacao({
         importacaoId: imp.id,
@@ -182,7 +182,7 @@ function Conferencia({ imp }: { imp: Importacao }) {
     <>
       <PageHeader
         voltar={
-          <Button variant="link" className="h-auto p-0 text-muted-foreground" asChild>
+          <Button variant="link" className="h-auto min-h-0 p-0 text-muted-foreground" asChild>
             <Link to="/importacoes">
               <ArrowLeft /> Importações de PDF
             </Link>

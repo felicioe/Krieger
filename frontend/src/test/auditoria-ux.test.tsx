@@ -258,5 +258,9 @@ describe("#47 navegar pelo menu do celular com rotas de verdade", () => {
     await screen.findByRole("heading", { name: "Atas" });
     expect(router.state.location.pathname).toBe("/atas");
     await waitFor(() => expect(document.getElementById("conteudo")).toHaveFocus());
+    // O destino do foco é o conteúdo da página NOVA (não a anterior nem o <body>).
+    expect(document.activeElement).not.toBe(document.body);
+    expect(document.getElementById("conteudo")).toContainElement(screen.getByRole("heading", { name: "Atas" }));
+    expect(screen.queryByRole("heading", { name: "Painel" })).not.toBeInTheDocument();
   });
 });

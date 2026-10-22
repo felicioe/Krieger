@@ -24,31 +24,31 @@ function LayoutSistema() {
 
   return (
     <ProvedorRegistroAlteracoes>
-    <div className="min-h-screen bg-background">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 md:block">
-        <ConteudoMenu />
-      </aside>
+      <div className="min-h-screen bg-background">
+        <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 md:block">
+          <ConteudoMenu />
+        </aside>
 
-      <div className="md:pl-64">
-        <MenuMovel
-          caminho={caminho}
-          carregando={carregando}
-          topo={<Marca compacta />}
-          destinoFoco={() => document.getElementById(ID_CONTEUDO)}
-        >
+        <div className="md:pl-64">
+          <MenuMovel
+            caminho={caminho}
+            carregando={carregando}
+            topo={<Marca compacta />}
+            destinoFoco={() => document.getElementById(ID_CONTEUDO)}
+          >
             {(aoNavegar, depoisDeFechar) => (
               <ConteudoMenu aoNavegar={aoNavegar} depoisDeFechar={depoisDeFechar} />
             )}
-        </MenuMovel>
-        <main
-          id={ID_CONTEUDO}
-          tabIndex={-1}
-          className="mx-auto w-full max-w-6xl px-4 py-6 focus:outline-none sm:px-6 lg:px-10 lg:py-8"
-        >
-          <Outlet />
-        </main>
+          </MenuMovel>
+          <main
+            id={ID_CONTEUDO}
+            tabIndex={-1}
+            className="mx-auto w-full max-w-6xl px-4 py-6 focus:outline-none sm:px-6 lg:px-10 lg:py-8"
+          >
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
     </ProvedorRegistroAlteracoes>
   );
 }

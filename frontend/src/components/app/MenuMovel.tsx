@@ -100,7 +100,8 @@ export function MenuMovel({
             <Menu className="size-5" />
           </button>
         </SheetTrigger>
-        {topo}
+        {/* min-w-0: com texto ampliado o logo encolhe no espaço que sobra em vez de empurrar a página. */}
+        <div className="min-w-0 flex-1">{topo}</div>
       </header>
       <SheetContent
         side="left"
@@ -116,7 +117,7 @@ export function MenuMovel({
           }
           if (!navegou.current) return; // Escape / Fechar / tocar fora: o foco volta ao "Abrir menu".
           navegou.current = false;
-            e.preventDefault();
+          e.preventDefault();
           if (carregandoRef.current) focoPendente.current = true;
           else focarDestino();
         }}

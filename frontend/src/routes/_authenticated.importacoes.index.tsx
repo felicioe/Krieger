@@ -55,7 +55,7 @@ function ListaImportacoes() {
         aoClicar={(i) => navigate({ to: "/importacoes/$id", params: { id: i.id } })}
         colunaAcao="arquivo"
         rotuloAcao={(i) => `Abrir importação do arquivo ${i.arquivo}`}
-        vazio="Nenhuma importação. Use “Importar PDF” no Relatório mensal ou na Prestação de contas."
+        vazio="Nenhuma importação. Use o Importador para ler um PDF do Systemar."
       />
     </>
   );

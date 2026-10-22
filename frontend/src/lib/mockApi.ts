@@ -138,8 +138,8 @@ function semente(): Dados {
     modelos: [modeloExemplo()],
     config: [{ id: "escritorio", nome: "Krieger Assessoria Contábil e Condominial", cidade: "", rodape: "", assinatura: "", logo: "", logoRatio: null }],
     importacoes: [],
-    atas: [ataExemplo(assembleias[0] as Registro, condominios[0] as Registro)],
     anexos_importacao: [],
+    atas: [ataExemplo(assembleias[0] as Registro, condominios[0] as Registro)],
   };
 }
 
@@ -434,7 +434,6 @@ function dados(): Dados {
   return d;
 }
 const usuarios = () => ler<UsuarioMock[]>(CHAVE_USUARIOS, usuariosSemente);
-
 type BackupRegistroMock = BackupRegistro & { dados: Backup };
 const backups = () => ler<BackupRegistroMock[]>(CHAVE_BACKUPS, () => []);
 const semDados = ({ dados: _dados, ...r }: BackupRegistroMock): BackupRegistro => r;

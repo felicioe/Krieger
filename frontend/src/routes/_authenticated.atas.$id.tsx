@@ -164,7 +164,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
     <>
       <PageHeader
         voltar={
-          <Button variant="link" className="h-auto p-0 text-muted-foreground" asChild>
+          <Button variant="link" className="h-auto min-h-0 p-0 text-muted-foreground" asChild>
             <Link to="/atas">
               <ArrowLeft /> Atas
             </Link>
