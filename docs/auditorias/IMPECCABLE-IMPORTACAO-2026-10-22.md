@@ -1,5 +1,23 @@
 # Impeccable — jornada de importação e conferência
 
+## Errata e reteste após PR74
+
+O arquivo chamado sem-totais.pdf da primeira execução ainda continha as quatro
+linhas de total, por erro no gerador da fixture. A alegação de reprodução
+visual de falsa confirmação com esse arquivo foi inválida. O diagnóstico de
+código e de domínio sem conferencia era válido, mas não substituía a prova
+de navegador. Evidência retificada também na issue #68.
+
+O gerador foi corrigido: remove exatamente quatro linhas exclusivamente
+numéricas, reabre o PDF e verifica que não sobrou nenhuma linha de total.
+Na produção main9c0c1c1/deploy204bb76, runtime index-iq1N4M9k.js, o PDF correto
+mostrou “Totais não conferidos” e cobertura0/4. O PDF válido mostrou4/4 e o
+divergente mostrou2.000×2.100. Cancelar/Escape/Fechar devolveram foco ao botão.
+Protegido/inválido e sem texto foram recusados com mensagens legíveis. O
+comparativo mensal e a seleção do total foram exercitados até a prévia, sem
+gravação. A nota abaixo é a amostra histórica anterior, com esta errata; não
+descreve a versão corrigida nem certifica persistência em produção.
+
 Auditoria técnica de 22/10/2026, modo Operate, issue #67. Site publicado:
 https://krieger.therafinancial.com.br. Runtime observado index-CGBpV4Il.js,
 origem main 01651fa/deploy c56e3ba. Fontes avaliados até main ea1588b (PR #66).
@@ -45,7 +63,7 @@ Esse bloqueio foi do ambiente de automação, não um defeito do Krieger.
 | --- | --- | --- |
 | valido.pdf, período único | Saldo anterior1.000, receitas2.000, despesas500, saldo atual2.500 | Quatro totais corretos e período01/08/2026–31/08/2026; formato e origem identificados. |
 | divergente.pdf | Receitas somam2.000; total declarado2.100 | Aviso explícito com os dois valores; comportamento aprovado. |
-| sem-totais.pdf | Informar impossibilidade de conferir totais declarados | Mostra a mesma confirmação positiva do caso completo; reprovado, #68. |
+| Arquivo denominado sem-totais.pdf | Informar impossibilidade de conferir totais declarados | Fixture anterior inválida: ainda tinha totais. Ver errata acima e diagnóstico de código da #68. |
 | sem-texto.pdf | Erro compreensível sem criar registro | “O PDF não tem texto legível (pode ser uma imagem digitalizada).”, role=alert; aprovado na amostra. |
 | Escape após prévia | Retornar ao botão Importar PDF | Diálogo fecha; após estabilização foco=BODY; reprovado, #71. |
 | Fechar após erro | Retornar ao botão Importar PDF | Diálogo fecha; foco=BODY novamente; reprovado. |
@@ -66,7 +84,7 @@ Local: domain/importacao.ts:143–168 e
 frontend/src/components/importacao/ResumoImportacao.tsx:90–94.
 A ausência de conferencia ou de comparações produz ok=true; o componente
 traduz isso em “Os totais do PDF conferem…”. Diagnóstico temporário de domínio
-passou e o caso sem totais foi reproduzido no site publicado.
+passou. A prova de navegador da amostra anterior foi retificada: ver errata.
 Impacto: uma leitura parcial ganha aparência de conferência financeira concluída.
 Recomendação: representar não verificado/parcial/verificado/divergente e escopo
 das comparações. /impeccable harden e /impeccable clarify. Sem alegação WCAG automática.
