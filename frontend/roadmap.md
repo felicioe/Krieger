@@ -30,3 +30,6 @@
 - [x] Tabela do comparativo no PDF/Word numa folha só: anual e "/mês" na mesma linha, coluna Rubrica mais larga
 - [x] Opção "Valor fixo (R$)" na previsão pelo demonstrativo (tela, prévia e PDF/Word do Relatório final)
 - [x] Cálculo da variação em R$ (código do Claude em src/domain/previsao.ts) e opção também no cadastro do condomínio
+
+## Listas editáveis
+- [x] Alça de arrastar no lugar das setas ↑↓ (mouse, toque e teclado: setas movem direto; Espaço levanta/solta; Escape cancela; anúncios em pt-BR)

@@ -21,9 +21,12 @@ npm run package:hostinger
 ```
 
 Não há build/dev React no package.json da raiz. Os fontes estão em frontend/,
-com package.json próprio, bun.lock e scripts dev/build/test/lint. Ler o AGENTS.md
-local antes de editar. O CI atual valida apenas o domínio da raiz; a validação
-reproduzível do frontend e sua integração ao pacote continuam na #16.
+com package.json próprio e scripts dev/build/test/lint. O npm usa o
+package-lock.json versionado; bun.lock é um arquivo de origem do Lovable.
+Ler o AGENTS.md local antes de editar. O CI valida o domínio, documentação e
+sintaxe PHP, instala o frontend com npm ci, compila e gera o pacote integrado.
+O workflow também executa os testes e o typecheck do frontend antes do build,
+evitando publicar uma versão que apenas compila, mas falha nessas verificações.
 
 Para desenvolvimento PHP, criar banco local de teste, aplicar `schema.sql` e
 criar `config.local.php` (na raiz do repo, ao lado de `config.example.php`) a
