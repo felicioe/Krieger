@@ -166,6 +166,47 @@ export function resumoConferencia(rel: RelatorioLido): { ok: boolean; mensagens:
   return { ok: mensagens.length === 0, mensagens };
 }
 
+export interface DivergenciaImportacao {
+  campo: "saldoAnterior" | "receitas" | "despesas" | "saldoAtual";
+  rotulo: string;
+  importado: number;
+  atual: number;
+  /** Variação percentual sobre o valor importado; `null` quando o importado é zero (percentual indefinido). */
+  diferencaPct: number | null;
+}
+
+const CAMPOS_DIVERGENCIA: { campo: DivergenciaImportacao["campo"]; rotulo: string; valor: (d: Demonstrativo) => number }[] = [
+  { campo: "saldoAnterior", rotulo: "Saldo anterior", valor: (d) => d.saldoAnterior.total },
+  { campo: "receitas", rotulo: "Receitas", valor: (d) => d.receitas.subtotal },
+  { campo: "despesas", rotulo: "Despesas", valor: (d) => d.despesas.subtotal },
+  { campo: "saldoAtual", rotulo: "Saldo atual", valor: (d) => d.saldoAtual.total },
+];
+
+/**
+ * Compara os totais do demonstrativo tal como foi importado do PDF (`original`, o que
+ * `demonstrativoDoRelatorio` devolveu) com o demonstrativo tal como está prestes a ser gravado
+ * (`atual`, já com as edições do usuário na tela de revisão). Pensado para rodar uma única vez, no
+ * momento de salvar logo após uma importação — não a cada edição subsequente do registro já salvo,
+ * que são alterações legítimas e não "divergências da importação".
+ */
+export function divergenciasImportacao(original: Demonstrativo, atual: Demonstrativo): DivergenciaImportacao[] {
+  const divergencias: DivergenciaImportacao[] = [];
+  for (const c of CAMPOS_DIVERGENCIA) {
+    const importado = c.valor(original);
+    const valorAtual = c.valor(atual);
+    if (importado !== valorAtual) {
+      divergencias.push({
+        campo: c.campo,
+        rotulo: c.rotulo,
+        importado,
+        atual: valorAtual,
+        diferencaPct: importado !== 0 ? Math.round(((valorAtual - importado) / importado) * 1000) / 10 : null,
+      });
+    }
+  }
+  return divergencias;
+}
+
 const digitos = (s: string | null | undefined) => (s ?? "").replace(/\D/g, "");
 const codigoNormal = (s: string | null | undefined) => {
   const d = digitos(s);
