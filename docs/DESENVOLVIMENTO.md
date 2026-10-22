@@ -55,6 +55,7 @@ Não inserir PDFs reais ou dados do ambiente em issue, PR ou fixtures.
 | `npm test` | Regras do domínio e utilitários cobertos pelos testes |
 | `npm run typecheck` | Tipagem de domain/lib/configuração Vitest |
 | `npm run docs:check` | Presença dos documentos essenciais e destinos de links locais Markdown |
+| `npm run changelog:check` | Versão atual e CHANGELOG.md consistentes com a fonte única pública |
 | `npm run package:hostinger` | Arquivos obrigatórios e referências diretas do index disponíveis |
 | `php -l ARQUIVO.php` | Sintaxe de cada PHP; não acessa MySQL |
 | `npm audit` | Alertas conhecidos das dependências npm instaladas; não audita assets compilados |
@@ -62,5 +63,6 @@ Não inserir PDFs reais ou dados do ambiente em issue, PR ou fixtures.
 No PowerShell, se `npm` não estiver no PATH, localize `npm.cmd` da instalação
 Node e invoque-o pelo caminho completo; não altere credenciais para resolver isso.
 
-O CI executa as verificações e publica um artefato. Ele não instala banco nem
-simula navegação. Para importação PDF, seguir `VALIDACAO-PDF.md`.
+O CI executa as verificações, usa MySQL efêmero para testes transacionais e
+publica um artefato. Não acessa o banco de produção nem comprova navegação real.
+Para importação PDF, seguir `VALIDACAO-PDF.md`.

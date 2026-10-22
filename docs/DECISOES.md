@@ -106,3 +106,12 @@ Claude e GitHub não deve ser proibida. A regra de frontend exclusivo no Lovable
 limita quem implementa a interface, não o transporte fiel dos arquivos produzidos.
 Sincronização é permitida e necessária; comparar versões e preservar avanços,
 sem inventar correções de frontend localmente no Codex.
+
+## 2026-10-22 — versão pública e marcos de alteração
+
+O responsável definiu1.0 como implantação do sistema. Rodapé do login identifica
+Therafinancial e versão; Registro de Alterações acessível sem sessão. Versões
+seguintes, como1.01, representam mudanças estruturais/importantes, não pequenos
+ajustes. A fonte única é frontend/src/data/versoes.json, mantida no Lovable;
+CHANGELOG.md é gerado a partir dela e verificado pelo CI. Não preencher releases
+futuros nem renumerar os commits anteriores. Procedimento em VERSIONAMENTO.md.

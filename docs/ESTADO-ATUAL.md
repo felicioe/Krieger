@@ -1,5 +1,19 @@
 # Estado atual e passagem de contexto
 
+## Login e versionamento — 22/10/2026, issue #77
+
+O login passa a exibir autoria Therafinancial, versão 1.0 e Registro de
+Alterações público. `frontend/src/data/versoes.json` é a fonte única do
+rodapé, histórico e `CHANGELOG.md` gerado. O CI verifica a consistência.
+1.0 representa a implantação; versões futuras como 1.01 exigem um marco
+importante, não pequenos ajustes. Ver [VERSIONAMENTO.md](VERSIONAMENTO.md).
+Frontend de autoria Lovable (mensagem `umsg_01m5jaqmn5fzk8y3sayz84bgt2`,
+diff base `38178ac` → `a688fb0`; diff por mensagem confirmado idêntico).
+O roadmap concorrente do Claude foi preservado, sem substituir seu estado
+do Importador/anexos pelo snapshot desatualizado do Lovable.
+Publicação e verificação final serão registradas no PR/issue #77.
+Crítica e hardening posteriores ainda não são considerados concluídos.
+
 Snapshot de 21/10/2026 (atualizado após publicar o frontend React novo em produção, substituindo o sistema legado). Conferir issues/PRs online antes de continuar.
 
 ## O que existe
