@@ -135,3 +135,43 @@ O método valor e a compactação PDF citados acima como pendentes já receberam
 implementação nos commits 11ad02e/0f376e8. Preservá-los nas próximas integrações.
 Reteste móvel publicado confirmou URL/h1/foco do menu após estabilização;
 evidência na #47. Correções #59–#62 ainda aguardam entrega final do Lovable.
+
+## Comparativo Financeiro, auditoria de importação e menu "Importador" — 22/10/2026
+
+Pedido do usuário após o incidente dos 14.000%: suportar o layout "Comparativo
+Financeiro" (multi-mês) do Systemar, ter um ponto de entrada único pra
+importação e uma auditoria obrigatória entre o que foi importado e o que foi
+gravado. Decisão de arquitetura (não reabrir sem motivo forte): o Comparativo
+Financeiro vira **anexo de referência** de uma Prestação de Contas já
+existente, não um `Demonstrativo` — ele é inerentemente multi-mês, não um
+snapshot de exercício único.
+
+- **PR #66 (merge b082784):** `domain/importacao.ts` ganha
+  `divergenciasImportacao(original, atual)` — compara os 4 totais do
+  demonstrativo entre o snapshot importado do PDF e o que está prestes a ser
+  salvo, pra pegar erros de digitação tipo os 14.000% antes de gravar, não
+  depois. Generaliza a conferência interna do parser (que só valida o PDF
+  contra ele mesmo). Pedido de integração enviado ao Lovable (telas de
+  Relatório mensal e Prestação de contas); função colada diretamente no chat
+  porque o sandbox deles não puxa de `main` automaticamente — ver
+  `docs/LOVABLE-FRONTEND.md` se o protocolo mudar.
+- **Dois bugs reais de parsing do layout "comparativo" corrigidos** (PR #64,
+  merge 123311c): regex de período e de filtro de lixo não toleravam o
+  espaçamento largo entre colunas que PDFs reais desse layout usam (dois
+  condomínios reais confirmaram, com `conferencia.divergentes: []` limpo
+  antes e depois — o fix só removeu lixo, nunca mexeu em total real).
+- **Schema novo (ação pendente no banco de produção):** tabela
+  `kr_anexos_importacao` (mesmo padrão id/dados/atualizado_em de todas as
+  outras) + store `anexos_importacao` em `domain/types.ts`/`api.php`/
+  `domain/backup.ts`. **Ainda não aplicada em produção** — precisa rodar o
+  `CREATE TABLE` do `schema.sql` via phpMyAdmin antes de qualquer anexo
+  funcionar contra a API real (mesmo passo que faltou pra `kr_atas`
+  anteriormente). `domain/importacao.ts` ganha `novoAnexoImportado(...)`
+  pra montar o registro.
+- **Menu "Importador" (hub único):** desenhado, ainda não enviado ao Lovable —
+  nova rota reunindo os pontos de entrada hoje espalhados (Relatório mensal,
+  Prestação de contas, e o novo Comparativo Financeiro), sem mudar onde os
+  relatórios já processados vivem.
+
+Validado: 130 testes raiz, typecheck e docs:check limpos, `php -l api.php`
+sem erro de sintaxe.

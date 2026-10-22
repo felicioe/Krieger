@@ -14,7 +14,8 @@ export type Store =
   | "modelos"
   | "config"
   | "importacoes"
-  | "atas";
+  | "atas"
+  | "anexos_importacao";
 
 export const STORES: Store[] = [
   "condominios",
@@ -25,6 +26,7 @@ export const STORES: Store[] = [
   "config",
   "importacoes",
   "atas",
+  "anexos_importacao",
 ];
 
 export interface ComId {
@@ -313,6 +315,28 @@ export interface Importacao extends ComId {
   consideracoes?: ConsideracoesFinaisLidas | null;
   /** Campo novo (opcional): Previsão orçamentária sugerida lida do PDF, só como referência. */
   previsaoSugerida?: PrevisaoSugeridaLida | null;
+}
+
+/**
+ * Tipos de relatório que só são anexados a um exercício já existente (referência/auditoria),
+ * em vez de virar um `Demonstrativo` por `DestinoImportacao`. Hoje só o Comparativo Financeiro;
+ * outros layouts "só leitura" entram aqui no futuro.
+ */
+export type TipoAnexoImportacao = "comparativo_financeiro";
+
+/**
+ * PDF anexado a uma Prestação de Contas (Exercício) já existente, como referência — não vira
+ * lançamento no demonstrativo. Guarda o relatório lido na íntegra para permitir reexibir os dados
+ * e para a auditoria de divergência (item a par com `divergenciasImportacao`, mas aqui comparando
+ * contra o que foi registrado manualmente, não contra uma importação direta).
+ */
+export interface AnexoImportado extends ComId {
+  exercicioId: string;
+  tipo: TipoAnexoImportacao;
+  arquivo: string;
+  /** ISO 8601 */
+  importadoEm: string;
+  relatorio: RelatorioLido;
 }
 
 // ---------- Configurações ----------

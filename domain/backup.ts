@@ -23,4 +23,5 @@ export const ROTULO_STORE: Record<Store, string> = {
   config: "Configurações",
   importacoes: "Importações",
   atas: "Atas",
+  anexos_importacao: "Anexos de importação",
 };
