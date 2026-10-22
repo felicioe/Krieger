@@ -6,6 +6,7 @@ import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { ROTULO_LAYOUT, colunasDoRelatorio, resumoConferencia } from "@/domain/importacao";
 import type { ConsideracoesFinaisLidas, PrevisaoSugeridaLida, RelatorioLido } from "@/domain/pdfParser";
 import type { Demonstrativo, DestinoImportacao } from "@/domain/types";
+import { contagem } from "@/components/app/textos";
 
 /** O que foi lido do PDF: origem, período, totais e conferência — para o usuário revisar antes de usar. */
 export function ResumoImportacao({
@@ -60,10 +61,10 @@ export function ResumoImportacao({
         <dl className="grid gap-1.5 sm:grid-cols-2 sm:gap-x-6">
           {(
             [
-              ["Saldo anterior", d.totais.saldoAnterior, `${d.saldoAnterior.contas.length} conta(s)`],
-              ["Receitas", d.totais.receitas, `${d.receitas.itens.length} item(ns)`],
-              ["Despesas", d.totais.despesas, `${nDespesas} item(ns) em ${d.despesas.grupos.length} grupo(s)`],
-              ["Saldo atual", d.totais.saldoAtual, `${d.saldoAtual.contas.length} conta(s)`],
+              ["Saldo anterior", d.totais.saldoAnterior, contagem(d.saldoAnterior.contas.length, "conta", "contas")],
+              ["Receitas", d.totais.receitas, contagem(d.receitas.itens.length, "item", "itens")],
+              ["Despesas", d.totais.despesas, `${contagem(nDespesas, "item", "itens")} em ${contagem(d.despesas.grupos.length, "grupo", "grupos")}`],
+              ["Saldo atual", d.totais.saldoAtual, contagem(d.saldoAtual.contas.length, "conta", "contas")],
             ] as const
           ).map(([rotulo, valor, detalhe]) => (
             <div key={rotulo} className="flex items-baseline justify-between gap-3">
@@ -118,11 +119,11 @@ function PaginasExtras({
   const naPrestacao = destino !== "mensais";
   const detalhes = cf
     ? [
-        cf.administracao.length > 0 && `${cf.administracao.length} membro(s) da administração`,
+        cf.administracao.length > 0 && `${contagem(cf.administracao.length, "membro", "membros")} da administração`,
         (cf.seguro.riscoAbsoluto != null || cf.seguro.coberturas.length > 0) && "seguro",
         cf.seguradora && `seguradora ${cf.seguradora}`,
         (cf.ultCaixaDagua || cf.ultDedetizacao || cf.ultGordura) && "datas de manutenção",
-        cf.indices.length > 0 && `${cf.indices.length} índice(s) de correção`,
+        cf.indices.length > 0 && `${contagem(cf.indices.length, "índice", "índices")} de correção`,
       ].filter(Boolean)
     : [];
 

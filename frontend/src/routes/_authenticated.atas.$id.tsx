@@ -283,7 +283,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
                 <>
                   <Input aria-label={`Unidade do presente ${i + 1}`} placeholder="Unidade" value={p.unidade} onChange={(e) => up({ unidade: e.target.value })} />
                   <Input aria-label={`Nome do presente ${i + 1}`} placeholder="Nome" value={p.nome} onChange={(e) => up({ nome: e.target.value })} />
-                  <label className="col-span-2 flex h-9 items-center gap-2 text-sm sm:col-span-1">
+                  <label className="col-span-2 flex h-9 items-center gap-2 pl-1.5 text-sm max-md:h-11 max-md:gap-3 pointer-coarse:h-11 pointer-coarse:gap-3 sm:col-span-1">
                     <Checkbox checked={p.procurador} onCheckedChange={(v) => up({ procurador: v === true })} aria-label={`Presente ${i + 1} é procurador`} />
                     Procurador
                   </label>

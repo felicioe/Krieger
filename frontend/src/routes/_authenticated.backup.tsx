@@ -20,6 +20,7 @@ import { cabecalho } from "@/lib/head";
 import { nomeArquivoBackup, resumoBackup, ROTULO_STORE } from "@/domain/backup";
 import { diasDesdeBackup } from "@/domain/painel";
 import type { BackupRegistro, Backup as DadosBackup, ConfigBackup } from "@/domain/types";
+import { haDias } from "@/components/app/textos";
 
 export const Route = createFileRoute("/_authenticated/backup")({
   head: () => cabecalho("Backup", "Gerar, baixar e restaurar backups dos dados do Sistema Krieger."),
@@ -197,10 +198,10 @@ function PaginaBackup() {
           <p className="text-sm text-muted-foreground">
             Último backup:{" "}
             <strong className="text-foreground">
-              {ultimo?.em ? `${formatDataHora(ultimo.em)}${dias !== null ? ` (há ${dias} dia(s))` : ""}` : "nunca realizado"}
+              {ultimo?.em ? `${formatDataHora(ultimo.em)}${dias !== null ? ` (${haDias(dias)})` : ""}` : "nunca realizado"}
             </strong>
           </p>
-          <Button className="mt-4" onClick={gerar} disabled={gerando}>
+          <Button className="mt-4 h-auto min-h-9 max-w-full whitespace-normal" onClick={gerar} disabled={gerando}>
             {gerando ? <Loader2 className="animate-spin" /> : <Server />}
             Gerar backup no servidor
           </Button>
@@ -223,7 +224,7 @@ function PaginaBackup() {
                 onChange={(e) => lerArquivo(e.target.files?.[0])}
               />
               <div>
-                <Button variant="outline" onClick={() => input.current?.click()}>
+                <Button variant="outline" className="h-auto min-h-9 max-w-full whitespace-normal" onClick={() => input.current?.click()}>
                   <FileUp /> Escolher arquivo de backup
                 </Button>
               </div>

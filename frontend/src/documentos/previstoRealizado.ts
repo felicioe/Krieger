@@ -8,6 +8,7 @@ import type { ResultadoComparativo } from "@/domain/previstoRealizado";
 import type { Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
 import { timbreDoEscritorio } from "./comum";
 import { tabelaComparativo } from "./relatorioFinal";
+import { contagem } from "@/components/app/textos";
 
 /** Previsto × Realizado avulso: só desenha o que `compararPrevistoRealizado` já calculou. */
 export async function documentoPrevistoRealizado(o: {
@@ -24,7 +25,7 @@ export async function documentoPrevistoRealizado(o: {
     {
       tipo: "paragrafo",
       suave: true,
-      texto: `Previsão ${e.ano} × realizado de ${c.meses[0]?.rotulo ?? "—"} a ${c.mesAte.rotulo} (${c.relatoriosUsados} relatório(s) mensal(is)).`,
+      texto: `Previsão ${e.ano} × realizado de ${c.meses[0]?.rotulo ?? "—"} a ${c.mesAte.rotulo} (${contagem(c.relatoriosUsados, "relatório mensal", "relatórios mensais")}).`,
     },
     {
       tipo: "tabela",

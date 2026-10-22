@@ -1,4 +1,5 @@
 import { useId, type ReactElement, cloneElement } from "react";
+import { TriangleAlert } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ export function Field({
   rotulo,
   dica,
   erro,
+  aviso,
   obrigatorio,
   className,
   children,
@@ -27,6 +29,8 @@ export function Field({
   rotulo: string;
   dica?: string;
   erro?: string | null;
+  /** Alerta não bloqueante (ex.: valor incomum); aparece junto da dica e é lido ao focar o campo. */
+  aviso?: string | null;
   obrigatorio?: boolean;
   className?: string;
   children: ReactElement<PropsControle>;
@@ -34,9 +38,10 @@ export function Field({
   const id = useId();
   const idDica = `${id}-dica`;
   const idErro = `${id}-erro`;
+  const idAviso = `${id}-aviso`;
   const descricao = erro ? idErro : dica ? idDica : undefined;
   const descricaoFilho = children.props["aria-describedby"];
-  const describedBy = [descricaoFilho, descricao].filter(Boolean).join(" ") || undefined;
+  const describedBy = [descricaoFilho, descricao, aviso ? idAviso : undefined].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={cn("grid min-w-0 content-start gap-1.5", className)}>
@@ -63,6 +68,12 @@ export function Field({
           {dica}
         </p>
       ) : null}
+      {aviso && (
+        <p id={idAviso} className="flex items-start gap-1 rounded-sm bg-warning/15 px-1.5 py-1 text-xs text-warning-foreground">
+          <TriangleAlert className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+          <span>{aviso}</span>
+        </p>
+      )}
     </div>
   );
 }

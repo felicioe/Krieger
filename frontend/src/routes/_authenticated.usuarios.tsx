@@ -228,7 +228,7 @@ function DialogUsuario({ usuario, aoFechar }: { usuario: UsuarioAdmin | null; ao
                 ]}
               />
             </Field>
-            <div className="flex h-9 items-center gap-2">
+            <div className="flex h-9 items-center gap-2 max-md:h-11 max-md:gap-3 pointer-coarse:h-11 pointer-coarse:gap-3">
               <Switch id="usuario-ativo" checked={ativo} onCheckedChange={setAtivo} />
               <Label htmlFor="usuario-ativo">{ativo ? "Ativo" : "Inativo"}</Label>
             </div>

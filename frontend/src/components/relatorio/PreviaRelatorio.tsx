@@ -9,6 +9,7 @@ import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio, LinhaValor, PrevisaoSugeridaExercicio } from "@/domain/types";
+import { contagem } from "@/components/app/textos";
 
 /** Prévia na tela do documento montado (sem PDF). Só as seções incluídas, numeradas na ordem. */
 export function PreviaRelatorio({
@@ -182,7 +183,7 @@ export function PreviaRelatorio({
         <Secao
           n={numero("previstoRealizado")}
           titulo="Previsto × Realizado"
-          sub={`Previsão ${e.ano} × realizado de ${rel.comparativo.meses[0]?.rotulo} a ${rel.comparativo.mesAte.rotulo} (${rel.comparativo.relatoriosUsados} relatório(s) mensal(is)).`}
+          sub={`Previsão ${e.ano} × realizado de ${rel.comparativo.meses[0]?.rotulo} a ${rel.comparativo.mesAte.rotulo} (${contagem(rel.comparativo.relatoriosUsados, "relatório mensal", "relatórios mensais")}).`}
         >
           <table className="mb-4 w-full rounded-sm bg-muted/50">
             <tbody>

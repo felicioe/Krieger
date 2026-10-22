@@ -10,6 +10,7 @@ import type { ResultadoComparativo, Situacao, Totais } from "@/domain/previstoRe
 import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio, PrevisaoSugeridaExercicio } from "@/domain/types";
 import { blocosDemonstrativo, localEData, timbreDoEscritorio } from "./comum";
+import { contagem } from "@/components/app/textos";
 
 /**
  * Relatório final da prestação de contas: desenha o que `montarRelatorioFinal` já montou,
@@ -134,7 +135,7 @@ export async function documentoRelatorioFinal(o: {
       tipo: "paragrafo",
       suave: true,
       tamanho: "pequeno",
-      texto: `Previsão ${e.ano} × realizado de ${c.meses[0]?.rotulo ?? "—"} a ${c.mesAte.rotulo} (${c.relatoriosUsados} relatório(s) mensal(is)).`,
+      texto: `Previsão ${e.ano} × realizado de ${c.meses[0]?.rotulo ?? "—"} a ${c.mesAte.rotulo} (${contagem(c.relatoriosUsados, "relatório mensal", "relatórios mensais")}).`,
     });
     b.push(
       resumo([

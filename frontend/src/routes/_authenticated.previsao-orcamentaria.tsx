@@ -18,6 +18,7 @@ import { cabecalho } from "@/lib/head";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { calcularPrevisao } from "@/domain/previsao";
+import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
 import type { Condominio, Exercicio } from "@/domain/types";
 
 type Busca = { exercicio?: string };
@@ -111,6 +112,14 @@ function EditorPrevisao({
     [e, unidades],
   );
 
+  // Só para avisar no topo que o resultado da aba aberta está incompleto (não muda o Salvar).
+  const valorUnidadeSugerida = useMemo(() => {
+    if (!e.previsaoSugerida) return null;
+    const rs = calcularPrevisaoSugerida(e.previsaoSugerida);
+    return calcularPrevisaoSugeridaPorUnidade(rs.rateioMensalSugerido, unidades, e.prev?.fundoReservaPct ?? 0, e.arredondamento).valorUnidade;
+  }, [e.previsaoSugerida, unidades, e.prev?.fundoReservaPct, e.arredondamento]);
+  const parcial = aba === "sugerida" ? !!e.previsaoSugerida && valorUnidadeSugerida === null : resultado.rateioSugerido === null;
+
   const sujoRef = useRef(sujo);
   sujoRef.current = sujo;
   useBlocker({
@@ -149,6 +158,11 @@ function EditorPrevisao({
         }
         acoes={
           <>
+            {parcial && (
+              <Badge variant="warning" title="Falta dado para o valor por unidade. Salvar continua permitido.">
+                Resultado parcial
+              </Badge>
+            )}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
             <Button variant="outline" asChild>
               <Link to="/prestacao-contas/$id" params={{ id: e.id }}>
@@ -167,9 +181,9 @@ function EditorPrevisao({
 
       <form id="form-previsao" onSubmit={enviar} noValidate>
         <Tabs value={aba} onValueChange={setAba}>
-          <TabsList className="h-10 bg-secondary">
-            <TabsTrigger value="sugerida" className="px-4">Sugerida pelo Systemar</TabsTrigger>
-            <TabsTrigger value="demonstrativo" className="px-4">Calculada pelo demonstrativo</TabsTrigger>
+          <TabsList className="h-auto min-h-10 max-w-full flex-wrap justify-start bg-secondary">
+            <TabsTrigger value="sugerida" className="whitespace-normal px-4">Sugerida pelo Systemar</TabsTrigger>
+            <TabsTrigger value="demonstrativo" className="whitespace-normal px-4">Calculada pelo demonstrativo</TabsTrigger>
           </TabsList>
           <TabsContent value="sugerida" className="mt-4">
             {e.previsaoSugerida ? (

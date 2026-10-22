@@ -27,6 +27,7 @@ import { normalizarCondominio } from "@/domain/condominio";
 import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { alternarSecao, montarRelatorioFinal, SECOES } from "@/domain/relatorioFinal";
 import type { Condominio, ConfigEscritorio, Exercicio, Mensal } from "@/domain/types";
+import { contagem, palavra } from "@/components/app/textos";
 
 export const Route = createFileRoute("/_authenticated/relatorio-final/$id")({
   head: () => cabecalho("Relatório final", "Montagem e conferência do relatório final da prestação de contas."),
@@ -168,10 +169,10 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
             <div className="grid gap-6 2xl:grid-cols-[18rem_minmax(0,1fr)]">
               <aside className="grid content-start gap-4 md:grid-cols-3 2xl:sticky 2xl:top-4 2xl:grid-cols-1 2xl:self-start">
                 <SectionCard titulo="Seções">
-                  <ul className="space-y-2.5">
+                  <ul className="space-y-2.5 max-md:space-y-0 pointer-coarse:space-y-0">
                     {SECOES.map((s) => (
                       <li key={s.id}>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 max-md:min-h-11 max-md:gap-3 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                           <Checkbox
                             id={`secao-${s.id}`}
                             checked={rel.secoes[s.id]}
@@ -182,7 +183,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                           </Label>
                         </div>
                         {s.id === "analise" && rel.secoes.analise && (
-                          <div className="ml-6 mt-1.5 flex items-center gap-2">
+                          <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox id="secao-pizza" checked={e.mostrarPizza !== false} onCheckedChange={(v) => mudar({ mostrarPizza: v === true })} />
                             <Label htmlFor="secao-pizza" className="text-xs font-normal text-muted-foreground">
                               Pizza das despesas por grupo
@@ -213,7 +214,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                 </SectionCard>
 
                 <SectionCard titulo="Relatórios mensais">
-                  <Field rotulo="Acumulado até" dica={`${rel.mensais.length} relatório(s) usados no Previsto × Realizado, na inadimplência e nas notas.`}>
+                  <Field rotulo="Acumulado até" dica={`${rel.mensais.length === 0 ? "Nenhum relatório mensal" : contagem(rel.mensais.length, "relatório mensal", "relatórios mensais")} ${palavra(rel.mensais.length, "usado", "usados")} no Previsto × Realizado, na inadimplência e nas notas.`}>
                     <Selecao
                       value={String(rel.comparativo.mesAte.posicao)}
                       onChange={(v) => mudar({ relatorioFinal: { ...e.relatorioFinal, prAte: Number(v) } })}

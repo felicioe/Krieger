@@ -16,16 +16,17 @@ import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DinheiroInput, InteiroInput } from "@/components/app/inputs";
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
+import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
 import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
-import { origemComArquivo } from "@/domain/importacao";
+import { divergenciasImportacao, origemComArquivo, type DivergenciaImportacao } from "@/domain/importacao";
 import { competenciaMensal, normalizarMensal, prepararMensal, rotuloCompetencia, validarMensal } from "@/domain/mensal";
 import { normalizarCondominio } from "@/domain/condominio";
 import { documentoMensal } from "@/documentos/mensal";
-import type { Condominio, ConfigEscritorio, Mensal } from "@/domain/types";
+import type { Condominio, ConfigEscritorio, Demonstrativo, Mensal } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/relatorio-mensal/$id")({
   head: () => cabecalho("Relatório mensal", "Demonstrativo do mês, contas a receber e notas explicativas."),
@@ -68,6 +69,10 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [aba, setAba] = useState("demonstrativo");
+  // Totais do PDF importado, guardados até o primeiro salvamento seguinte (trava de divergência).
+  const [snapshotImportado, setSnapshotImportado] = useState<Demonstrativo | null>(null);
+  const [divergencias, setDivergencias] = useState<DivergenciaImportacao[]>([]);
+  const [confirmarDivergencia, setConfirmarDivergencia] = useState(false);
 
   const condo = condominios.find((c) => c.id === m.condoId);
   const demonstrativo = m.demonstrativo ?? demonstrativoVazio(m.condoNome);
@@ -103,6 +108,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
       setM(n);
       setSalvoJson(JSON.stringify(n));
       toast.success("Relatório mensal salvo.");
+      setSnapshotImportado(null);
     },
   });
 
@@ -123,6 +129,14 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
       toast.error(v.erro);
       setAba("demonstrativo");
       return;
+    }
+    if (snapshotImportado) {
+      const d = divergenciasImportacao(snapshotImportado, m.demonstrativo ?? demonstrativoVazio(m.condoNome));
+      if (d.length > 0) {
+        setDivergencias(d);
+        setConfirmarDivergencia(true);
+        return;
+      }
     }
     salvar.mutate(prepararMensal(m));
   }
@@ -160,6 +174,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
                   ...(r.receber ? { receber: r.receber } : {}),
                   origem: origemComArquivo(m.origem, r.arquivo),
                 });
+                setSnapshotImportado(r.demonstrativo);
                 setAba("demonstrativo");
               }}
             />
@@ -249,6 +264,13 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
           </TabsContent>
         </Tabs>
       </form>
+
+      <DialogoDivergencia
+        aberto={confirmarDivergencia}
+        aoMudar={setConfirmarDivergencia}
+        divergencias={divergencias}
+        aoConfirmar={() => salvar.mutateAsync(prepararMensal(m)).then(() => setSnapshotImportado(null))}
+      />
 
       <ConfirmDialog
         aberto={confirmarExclusao}
