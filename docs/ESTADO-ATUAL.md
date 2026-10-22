@@ -188,14 +188,13 @@ snapshot de exercício único.
   espaçamento largo entre colunas que PDFs reais desse layout usam (dois
   condomínios reais confirmaram, com `conferencia.divergentes: []` limpo
   antes e depois — o fix só removeu lixo, nunca mexeu em total real).
-- **Schema novo (ação pendente no banco de produção):** tabela
-  `kr_anexos_importacao` (mesmo padrão id/dados/atualizado_em de todas as
-  outras) + store `anexos_importacao` em `domain/types.ts`/`api.php`/
-  `domain/backup.ts`. **Ainda não aplicada em produção** — precisa rodar o
-  `CREATE TABLE` do `schema.sql` via phpMyAdmin antes de qualquer anexo
-  funcionar contra a API real (mesmo passo que faltou pra `kr_atas`
-  anteriormente). `domain/importacao.ts` ganha `novoAnexoImportado(...)`
-  pra montar o registro.
+- **Schema novo:** tabela `kr_anexos_importacao` (mesmo padrão
+  id/dados/atualizado_em de todas as outras) + store `anexos_importacao` em
+  `domain/types.ts`/`api.php`/`domain/backup.ts`. **Aplicada em produção em
+  22/10/2026** (usuário rodou o `CREATE TABLE` via phpMyAdmin). `domain/importacao.ts`
+  ganha `novoAnexoImportado(...)` pra montar o registro — falta só a tela
+  do Lovable (pedido do menu Importador já enviado) pra gravar/exibir de
+  verdade.
 - **Menu "Importador" (hub único):** pedido enviado ao Lovable em 22/10/2026
   (fila normal) — nova rota reunindo os pontos de entrada hoje espalhados
   (Relatório mensal, Prestação de contas, e o novo Comparativo Financeiro
