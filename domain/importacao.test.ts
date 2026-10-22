@@ -372,11 +372,19 @@ describe("auditoria: divergência entre o importado e o gravado", () => {
 describe("anexo de relatório só leitura (Comparativo Financeiro)", () => {
   it("guarda o relatório lido na íntegra, vinculado ao exercício, sem id", () => {
     const rel = lerRelatorio(periodoUnico.replace(/^Condomínio:.*$/m, "Demonstrativo"));
-    const anexo = novoAnexoImportado("ex-1", "comparativo_financeiro", rel, "comparativo.pdf", new Date("2026-10-22T00:00:00Z"));
+    const anexo = novoAnexoImportado(
+      "ex-1",
+      "comparativo_financeiro",
+      rel,
+      "comparativo.pdf",
+      "data:application/pdf;base64,AAAA",
+      new Date("2026-10-22T00:00:00Z"),
+    );
     expect(anexo).toEqual({
       exercicioId: "ex-1",
       tipo: "comparativo_financeiro",
       arquivo: "comparativo.pdf",
+      arquivoDataUrl: "data:application/pdf;base64,AAAA",
       importadoEm: "2026-10-22T00:00:00.000Z",
       relatorio: rel,
     });
