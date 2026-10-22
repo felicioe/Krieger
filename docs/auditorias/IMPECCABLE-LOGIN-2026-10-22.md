@@ -102,3 +102,24 @@ ficou na #82 para reprodução independente, sem alterar outra tela por hipótes
 Leitor real e toque físico continuam não testados. Evidências da publicação
 final e da sessão autenticada serão registradas no PR/issue, sem dados reais.
 
+## Conclusão da publicação
+
+PR #80 publicado: main `3dbeaad` → CI `39830694020` aprovado →
+deploy-hostinger `bfde51c` → conector Hostinger. HTML público idêntico ao
+artefato, SHA256 `46AADC8E6949C2A14CC1DD02B1ED05E1885D05BA9157B873E7AC6005132BFFC4`.
+Rollback `048e732`; configuração/banco preservados.
+
+Conferência independente autenticada no site: menu fechado por padrão,
+expansão com Enter/recolhimento com Espaço, opções de usuário comum corretas,
+histórico interno 1.0, Escape retorna ao acionador. Em 320 × 740: gaveta fecha
+antes de abrir o histórico, somente um diálogo de 320 × 332 px, Escape retorna
+a “Abrir menu” e não sobra bloqueio de ponteiro. Viewport restaurado.
+Administração foi coberta em teste simulado, não por troca de perfil real.
+Login separado mostra autoria/versão sem ação do histórico, orientação e
+controle Mostrar/Ocultar senha; alternância não navega. Senha fictícia apagada
+após o teste; vazio mostra erro ligado ao campo com foco. Nenhuma autenticação
+real foi tentada pelo agente, nem cadastro salvo, logout ou alteração de senha.
+Bibliotecas403, configurações404 e API/auth401 sem sessão. Detalhes no PR #80.
+158 testes frontend passaram; leitor real/toque físico continuam não executados.
+Não foi feita nova pontuação do menu: a nota31/40 permanece histórica.
+

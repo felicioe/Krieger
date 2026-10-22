@@ -2,8 +2,8 @@
 
 ## Login e versionamento — 22/10/2026, issue #77
 
-O login passa a exibir autoria Therafinancial, versão 1.0 e Registro de
-Alterações público. `frontend/src/data/versoes.json` é a fonte única do
+O login exibe autoria Therafinancial e versão 1.0. O Registro de Alterações
+fica na área autenticada. `frontend/src/data/versoes.json` é a fonte única do
 rodapé, histórico e `CHANGELOG.md` gerado. O CI verifica a consistência.
 1.0 representa a implantação; versões futuras como 1.01 exigem um marco
 importante, não pequenos ajustes. Ver [VERSIONAMENTO.md](VERSIONAMENTO.md).
@@ -11,7 +11,7 @@ Frontend de autoria Lovable (mensagem `umsg_01m5jaqmn5fzk8y3sayz84bgt2`,
 diff base `38178ac` → `a688fb0`; diff por mensagem confirmado idêntico).
 O roadmap concorrente do Claude foi preservado, sem substituir seu estado
 do Importador/anexos pelo snapshot desatualizado do Lovable.
-Publicado pelo PR #78: main `c930a84` → CI `39825154179` aprovado →
+Entrega inicial pelo PR #78: main `c930a84` → CI `39825154179` aprovado →
 artefato `krieger-hostinger` → deploy-hostinger `048e732` → conector
 Hostinger. HTML público idêntico ao artefato (SHA256
 `579BA54261C84D80C753831E6B10C4DF5272C82851D4DFC4662A60BF2B0A1CC7`).
@@ -22,17 +22,33 @@ duas prioridades P2, nenhuma P0/P1 demonstrada. Relatório em
 Hardening das prioridades via Lovable na issue #79 implementado (diff base
 `20be9fe` → `aa97b80`): orientação de acesso, mostrar/ocultar senha,
 obrigatoriedade/erros/foco, ocupado e histórico longo. Validação local:
-153 testes frontend, tipos e build aprovados. Aguardar evidência de publicação
-no PR/issue antes de considerar essa etapa disponível na Hostinger.
+153 testes frontend, tipos e build aprovados nessa etapa. Publicado junto da
+mudança #81 pelo PR #80, conforme a cadeia final abaixo.
 
-Pedido posterior #81, implementado no Lovable e aguardando publicação: Registro de Alterações
+Pedido posterior #81, publicado pelo PR #80: Registro de Alterações
 somente após login, dentro do menu inferior do usuário recolhível, fechado por
-padrão. O login mantém apenas autoria e versão. PR #80 aguarda essa integração
-antes de ser publicado. Essa decisão substitui a localização pública inicial,
+padrão. O login mantém apenas autoria e versão. Essa decisão substitui a localização pública inicial,
 sem reescrever a evidência histórica da crítica já realizada. Diff de autoria
 Lovable: `aa97b80` → `6c29269`, incluindo reorganização das instruções de UI.
 Contextos de Importador não presentes em main e o roadmap concorrente não
 foram importados; somente o diff funcional solicitado foi sincronizado.
+
+Cadeia final: main `3dbeaad81fed73fabf474ac3f8a50ada94414eae` → CI
+`39830694020` aprovado (158 testes frontend, domínio, PHP/MySQL, tipos, build,
+docs, changelog e pacote) → artefato `krieger-hostinger` → deploy-hostinger
+`bfde51c9696455af5882daf2202eaf5bfd2742aa` → conector Hostinger.
+HTML público SHA256 `46AADC8E6949C2A14CC1DD02B1ED05E1885D05BA9157B873E7AC6005132BFFC4`
+idêntico ao artefato; rollback `048e732`. Sem migração de banco/configuração.
+
+Validação independente em produção: login sem acionador do histórico,
+mostrar/ocultar senha, erro local de senha vazia; sessão autenticada com menu
+fechado por padrão, Enter/Espaço, histórico 1.0 e retorno de foco. Em 320 × 740,
+gaveta fecha antes do histórico (uma janela), Escape volta a “Abrir menu” e
+não resta bloqueio de ponteiro. Viewport restaurado. Nenhum cadastro salvo,
+logout ou alteração de senha. Leitor real e toque físico não executados.
+Possível overflow extremo do Painel relatado pelo Lovable está na #82 para
+reprodução independente. A nota 31/40 é da crítica anterior, não do menu final.
+Evidência operacional completa no [PR #80](https://github.com/felicioe/Krieger/pull/80).
 
 Snapshot de 21/10/2026 (atualizado após publicar o frontend React novo em produção, substituindo o sistema legado). Conferir issues/PRs online antes de continuar.
 
