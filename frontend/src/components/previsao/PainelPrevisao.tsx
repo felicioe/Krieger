@@ -1,11 +1,10 @@
-import { Fragment } from "react";
+import { Fragment, useId, useRef, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { TriangleAlert } from "lucide-react";
 import { SinalToggle } from "./SinalToggle";
+import { AcaoAviso, QuadroAvisos, SemValor, SituacaoResultado, irPara, tipoAviso, type ItemAviso } from "./AvisosPrevisao";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -60,9 +59,35 @@ export function PainelPrevisao({
   const ajustes = prev.ajustes ?? [];
   const opcoesGrupo = [{ valor: SEM_GRUPO, rotulo: "Geral" }, ...grupos.filter(Boolean).map((g) => ({ valor: g, rotulo: g }))];
 
+  // Avisos do cálculo: no topo (com o que fazer) e junto do campo a que se referem.
+  const idBase = useId();
+  const idQuadro = `${idBase}-avisos`;
+  const idIndices = `${idBase}-indices`;
+  const refVariacao = useRef<HTMLInputElement>(null);
+  const parcial = r.rateioSugerido === null;
+  const tipos = r.avisos.map((texto) => ({ texto, tipo: tipoAviso(texto) }));
+  const textoDe = (...t: string[]) => tipos.filter((a) => t.includes(a.tipo)).map((a) => a.texto).join(" ") || null;
+  const avisoVariacao = textoDe("variacao", ...(e.variacaoMetodo === "mediaIndices" ? ["indices"] : []));
+  const semUnidades = !unidades;
+  const itensAviso: ItemAviso[] = tipos.map(({ texto, tipo }) => {
+    let acao: ReactNode = null;
+    if (tipo === "unidades")
+      acao = (
+        <Link to="/condominios/$id" params={{ id: condoId }} className="text-xs font-medium underline underline-offset-2 hover:no-underline">
+          Informar unidades no cadastro
+        </Link>
+      );
+    else if (tipo === "variacao")
+      acao = <AcaoAviso onClick={() => refVariacao.current?.focus()}>Ir para a variação</AcaoAviso>;
+    else if (tipo === "indices")
+      acao = <AcaoAviso onClick={() => irPara(idIndices)}>Ir para os índices</AcaoAviso>;
+    return { texto, acao };
+  });
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_21rem]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)]">
       <div className="min-w-0 space-y-6">
+        <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
         <SectionCard titulo="Parâmetros da previsão">
           <div className="grid gap-4 sm:grid-cols-6">
             <Field rotulo="Modo" className="sm:col-span-3">
@@ -75,18 +100,18 @@ export function PainelPrevisao({
               <Selecao value={e.variacaoMetodo} onChange={(v) => onChange({ variacaoMetodo: v })} opcoes={METODOS} />
             </Field>
             {e.variacaoMetodo === "manual" && (
-              <Field rotulo="Variação" dica="Reajuste aplicado sobre a base." className="sm:col-span-2">
-                <PercentualInput value={e.variacao} onChange={(v) => onChange({ variacao: v })} />
+              <Field rotulo="Variação" dica="Reajuste aplicado sobre a base." aviso={avisoVariacao} className="sm:col-span-2">
+                <PercentualInput ref={refVariacao} value={e.variacao} onChange={(v) => onChange({ variacao: v })} />
               </Field>
             )}
             {e.variacaoMetodo === "percentual" && (
-              <Field rotulo="Percentual fixo" className="sm:col-span-2">
-                <PercentualInput value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} />
+              <Field rotulo="Percentual fixo" aviso={avisoVariacao} className="sm:col-span-2">
+                <PercentualInput ref={refVariacao} value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} />
               </Field>
             )}
             {e.variacaoMetodo === "mediaIndices" && (
-              <Field rotulo="Anos na média" dica={`Vazio = todos. Média atual: ${pct(r.variacaoPct)}`} className="sm:col-span-2">
-                <InteiroInput value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} placeholder="Todos" />
+              <Field rotulo="Anos na média" dica={`Vazio = todos. Média atual: ${pct(r.variacaoPct)}`} aviso={avisoVariacao} className="sm:col-span-2">
+                <InteiroInput ref={refVariacao} value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} placeholder="Todos" />
               </Field>
             )}
             {e.variacaoMetodo === "valor" && (
@@ -104,20 +129,16 @@ export function PainelPrevisao({
             >
               <Input value={e.deducaoRegex} onChange={(ev) => onChange({ deducaoRegex: ev.target.value })} />
             </Field>
-            <div className="grid content-start gap-1.5 sm:col-span-2">
-              <span className="text-xs font-medium text-muted-foreground">Unidades</span>
-              <div className="flex h-9 items-center justify-between rounded-md border bg-muted/40 px-3 text-sm">
-                <span className="num">{unidades ?? "—"}</span>
-                <Link to="/condominios/$id" params={{ id: condoId }} className="text-xs text-primary underline-offset-2 hover:underline">
-                  alterar
-                </Link>
-              </div>
-            </div>
+            <CaixaUnidades unidades={unidades} condoId={condoId} className="sm:col-span-2" />
           </div>
         </SectionCard>
 
         {e.variacaoMetodo === "mediaIndices" && (
-          <SectionCard titulo="Índices de correção" descricao="Usados para a média da variação. Os mais recentes entram primeiro.">
+          <SectionCard
+            id={idIndices}
+            titulo="Índices de correção"
+            descricao="Usados para a média da variação. Os mais recentes entram primeiro."
+          >
             <RepeatableList
               itens={e.consid.indices}
               onChange={(indices) => onChange({ consid: { ...e.consid, indices } })}
@@ -163,7 +184,7 @@ export function PainelPrevisao({
                     value={a.grupo || SEM_GRUPO}
                     onChange={(v) => up({ grupo: v === SEM_GRUPO ? "" : v })}
                     opcoes={opcoesGrupo}
-                    className="h-8 text-xs sm:max-w-[16rem]"
+                    className="min-h-8 py-1 text-xs sm:max-w-[16rem]"
                   />
                 </div>
               </>
@@ -177,7 +198,15 @@ export function PainelPrevisao({
       </div>
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
-        <Resumo r={r} arredondamento={e.arredondamento} metodo={e.variacaoMetodo} aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })} />
+        <Resumo
+          r={r}
+          arredondamento={e.arredondamento}
+          metodo={e.variacaoMetodo}
+          parcial={parcial}
+          semUnidades={semUnidades}
+          idQuadro={idQuadro}
+          aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })}
+        />
       </aside>
     </div>
   );
@@ -293,7 +322,7 @@ function LinhaResumo({
   className,
 }: {
   rotulo: string;
-  valor: string;
+  valor: ReactNode;
   forte?: boolean;
   negativo?: boolean;
   className?: string;
@@ -316,13 +345,20 @@ function Resumo({
   r,
   arredondamento,
   metodo,
+  parcial,
+  semUnidades,
+  idQuadro,
   aoAprovar,
 }: {
   r: ResultadoPrevisao;
   arredondamento: Arredondamento;
   metodo: VariacaoMetodo;
+  parcial: boolean;
+  semUnidades: boolean;
+  idQuadro: string;
   aoAprovar: () => void;
 }) {
+  const ausente = (n: number | null, motivo?: string) => (n === null ? <SemValor motivo={motivo} /> : formatBRL(n));
   return (
     <section className="rounded-md border bg-card" aria-label="Resumo da previsão">
       <header className="border-b px-5 py-3">
@@ -330,6 +366,9 @@ function Resumo({
         <p className="mt-0.5 text-xs text-muted-foreground">Atualiza a cada alteração.</p>
       </header>
       <div className="px-5 py-4">
+        <div className="mb-3">
+          <SituacaoResultado parcial={parcial} avisos={r.avisos.length} idQuadro={idQuadro} />
+        </div>
         <LinhaResumo rotulo="Base (despesas realizadas)" valor={formatBRL(r.base)} />
         <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
         <LinhaResumo
@@ -342,22 +381,18 @@ function Resumo({
 
         <div className="mt-4 border-t pt-3">
           <LinhaResumo rotulo="Mensal (÷ 12)" valor={formatBRL(r.mensal)} />
-          <LinhaResumo rotulo="(÷) Unidades" valor={r.unidades ? String(r.unidades) : "—"} />
-          <LinhaResumo rotulo="Cota por unidade" valor={formatBRL(r.cotaUnidade)} forte />
-          <LinhaResumo rotulo={`(+) Reserva por unidade ${pct(r.fundoReservaPct)}`} valor={formatBRL(r.reservaUnidade)} />
+          <LinhaResumo rotulo="(÷) Unidades" valor={r.unidades ? String(r.unidades) : <SemValor motivo="não informado" />} />
+          <LinhaResumo rotulo="Cota por unidade" valor={ausente(r.cotaUnidade)} forte />
+          <LinhaResumo rotulo={`(+) Reserva por unidade ${pct(r.fundoReservaPct)}`} valor={ausente(r.reservaUnidade)} />
         </div>
 
-        <div className="mt-4 rounded-md bg-sidebar px-4 py-3 text-sidebar-foreground">
-          <div className="text-xs uppercase tracking-wide text-sidebar-muted">Valor por unidade</div>
-          <div className="num mt-0.5 text-2xl font-semibold">{formatBRL(r.rateioSugerido)}</div>
-          <div className="text-xs text-sidebar-muted">{ROTULO_ARRED[arredondamento]}</div>
-        </div>
+        <ValorPorUnidade valor={r.rateioSugerido} rodape={ROTULO_ARRED[arredondamento]} semUnidades={semUnidades} />
 
         <div className="mt-3">
           <LinhaResumo rotulo="Rateio atual" valor={formatBRL(r.rateioAtual)} />
           <LinhaResumo
             rotulo="Índice de reajuste"
-            valor={pct(r.indice, true)}
+            valor={r.indice === null ? <SemValor /> : pct(r.indice, true)}
             forte
             negativo={r.indice !== null && r.indice < 0}
           />
@@ -369,19 +404,67 @@ function Resumo({
           </Button>
         )}
 
-        {r.avisos.length > 0 && (
-          <Alert variant="warning" className="mt-4">
-            <TriangleAlert />
-            <AlertDescription>
-              <ul className="list-disc space-y-1 pl-4">
-                {r.avisos.map((a) => (
-                  <li key={a}>{a}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
       </div>
     </section>
+  );
+}
+
+/** Destaque do valor por unidade: escuro quando calculado; tracejado e explicado quando falta dado. */
+export function ValorPorUnidade({
+  valor,
+  rodape,
+  semUnidades,
+  titulo = "Valor por unidade",
+}: {
+  valor: number | null;
+  rodape: string;
+  semUnidades: boolean;
+  titulo?: string;
+}) {
+  if (valor === null) {
+    return (
+      <div className="mt-4 rounded-md border border-dashed border-warning bg-warning/10 px-4 py-3 text-warning-foreground">
+        <div className="text-xs font-semibold uppercase tracking-wide">{titulo}</div>
+        <div className="mt-0.5 text-base font-semibold">Não calculado</div>
+        <div className="text-xs">
+          {semUnidades ? "Falta a quantidade de unidades no cadastro do condomínio." : "Faltam dados para o cálculo; veja os avisos."}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 rounded-md bg-sidebar px-4 py-3 text-sidebar-foreground">
+      <div className="text-xs uppercase tracking-wide text-sidebar-muted">{titulo}</div>
+      <div className="num mt-0.5 text-2xl font-semibold">{formatBRL(valor)}</div>
+      <div className="text-xs text-sidebar-muted">{rodape}</div>
+    </div>
+  );
+}
+
+/** Quantidade de unidades (só leitura, vem do cadastro); sem unidades fica em destaque com o atalho. */
+export function CaixaUnidades({ unidades, condoId, className }: { unidades: number | null; condoId: string; className?: string }) {
+  const falta = !unidades;
+  return (
+    <div className={cn("grid content-start gap-1.5", className)}>
+      <span className="text-xs font-medium text-muted-foreground">Unidades</span>
+      <div
+        className={cn(
+          "flex min-h-9 flex-wrap items-center justify-between gap-x-2 rounded-md border px-3 py-1 text-sm max-md:min-h-11 pointer-coarse:min-h-11",
+          falta ? "border-warning bg-warning/10 text-warning-foreground" : "bg-muted/40",
+        )}
+      >
+        <span className={cn(!falta && "num", falta && "font-medium")}>{falta ? "Não informado" : unidades}</span>
+        {condoId && (
+          <Link
+            to="/condominios/$id"
+            params={{ id: condoId }}
+            className={cn("text-xs underline-offset-2 hover:underline", falta ? "font-medium underline" : "text-primary")}
+            aria-label={falta ? "Informar unidades no cadastro do condomínio" : "Alterar unidades no cadastro do condomínio"}
+          >
+            {falta ? "informar" : "alterar"}
+          </Link>
+        )}
+      </div>
+    </div>
   );
 }

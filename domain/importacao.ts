@@ -150,17 +150,23 @@ export function demonstrativoDoRelatorio(rel: RelatorioLido, coluna: string | nu
 }
 
 /** Resultado da conferência automática do parser, em frases. */
-export function resumoConferencia(rel: RelatorioLido): { ok: boolean; mensagens: string[] } {
+export type EstadoConferencia = "nao_verificado" | "parcial" | "verificado" | "divergente";
+export function resumoConferencia(rel: RelatorioLido): {
+  ok: boolean; estado: EstadoConferencia; comparacoes: number; esperadas: number; mensagens: string[];
+} {
   const c = rel.conferencia;
-  if (!c) return { ok: true, mensagens: [] };
+  const finalizar = (comparacoes: number, esperadas: number, mensagens: string[]) => {
+    const estado: EstadoConferencia = mensagens.length ? "divergente"
+      : comparacoes === 0 ? "nao_verificado" : comparacoes < esperadas ? "parcial" : "verificado";
+    return { ok: estado === "verificado", estado, comparacoes, esperadas, mensagens };
+  };
+  const esperadasComparativo = [rel.receitas, rel.despesas].reduce((s, secao) => s + (secao?.itens.length ?? 0), 0);
+  if (!c) return finalizar(0, rel.layout === "comparativo" ? esperadasComparativo : 4, []);
   const fmt = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if ("divergentes" in c) {
-    return {
-      ok: c.divergentes.length === 0,
-      mensagens: c.divergentes.map(
+    return finalizar(c.linhasConferidas, Math.max(c.linhasConferidas, esperadasComparativo), c.divergentes.map(
         (d) => `${d.secao === "receitas" ? "Receita" : "Despesa"} "${d.descricao}": soma dos meses R$ ${fmt(d.somaMeses)} × total R$ ${fmt(d.total)}.`,
-      ),
-    };
+      ));
   }
   const nomes: Record<NomeSecao, string> = {
     saldoAnterior: "Saldo anterior",
@@ -173,7 +179,7 @@ export function resumoConferencia(rel: RelatorioLido): { ok: boolean; mensagens:
     const x = c[k];
     if (x && !x.confere) mensagens.push(`${nomes[k]}: soma dos itens R$ ${fmt(x.somaItens)} × total do relatório R$ ${fmt(x.totalRelatorio)}.`);
   }
-  return { ok: mensagens.length === 0, mensagens };
+  return finalizar(Object.values(c).filter(Boolean).length, 4, mensagens);
 }
 
 export interface DivergenciaImportacao {

@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, CalendarPlus, Loader2, Megaphone, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarPlus, ChevronsDownUp, ChevronsUpDown, Loader2, Megaphone, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
+import { SecaoRecolhivel } from "@/components/app/SecaoRecolhivel";
+import { contagem } from "@/components/app/textos";
+import { AjudaDePara, AjudaExpressoes } from "@/components/condominios/AjudaCadastro";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
@@ -74,6 +77,40 @@ const MODO_REGRA: { valor: ModoRegra; rotulo: string }[] = [
   { valor: "ultimo+12", rotulo: "Último valor × 12" },
 ];
 
+const SECOES = ["administracao", "seguro", "manutencoes", "indices", "automacoes", "regras", "depara"] as const;
+type Secao = (typeof SECOES)[number];
+const todas = (v: boolean) => Object.fromEntries(SECOES.map((k) => [k, v])) as Record<Secao, boolean>;
+
+/** Resumo de uma linha para cada seção recolhível (só contagem do que está preenchido). */
+function resumos(c: Condominio): Record<Secao, string> {
+  const preenchido = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== "";
+  const datas = [c.vigenciaExtintores, c.ultGordura, c.ultDedetizacao, c.ultCaixaDagua, c.vistoriaAno].filter(preenchido).length;
+  const anos = c.indices.map((i) => i.ano).filter((a): a is number => typeof a === "number").sort((a, b) => a - b);
+  const metodo = VARIACAO.find((v) => v.valor === c.variacaoMetodo)?.rotulo ?? c.variacaoMetodo;
+  const arred = ARREDONDAMENTO.find((v) => v.valor === c.arredondamento)?.rotulo ?? c.arredondamento;
+  return {
+    administracao: c.administracao.length ? contagem(c.administracao.length, "membro informado", "membros informados") : "Ninguém informado",
+    seguro: [
+      c.seguradora || "Seguradora não informada",
+      c.vigenciaSeguro ? `vigente até ${c.vigenciaSeguro}` : "sem vigência",
+      c.seguro.coberturas.length ? contagem(c.seguro.coberturas.length, "cobertura", "coberturas") : "nenhuma cobertura",
+    ].join(" · "),
+    manutencoes: `${datas} de 5 datas informadas`,
+    indices: anos.length
+      ? `${contagem(c.indices.length, "índice", "índices")} (${anos[0] === anos[anos.length - 1] ? anos[0] : `${anos[0]} a ${anos[anos.length - 1]}`})`
+      : c.indices.length
+        ? contagem(c.indices.length, "índice", "índices")
+        : "Nenhum índice informado",
+    automacoes: [
+      c.somenteAnual ? "Só prestação anual" : "Com histórico mensal",
+      `variação: ${metodo}`,
+      c.regras.length ? contagem(c.regras.length, "regra", "regras") : "nenhuma regra",
+    ].join(" · "),
+    regras: `${arred}${c.deducaoRegex ? ` · dedução: “${c.deducaoRegex}”` : " · sem dedução"}`,
+    depara: c.mapeamento.length ? contagem(c.mapeamento.length, "substituição", "substituições") : "Nenhuma substituição",
+  };
+}
+
 function FormCondominio({ inicial }: { inicial: Condominio }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -82,6 +119,10 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
   const [erroNome, setErroNome] = useState<string | null>(null);
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const refNome = useRef<HTMLInputElement>(null);
+  const [abertas, setAbertas] = useState(() => todas(false));
+  const abrir = (k: Secao) => (v: boolean) => setAbertas((a) => ({ ...a, [k]: v }));
+  const todasAbertas = SECOES.every((k) => abertas[k]);
+  const res = resumos(c);
 
   const set = <K extends keyof Condominio>(campo: K, valor: Condominio[K]) =>
     setC((atual) => ({ ...atual, [campo]: valor }));
@@ -166,7 +207,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
       />
 
       <form id="form-condominio" onSubmit={enviar} className="space-y-6" noValidate>
-        <SectionCard titulo="Dados gerais">
+        <SectionCard titulo="Dados gerais" descricao="O essencial para começar. O nome é obrigatório; o resto pode ser completado depois.">
           <div className="grid gap-4 sm:grid-cols-6">
             <Field rotulo="Código" className="sm:col-span-1">
               <Input value={c.codigo} onChange={(e) => set("codigo", e.target.value)} />
@@ -217,7 +258,26 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           </div>
         </SectionCard>
 
-        <SectionCard titulo="Administração" descricao="Síndico, subsíndico, conselheiros e respectivos mandatos.">
+        <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+          <div className="min-w-0">
+            <h2 className="text-sm font-semibold text-foreground">Demais informações</h2>
+            <p className="text-xs text-muted-foreground">
+              Abra cada parte quando precisar. Tudo o que estiver preenchido é salvo junto, aberto ou recolhido.
+            </p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => setAbertas(todas(!todasAbertas))}>
+            {todasAbertas ? <ChevronsDownUp /> : <ChevronsUpDown />}
+            {todasAbertas ? "Recolher todas" : "Abrir todas"}
+          </Button>
+        </div>
+
+        <SecaoRecolhivel
+          titulo="Administração"
+          descricao="Síndico, subsíndico, conselheiros e respectivos mandatos."
+          resumo={res.administracao}
+          aberta={abertas.administracao}
+          aoMudar={abrir("administracao")}
+        >
           <RepeatableList
             itens={c.administracao}
             onChange={(v) => set("administracao", v)}
@@ -234,9 +294,9 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
               </>
             )}
           />
-        </SectionCard>
+        </SecaoRecolhivel>
 
-        <SectionCard titulo="Seguro">
+        <SecaoRecolhivel titulo="Seguro" resumo={res.seguro} aberta={abertas.seguro} aoMudar={abrir("seguro")}>
           <div className="mb-5 grid gap-4 sm:grid-cols-3">
             <Field rotulo="Seguradora">
               <Input value={c.seguradora} onChange={(e) => set("seguradora", e.target.value)} />
@@ -267,9 +327,9 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
               </>
             )}
           />
-        </SectionCard>
+        </SecaoRecolhivel>
 
-        <SectionCard titulo="Manutenções e vistorias">
+        <SecaoRecolhivel titulo="Manutenções e vistorias" resumo={res.manutencoes} aberta={abertas.manutencoes} aoMudar={abrir("manutencoes")}>
           <div className="grid gap-4 sm:grid-cols-4">
             <Field rotulo="Recarga de extintores (vence em)">
               <DataInput value={c.vigenciaExtintores} onChange={(v) => set("vigenciaExtintores", v)} />
@@ -293,9 +353,9 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
               <Input value={c.vistoriaLei} onChange={(e) => set("vistoriaLei", e.target.value)} placeholder="Ex.: Lei municipal nº …" />
             </Field>
           </div>
-        </SectionCard>
+        </SecaoRecolhivel>
 
-        <SectionCard titulo="Índices de correção aplicados">
+        <SecaoRecolhivel titulo="Índices de correção aplicados" resumo={res.indices} aberta={abertas.indices} aoMudar={abrir("indices")}>
           <RepeatableList
             itens={c.indices}
             onChange={(v) => set("indices", v)}
@@ -311,9 +371,14 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
               </>
             )}
           />
-        </SectionCard>
+        </SecaoRecolhivel>
 
-        <SectionCard titulo="Histórico mensal e automações">
+        <SecaoRecolhivel
+          titulo="Histórico mensal e automações"
+          resumo={res.automacoes}
+          aberta={abertas.automacoes}
+          aoMudar={abrir("automacoes")}
+        >
           <div className="mb-5 flex items-center gap-3">
             <Switch id="somente-anual" checked={c.somenteAnual} onCheckedChange={(v) => set("somenteAnual", v)} />
             <Label htmlFor="somente-anual" className="text-sm">
@@ -340,7 +405,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             onChange={(v) => set("regras", v)}
             novo={() => ({ campo: "", rotulo: "", fonte: "", regex: "", modo: "ultimo" as ModoRegra })}
             colunas="@2xl:grid-cols-[1fr_1fr_1fr_1.4fr_10rem]"
-            cabecalhos={["Campo", "Rótulo", "Fonte", "Expressão (regex)", "Modo"]}
+            cabecalhos={["Campo", "Rótulo", "Fonte", "Expressão de busca", "Modo"]}
             rotuloAdicionar="Adicionar regra"
             vazio="Nenhuma regra de preenchimento automático."
             render={(r, up) => (
@@ -348,28 +413,49 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
                 <Input aria-label="Campo" placeholder="Campo" value={r.campo} onChange={(e) => up({ campo: e.target.value })} />
                 <Input aria-label="Rótulo" placeholder="Rótulo" value={r.rotulo} onChange={(e) => up({ rotulo: e.target.value })} />
                 <Input aria-label="Fonte" placeholder="Fonte" value={r.fonte} onChange={(e) => up({ fonte: e.target.value })} />
-                <Input aria-label="Expressão" placeholder="^energia" className="font-mono text-xs" value={r.regex} onChange={(e) => up({ regex: e.target.value })} />
-                <Selecao value={r.modo} onChange={(v) => up({ modo: v })} opcoes={MODO_REGRA} />
+                <Input aria-label="Expressão de busca" placeholder="^energia" className="font-mono text-xs" value={r.regex} onChange={(e) => up({ regex: e.target.value })} />
+                <Selecao aria-label="Modo" value={r.modo} onChange={(v) => up({ modo: v })} opcoes={MODO_REGRA} />
               </>
             )}
           />
-        </SectionCard>
+        </SecaoRecolhivel>
 
-        <SectionCard titulo="Regras do relatório">
+        <SecaoRecolhivel
+          titulo="Regras do relatório"
+          descricao="Quais despesas saem da base da previsão, quais contam como consumo de água e como arredondar o rateio."
+          resumo={res.regras}
+          aberta={abertas.regras}
+          aoMudar={abrir("regras")}
+        >
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field rotulo="Rubrica de dedução (regex)" dica='Padrão: "fundo de caixa p/ obras"'>
+            <Field
+              rotulo="Rubrica de dedução"
+              dica='Despesas (ou grupos) cujo nome contém este texto saem da base da previsão. Padrão: "fundo de caixa p/ obras".'
+            >
               <Input className="font-mono text-xs" value={c.deducaoRegex} onChange={(e) => set("deducaoRegex", e.target.value)} />
             </Field>
-            <Field rotulo="Rubrica de água (regex)" dica='Padrão: "^[áa]gua"'>
+            <Field rotulo="Rubrica de água" dica='Despesas somadas como consumo de água no relatório final. Padrão: "^[áa]gua".'>
               <Input className="font-mono text-xs" value={c.aguaRubrica} onChange={(e) => set("aguaRubrica", e.target.value)} />
             </Field>
             <Field rotulo="Arredondamento do rateio">
               <Selecao value={c.arredondamento} onChange={(v) => set("arredondamento", v)} opcoes={ARREDONDAMENTO} />
             </Field>
           </div>
-        </SectionCard>
+          <div className="mt-5">
+            <AjudaExpressoes />
+          </div>
+        </SecaoRecolhivel>
 
-        <SectionCard titulo="De-para de rótulos" descricao="Substitui rótulos do balancete pelos nomes usados no relatório.">
+        <SecaoRecolhivel
+          titulo="De-para de rótulos"
+          descricao="Substitui rótulos do balancete pelos nomes usados no relatório."
+          resumo={res.depara}
+          aberta={abertas.depara}
+          aoMudar={abrir("depara")}
+        >
+          <div className="mb-4">
+            <AjudaDePara />
+          </div>
           <RepeatableList
             itens={c.mapeamento}
             onChange={(v) => set("mapeamento", v)}
@@ -385,7 +471,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
               </>
             )}
           />
-        </SectionCard>
+        </SecaoRecolhivel>
 
         <div className="flex justify-end">{botaoSalvar}</div>
       </form>

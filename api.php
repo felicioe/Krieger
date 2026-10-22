@@ -4,6 +4,8 @@
 // tudo de uma vez (usado no Backup). Exige usuário logado (ver auth.php). Front-end: ver src/db.js.
 declare(strict_types=1);
 require __DIR__ . '/lib_auth.php';
+require __DIR__ . '/lib_importacao.php';
+require __DIR__ . '/lib_backup.php';
 aplicar_cabecalhos_seguranca();
 
 function erro(string $msg, int $codigo = 400): never { json_erro($msg, $codigo); }
@@ -101,8 +103,7 @@ function validar_backup_dados(array $dados, PDO $pdo, bool $substituir, array $s
 function montar_backup(PDO $pdo, array $stores, callable $tabela): array {
   $o = ['app' => 'krieger-condominios', 'versao' => 1, 'exportadoEm' => date('c')];
   foreach ($stores as $st) {
-    $linhas = $pdo->query('SELECT dados FROM ' . $tabela($st))->fetchAll();
-    $o[$st] = array_map(fn($r) => json_decode($r['dados'], true), $linhas);
+    $o[$st] = ler_colecao_backup($pdo, $st);
   }
   return $o;
 }
@@ -111,6 +112,7 @@ function montar_backup(PDO $pdo, array $stores, callable $tabela): array {
 // por 'importar' (arquivo enviado pelo navegador) quanto por 'backup_restaurar' (backup salvo no
 // servidor) — mesma lógica, duas origens diferentes do $dados.
 function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores, callable $tabela): void {
+  $stores = stores_restauraveis($pdo, $dados, $stores);
   $pdo->beginTransaction();
   try {
     foreach ($stores as $st) {
@@ -132,6 +134,16 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
 }
 
 try {
+  if ($a === 'confirmar_importacao') {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST para confirmar a importação.', 405);
+    try { $resultado = confirmar_importacao($pdo, $corpo); }
+    catch (InvalidArgumentException $e) { erro($e->getMessage()); }
+    catch (RuntimeException $e) {
+      if (in_array($e->getCode(), [404, 409], true)) erro($e->getMessage(), $e->getCode());
+      throw $e;
+    }
+    saida($resultado);
+  }
   if ($a === 'exportar') {
     saida(montar_backup($pdo, $STORES, $tabela));
   }
@@ -222,6 +234,15 @@ try {
       $o = $corpo['o'] ?? null;
       if (!is_array($o) || empty($o['id'])) erro('Objeto inválido (sem id).');
       $id = id_valido($o['id']);
+      if ($s === 'importacoes') {
+        try { $salvo = salvar_staging_importacao($pdo, $o); }
+        catch (InvalidArgumentException $e) { erro($e->getMessage()); }
+        catch (RuntimeException $e) {
+          if ($e->getCode() === 409) erro($e->getMessage(), 409);
+          throw $e;
+        }
+        saida($salvo);
+      }
       $o['atualizadoEm'] = date('c');
       $stmt = $pdo->prepare('REPLACE INTO ' . $tb . ' (id, dados, atualizado_em) VALUES (?, ?, ?)');
       $stmt->execute([$id, json_encode($o, JSON_UNESCAPED_UNICODE), date('Y-m-d H:i:s')]);
@@ -235,6 +256,7 @@ try {
       erro('Ação inválida.');
   }
 } catch (Throwable $e) {
+  if ($e instanceof RuntimeException && $e->getCode() === 409) erro($e->getMessage(), 409);
   error_log('[krieger] ' . $e->getMessage());
   // Tabela ausente (schema.sql tem uma tabela que o banco deste servidor ainda não tem,
   // ex.: uma tabela nova de uma funcionalidade adicionada depois da instalação inicial).

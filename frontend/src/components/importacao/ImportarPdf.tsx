@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Field } from "@/components/app/Field";
 import { InteiroInput } from "@/components/app/inputs";
 import { ResumoImportacao } from "./ResumoImportacao";
+import { marcarCriadoPorPdf } from "./criadoPorPdf";
+import { focarConteudoApos } from "@/components/app/foco";
 import { api, mensagemErro } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import {
@@ -71,6 +73,9 @@ type Lido = {
 /** Botão "Importar PDF": lê o relatório do Systemar no navegador e mostra o resumo para revisão. */
 export function ImportarPdf(props: Props) {
   const entrada = useRef<HTMLInputElement>(null);
+  const botao = useRef<HTMLButtonElement>(null);
+  // Quando a janela fecha porque a página vai mudar, o foco não volta ao botão (ele vai sumir).
+  const vaiNavegar = useRef(false);
   const [aberto, setAberto] = useState(false);
   const [lendo, setLendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -107,7 +112,7 @@ export function ImportarPdf(props: Props) {
 
   return (
     <>
-      <Button type="button" variant="outline" onClick={() => entrada.current?.click()}>
+      <Button ref={botao} type="button" variant="outline" onClick={() => entrada.current?.click()}>
         <FileUp /> Importar PDF
       </Button>
       <input
@@ -119,7 +124,19 @@ export function ImportarPdf(props: Props) {
         onChange={(e) => escolher(e.target.files?.[0])}
       />
       <Dialog open={aberto} onOpenChange={setAberto}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent
+          className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+          // A janela abre depois da escolha do arquivo (o foco já tinha saído do botão): ao fechar —
+          // Cancelar, Escape, Fechar ou depois de um erro — o foco volta ao "Importar PDF".
+          onCloseAutoFocus={(ev) => {
+            ev.preventDefault();
+            if (vaiNavegar.current) {
+              vaiNavegar.current = false;
+              return;
+            }
+            botao.current?.focus();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>Importar PDF do Systemar</DialogTitle>
             <DialogDescription>Confira o que foi lido antes de usar. Você ainda poderá corrigir tudo no editor.</DialogDescription>
@@ -143,7 +160,16 @@ export function ImportarPdf(props: Props) {
             props.modo === "editor" ? (
               <PassoEditor {...props} lido={lido} coluna={coluna} setColuna={setColuna} fechar={() => setAberto(false)} />
             ) : (
-              <PassoNovo {...props} lido={lido} coluna={coluna} setColuna={setColuna} fechar={() => setAberto(false)} />
+              <PassoNovo
+                {...props}
+                lido={lido}
+                coluna={coluna}
+                setColuna={setColuna}
+                fechar={() => setAberto(false)}
+                antesDeNavegar={() => {
+                  vaiNavegar.current = true;
+                }}
+              />
             )
           ) : null}
         </DialogContent>
@@ -228,7 +254,15 @@ function PassoEditor({
   );
 }
 
-function PassoNovo({ destino, condominios, lido, coluna, setColuna, fechar }: Extract<Props, { modo: "novo" }> & Passo) {
+function PassoNovo({
+  destino,
+  condominios,
+  lido,
+  coluna,
+  setColuna,
+  fechar,
+  antesDeNavegar,
+}: Extract<Props, { modo: "novo" }> & Passo & { antesDeNavegar: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: mensais = [] } = useQuery({ ...listaQuery<Mensal>("mensais"), enabled: destino === "mensais" });
@@ -263,9 +297,14 @@ function PassoNovo({ destino, condominios, lido, coluna, setColuna, fechar }: Ex
       queryClient.invalidateQueries({ queryKey: chaves.store(destino) });
       queryClient.setQueryData(chaves.item(destino, salvo.id), salvo);
       toast.success(`${destino === "mensais" ? "Relatório mensal criado" : "Prestação de contas criada"} a partir do PDF. Revise e salve as correções.`);
+      marcarCriadoPorPdf(destino, salvo.id);
+      antesDeNavegar();
       fechar();
-      if (destino === "mensais") navigate({ to: "/relatorio-mensal/$id", params: { id: salvo.id } });
-      else navigate({ to: "/prestacao-contas/$id", params: { id: salvo.id } });
+      focarConteudoApos(
+        destino === "mensais"
+          ? navigate({ to: "/relatorio-mensal/$id", params: { id: salvo.id } })
+          : navigate({ to: "/prestacao-contas/$id", params: { id: salvo.id } }),
+      );
     },
   });
 
@@ -273,8 +312,9 @@ function PassoNovo({ destino, condominios, lido, coluna, setColuna, fechar }: Ex
     mutationFn: () => api.salvar<Omit<Importacao, "id"> & { id?: string }>("importacoes", novaImportacao(lido.relatorio, lido.arquivo, destino, lido.consideracoes, lido.previsaoSugerida)),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("importacoes") });
+      antesDeNavegar();
       fechar();
-      navigate({ to: "/importacoes/$id", params: { id: salvo.id } });
+      focarConteudoApos(navigate({ to: "/importacoes/$id", params: { id: salvo.id } }));
     },
   });
 

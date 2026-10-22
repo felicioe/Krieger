@@ -13,13 +13,16 @@ import {
  * - Abre com clique, Enter ou Espaço (o acionador é um botão de verdade).
  * - Fecha com Escape, com o botão "Fechar" ou tocando fora; o foco volta ao "Abrir menu".
  * - Quando a pessoa escolhe um destino no menu, o foco vai para o conteúdo da página
- *   (`destinoFoco`), em vez de voltar ao botão ou ficar num item escondido.
+ *   (`destinoFoco`), em vez de voltar ao botão ou ficar num item escondido — mas só depois que a
+ *   página nova terminou de carregar (`carregando` falso), para o leitor de tela não ler a página
+ *   anterior. Se o conteúdo for trocado durante a carga, o foco é refeito no elemento novo.
  */
 export function MenuMovel({
   topo,
   children,
   destinoFoco,
   caminho,
+  carregando = false,
 }: {
   /** Conteúdo ao lado do botão (ex.: a marca compacta). */
   topo?: ReactNode;
@@ -29,11 +32,34 @@ export function MenuMovel({
   destinoFoco: () => HTMLElement | null;
   /** Caminho atual: a gaveta fecha sozinha quando ele muda. */
   caminho?: string;
+  /** Verdadeiro enquanto a página de destino ainda carrega. */
+  carregando?: boolean;
 }) {
   const [aberto, setAberto] = useState(false);
   const navegou = useRef(false);
+  const focoPendente = useRef(false);
+  const carregandoRef = useRef(carregando);
+  carregandoRef.current = carregando;
 
   useEffect(() => setAberto(false), [caminho]);
+
+  const focarDestino = () => {
+    const destino = destinoFoco();
+    if (destino && document.activeElement !== destino) destino.focus({ preventScroll: true });
+  };
+
+  // Página carregada depois que a gaveta fechou: agora sim leva o foco ao conteúdo novo.
+  useEffect(() => {
+    if (carregando || !focoPendente.current) return;
+    const quadro = requestAnimationFrame(() => {
+      if (!focoPendente.current) return;
+      focoPendente.current = false;
+      const atual = document.activeElement;
+      // Não rouba o foco se a pessoa já foi para outro controle durante a carga.
+      if (!atual || atual === document.body || !atual.isConnected || atual === destinoFoco()) focarDestino();
+    });
+    return () => cancelAnimationFrame(quadro);
+  }, [carregando, caminho]);
 
   const aoNavegar = () => {
     navegou.current = true;
@@ -67,11 +93,9 @@ export function MenuMovel({
         onCloseAutoFocus={(e) => {
           if (!navegou.current) return; // Escape / Fechar / tocar fora: o foco volta ao "Abrir menu".
           navegou.current = false;
-          const destino = destinoFoco();
-          if (destino) {
             e.preventDefault();
-            destino.focus({ preventScroll: true });
-          }
+          if (carregandoRef.current) focoPendente.current = true;
+          else focarDestino();
         }}
       >
         <SheetTitle className="sr-only">Menu</SheetTitle>

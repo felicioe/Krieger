@@ -12,6 +12,7 @@ import { dataParaBR, formatData } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { backupAtrasado, calcularVencimentos, diasDesdeBackup, proximasAssembleias } from "@/domain/painel";
 import type { Assembleia, Condominio, ConfigBackup, Exercicio } from "@/domain/types";
+import { haDias, prazoDias } from "@/components/app/textos";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => cabecalho("Painel", "Visão geral dos condomínios, vencimentos e próximas assembleias."),
@@ -50,7 +51,7 @@ function Painel() {
   const hoje = new Date();
   const vencimentos = calcularVencimentos(condos, hoje, 90);
   const proximas = proximasAssembleias(assembleias, hoje, 5);
-  const nomeCondo = (id: string) => condos.find((c) => c.id === id)?.nome ?? "—";
+  const nomeCondo = (id: string) => condos.find((c) => c.id === id)?.nome ?? "Condomínio não encontrado";
   const diasBackup = diasDesdeBackup(backup?.em, hoje);
 
   return (
@@ -65,7 +66,7 @@ function Painel() {
             <span>
               {diasBackup === null
                 ? "Nenhum backup foi feito até agora."
-                : `O último backup foi feito há ${diasBackup} dias (${formatData(backup?.em)}).`}
+                : `O último backup foi feito ${haDias(diasBackup)} (${formatData(backup?.em)}).`}
             </span>
             <Button size="sm" variant="outline" asChild>
               <Link to="/backup">Fazer backup</Link>
@@ -92,7 +93,7 @@ function Painel() {
                     <Link
                       to="/condominios/$id"
                       params={{ id: v.condoId }}
-                      className="block truncate text-sm font-medium text-foreground hover:text-primary hover:underline"
+                      className="block break-words text-sm font-medium text-foreground hover:text-primary hover:underline"
                     >
                       {v.condoNome}
                     </Link>
@@ -101,7 +102,7 @@ function Painel() {
                     </div>
                   </div>
                   <Badge variant={v.dias < 0 ? "alerta" : v.dias <= 30 ? "warning" : "secondary"} className="shrink-0">
-                    {v.dias < 0 ? `Vencido há ${-v.dias} dia(s)` : v.dias === 0 ? "Vence hoje" : `Em ${v.dias} dia(s)`}
+                    {prazoDias(v.dias)}
                   </Badge>
                 </li>
               ))}

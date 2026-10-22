@@ -14,7 +14,10 @@ import { InteiroInput } from "@/components/app/inputs";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { ResumoImportacao } from "@/components/importacao/ResumoImportacao";
 import { ROTULO_STATUS } from "@/components/importacao/status";
+import { marcarCriadoPorPdf } from "@/components/importacao/criadoPorPdf";
+import { focarConteudoApos } from "@/components/app/foco";
 import { api } from "@/lib/api";
+import { novoId } from "@/lib/id";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { formatDataHora, mascaraCNPJ } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
@@ -96,6 +99,8 @@ function Conferencia({ imp }: { imp: Importacao }) {
   const existente = encontrarCondominio(condominios, cad);
   const demonstrativo = useMemo(() => demonstrativoDoRelatorio(rel, coluna, cad.nome), [rel, coluna, cad.nome]);
   const rotulo = destino === "mensais" ? "relatório mensal" : "prestação de contas";
+  // Ids definidos uma vez: repetir a confirmação (ex.: depois de falha de rede) manda o mesmo pedido.
+  const [ids] = useState(() => ({ condominio: novoId(), registro: novoId() }));
 
   const confirmar = useMutation({
     mutationFn: async () => {
@@ -119,36 +124,46 @@ function Conferencia({ imp }: { imp: Importacao }) {
         if (!v.ok) throw new Error(v.erro);
       }
 
-      // 2) Cria o condomínio (se não existir), grava o relatório e marca a importação.
-      const condo = existente
-        ? normalizarCondominio(existente)
-        : normalizarCondominio(await api.salvar<Omit<Condominio, "id"> & { id?: string }>("condominios", (novo as { ok: true; valor: Omit<Condominio, "id"> }).valor));
-      const exercicio = () => {
+      // 2) Monta tudo com os ids já definidos e envia numa ÚNICA chamada: o servidor cria o
+      //    condomínio (se novo), grava o relatório e confirma a importação de uma vez só.
+      const novoValor = existente ? null : (novo as { ok: true; valor: Omit<Condominio, "id"> }).valor;
+      const condo = existente ? normalizarCondominio(existente) : normalizarCondominio({ ...novoValor!, id: ids.condominio });
+      const registro: Mensal | Exercicio =
+        destino === "mensais"
+          ? { ...mensalImportado(condo, rel, coluna, imp.arquivo).registro, id: ids.registro }
+          : (() => {
         const base = exercicioImportado(condo, ano!, escritorio?.cidade ?? "", rel, coluna, imp.arquivo);
         return {
           ...base,
           consid: aplicarConsideracoesAoExercicio(base.consid, imp.consideracoes ?? null),
           previsaoSugerida: imp.previsaoSugerida ? previsaoSugeridaDoPdf(imp.previsaoSugerida) : null,
+                id: ids.registro,
         };
-      };
-      const salvo =
-        destino === "mensais"
-          ? await api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", mensalImportado(condo, rel, coluna, imp.arquivo).registro)
-          : await api.salvar<Omit<Exercicio, "id"> & { id?: string }>("exercicios", exercicio());
-      await api.salvar<Importacao>("importacoes", {
-        ...imp,
-        status: "confirmado",
-        cadastro: { ...imp.cadastro, codigo: cad.codigo || null, nome: cad.nome || null, cnpj: cad.cnpj || null, revisar: false },
-        condominioId: condo.id,
-        registroId: salvo.id,
+            })();
+      return api.confirmarImportacao({
+        importacaoId: imp.id,
+        destino,
+        condominio: existente ? { id: existente.id } : { ...novoValor!, id: ids.condominio },
+        registro,
+        cadastro: { codigo: cad.codigo || null, nome: cad.nome || null, cnpj: cad.cnpj || null },
       });
-      return { salvo, criouCondominio: !existente };
     },
-    onSuccess: ({ salvo, criouCondominio }) => {
+    onSuccess: ({ registro, criouCondominio, reutilizado }) => {
       for (const s of ["condominios", destino, "importacoes"] as const) queryClient.invalidateQueries({ queryKey: chaves.store(s) });
-      toast.success(`${criouCondominio ? "Condomínio cadastrado e " : ""}${rotulo} gravado a partir do PDF.`);
-      if (destino === "mensais") navigate({ to: "/relatorio-mensal/$id", params: { id: salvo.id } });
-      else navigate({ to: "/prestacao-contas/$id", params: { id: salvo.id } });
+      queryClient.setQueryData(chaves.item(destino, registro.id), registro);
+      const gravado = destino === "mensais" ? "Relatório mensal gravado" : "Prestação de contas gravada";
+      if (reutilizado) {
+        toast.info(`Esta importação já estava confirmada. Abrindo o ${rotulo} gravado.`);
+      } else {
+        // Só um registro recém-criado a partir do PDF ganha a conferência dos totais no primeiro Salvar.
+        marcarCriadoPorPdf(destino, registro.id);
+        toast.success(criouCondominio ? `Condomínio cadastrado e ${rotulo} gravado a partir do PDF.` : `${gravado} a partir do PDF.`);
+      }
+      focarConteudoApos(
+        destino === "mensais"
+          ? navigate({ to: "/relatorio-mensal/$id", params: { id: registro.id } })
+          : navigate({ to: "/prestacao-contas/$id", params: { id: registro.id } }),
+      );
     },
   });
 
@@ -157,7 +172,7 @@ function Conferencia({ imp }: { imp: Importacao }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: chaves.store("importacoes") });
       toast.success("Importação descartada.");
-      navigate({ to: "/importacoes" });
+      focarConteudoApos(navigate({ to: "/importacoes" }));
     },
   });
 

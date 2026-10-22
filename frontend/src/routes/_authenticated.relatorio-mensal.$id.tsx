@@ -16,6 +16,8 @@ import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DinheiroInput, InteiroInput } from "@/components/app/inputs";
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
+import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
+import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
@@ -68,6 +70,8 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [aba, setAba] = useState("demonstrativo");
+  // Totais do PDF importado (ou do registro recém-criado por PDF), conferidos no primeiro Salvar.
+  const trava = useTravaImportacao("mensais", inicial.id, inicial.demonstrativo ?? null);
 
   const condo = condominios.find((c) => c.id === m.condoId);
   const demonstrativo = m.demonstrativo ?? demonstrativoVazio(m.condoNome);
@@ -124,7 +128,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
       setAba("demonstrativo");
       return;
     }
-    salvar.mutate(prepararMensal(m));
+    trava.salvar(m.demonstrativo ?? demonstrativoVazio(m.condoNome), () => salvar.mutateAsync(prepararMensal(m)));
   }
 
   const nomeCondo = m.condoNome || condo?.nome || "";
@@ -160,6 +164,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
                   ...(r.receber ? { receber: r.receber } : {}),
                   origem: origemComArquivo(m.origem, r.arquivo),
                 });
+                trava.marcarImportado(r.demonstrativo);
                 setAba("demonstrativo");
               }}
             />
@@ -249,6 +254,13 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
           </TabsContent>
         </Tabs>
       </form>
+
+      <DialogoDivergencia
+        aberto={trava.dialogo.aberto}
+        aoMudar={trava.dialogo.aoMudar}
+        pendente={trava.dialogo.pendente}
+        aoConfirmar={trava.dialogo.aoConfirmar}
+      />
 
       <ConfirmDialog
         aberto={confirmarExclusao}

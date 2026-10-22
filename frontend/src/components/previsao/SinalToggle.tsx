@@ -14,7 +14,7 @@ export function SinalToggle({
   className?: string;
 }) {
   return (
-    <div className={cn("flex h-9 overflow-hidden rounded-md border max-md:h-11 pointer-coarse:h-11", className)} role="group" aria-label={rotulo}>
+    <div className={cn("flex h-9 overflow-hidden rounded-md border border-control max-md:h-11 pointer-coarse:h-11", className)} role="group" aria-label={rotulo}>
       {(["+", "-"] as const).map((s) => (
         <button
           key={s}

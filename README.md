@@ -26,7 +26,8 @@ compilado antes, `cd frontend && npm run build`) junto com o backend PHP — ver
 
 ## Arquivos que vão para o servidor
 `index.html`, `assets/` e `favicon.png` (build de `frontend/`), `branding/`, `.htaccess`,
-`api.php`, `auth.php` e `lib_auth.php`. A configuração real `krieger-config.php`
+`api.php`, `auth.php`, `lib_auth.php`, `lib_importacao.php` e `lib_backup.php`.
+A configuração real `krieger-config.php`
 fica no servidor, fora da pasta publicada e do Git; não integra o pacote.
 `login.html`, `usuarios.html`, `auth-guard.js`, `acesso.css`, `favicon.svg` e `icons.svg`
 eram do frontend legado (HTML/JS estático) e não fazem mais parte do pacote — o SPA novo

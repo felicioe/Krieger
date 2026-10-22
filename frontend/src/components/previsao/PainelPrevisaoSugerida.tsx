@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useId, useMemo, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,7 +11,8 @@ import { novoId } from "@/lib/id";
 import { cn } from "@/lib/utils";
 import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
 import type { AjustePrevisao, Exercicio, PrevisaoSugeridaExercicio } from "@/domain/types";
-import { ARREDONDAMENTO } from "./PainelPrevisao";
+import { ARREDONDAMENTO, CaixaUnidades } from "./PainelPrevisao";
+import { QuadroAvisos, SemValor, SituacaoResultado } from "./AvisosPrevisao";
 import { SinalToggle } from "./SinalToggle";
 
 const pct = (n: number | null | undefined) => (n === null || n === undefined ? "—" : `${n > 0 ? "+" : ""}${formatNumeroBR(n)}%`);
@@ -39,10 +40,25 @@ export function PainelPrevisaoSugerida({
   );
   const setP = (parcial: Partial<PrevisaoSugeridaExercicio>) => onChange({ previsaoSugerida: { ...p, ...parcial } });
   const prev = e.prev ?? { modo: "tradicional" as const, ajustes: [] };
+  const idQuadro = `${useId()}-avisos`;
+  const parcial = u.valorUnidade === null;
+  const itensAviso = parcial
+    ? [
+        {
+          texto: "Informe a quantidade de unidades no cadastro do condomínio para ver o valor por unidade.",
+          acao: condoId ? (
+            <Link to="/condominios/$id" params={{ id: condoId }} className="text-xs font-medium underline underline-offset-2 hover:no-underline">
+              Informar unidades no cadastro
+            </Link>
+          ) : null,
+        },
+      ]
+    : [];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
       <div className="min-w-0 space-y-6">
+        <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
         <SectionCard titulo="Categorias de despesa" descricao="Efetivamente realizado no ano, como veio do PDF do Systemar.">
           {p.categorias.length === 0 ? (
             <p className="text-sm text-muted-foreground">O PDF não trouxe categorias de despesa.</p>
@@ -136,10 +152,13 @@ export function PainelPrevisaoSugerida({
               </Field>
               <LinhaResumo
                 rotulo="Índice sugerido para correção"
-                valor={pct(r.indiceSugerido)}
+                valor={r.indiceSugerido === null ? <SemValor /> : pct(r.indiceSugerido)}
                 forte
                 negativo={r.indiceSugerido !== null && r.indiceSugerido < 0}
               />
+              {r.indiceSugerido === null && (
+                <p className="text-xs text-muted-foreground">Sem o rateio mensal atual, o índice não é calculado.</p>
+              )}
             </div>
           </div>
         </section>
@@ -150,6 +169,7 @@ export function PainelPrevisaoSugerida({
             <p className="mt-0.5 text-xs text-muted-foreground">Só para fins de validação.</p>
           </header>
           <div className="space-y-3 px-5 py-4">
+            <SituacaoResultado parcial={parcial} avisos={parcial ? 1 : 0} idQuadro={idQuadro} />
             <div className="grid grid-cols-2 gap-3">
               <Field rotulo="Fundo de reserva">
                 <PercentualInput
@@ -157,29 +177,24 @@ export function PainelPrevisaoSugerida({
                   onChange={(v) => onChange({ prev: { ...prev, fundoReservaPct: v } })}
                 />
               </Field>
-              <div className="grid content-start gap-1.5">
-                <span className="text-xs font-medium text-muted-foreground">Unidades</span>
-                <div className="flex h-9 items-center justify-between rounded-md border bg-muted/40 px-3 text-sm">
-                  <span className="num">{unidades ?? "—"}</span>
-                  {condoId && (
-                    <Link to="/condominios/$id" params={{ id: condoId }} className="text-xs text-primary underline-offset-2 hover:underline">
-                      alterar
-                    </Link>
-                  )}
-                </div>
-              </div>
+              <CaixaUnidades unidades={unidades} condoId={condoId} />
             </div>
             <Field rotulo="Arredondamento do valor por unidade">
               <Selecao value={e.arredondamento} onChange={(v) => onChange({ arredondamento: v })} opcoes={ARREDONDAMENTO} />
             </Field>
             <div>
-              <LinhaResumo rotulo="Cota por unidade" valor={formatBRL(u.cotaUnidade)} />
-              <LinhaResumo rotulo={`(+) Reserva por unidade ${formatNumeroBR(fundoReservaPct ?? 0)}%`} valor={formatBRL(u.reservaUnidade)} />
-              <LinhaResumo rotulo="Valor por unidade" valor={formatBRL(u.valorUnidade)} forte className="mt-1 border-t pt-2" />
+              <LinhaResumo rotulo="Cota por unidade" valor={u.cotaUnidade === null ? <SemValor /> : formatBRL(u.cotaUnidade)} />
+              <LinhaResumo
+                rotulo={`(+) Reserva por unidade ${formatNumeroBR(fundoReservaPct ?? 0)}%`}
+                valor={u.reservaUnidade === null ? <SemValor /> : formatBRL(u.reservaUnidade)}
+              />
+              <LinhaResumo
+                rotulo="Valor por unidade"
+                valor={u.valorUnidade === null ? "Não calculado" : formatBRL(u.valorUnidade)}
+                forte
+                className="mt-1 border-t pt-2"
+              />
             </div>
-            {u.unidades === null && (
-              <p className="text-xs text-muted-foreground">Informe as unidades no cadastro do condomínio para ver o valor por unidade.</p>
-            )}
           </div>
         </section>
       </aside>
@@ -195,7 +210,7 @@ function LinhaResumo({
   className,
 }: {
   rotulo: string;
-  valor: string;
+  valor: ReactNode;
   forte?: boolean;
   negativo?: boolean;
   className?: string;

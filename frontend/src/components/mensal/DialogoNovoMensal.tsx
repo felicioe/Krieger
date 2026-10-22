@@ -125,7 +125,7 @@ export function DialogoNovoMensal({
             />
           </Field>
           {anterior && (
-            <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3">
+            <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 max-md:gap-3 pointer-coarse:gap-3">
               <Checkbox id="copiar-anterior" checked={copiar} onCheckedChange={(v) => setCopiar(v === true)} className="mt-0.5" />
               <Label htmlFor="copiar-anterior" className="text-sm font-normal leading-snug">
                 Partir do relatório de {rotuloCompetencia(competenciaMensal(anterior))}: saldo anterior = saldo atual dele, e os mesmos

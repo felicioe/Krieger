@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { normalizarExercicio } from "@/domain/exercicio";
 import { compararPrevistoRealizado, TOLERANCIA_PADRAO, type Totais } from "@/domain/previstoRealizado";
 import type { Condominio, ConfigEscritorio, Exercicio, Mensal } from "@/domain/types";
+import { contagem } from "@/components/app/textos";
 
 type Busca = { exercicio?: string; ate?: number };
 
@@ -133,7 +134,7 @@ function PaginaComparativo() {
           </Field>
         </div>
         <p className="mt-3 text-xs text-muted-foreground">
-          {r.relatoriosUsados} relatório(s) mensal(is) somado(s).{" "}
+          {r.relatoriosUsados === 0 ? "Nenhum relatório mensal somado ainda." : `${contagem(r.relatoriosUsados, "relatório mensal somado", "relatórios mensais somados")}.`}{" "}
           <Link to="/previsao-orcamentaria" search={{ exercicio: exercicio.id }} className="text-primary underline-offset-2 hover:underline">
             Abrir a previsão do exercício {exercicio.ano}
           </Link>
@@ -143,7 +144,7 @@ function PaginaComparativo() {
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Indicador rotulo="Previsto anual" valor={formatBRL(r.total.previstoAnual)} detalhe={`${formatBRL(r.total.previstoMensal)} por mês`} />
         <Indicador rotulo={`Previsto até ${ate}`} valor={formatBRL(r.total.previsto)} detalhe={mesesTexto} />
-        <Indicador rotulo={`Realizado até ${ate}`} valor={formatBRL(r.total.realizado)} detalhe={`${r.relatoriosUsados} relatório(s)`} />
+        <Indicador rotulo={`Realizado até ${ate}`} valor={formatBRL(r.total.realizado)} detalhe={r.relatoriosUsados === 0 ? "nenhum relatório mensal" : contagem(r.relatoriosUsados, "relatório mensal", "relatórios mensais")} />
         <IndicadorDiferenca t={r.total} />
       </div>
 

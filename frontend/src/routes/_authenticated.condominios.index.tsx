@@ -10,6 +10,7 @@ import { listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import type { Condominio } from "@/domain/types";
+import { contagem } from "@/components/app/textos";
 
 export const Route = createFileRoute("/_authenticated/condominios/")({
   head: () => cabecalho("Condomínios", "Cadastro dos condomínios atendidos."),
@@ -37,7 +38,7 @@ function ListaCondominios() {
     <>
       <PageHeader
         titulo="Condomínios"
-        descricao={`${data.length} condomínio(s) cadastrado(s)`}
+        descricao={`${contagem(data.length, "condomínio cadastrado", "condomínios cadastrados")}`}
         acoes={
           <Button asChild>
             <Link to="/condominios/$id" params={{ id: "novo" }}>

@@ -3,7 +3,7 @@
  * Guarda tudo no localStorage e imita as regras e mensagens da API PHP.
  * Usuário semente: admin / admin123 (perfil admin).
  */
-import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
+import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type Importacao, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
 import { condominioPadrao, normalizarCondominio } from "@/domain/condominio";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
@@ -12,7 +12,7 @@ import { novaAtaDeAssembleia } from "@/domain/ata";
 import { normalizarAssembleia } from "@/domain/edital";
 import { dataParaBR, dataParaISO } from "./format";
 import { novoId } from "./id";
-import { ApiError, type ApiAdapter, type Registro } from "./apiTypes";
+import { ApiError, type ApiAdapter, type ConfirmarImportacaoResposta, type Registro } from "./apiTypes";
 
 const CHAVE_DADOS = "krieger-mock-dados-v1";
 const CHAVE_USUARIOS = "krieger-mock-usuarios-v1";
@@ -498,6 +498,42 @@ export const mockApi: ApiAdapter = {
     await espera();
     sessao();
     return { ...clone(dados()), _exportadoEm: new Date().toISOString(), _versao: 1 } as Backup;
+  },
+  /** Imita o endpoint atômico: valida tudo, depois grava condomínio, registro e importação de uma vez. */
+  async confirmarImportacao(pedido) {
+    await espera();
+    sessao();
+    const d = dados();
+    const i = d.importacoes.findIndex((x) => x.id === pedido.importacaoId);
+    if (i < 0) throw new ApiError("Importação não encontrada.", 404);
+    const imp = d.importacoes[i] as unknown as Importacao;
+    const destino = pedido.destino;
+    if (destino !== "mensais" && destino !== "exercicios") throw new ApiError("Destino da importação inválido.", 400);
+    if (imp.status === "confirmado") {
+      const ja = imp.registroId ? d[destino].find((x) => x.id === imp.registroId) : undefined;
+      if (!ja) throw new ApiError("Esta importação já foi confirmada, mas o registro gravado não foi encontrado.", 409);
+      return clone({ registro: ja, condominioId: imp.condominioId ?? "", criouCondominio: false, reutilizado: true }) as unknown as ConfirmarImportacaoResposta;
+    }
+    if (imp.status !== "pendente") throw new ApiError("Esta importação foi descartada e não pode ser confirmada.", 409);
+    const condoId = pedido.condominio?.id;
+    const registro = pedido.registro as unknown as Registro;
+    if (!condoId || !registro?.id) throw new ApiError("Dados incompletos para confirmar a importação.", 400);
+    if (registro["condoId"] !== condoId) throw new ApiError("O registro não pertence ao condomínio informado.", 400);
+    if (d[destino].some((x) => x.id === registro.id)) throw new ApiError("Já existe um registro com este identificador.", 409);
+    const existe = d.condominios.some((c) => c.id === condoId);
+    if (!existe && !("nome" in pedido.condominio)) throw new ApiError("Condomínio não encontrado.", 404);
+    // Tudo validado: uma única gravação (não sobra condomínio sem relatório nem importação pendente).
+    if (!existe) d.condominios.push(clone(pedido.condominio) as unknown as Registro);
+    d[destino].push(clone(registro));
+    d.importacoes[i] = {
+      ...imp,
+      status: "confirmado",
+      cadastro: { ...imp.cadastro, ...pedido.cadastro, revisar: false },
+      condominioId: condoId,
+      registroId: registro.id,
+    } as unknown as Registro;
+    gravar(CHAVE_DADOS, d);
+    return clone({ registro, condominioId: condoId, criouCondominio: !existe, reutilizado: false }) as unknown as ConfirmarImportacaoResposta;
   },
   async importar(backup: Backup, substituir: boolean) {
     await espera(300);

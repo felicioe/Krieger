@@ -1,4 +1,4 @@
-import { CircleCheck, Info, TriangleAlert } from "lucide-react";
+import { CircleCheck, CircleHelp, Info, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
@@ -6,6 +6,7 @@ import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { ROTULO_LAYOUT, colunasDoRelatorio, resumoConferencia } from "@/domain/importacao";
 import type { ConsideracoesFinaisLidas, PrevisaoSugeridaLida, RelatorioLido } from "@/domain/pdfParser";
 import type { Demonstrativo, DestinoImportacao } from "@/domain/types";
+import { contagem } from "@/components/app/textos";
 
 /** O que foi lido do PDF: origem, período, totais e conferência — para o usuário revisar antes de usar. */
 export function ResumoImportacao({
@@ -60,10 +61,10 @@ export function ResumoImportacao({
         <dl className="grid gap-1.5 sm:grid-cols-2 sm:gap-x-6">
           {(
             [
-              ["Saldo anterior", d.totais.saldoAnterior, `${d.saldoAnterior.contas.length} conta(s)`],
-              ["Receitas", d.totais.receitas, `${d.receitas.itens.length} item(ns)`],
-              ["Despesas", d.totais.despesas, `${nDespesas} item(ns) em ${d.despesas.grupos.length} grupo(s)`],
-              ["Saldo atual", d.totais.saldoAtual, `${d.saldoAtual.contas.length} conta(s)`],
+              ["Saldo anterior", d.totais.saldoAnterior, contagem(d.saldoAnterior.contas.length, "conta", "contas")],
+              ["Receitas", d.totais.receitas, contagem(d.receitas.itens.length, "item", "itens")],
+              ["Despesas", d.totais.despesas, `${contagem(nDespesas, "item", "itens")} em ${contagem(d.despesas.grupos.length, "grupo", "grupos")}`],
+              ["Saldo atual", d.totais.saldoAtual, contagem(d.saldoAtual.contas.length, "conta", "contas")],
             ] as const
           ).map(([rotulo, valor, detalhe]) => (
             <div key={rotulo} className="flex items-baseline justify-between gap-3">
@@ -76,23 +77,7 @@ export function ResumoImportacao({
         </dl>
       </div>
 
-      {conf.ok ? (
-        <p className="flex items-center gap-2 text-success">
-          <CircleCheck className="size-4" /> Os totais do PDF conferem com a soma dos itens lidos.
-        </p>
-      ) : (
-        <Alert variant="warning">
-          <TriangleAlert />
-          <AlertDescription>
-            <p className="font-medium">A conferência do PDF encontrou diferenças:</p>
-            <ul className="mt-1 list-disc pl-4">
-              {conf.mensagens.map((m) => (
-                <li key={m}>{m}</li>
-              ))}
-            </ul>
-          </AlertDescription>
-        </Alert>
-      )}
+      <ConferenciaPdf conf={conf} layout={relatorio.layout} />
       <PaginasExtras destino={destino} consideracoes={consideracoes} previsaoSugerida={previsaoSugerida} />
       {d.avisos.length > 0 && (
         <Alert variant="warning">
@@ -101,6 +86,87 @@ export function ResumoImportacao({
         </Alert>
       )}
     </div>
+  );
+}
+
+export type EstadoConferencia = "nao_verificado" | "parcial" | "verificado" | "divergente";
+
+/**
+ * Resultado de `resumoConferencia`. `estado`, `comparacoes` e `esperadas` são do contrato novo do
+ * domínio; enquanto não chegarem, a tela não afirma que os totais conferem.
+ */
+export type ResultadoConferencia = {
+  ok: boolean;
+  mensagens: string[];
+  estado?: EstadoConferencia;
+  comparacoes?: number;
+  esperadas?: number;
+};
+
+/** Só apresenta o estado da conferência automática do PDF (quem decide é o domínio). */
+export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; layout: RelatorioLido["layout"] }) {
+  const [um, varios] = layout === "comparativo" ? ["linha", "linhas"] : ["seção", "seções"];
+  const temCobertura = conf.comparacoes != null && conf.esperadas != null;
+  const cobertura = temCobertura ? `${conf.comparacoes} de ${contagem(conf.esperadas!, um, varios)}` : null;
+  const estado = conf.estado ?? (conf.mensagens.length > 0 ? "divergente" : null);
+  const lista =
+    conf.mensagens.length > 0 ? (
+            <ul className="mt-1 list-disc pl-4">
+              {conf.mensagens.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+    ) : null;
+
+  if (estado === "verificado") {
+    return (
+      <div className="flex items-start gap-2 rounded-md border border-success/40 bg-success/10 p-3 text-success" data-estado="verificado">
+        <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
+        <p>
+          <span className="font-semibold">Conferência completa:</span> {cobertura ? `${cobertura} comparadas` : "totais comparados"} com a
+          soma dos itens lidos, sem diferenças.
+        </p>
+      </div>
+    );
+  }
+  if (estado === "divergente") {
+    return (
+      <Alert variant="warning" data-estado="divergente">
+        <TriangleAlert />
+        <AlertDescription>
+          <p className="font-semibold">Conferência com diferenças{cobertura ? ` (${cobertura} comparadas)` : ""}:</p>
+          {lista}
+          </AlertDescription>
+        </Alert>
+    );
+  }
+  if (estado === "parcial") {
+    return (
+      <Alert variant="warning" data-estado="parcial">
+        <CircleHelp />
+        <AlertDescription>
+          <p>
+            <span className="font-semibold">Conferência parcial:</span> {cobertura ? `só ${cobertura} puderam ser comparadas` : "só parte dos totais pôde ser comparada"} com a
+            soma dos itens. As demais não têm total no PDF para comparar; confira esses valores manualmente.
+          </p>
+          {lista}
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  return (
+    <Alert data-estado="nao_verificado">
+      <CircleHelp />
+      <AlertDescription>
+        <p>
+          <span className="font-semibold">Totais não conferidos:</span>{" "}
+          {estado === "nao_verificado"
+            ? "o PDF não traz totais que permitam comparar com a soma dos itens"
+            : "a leitura não informou quantos totais foram comparados"}
+          {cobertura ? ` (${cobertura} comparadas)` : ""}. Confira os valores manualmente antes de usar.
+        </p>
+      </AlertDescription>
+        </Alert>
   );
 }
 
@@ -118,11 +184,11 @@ function PaginasExtras({
   const naPrestacao = destino !== "mensais";
   const detalhes = cf
     ? [
-        cf.administracao.length > 0 && `${cf.administracao.length} membro(s) da administração`,
+        cf.administracao.length > 0 && `${contagem(cf.administracao.length, "membro", "membros")} da administração`,
         (cf.seguro.riscoAbsoluto != null || cf.seguro.coberturas.length > 0) && "seguro",
         cf.seguradora && `seguradora ${cf.seguradora}`,
         (cf.ultCaixaDagua || cf.ultDedetizacao || cf.ultGordura) && "datas de manutenção",
-        cf.indices.length > 0 && `${cf.indices.length} índice(s) de correção`,
+        cf.indices.length > 0 && `${contagem(cf.indices.length, "índice", "índices")} de correção`,
       ].filter(Boolean)
     : [];
 

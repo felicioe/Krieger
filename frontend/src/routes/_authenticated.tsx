@@ -3,6 +3,7 @@ import { ConteudoMenu } from "@/components/app/AppSidebar";
 import { Marca } from "@/components/app/Marca";
 import { MenuMovel } from "@/components/app/MenuMovel";
 import { Carregando } from "@/components/app/Carregando";
+import { ID_CONTEUDO } from "@/components/app/foco";
 import { garantirSessao } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -16,10 +17,10 @@ export const Route = createFileRoute("/_authenticated")({
   component: LayoutSistema,
 });
 
-const ID_CONTEUDO = "conteudo";
 
 function LayoutSistema() {
   const caminho = useRouterState({ select: (s) => s.location.pathname });
+  const carregando = useRouterState({ select: (s) => s.status === "pending" });
 
   return (
     <div className="min-h-screen bg-background">
@@ -30,6 +31,7 @@ function LayoutSistema() {
       <div className="md:pl-64">
         <MenuMovel
           caminho={caminho}
+          carregando={carregando}
           topo={<Marca compacta />}
           destinoFoco={() => document.getElementById(ID_CONTEUDO)}
         >

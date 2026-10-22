@@ -13,6 +13,8 @@ import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DataInput, DinheiroInput, InteiroInput } from "@/components/app/inputs";
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
+import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
+import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
@@ -59,6 +61,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [erroAno, setErroAno] = useState<string | null>(null);
+  // Totais do PDF importado (ou do registro recém-criado por PDF), conferidos no primeiro Salvar.
+  const trava = useTravaImportacao("exercicios", inicial.id, inicial.demonstrativo ?? null);
 
   const condo = condominios.find((c) => c.id === e.condoId);
   const demonstrativo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
@@ -109,7 +113,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       return;
     }
     setErroAno(null);
-    salvar.mutate(prepararExercicio(e));
+    trava.salvar(e.demonstrativo ?? demonstrativoVazio(e.condoNome), () => salvar.mutateAsync(prepararExercicio(e)));
   }
 
   return (
@@ -139,6 +143,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                   ...(r.consideracoes ? { consid: aplicarConsideracoesAoExercicio(e.consid, r.consideracoes) } : {}),
                   ...(r.previsaoSugerida ? { previsaoSugerida: previsaoSugeridaDoPdf(r.previsaoSugerida) } : {}),
                 });
+                trava.marcarImportado(r.demonstrativo);
               }}
             />
             <Button variant="outline" asChild>
@@ -201,6 +206,13 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão calculada pelo demonstrativo."
         />
       </form>
+
+      <DialogoDivergencia
+        aberto={trava.dialogo.aberto}
+        aoMudar={trava.dialogo.aoMudar}
+        pendente={trava.dialogo.pendente}
+        aoConfirmar={trava.dialogo.aoConfirmar}
+      />
 
       <ConfirmDialog
         aberto={confirmarExclusao}
