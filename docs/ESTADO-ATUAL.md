@@ -138,8 +138,10 @@ evidência na #47. Correções #59–#62 aguardavam entrega final do Lovable nes
 
 ## Correções de importação — PR #74 (22/10/2026)
 
-Issues #68–#71 implementadas na branch codex/issue-68-71-importacao, aguardando
-CI final e publicação. Domínio representa cobertura da conferência; endpoint
+Issues #68–#71 implementadas na branch codex/issue-68-71-importacao, PR #74
+mergeada e **publicada** (commit `9c0c1c1` → `deploy-hostinger` `204bb76`,
+confirmado em 22/10/2026 pelo asset novo `textos-*.js` no ar em
+krieger.therafinancial.com.br). Domínio representa cobertura da conferência; endpoint
 confirmar_importacao é transacional e idempotente, com contrato em
 [CONFIRMACAO-IMPORTACAO.md](CONFIRMACAO-IMPORTACAO.md). CI MySQL efêmero verifica
 rollback entre etapas, retry e proteção contra descarte atrasado.
