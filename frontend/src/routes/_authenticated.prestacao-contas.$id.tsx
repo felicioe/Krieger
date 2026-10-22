@@ -14,14 +14,15 @@ import { DataInput, DinheiroInput, InteiroInput } from "@/components/app/inputs"
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
+import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
-import { aplicarConsideracoesAoExercicio, divergenciasImportacao, origemComArquivo, type DivergenciaImportacao } from "@/domain/importacao";
+import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
 import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
-import type { Condominio, Demonstrativo, Exercicio } from "@/domain/types";
+import type { Condominio, Exercicio } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
   head: () => cabecalho("Prestação de contas", "Dados e demonstrativo do exercício."),
@@ -60,10 +61,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [erroAno, setErroAno] = useState<string | null>(null);
-  // Totais do PDF importado, guardados até o primeiro salvamento seguinte (trava de divergência).
-  const [snapshotImportado, setSnapshotImportado] = useState<Demonstrativo | null>(null);
-  const [divergencias, setDivergencias] = useState<DivergenciaImportacao[]>([]);
-  const [confirmarDivergencia, setConfirmarDivergencia] = useState(false);
+  // Totais do PDF importado (ou do registro recém-criado por PDF), conferidos no primeiro Salvar.
+  const trava = useTravaImportacao("exercicios", inicial.id, inicial.demonstrativo ?? null);
 
   const condo = condominios.find((c) => c.id === e.condoId);
   const demonstrativo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
@@ -92,7 +91,6 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       setE(n);
       setSalvoJson(JSON.stringify(n));
       toast.success("Prestação de contas salva.");
-      setSnapshotImportado(null);
     },
   });
 
@@ -115,15 +113,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       return;
     }
     setErroAno(null);
-    if (snapshotImportado) {
-      const d = divergenciasImportacao(snapshotImportado, e.demonstrativo ?? demonstrativoVazio(e.condoNome));
-      if (d.length > 0) {
-        setDivergencias(d);
-        setConfirmarDivergencia(true);
-        return;
-      }
-    }
-    salvar.mutate(prepararExercicio(e));
+    trava.salvar(e.demonstrativo ?? demonstrativoVazio(e.condoNome), () => salvar.mutateAsync(prepararExercicio(e)));
   }
 
   return (
@@ -153,7 +143,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                   ...(r.consideracoes ? { consid: aplicarConsideracoesAoExercicio(e.consid, r.consideracoes) } : {}),
                   ...(r.previsaoSugerida ? { previsaoSugerida: previsaoSugeridaDoPdf(r.previsaoSugerida) } : {}),
                 });
-                setSnapshotImportado(r.demonstrativo);
+                trava.marcarImportado(r.demonstrativo);
               }}
             />
             <Button variant="outline" asChild>
@@ -218,10 +208,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       </form>
 
       <DialogoDivergencia
-        aberto={confirmarDivergencia}
-        aoMudar={setConfirmarDivergencia}
-        divergencias={divergencias}
-        aoConfirmar={() => salvar.mutateAsync(prepararExercicio(e)).then(() => setSnapshotImportado(null))}
+        aberto={trava.dialogo.aberto}
+        aoMudar={trava.dialogo.aoMudar}
+        pendente={trava.dialogo.pendente}
+        aoConfirmar={trava.dialogo.aoConfirmar}
       />
 
       <ConfirmDialog

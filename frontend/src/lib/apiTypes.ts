@@ -1,4 +1,15 @@
-import type { Backup, BackupRegistro, Store, Usuario, UsuarioAdmin, UsuarioSalvar } from "@/domain/types";
+import type {
+  Backup,
+  BackupRegistro,
+  Condominio,
+  DestinoImportacao,
+  Exercicio,
+  Mensal,
+  Store,
+  Usuario,
+  UsuarioAdmin,
+  UsuarioSalvar,
+} from "@/domain/types";
 
 /** Erro devolvido pela API ({erro: "mensagem"} + status HTTP). */
 export class ApiError extends Error {
@@ -12,6 +23,28 @@ export class ApiError extends Error {
 
 export type Registro = { id: string } & Record<string, unknown>;
 
+/**
+ * Pedido de confirmação de uma importação pendente (POST api.php?a=confirmar_importacao).
+ * Os ids do condomínio novo e do registro são gerados antes do envio, para que repetir o pedido
+ * (ex.: depois de uma falha de rede) não crie nada em dobro: a importação é a chave idempotente.
+ */
+export type ConfirmarImportacaoPedido = {
+  importacaoId: string;
+  destino: DestinoImportacao;
+  /** Existente: só `{ id }`. Novo: o cadastro completo já preparado, com o id gerado. */
+  condominio: { id: string } | Condominio;
+  registro: Mensal | Exercicio;
+  cadastro: { codigo: string | null; nome: string | null; cnpj: string | null };
+};
+
+export type ConfirmarImportacaoResposta = {
+  registro: Mensal | Exercicio;
+  condominioId: string;
+  criouCondominio: boolean;
+  /** true quando a importação já estava confirmada e o registro gravado antes foi devolvido. */
+  reutilizado: boolean;
+};
+
 /** Contrato único de acesso a dados — implementado pela API PHP e pelo mock. */
 export interface ApiAdapter {
   listar<T = Registro>(store: Store): Promise<T[]>;
@@ -20,6 +53,8 @@ export interface ApiAdapter {
   excluir(store: Store, id: string): Promise<void>;
   exportar(): Promise<Backup>;
   importar(dados: Backup, substituir: boolean): Promise<unknown>;
+  /** Confirma a importação numa única operação no servidor: condomínio (se novo), registro e status. */
+  confirmarImportacao(pedido: ConfirmarImportacaoPedido): Promise<ConfirmarImportacaoResposta>;
   /** Backups salvos no servidor (histórico, vinculado a quem gerou) — além do arquivo baixado na hora. */
   backup: {
     /** Gera um novo backup no servidor com os dados atuais, vinculado ao usuário logado. */

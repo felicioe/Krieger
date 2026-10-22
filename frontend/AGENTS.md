@@ -32,3 +32,5 @@
 - Long forms keep the essential section always open and put the rest in `SecaoRecolhivel` (Radix Collapsible, content stays mounted but `hidden`), so collapsing never loses typed values.
 - Sidebar navigation is declared once in `GRUPOS_MENU` (`AppSidebar.tsx`; `ITENS_MENU` is its flat view) so desktop and drawer share the same groups and links.
 - Count/day phrasing on screens and in generated documents goes through `src/components/app/textos.ts` (`contagem`, `haDias`, `prazoDias`) instead of "(s)" suffixes.
+- Confirming a staged PDF import is one atomic `api.confirmarImportacao` call (ids generated before the request, staging import = idempotency key), never chained `salvar` calls, so a partial failure leaves no orphans or duplicates.
+- Dialogs opened by state (no Radix trigger) restore focus explicitly (`ConfirmDialog` to the element focused at open, `ImportarPdf` to its button); dialog actions that navigate use `focarConteudoApos` (`components/app/foco.ts`), so focus never stays on `<body>` or an unmounted button.

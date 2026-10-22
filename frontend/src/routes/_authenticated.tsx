@@ -3,6 +3,7 @@ import { ConteudoMenu } from "@/components/app/AppSidebar";
 import { Marca } from "@/components/app/Marca";
 import { MenuMovel } from "@/components/app/MenuMovel";
 import { Carregando } from "@/components/app/Carregando";
+import { ID_CONTEUDO } from "@/components/app/foco";
 import { garantirSessao } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -16,7 +17,6 @@ export const Route = createFileRoute("/_authenticated")({
   component: LayoutSistema,
 });
 
-const ID_CONTEUDO = "conteudo";
 
 function LayoutSistema() {
   const caminho = useRouterState({ select: (s) => s.location.pathname });

@@ -1,5 +1,5 @@
 import type { Backup, BackupRegistro, Store, Usuario, UsuarioAdmin } from "@/domain/types";
-import { ApiError, type ApiAdapter } from "./apiTypes";
+import { ApiError, type ApiAdapter, type ConfirmarImportacaoResposta } from "./apiTypes";
 
 /**
  * Adaptador da API PHP existente (api.php / auth.php no mesmo diretório do site).
@@ -81,6 +81,11 @@ export const realApi: ApiAdapter = {
   },
   async importar(dados: Backup, substituir: boolean) {
     return post("api.php?a=importar", { dados, substituir });
+  },
+  async confirmarImportacao(pedido) {
+    const r = objeto<ConfirmarImportacaoResposta>(await post("api.php?a=confirmar_importacao", pedido));
+    if (!r?.registro?.id) throw new ApiError("Resposta inválida do servidor ao confirmar a importação.", 500);
+    return r;
   },
   backup: {
     async criar() {

@@ -1,4 +1,5 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import { ID_CONTEUDO } from "./foco";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -18,6 +19,7 @@ export function ConfirmDialog({
   titulo,
   descricao,
   rotuloConfirmar = "Confirmar",
+  rotuloCancelar = "Cancelar",
   destrutivo,
   aoConfirmar,
 }: {
@@ -26,10 +28,13 @@ export function ConfirmDialog({
   titulo: string;
   descricao?: ReactNode;
   rotuloConfirmar?: string;
+  rotuloCancelar?: string;
   destrutivo?: boolean;
   aoConfirmar: () => unknown | Promise<unknown>;
 }) {
   const [ocupado, setOcupado] = useState(false);
+  // A janela é aberta por estado (sem acionador próprio): guarda quem tinha o foco para devolvê-lo.
+  const origem = useRef<Element | null>(null);
 
   async function confirmar() {
     setOcupado(true);
@@ -45,13 +50,25 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={aberto} onOpenChange={(v) => !ocupado && aoMudar(v)}>
-      <AlertDialogContent>
+      <AlertDialogContent
+        onOpenAutoFocus={() => {
+          origem.current = document.activeElement;
+        }}
+        onCloseAutoFocus={(ev) => {
+          ev.preventDefault();
+          const o = origem.current;
+          origem.current = null;
+          // Se o controle de origem saiu da tela (ex.: página trocada), o foco vai para o conteúdo.
+          if (o instanceof HTMLElement && o.isConnected) o.focus();
+          else document.getElementById(ID_CONTEUDO)?.focus({ preventScroll: true });
+        }}
+      >
         <AlertDialogHeader>
           <AlertDialogTitle>{titulo}</AlertDialogTitle>
           {descricao && <AlertDialogDescription asChild><div>{descricao}</div></AlertDialogDescription>}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={ocupado}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel disabled={ocupado}>{rotuloCancelar}</AlertDialogCancel>
           <Button variant={destrutivo ? "destructive" : "default"} onClick={confirmar} disabled={ocupado}>
             {ocupado && <Loader2 className="animate-spin" />}
             {rotuloConfirmar}

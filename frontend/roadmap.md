@@ -45,3 +45,10 @@
 
 ## Trava de divergência da importação
 - [x] Confirmação antes de salvar quando os totais do PDF importado mudaram (Relatório mensal e Prestação de contas; função do Claude)
+
+## Correções #68–#71 (só front-end)
+- [x] #69 confirmação da importação numa chamada única (`api.confirmarImportacao`), ids gerados antes, repetir não duplica; simulado do preview equivalente
+- [x] #70 trava de divergência: quatro totais (PDF/atual/diferença), "Voltar e revisar", referência só some depois de salvar com sucesso; também no registro recém-criado por PDF
+- [x] #71 foco volta ao "Importar PDF" (Cancelar/Escape/Fechar/erro); ao trocar de página vai para o conteúdo; janelas de confirmação devolvem o foco a quem as abriu
+- [ ] #68 estados da conferência do PDF: tela pronta para verificado/parcial/não verificado/divergente — aguardando `estado`/`comparacoes`/`esperadas` no `resumoConferencia` do domínio (Codex)
+- [ ] Leitor de tela real e toque físico — ficam com o responsável

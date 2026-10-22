@@ -5,11 +5,12 @@
  */
 import type { Backup, Store, UsuarioSalvar } from "@/domain/types";
 import { novoId } from "./id";
-import { ApiError, type ApiAdapter } from "./apiTypes";
+import { ApiError, type ApiAdapter, type ConfirmarImportacaoPedido } from "./apiTypes";
 import { realApi } from "./realApi";
 import { mockApi } from "./mockApi";
 
 export { ApiError } from "./apiTypes";
+export type { ConfirmarImportacaoPedido, ConfirmarImportacaoResposta } from "./apiTypes";
 
 export function usandoMock(): boolean {
   if (typeof window === "undefined") return false;
@@ -55,6 +56,7 @@ export const api = {
   excluir: (store: Store, id: string) => guarda(() => impl().excluir(store, id)),
   exportar: () => guarda(() => impl().exportar()),
   importar: (dados: Backup, substituir: boolean) => guarda(() => impl().importar(dados, substituir)),
+  confirmarImportacao: (pedido: ConfirmarImportacaoPedido) => guarda(() => impl().confirmarImportacao(pedido)),
   backup: {
     criar: () => guarda(() => impl().backup.criar()),
     listar: () => guarda(() => impl().backup.listar()),
