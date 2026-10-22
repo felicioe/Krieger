@@ -2,12 +2,39 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Quando a tabela é mais larga que a tela, a área de rolagem entra na ordem do Tab
+ * (com foco visível) para quem usa teclado conseguir rolar com as setas (WCAG 2.1.1).
+ */
+function useRolavel() {
+  const ref = React.useRef<HTMLDivElement>(null);
+  const [rolavel, setRolavel] = React.useState(false);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const medir = () => setRolavel(el.scrollWidth > el.clientWidth + 1);
+    medir();
+    const obs = new ResizeObserver(medir);
+    obs.observe(el);
+    if (el.firstElementChild) obs.observe(el.firstElementChild);
+    return () => obs.disconnect();
+  }, []);
+  return { ref, rolavel };
+}
+
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
-  ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
-      <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
-    </div>
-  ),
+  ({ className, ...props }, ref) => {
+    const { ref: area, rolavel } = useRolavel();
+    return (
+      <div
+        ref={area}
+        tabIndex={rolavel ? 0 : undefined}
+        className="relative w-full overflow-auto rounded-[inherit] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
+      </div>
+    );
+  },
 );
 Table.displayName = "Table";
 

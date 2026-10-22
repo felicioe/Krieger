@@ -92,6 +92,7 @@ function ListaEditais() {
       />
       <div className="mb-4 max-w-sm">
         <Selecao
+          aria-label="Filtrar por condomínio"
           value={condo}
           onChange={(v) => {
             setCondo(v);

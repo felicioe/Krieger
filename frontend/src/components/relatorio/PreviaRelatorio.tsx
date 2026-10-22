@@ -277,7 +277,7 @@ export function PreviaRelatorio({
       {rel.secoes.assinatura && (
         <section className="mt-12 text-center">
           <p>{[e.cidade, e.dataEmissao].filter(Boolean).join(", ")}</p>
-          <div className="mx-auto mt-12 w-72 border-t pt-2">
+          <div className="mx-auto mt-12 w-72 max-w-full border-t pt-2">
             {escritorio?.assinatura ? (
               <p className="whitespace-pre-line">{escritorio.assinatura}</p>
             ) : (
@@ -333,8 +333,10 @@ function Bloco({ titulo, linhas, total }: { titulo: string; linhas: LinhaValor[]
 
 function Item({ rotulo, children }: { rotulo: string; children: ReactNode }) {
   return (
-    <div className="grid grid-cols-[minmax(0,14rem)_minmax(0,1fr)] gap-3 py-0.5">
-      <dt className="text-muted-foreground">{rotulo}</dt>
+    // minmax(min-content,…) no valor: em 320 px o rótulo (até 14rem) é que quebra, e o valor
+    // (R$ 8.500.000,00, datas) fica inteiro sem passar da página.
+    <div className="grid grid-cols-[minmax(0,14rem)_minmax(min-content,1fr)] gap-3 py-0.5">
+      <dt className="break-words text-muted-foreground">{rotulo}</dt>
       <dd>{children}</dd>
     </div>
   );

@@ -34,9 +34,9 @@ describe("versões (src/data/versoes.json)", () => {
 
   it("a 1.0 continua registrada como a implantação do sistema", () => {
     expect(dados.versoes.find((v) => v.versao === "1.0")).toEqual({
-        versao: "1.0",
-        titulo: "Implantação do sistema",
-        alteracoes: ["Implantação inicial do Sistema Krieger."],
+      versao: "1.0",
+      titulo: "Implantação do sistema",
+      alteracoes: ["Implantação inicial do Sistema Krieger."],
     });
   });
 });

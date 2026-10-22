@@ -260,24 +260,24 @@ function Linha({
   };
 
   return (
-            <div
+    <div
       ref={setNodeRef}
       style={{ transform: CSS.Translate.toString(transform), transition }}
-              className={cn(
+      className={cn(
         "relative flex flex-col gap-2 rounded-md border bg-muted/40 p-2",
-                compacta
-                  ? "@md:flex-row @md:items-start @md:border-0 @md:bg-transparent @md:p-0"
-                  : "@2xl:flex-row @2xl:items-start @2xl:border-0 @2xl:bg-transparent @2xl:p-0",
+        compacta
+          ? "@md:flex-row @md:items-start @md:border-0 @md:bg-transparent @md:p-0"
+          : "@2xl:flex-row @2xl:items-start @2xl:border-0 @2xl:bg-transparent @2xl:p-0",
         isDragging && "z-10 bg-card! shadow-lg ring-1 ring-ring/30",
-              )}
-            >
+      )}
+    >
       {children}
-              <div className="flex shrink-0 justify-end gap-1">
-                {reordenavel && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
+      <div className="flex shrink-0 justify-end gap-1">
+        {reordenavel && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             {...attributes}
             {...listeners}
             ref={(el) => {
@@ -289,21 +289,21 @@ function Linha({
             aria-roledescription="alça para reordenar"
             aria-label={`Reordenar linha ${indice + 1}`}
             className="cursor-grab touch-none text-muted-foreground active:cursor-grabbing"
-                    >
+          >
             <GripVertical />
-                    </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={aoRemover}
           aria-label={`Remover linha ${indice + 1}`}
-                  className="text-destructive hover:text-destructive"
-                >
-                  <Trash2 />
-                </Button>
-              </div>
-            </div>
+          className="text-destructive hover:text-destructive"
+        >
+          <Trash2 />
+        </Button>
+      </div>
+    </div>
   );
 }

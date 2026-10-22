@@ -34,39 +34,39 @@ function Login() {
 
       <div className="flex min-h-screen flex-col bg-background">
         <main className="flex flex-1 items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm">
-          <div className="mb-8 md:hidden">
-            <Marca fundo="claro" className="mx-auto max-w-[14rem]" />
-          </div>
-          <div className="rounded-md border bg-card p-6 sm:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-md bg-secondary text-primary">
-                <LockKeyhole className="size-4" />
-              </span>
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">Entrar no sistema</h1>
-                <p className="text-xs text-muted-foreground">Use seu usuário e senha.</p>
-              </div>
+          <div className="w-full max-w-sm">
+            <div className="mb-8 md:hidden">
+              <Marca fundo="claro" className="mx-auto max-w-[14rem]" />
             </div>
+            <div className="rounded-md border bg-card p-6 sm:p-8">
+              <div className="mb-6 flex items-center gap-3">
+                <span className="flex size-9 items-center justify-center rounded-md bg-secondary text-primary">
+                  <LockKeyhole className="size-4" />
+                </span>
+                <div>
+                  <h1 className="text-lg font-semibold text-foreground">Entrar no sistema</h1>
+                  <p className="text-xs text-muted-foreground">Use seu usuário e senha.</p>
+                </div>
+              </div>
               <FormEntrar
                 aoEntrar={(u) => {
                   definirUsuario(u);
                   navigate({ to: u.trocarSenha ? "/trocar-senha" : "/painel", replace: true });
                 }}
-                />
+              />
               <p className="mt-6 border-t pt-4 text-xs leading-relaxed text-muted-foreground">
                 Precisa de acesso ou esqueceu sua senha? Procure o administrador responsável pelo
                 sistema.
               </p>
-          </div>
-          {usandoMock() && (
-            <p className="mt-4 text-center text-xs text-muted-foreground">
+            </div>
+            {usandoMock() && (
+              <p className="mt-4 text-center text-xs text-muted-foreground">
                 Modo demonstração (dados locais): usuário <strong>admin</strong>, senha{" "}
                 <strong>admin123</strong>.
-            </p>
-          )}
-        </div>
-      </main>
+              </p>
+            )}
+          </div>
+        </main>
         <RodapeLogin />
       </div>
     </div>

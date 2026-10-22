@@ -137,7 +137,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
     <>
       <PageHeader
         voltar={
-          <Button variant="link" className="h-auto p-0 text-muted-foreground" asChild>
+          <Button variant="link" className="h-auto min-h-0 p-0 text-muted-foreground" asChild>
             <Link to="/relatorio-mensal">
               <ArrowLeft /> Relatório mensal
             </Link>

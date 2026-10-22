@@ -111,11 +111,11 @@ export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; l
   const estado = conf.estado ?? (conf.mensagens.length > 0 ? "divergente" : null);
   const lista =
     conf.mensagens.length > 0 ? (
-            <ul className="mt-1 list-disc pl-4">
-              {conf.mensagens.map((m) => (
-                <li key={m}>{m}</li>
-              ))}
-            </ul>
+      <ul className="mt-1 list-disc pl-4">
+        {conf.mensagens.map((m) => (
+          <li key={m}>{m}</li>
+        ))}
+      </ul>
     ) : null;
 
   if (estado === "verificado") {
@@ -136,8 +136,8 @@ export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; l
         <AlertDescription>
           <p className="font-semibold">Conferência com diferenças{cobertura ? ` (${cobertura} comparadas)` : ""}:</p>
           {lista}
-          </AlertDescription>
-        </Alert>
+        </AlertDescription>
+      </Alert>
     );
   }
   if (estado === "parcial") {
@@ -166,7 +166,7 @@ export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; l
           {cobertura ? ` (${cobertura} comparadas)` : ""}. Confira os valores manualmente antes de usar.
         </p>
       </AlertDescription>
-        </Alert>
+    </Alert>
   );
 }
 

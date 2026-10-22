@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState, type FormEvent } from "react";
-import { Loader2, Plus, Search } from "lucide-react";
+import { FileUp, Loader2, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
-import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { Field } from "@/components/app/Field";
 import { InteiroInput, Selecao } from "@/components/app/inputs";
@@ -63,7 +62,11 @@ function ListaExercicios() {
         descricao="Demonstrativo do exercício e previsão orçamentária do ano seguinte."
         acoes={
           <>
-            <ImportarPdf modo="novo" destino="exercicios" condominios={condominios} />
+            <Button variant="outline" asChild>
+              <Link to="/importador">
+                <FileUp /> Importar PDF
+              </Link>
+            </Button>
             <Button onClick={() => setNovoAberto(true)} disabled={condominios.length === 0}>
               <Plus /> Nova prestação de contas
             </Button>

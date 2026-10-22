@@ -24,7 +24,12 @@ export function Marca({
       src={src}
       alt="Krieger — Contabilidade Condominial"
       draggable={false}
-      className={cn("block h-auto select-none", compacta ? "h-8 w-auto" : "w-full", className)}
+      className={cn(
+        "block h-auto select-none",
+        // max-w-full + object-contain: em tela estreita com texto ampliado reduz a arte sem distorcer.
+        compacta ? "h-8 w-auto max-w-full object-contain object-left" : "w-full",
+        className,
+      )}
     />
   );
 }

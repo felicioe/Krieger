@@ -8,6 +8,7 @@ import {
   DatabaseBackup,
   FileSpreadsheet,
   FileText,
+  FileUp,
   GitCompareArrows,
   History,
   KeyRound,
@@ -37,32 +38,33 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
   {
     titulo: null,
     itens: [
-  { titulo: "Painel", to: "/painel", icone: LayoutDashboard },
-  { titulo: "Condomínios", to: "/condominios", icone: Building2 },
+      { titulo: "Painel", to: "/painel", icone: LayoutDashboard },
+      { titulo: "Condomínios", to: "/condominios", icone: Building2 },
     ],
   },
   {
     titulo: "Financeiro",
     itens: [
-  { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet },
-  { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator },
-  { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows },
-  { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange },
+      { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet },
+      { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator },
+      { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows },
+      { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange },
+      { titulo: "Importador", to: "/importador", icone: FileUp },
     ],
   },
   {
     titulo: "Assembleias e documentos",
     itens: [
-  { titulo: "Editais", to: "/editais", icone: Megaphone },
-  { titulo: "Atas", to: "/atas", icone: ScrollText },
-  { titulo: "Modelos de edital", to: "/modelos", icone: FileText },
+      { titulo: "Editais", to: "/editais", icone: Megaphone },
+      { titulo: "Atas", to: "/atas", icone: ScrollText },
+      { titulo: "Modelos de edital", to: "/modelos", icone: FileText },
     ],
   },
   {
     titulo: "Administração",
     itens: [
-  { titulo: "Escritório", to: "/escritorio", icone: Briefcase },
-  { titulo: "Backup", to: "/backup", icone: DatabaseBackup },
+      { titulo: "Escritório", to: "/escritorio", icone: Briefcase },
+      { titulo: "Backup", to: "/backup", icone: DatabaseBackup },
     ],
   },
 ];
@@ -146,7 +148,7 @@ export function ConteudoMenu({
                   <li key={item.to}>
                     <ItemMenu item={item} aoNavegar={aoNavegar} />
                   </li>
-        ))}
+                ))}
               </ul>
             </div>
           );
@@ -169,13 +171,13 @@ export function ConteudoMenu({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <ul aria-label="Opções da conta" className="pb-2">
-        {usuario?.perfil === "admin" && (
+            {usuario?.perfil === "admin" && (
               <li>
-          <ItemMenu item={{ titulo: "Usuários", to: "/usuarios", icone: Users }} aoNavegar={aoNavegar} />
+                <ItemMenu item={{ titulo: "Usuários", to: "/usuarios", icone: Users }} aoNavegar={aoNavegar} />
               </li>
-        )}
+            )}
             <li>
-        <ItemMenu item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }} aoNavegar={aoNavegar} />
+              <ItemMenu item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }} aoNavegar={aoNavegar} />
             </li>
             {abrirRegistro && (
               <li>
@@ -188,9 +190,9 @@ export function ConteudoMenu({
               </li>
             )}
             <li>
-        <BotaoMenu icone={LogOut} onClick={encerrar}>
-          Sair
-        </BotaoMenu>
+              <BotaoMenu icone={LogOut} onClick={encerrar}>
+                Sair
+              </BotaoMenu>
             </li>
           </ul>
         </CollapsibleContent>

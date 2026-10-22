@@ -15,6 +15,7 @@ import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrat
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
+import { AnexosPrestacao, anexosQuery } from "@/components/importacao/AnexosPrestacao";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
       queryClient.ensureQueryData(itemQuery<Exercicio>("exercicios", params.id)),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
+      queryClient.ensureQueryData(anexosQuery()),
     ]);
     if (!e) throw notFound();
     return null;
@@ -120,7 +122,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
     <>
       <PageHeader
         voltar={
-          <Button variant="link" className="h-auto p-0 text-muted-foreground" asChild>
+          <Button variant="link" className="h-auto min-h-0 p-0 text-muted-foreground" asChild>
             <Link to="/prestacao-contas">
               <ArrowLeft /> Prestação de contas
             </Link>
@@ -206,6 +208,11 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão calculada pelo demonstrativo."
         />
       </form>
+
+      {/* Fora do formulário: baixar/excluir anexo não envia nem suja a prestação. */}
+      <div className="mt-6">
+        <AnexosPrestacao exercicioId={e.id} />
+      </div>
 
       <DialogoDivergencia
         aberto={trava.dialogo.aberto}

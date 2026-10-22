@@ -107,7 +107,7 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
     <>
       <PageHeader
         voltar={
-          <Button variant="link" className="h-auto p-0 text-muted-foreground" asChild>
+          <Button variant="link" className="h-auto min-h-0 p-0 text-muted-foreground" asChild>
             <Link to="/modelos">
               <ArrowLeft /> Modelos de edital
             </Link>
@@ -176,13 +176,13 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
           <div className="mb-4 rounded-md border border-dashed bg-muted/40 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
             <p>
               <span className="font-medium text-foreground">Dados do edital no texto:</span> escreva entre chaves duplas, por exemplo{" "}
-              <code className="rounded bg-card px-1">{"{{condominio.nome}}"}</code>, <code className="rounded bg-card px-1">{"{{assembleia.data}}"}</code>,{" "}
-              <code className="rounded bg-card px-1">{"{{assembleia.modalidade}}"}</code>. Datas saem em dd/mm/aaaa e tipo, modalidade e entrega das contas saem por extenso.
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">{"{{condominio.nome}}"}</code>, <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">{"{{assembleia.data}}"}</code>,{" "}
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">{"{{assembleia.modalidade}}"}</code>. Datas saem em dd/mm/aaaa e tipo, modalidade e entrega das contas saem por extenso.
             </p>
             <p className="mt-1">
               <span className="font-medium text-foreground">Condição:</span> o bloco só aparece quando ela é verdadeira, por exemplo{" "}
-              <code className="rounded bg-card px-1">assembleia.modalidade != online</code>. Combine com “e” / “ou”:{" "}
-              <code className="rounded bg-card px-1">assembleia.modalidade == online e assembleia.tipo == extraordinaria</code>. Compare sempre com o código
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">assembleia.modalidade != online</code>. Combine com “e” / “ou”:{" "}
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">assembleia.modalidade == online e assembleia.tipo == extraordinaria</code>. Compare sempre com o código
               (ordinaria, extraordinaria, presencial, online, hibrida, email, administracao, aplicativo). Em branco, aparece sempre.
             </p>
           </div>
@@ -197,7 +197,7 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
               <div className="grid gap-2 rounded-md border bg-card p-3 sm:grid-cols-[11rem_minmax(0,1fr)]">
                 <div className="grid content-start gap-2">
                   <span className="num text-xs font-medium text-muted-foreground">Bloco {i + 1}</span>
-                  <Selecao value={b.tipo} onChange={(tipo) => up({ tipo })} opcoes={TIPOS_BLOCO} />
+                  <Selecao aria-label={`Tipo do bloco ${i + 1}`} value={b.tipo} onChange={(tipo) => up({ tipo })} opcoes={TIPOS_BLOCO} />
                   <Input
                     aria-label={`Condição do bloco ${i + 1}`}
                     placeholder="Condição (opcional)"

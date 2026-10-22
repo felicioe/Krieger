@@ -84,7 +84,7 @@
   --accent-foreground: oklch(0.338 0.08 246.9);
   --destructive: oklch(0.53 0.19 27);
   --destructive-foreground: oklch(0.985 0.003 250);
-  --success: oklch(0.52 0.12 155);
+  --success: oklch(0.49 0.12 155); /* 4,7:1 no selo bg-success/15 e 5,9:1 no branco (texto ≥ 4,5:1) */
   --success-foreground: oklch(0.985 0.003 250);
   --warning: oklch(0.72 0.15 70);
   --warning-foreground: oklch(0.3 0.06 60);
@@ -148,4 +148,25 @@
 /* Números tabulares para valores monetários */
 @utility num {
   font-variant-numeric: tabular-nums;
+}
+
+/*
+ * Área de toque invisível de pelo menos 44×44 px (#32) em links e botões pequenos,
+ * só no celular (abaixo de md) e em telas de toque; no desktop com mouse nada muda.
+ */
+@utility alvo-toque {
+  @media (width < 48rem), (pointer: coarse) {
+    position: relative;
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 100%;
+      height: 100%;
+      min-width: 44px;
+      min-height: 44px;
+      transform: translate(-50%, -50%);
+    }
+  }
 }
