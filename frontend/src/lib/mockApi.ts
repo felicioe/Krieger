@@ -139,6 +139,7 @@ function semente(): Dados {
     config: [{ id: "escritorio", nome: "Krieger Assessoria Contábil e Condominial", cidade: "", rodape: "", assinatura: "", logo: "", logoRatio: null }],
     importacoes: [],
     atas: [ataExemplo(assembleias[0] as Registro, condominios[0] as Registro)],
+    anexos_importacao: [],
   };
 }
 

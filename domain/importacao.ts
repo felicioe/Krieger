@@ -26,7 +26,17 @@ import {
   type RelatorioLido,
   type SecaoLida,
 } from "./pdfParser";
-import type { Condominio, Demonstrativo, DestinoImportacao, Exercicio, Importacao, LinhaValor, Mensal } from "./types";
+import type {
+  AnexoImportado,
+  Condominio,
+  Demonstrativo,
+  DestinoImportacao,
+  Exercicio,
+  Importacao,
+  LinhaValor,
+  Mensal,
+  TipoAnexoImportacao,
+} from "./types";
 
 export const COLUNA_TOTAL = "total";
 
@@ -374,6 +384,20 @@ export function aplicarConsideracoesAoExercicio(consid: Exercicio["consid"], cf:
     out = { ...out, extras };
   }
   return out;
+}
+
+/**
+ * Anexo de um relatório "só leitura" (ex.: Comparativo Financeiro) a uma Prestação de Contas já
+ * existente — guarda o relatório lido na íntegra, sem virar lançamento no demonstrativo.
+ */
+export function novoAnexoImportado(
+  exercicioId: string,
+  tipo: TipoAnexoImportacao,
+  rel: RelatorioLido,
+  arquivo: string,
+  agora = new Date(),
+): Omit<AnexoImportado, "id"> {
+  return { exercicioId, tipo, arquivo, importadoEm: agora.toISOString(), relatorio: rel };
 }
 
 /** Prestação de contas nova com o demonstrativo do PDF. */

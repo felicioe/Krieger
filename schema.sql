@@ -43,6 +43,15 @@ CREATE TABLE IF NOT EXISTS kr_importacoes (
   atualizado_em DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- PDFs anexados a uma Prestação de Contas (exercício) já existente, como referência/auditoria
+-- (ex.: Comparativo Financeiro) — não viram lançamento no demonstrativo. Mesmo padrão id/dados das
+-- demais tabelas; o JSON em `dados` segue `AnexoImportado` (domain/types.ts).
+CREATE TABLE IF NOT EXISTS kr_anexos_importacao (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Controle de acesso: usuários do sistema (perfil 'admin' ou 'user') e controle de tentativas de login.
 CREATE TABLE IF NOT EXISTS kr_usuarios (
   id VARCHAR(32) PRIMARY KEY,
