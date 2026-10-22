@@ -233,6 +233,15 @@ try {
       $o = $corpo['o'] ?? null;
       if (!is_array($o) || empty($o['id'])) erro('Objeto inválido (sem id).');
       $id = id_valido($o['id']);
+      if ($s === 'importacoes') {
+        try { $salvo = salvar_staging_importacao($pdo, $o); }
+        catch (InvalidArgumentException $e) { erro($e->getMessage()); }
+        catch (RuntimeException $e) {
+          if ($e->getCode() === 409) erro($e->getMessage(), 409);
+          throw $e;
+        }
+        saida($salvo);
+      }
       $o['atualizadoEm'] = date('c');
       $stmt = $pdo->prepare('REPLACE INTO ' . $tb . ' (id, dados, atualizado_em) VALUES (?, ?, ?)');
       $stmt->execute([$id, json_encode($o, JSON_UNESCAPED_UNICODE), date('Y-m-d H:i:s')]);

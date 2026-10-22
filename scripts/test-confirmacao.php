@@ -59,5 +59,13 @@ $r=confirmar_importacao($pdo,$p); $assert($r['registro']['ano']===2999, 'Limite 
 $assert($contar('condominios')===2 && $contar('mensais')===3 && $contar('exercicios')===1, 'Confirmações válidas incorretas.');
 $stmt=$pdo->query("SELECT dados FROM kr_condominios WHERE id='c-ok'");
 $assert(json_decode($stmt->fetchColumn(),true)['nome']==='Condomínio fictício', 'Cadastro existente foi sobrescrito.');
+try {
+  salvar_staging_importacao($pdo, ['id'=>'ok','status'=>'descartado']);
+  throw new LogicException('Descarte atrasado reverteu confirmação.');
+} catch (RuntimeException $e) { $assert($e->getCode()===409, 'Conflito de estado não informado.'); }
+$novo=salvar_staging_importacao($pdo,['id'=>'staging-novo','status'=>'pendente']);
+$assert($novo['status']==='pendente', 'Novo staging falhou.');
+$descartado=salvar_staging_importacao($pdo,['id'=>'staging-novo','status'=>'descartado']);
+$assert($descartado['status']==='descartado', 'Descarte normal falhou.');
 echo "Confirmação MySQL: sucesso, retry, rollback entre etapas, recuperação, descartado, referência, duplicidade e destino aprovados.\n";
 

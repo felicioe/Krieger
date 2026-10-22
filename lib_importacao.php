@@ -50,7 +50,7 @@ function confirmar_importacao(PDO $pdo, array $pedido): array {
       $salvo = $ler($destino, $id($imp['registroId'] ?? null));
       if (!$salvo) throw new RuntimeException('A confirmação anterior perdeu o relatório vinculado. Confira a importação.', 409);
       $pdo->commit();
-      return ['registro' => $salvo, 'condominioId' => $imp['condominioId'], 'criouCondominio' => false, 'reutilizado' => true];
+      return ['registro' => $salvo, 'condominioId' => $id($imp['condominioId'] ?? $salvo['condoId'] ?? null), 'criouCondominio' => false, 'reutilizado' => true];
     }
     if (($imp['status'] ?? '') !== 'pendente') throw new RuntimeException('Esta importação não está pendente.', 409);
     // O lock do condomínio existente serializa confirmações concorrentes para o mesmo cadastro.
@@ -93,3 +93,27 @@ function confirmar_importacao(PDO $pdo, array $pedido): array {
   }
 }
 
+/** Impede que descarte/edição atrasados revertam uma confirmação concorrente. */
+function salvar_staging_importacao(PDO $pdo, array $objeto): array {
+  $id = $objeto['id'] ?? null;
+  if (!is_string($id) || trim($id) === '' || strlen($id) > 64) throw new InvalidArgumentException('Identificador inválido.');
+  $pdo->beginTransaction();
+  try {
+    $stmt = $pdo->prepare('SELECT dados FROM kr_importacoes WHERE id = ? FOR UPDATE');
+    $stmt->execute([$id]);
+    $json = $stmt->fetchColumn();
+    $existente = $json === false ? null : json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+    if ($existente && ($existente['status'] ?? '') !== 'pendente') throw new RuntimeException('A importação já foi concluída. Atualize a página para conferir o resultado.', 409);
+    if (!in_array($objeto['status'] ?? '', $existente ? ['pendente', 'descartado'] : ['pendente'], true)) {
+      throw new RuntimeException('Use a confirmação integrada para concluir a importação.', 409);
+    }
+    $objeto['atualizadoEm'] = date('c');
+    $stmt = $pdo->prepare('REPLACE INTO kr_importacoes (id, dados, atualizado_em) VALUES (?, ?, ?)');
+    $stmt->execute([$id, json_encode($objeto, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), date('Y-m-d H:i:s')]);
+    $pdo->commit();
+    return $objeto;
+  } catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    throw $e;
+  }
+}

@@ -26,6 +26,11 @@ Dentro da transação InnoDB: obtém/cria condomínio, insere relatório, atuali
 staging para confirmado e commit. Qualquer exceção faz rollback de todas as
 etapas. Repetir após uma falha é seguro para essa mesma importação.
 
+O salvamento genérico de staging também bloqueia a linha e só altera registros
+pendentes. Descarte/edição atrasados não podem reverter uma confirmação final;
+recebem409 com orientação de atualizar a página. Clientes antigos precisam
+recarregar a versão publicada para usar a confirmação integrada.
+
 O lock do condomínio existente serializa confirmações para o mesmo cadastro;
 ids distintos de condomínios novos ainda seguem o contrato de identificação
 do produto. Este endpoint não introduz unicidade global de CNPJ/código no banco
