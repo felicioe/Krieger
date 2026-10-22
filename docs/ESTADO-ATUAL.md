@@ -122,3 +122,16 @@ Crítica independente26/40 e auditoria sequencial foram consolidadas em
 Issues #59–#62 e resíduos #32/#47 foram encaminhados ao Lovable. Sincronização
 permitida, preservando reordenação acessível em execução e mudanças da Claude.
 Não presumir implementação concluída: consultar GitHub e status do Lovable.
+
+Na branch do PR #63, reordenação acessível recebida do Lovable SHA
+7ee0c30a269437b7e0faf7e2c9696bee8a62033e e sincronizada no commit 557e090;
+97 testes frontend e typecheck passaram. O CI passa a exigir esses comandos
+antes do build. A base incorpora main 123311c (PR #64, parser comparativo da
+Claude), com 125 testes raiz aprovados. Novo alerta Vite documentado na #65;
+produção usa build estático/PHP, sem servidor Vite. Não executar correção
+forçada de dependências sem revisão pelo Lovable.
+
+O método valor e a compactação PDF citados acima como pendentes já receberam
+implementação nos commits 11ad02e/0f376e8. Preservá-los nas próximas integrações.
+Reteste móvel publicado confirmou URL/h1/foco do menu após estabilização;
+evidência na #47. Correções #59–#62 ainda aguardam entrega final do Lovable.
