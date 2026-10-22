@@ -292,3 +292,30 @@ Codex). Issues #46 e #75 receberam comentário de status (só falta #33 na
 continuam abertas de propósito. Restam abertas: #31, #32, #33, #46, #59–#62,
 #65, #75, #82 — todas com trabalho ativo em andamento (revisão focal pedida
 pelo usuário ao Lovable, ou PR #85 do Codex).
+
+## Menu Importador concluído e publicado — 22/10/2026
+
+PR #86 (merge dd994bb): terceiro card do Importador (Comparativo Financeiro)
+completo — lê e valida o PDF (recusa quando o layout não é `comparativo`),
+sugere condomínio/ano a partir do próprio PDF, grava o anexo com o PDF
+original (`arquivoDataUrl`) e lista em "Anexos de referência" na tela da
+prestação de contas, com Baixar e Excluir. Também trouxe as correções #82
+(overflow do Painel) e #65 (Vite 8.3.5) que o Lovable fez no mesmo lote.
+
+**Descoberta operacional:** o GitHub do Lovable (`felicioe/krieger-projeto-atual`,
+feature "sync to GitHub" dele, confirmado pelos commits idênticos ao sandbox)
+dá acesso direto via `git clone`/`git diff` ao código do Lovable — bem mais
+rápido e preciso que ler arquivo por arquivo via MCP `read_file`. Usar esse
+caminho quando disponível; `src/domain/*`, `src/lib/format.ts` e
+`src/lib/id.ts` continuam excluídos de qualquer cópia (shims canônicos,
+nunca o código duplicado do Lovable). `krieger-projeto-atual` não tem CI,
+webhook nem relação com a produção (Hostinger publica só de
+`felicioe/Krieger`) — seguro apagar após este registro, a critério do
+usuário.
+
+**Decisões em aberto, levantadas pelo Lovable:** excluir uma prestação de
+contas deve excluir os anexos dela junto? Há limite de tamanho desejado pro
+PDF anexado?
+
+Publicado: commit `dd994bb` → `deploy-hostinger` `64e3b82`, confirmado ao
+vivo (`_authenticated.importador-*.js` no ar).
