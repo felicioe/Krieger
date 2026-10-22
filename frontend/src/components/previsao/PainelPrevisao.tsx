@@ -361,7 +361,7 @@ function Resumo({
 }) {
   const ausente = (n: number | null, motivo?: string) => (n === null ? <SemValor motivo={motivo} /> : formatBRL(n));
   return (
-    <section className="rounded-md border bg-card" aria-label="Resumo da previsão">
+    <section className="rounded-md border bg-card shadow-sm" aria-label="Resumo da previsão">
       <header className="border-b px-5 py-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Resumo da previsão</h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Atualiza a cada alteração.</p>

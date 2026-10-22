@@ -130,7 +130,7 @@ export function PainelPrevisaoSugerida({
       </div>
 
       <aside className="space-y-6 lg:sticky lg:top-6 lg:self-start">
-        <section className="rounded-md border bg-card" aria-label="Resultado da previsão">
+        <section className="rounded-md border bg-card shadow-sm" aria-label="Resultado da previsão">
           <header className="border-b px-5 py-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Resultado</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">Atualiza a cada alteração.</p>
@@ -165,7 +165,7 @@ export function PainelPrevisaoSugerida({
           </div>
         </section>
 
-        <section className="rounded-md border bg-card" aria-label="Previsão orçamentária por unidade">
+        <section className="rounded-md border bg-card shadow-sm" aria-label="Previsão orçamentária por unidade">
           <header className="border-b px-5 py-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Previsão orçamentária por unidade</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">Só para fins de validação.</p>

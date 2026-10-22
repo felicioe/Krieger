@@ -30,7 +30,7 @@ function CartaoImportacao({
   acao: ReactNode;
 }) {
   return (
-    <section className="flex min-w-0 flex-col rounded-md border bg-card p-5 text-card-foreground">
+    <section className="flex min-w-0 flex-col rounded-md border bg-card p-5 text-card-foreground shadow-sm">
       <div className="flex items-center gap-2">
         <Icone className="size-5 shrink-0 text-primary" aria-hidden />
         <h2 className="min-w-0 break-words text-base font-semibold text-primary">{titulo}</h2>

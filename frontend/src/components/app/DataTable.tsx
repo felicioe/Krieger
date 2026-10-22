@@ -59,7 +59,7 @@ export function DataTable<T>({
   };
 
   return (
-    <div className="overflow-hidden rounded-md border bg-card">
+    <div className="overflow-hidden rounded-md border bg-card shadow-sm">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/60 hover:bg-muted/60">

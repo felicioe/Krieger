@@ -25,7 +25,7 @@ function TrocarSenha() {
         <div className="mb-8">
           <Marca fundo="claro" className="mx-auto max-w-[15rem]" />
         </div>
-        <div className="rounded-md border bg-card p-6 sm:p-8">
+        <div className="rounded-md border bg-card p-6 sm:p-8 shadow-sm">
           <h1 className="text-lg font-semibold text-foreground">Defina uma nova senha</h1>
           <p className="mb-6 mt-1 text-sm text-muted-foreground">
             Sua senha atual é provisória. Para continuar, crie uma senha pessoal.
