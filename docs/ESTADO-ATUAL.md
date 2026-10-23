@@ -1,5 +1,37 @@
 # Estado atual e passagem de contexto
 
+## Queda de produção e correção pelo Codex — 23/10/2026
+
+Durante teste real do Importador (condomínio Edifício Itamaracá), a tela
+mostrou "Não foi possível conectar ao banco de dados". Claude avaliou
+(incorretamente) como falha passageira, checando `u630316951_app` via API da
+Hostinger e vendo atividade recente — mas esse banco **pertence ao site
+institucional**, não ao Krieger.
+
+O Codex investigou pela issue #89 e achou a causa real: o subdomínio
+`krieger.therafinancial.com.br` foi recriado em algum momento e ficou **sem
+banco próprio** (só existia o institucional, sem relação com o Krieger).
+Correção aplicada direto no hPanel (sem passar por commit/PR, como deve ser
+para credenciais):
+- criado `u630316951_krieger` + usuário dedicado, separado do institucional;
+- `schema.sql` aplicado (12 tabelas, incluindo `kr_anexos_importacao` e
+  `kr_backups`, que antes dependiam de aplicação manual avulsa — ver #75);
+- `config.local.php` privado criado na raiz publicada, protegido por
+  `.htaccess`;
+- primeiro administrador criado com senha provisória (troca obrigatória no
+  primeiro acesso).
+
+Confirmado às 23/10 que a API voltou (`auth.php?a=eu` responde 401 em vez de
+500 — banco conectando). A importação do Itamaracá que falhou durante a
+queda **não foi gravada** (erro ocorreu antes de persistir) — repetir quando
+o usuário quiser. Qualquer dado anterior a esta correção não existe neste
+banco (é um banco novo); não há evidência de que dados reais do Krieger
+tenham sido gravados no banco institucional por engano, mas vale confirmar.
+
+**Lição:** ao diagnosticar erro de conexão com banco em produção, não
+presumir "passageiro" só por o banco aparecer ativo — confirmar que é
+*o banco certo para o site certo* antes de descartar causa estrutural.
+
 ## Achados reais de um PDF de produção (Urban Classic) — 22/10/2026
 
 Usuário anexou o Comparativo Financeiro do Urban Classic pela tela publicada
