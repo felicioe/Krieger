@@ -144,7 +144,7 @@ export function PainelPrevisaoSugerida({
 
             <div className="mt-4 rounded-md bg-sidebar px-4 py-3 text-sidebar-foreground">
               <div className="text-xs uppercase tracking-wide text-sidebar-muted">Rateio mensal sugerido</div>
-              <div className="num mt-0.5 text-2xl font-semibold">{formatBRL(r.rateioMensalSugerido)}</div>
+              <div className="num mt-0.5 break-words text-2xl font-semibold">{formatBRL(r.rateioMensalSugerido)}</div>
               <div className="text-xs text-sidebar-muted">Total final ÷ 12</div>
             </div>
 
