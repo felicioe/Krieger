@@ -131,11 +131,12 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     const u = userEvent.setup();
     await montar();
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
-    await screen.findByRole("checkbox", { name: /02\/2025/ });
+    // Espera a lista refletir o relatório mensal já existente (useQuery), não só o primeiro
+    // render (que começa com a lista vazia, antes da consulta resolver).
+    await screen.findByText(/já existe um relatório mensal/);
     const checkJan = screen.getByRole("checkbox", { name: /01\/2025/ });
     const checkFev = screen.getByRole("checkbox", { name: /02\/2025/ });
     expect(checkJan).not.toBeChecked();
-    expect(screen.getByText(/já existe um relatório mensal/)).toBeInTheDocument();
     expect(checkFev).toBeChecked();
 
     // Deixa 01/2025 desmarcado (não sobrescreve) e envia só o 02/2025 novo.
