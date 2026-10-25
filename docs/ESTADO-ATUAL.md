@@ -1,5 +1,39 @@
 # Estado atual e passagem de contexto
 
+## Lovable descontinuada; auto-deploy reconectado; issue #89 fechada — 25/10/2026
+
+Três frentes fechadas nesta revisão:
+
+- **Lovable não existe mais no projeto** (decisão do responsável, 24/10/2026).
+  Claude edita `frontend/src/**` diretamente desde então — ver
+  `docs/ARQUITETURA.md` (seção própria) e a memória do Claude.
+- **Validação dos 8 editores em 320px/200%** (último item pendente da Lovable
+  na #89): achados e corrigidos 2 vazamentos reais — título de página sem
+  `break-words` (`PageHeader`, afeta todas as telas) e o valor grande de
+  "Valor por unidade"/"Rateio mensal sugerido" vazando do cartão quando não
+  cabia numa linha (`PainelPrevisao`/`PainelPrevisaoSugerida`). PR #92, merge
+  `688f948`. Os outros 6 editores (prestação, mensal, comparativo, ata,
+  modelo, relatório final) não tinham vazamento real.
+- **Auto-deploy do Hostinger estava desconectado desde a recriação do
+  subdomínio** (mesmo episódio que derrubou o banco, 23/10): `hosting_git_auto-deployment-settings`
+  vinha com todos os campos `null`. A produção servia um build de antes do
+  PR #88 havia dias, sem erro visível — só percebido comparando o hash de
+  `assets/index-*.js` ao vivo com o commit esperado. Reconectado via
+  `hosting_git_update-auto-deployment-settings` (mesma instalação GitHub,
+  `felicioe/Krieger`, branch `deploy-hostinger`); a própria gravação disparou
+  o deploy, confirmado ao vivo (122 arquivos batendo com o commit `c9147df`).
+  Ver "Limitações conhecidas" abaixo — isso pode voltar a acontecer se o
+  site for recriado de novo.
+
+`docs/ARQUITETURA.md` também reconciliado (commit `1c236b0`): páginas de
+acesso legadas marcadas como tal, store `anexos_importacao` incluída,
+parágrafo sobre `frontend/src/domain` corrigido (são shims, não mais
+incerteza), referência à issue #16 (fechada) removida.
+
+Issue #89 fechada — todos os itens do checklist resolvidos ou documentados,
+exceto o teste funcional de anexo da #75 (depende de login real de produção,
+fora do que este agente faz; fica para quem tiver esse acesso).
+
 ## Queda de produção e correção pelo Codex — 23/10/2026
 
 Durante teste real do Importador (condomínio Edifício Itamaracá), a tela
@@ -184,7 +218,8 @@ Fechadas: #1, #2, #3, #4, #5, #6, #7, #15, #16, #17, #20, #22. #19 e #49 seguem 
 - Testes do domínio não validam navegador/PDF worker, backend/banco ou produção.
 - Atualizar a branch `deploy-hostinger` depois de mudanças relevantes em `main` é manual; esquecer isso deixa a produção desatualizada silenciosamente.
 - **Qualquer** publicação pelo auto-deploy do Hostinger (push ou atualização de configuração) não preserva arquivos fora do Git (ex.: `config.php`) — checar e, se preciso, reupload manual depois de toda publicação.
-- Backup no servidor depende da tabela `kr_backups`, ainda não criada no banco de produção.
+- **A própria conexão de auto-deploy do Git (`hosting_git_auto-deployment-settings`) pode cair silenciosamente** — aconteceu em 23–25/10/2026 quando o subdomínio foi recriado (resolvendo o banco, ver abaixo), apagando a integração sem avisar: pushes em `deploy-hostinger` paravam de surtir efeito e a produção ficou dias atrás (ainda servindo um build de antes do PR #88) sem erro visível. Sempre que desconfiar de build desatualizado em produção, confira `GET /index.html` sem cache e compare o hash de `assets/index-*.js` com o commit esperado antes de assumir que só falta publicar de novo; se estiver preso, confira `hosting_git_auto-deployment-settings` e reconecte com `hosting_git_update-auto-deployment-settings` (mesmos `installation_uuid`/`owner`/`repository`/`branch` de sempre) — a própria gravação já dispara o deploy.
+- Backup no servidor (tabela `kr_backups`) e anexos de importação (`kr_anexos_importacao`) foram aplicados no banco de produção em 23/10/2026, junto com a recriação do banco dedicado (`u630316951_krieger`) — ver "Queda de produção e correção pelo Codex" abaixo.
 
 ## Ao retomar
 
