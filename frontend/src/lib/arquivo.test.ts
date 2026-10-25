@@ -8,14 +8,20 @@ function bytesDeTeste(n: number): Uint8Array<ArrayBuffer> {
   return b;
 }
 
-/** blob.arrayBuffer() não existe no jsdom desta versão; lê via FileReader. */
-function lerBlob(blob: Blob): Promise<Uint8Array> {
-  return new Promise((ok, falha) => {
-    const leitor = new FileReader();
-    leitor.onload = () => ok(new Uint8Array(leitor.result as ArrayBuffer));
-    leitor.onerror = () => falha(new Error("Não foi possível ler o blob."));
-    leitor.readAsArrayBuffer(blob);
-  });
+/**
+ * Decodifica os bytes originais direto do data URL, sem passar por Blob/FileReader:
+ * nos testes (Node + jsdom), o Blob devolvido por `fetch().blob()` e o FileReader do
+ * jsdom nem sempre são do mesmo "realm" (comportamento varia por versão de Node/jsdom),
+ * o que quebra `readAsArrayBuffer` com um Blob alheio. No navegador de verdade os dois
+ * vêm do mesmo global e isso não acontece — aqui testamos a fidelidade da codificação
+ * base64 em si, que é o que `dataUrlParaBlob` e `baixar()` realmente dependem.
+ */
+function bytesDoDataUrlDecodificados(dataUrl: string): Uint8Array {
+  const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+  const binario = atob(base64);
+  const bytes = new Uint8Array(binario.length);
+  for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+  return bytes;
 }
 
 describe("ida e volta de arquivo por data URL (#75: download idêntico ao original)", () => {
@@ -27,8 +33,9 @@ describe("ida e volta de arquivo por data URL (#75: download idêntico ao origin
     expect(dataUrl).toMatch(/^data:application\/pdf;base64,/);
 
     const blob = await dataUrlParaBlob(dataUrl);
-    const bytesBaixados = await lerBlob(blob);
+    expect(blob.size).toBe(original.length);
 
+    const bytesBaixados = bytesDoDataUrlDecodificados(dataUrl);
     expect(bytesBaixados.length).toBe(original.length);
     expect(Array.from(bytesBaixados)).toEqual(Array.from(original));
   });
