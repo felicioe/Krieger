@@ -1,5 +1,31 @@
 # Estado atual e passagem de contexto
 
+## Segunda queda de banco (causada por mim) e correção — 25/10/2026
+
+Ao reconectar o auto-deploy do Git (abaixo), o próprio ato de salvar a
+configuração disparou um redeploy imediato — e qualquer deploy limpa a
+pasta publicada do que não está no Git. O `config.local.php` que o Codex
+criou no dia anterior estava **dentro** da pasta publicada, então foi
+apagado, derrubando o banco de novo.
+
+Diagnóstico levou várias rodadas (dbname com sufixo errado, depois senha,
+depois host `127.0.0.1` vs `localhost`) até achar a causa real: **o site foi
+recriado com estrutura de pastas diferente da anterior.** Antes:
+`domains/therafinancial.com.br/public_html/krieger`. Agora:
+`domains/krieger.therafinancial.com.br/public_html` (confirmado via
+`hosting_websites_list`). Isso muda onde `dirname(__DIR__, 2)` aponta: o
+arquivo precisa estar em `domains/krieger-config.php` (direto dentro de
+`domains`), não mais em `domains/therafinancial.com.br/krieger-config.php`.
+O usuário recriou no lugar certo e funcionou — confirmado ao vivo
+(`auth.php?a=eu` responde 401, não mais 500).
+
+**Lição registrada na memória do Claude:** não reconectar/alterar
+configuração de infraestrutura em produção sem considerar o efeito colateral
+antes de agir (redeploy apaga arquivos fora do Git) — avisar o risco antes,
+não só depois. Também: ao recalcular "dois níveis acima da pasta publicada",
+sempre confirmar o `root_directory` atual via API em vez de assumir a
+estrutura antiga, porque o site já foi recriado mais de uma vez.
+
 ## Lovable descontinuada; auto-deploy reconectado; issue #89 fechada — 25/10/2026
 
 Três frentes fechadas nesta revisão:
