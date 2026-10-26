@@ -1,5 +1,31 @@
 # Estado atual e passagem de contexto
 
+## PR #95 mesclado e publicado: evolução mensal + comparativo vira mensais — 26/10/2026
+
+PR #95 (abaixo) tinha CI vermelho e 3 achados do Codex review quando esta sessão
+assumiu: 2 testes de `anexo-comparativo.test.tsx` quebravam por corrida de teste
+real (acessava os campos antes da leitura assíncrona do PDF terminar) e por uma
+data errada no próprio teste ("02/01/2025" em vez de "01/02/2025" pra
+fevereiro) — não eram a incompatibilidade de `localStorage` do Node 26 local
+que o PR original citava. Corrigidos, mais os 3 achados do Codex: idempotência
+na reimportação após falha parcial (IDs de mês/anexo gerados uma vez e
+reaproveitados numa nova tentativa, em vez de duplicar), botão de confirmar
+bloqueado enquanto a consulta de relatórios mensais carrega (evitava esconder
+conflito real), e margem do gráfico de evolução mensal ajustada pra não cortar
+o rótulo da competência de extremidade (ex. "12/2026") no PDF/Word. Cada achado
+tem teste de regressão próprio; 179 testes de frontend + 140 de domínio, CI
+verde, 3 threads do Codex respondidas e resolvidas.
+
+Mesclado (squash) em `main` no commit `0ba2ad1`, com autorização explícita do
+responsável pra "fazer tudo e resolver... já publica o que precisar". Publicado
+na mesma sessão: `npm run package:hostinger` a partir desse commit, pacote
+commitado em `deploy-hostinger` (`ec1dde7`), auto-deploy da Hostinger disparou
+sozinho (confirmado ligado: branch `deploy-hostinger`, raiz do site). Validado
+ao vivo — `index.html` publicado referencia `index-CQMzwRkr.js`, o hash exato
+do build local; `auth.php?a=eu` responde 401 (API conectando ao banco,
+`krieger-config.php` intacto, sem repetir o incidente de configuração já
+registrado abaixo).
+
 ## Gráfico de evolução mensal no Relatório Final; comparativo vira relatórios mensais — 25/10/2026
 
 Duas adições ao Relatório Final, pedidas pelo usuário após eu reconstruir o
