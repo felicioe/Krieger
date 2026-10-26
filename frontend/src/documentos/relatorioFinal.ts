@@ -1,7 +1,7 @@
 import { dataParaBR, formatBRL, formatData, formatNumeroBR } from "@/lib/format";
 import { dataVistoria } from "@/domain/painel";
 import { nomeDeArquivo } from "@/lib/documento/baixar";
-import { barrasSvg, blocoGrafico, pizzaSvg } from "@/lib/documento/graficos";
+import { barrasSvg, blocoGrafico, linhaSvg, pizzaSvg } from "@/lib/documento/graficos";
 import type { Bloco, Coluna, Documento, LinhaTabela, Texto } from "@/lib/documento/tipos";
 import { legendaSituacao, marcaSituacao, pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
 import { semRealizado, textoSemRealizado } from "@/components/previsto-realizado/semRealizado";
@@ -174,6 +174,20 @@ export async function documentoRelatorioFinal(o: {
       if (rel.despesasGrupo.length) {
         b.push(await blocoGrafico(pizzaSvg(rel.despesasGrupo)));
       } else b.push(vazio("Sem despesas no demonstrativo."));
+    }
+    if (e.mostrarEvolucaoMensal !== false) {
+      b.push({ tipo: "titulo", nivel: 3, texto: "Evolução mensal" });
+      if (rel.evolucaoMensal.length) {
+        const grafico = linhaSvg(
+          rel.evolucaoMensal.map((p) => p.mes),
+          [
+            { nome: "Receitas", cor: "#0b3a5e", valores: rel.evolucaoMensal.map((p) => p.receitas) },
+            { nome: "Despesas", cor: "#c7a55b", valores: rel.evolucaoMensal.map((p) => p.despesas) },
+            { nome: "Saldo atual", cor: "#5f8f7a", valores: rel.evolucaoMensal.map((p) => p.saldo) },
+          ],
+        );
+        b.push(await blocoGrafico(grafico));
+      } else b.push(vazio("Sem relatórios mensais no período."));
     }
   }
 

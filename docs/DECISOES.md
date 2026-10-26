@@ -118,6 +118,24 @@ limita quem implementa a interface, não o transporte fiel dos arquivos produzid
 Sincronização é permitida e necessária; comparar versões e preservar avanços,
 sem inventar correções de frontend localmente no Codex.
 
+## 2026-10-24 — Lovable descontinuado: frontend e todo o código passam a ser do Claude
+
+Decisão do responsável: o Lovable deixou de fazer parte do projeto, em qualquer
+frente. **Isto revoga as duas decisões acima** ("2026-10-21 — frontend
+exclusivamente no Lovable" e "2026-10-21 — sincronização permitida; exclusividade
+se refere à autoria"): não existe mais frontend exclusivo do Lovable, nem
+sincronização de arquivos com um projeto Lovable — essas entradas ficam só como
+histórico de como o projeto funcionou até 24/10/2026, não como regra vigente.
+
+A partir desta data, Claude edita `frontend/src/**` diretamente, do mesmo jeito
+que o resto do repositório (`domain/`, `lib/`, PHP), seguindo os padrões já
+estabelecidos (lógica de negócio nos shims `@/domain`/`@/lib`, nunca duplicada
+inline). Codex mantém auditoria, revisão, CI, integração e publicação, e passa a
+poder revisar/testar o frontend também (deixou de ser território exclusivo do
+Lovable) — mas quem implementa correções de frontend é o Claude. Detalhes
+técnicos em `docs/ARQUITETURA.md` ("Frontend: Claude, não mais Lovable") e regra
+operacional em `AGENTS.md`.
+
 ## 2026-10-22 — versão pública e marcos de alteração
 
 O responsável definiu1.0 como implantação do sistema. Rodapé do login identifica

@@ -7,30 +7,30 @@
 3. Leia `docs/DESENVOLVIMENTO.md` antes de editar e `docs/PUBLICACAO.md` antes de publicar.
 4. Confira `git status`, sincronize `origin/main` e trabalhe em branch própria por issue.
 
-## Responsabilidade permanente pelo frontend
+## Lovable descontinuado (desde 24/10/2026) — frontend e todo o código são do Claude
 
-Determinação explícita do responsável em 21/10/2026: o frontend pertence
-exclusivamente ao Lovable. Codex/ChatGPT não deve editar componentes, estilos,
-layouts, assets ou comportamento do frontend, inclusive para corrigir auditorias.
-Esta regra vale para todas as sessões futuras; não presumir exceção a partir de
-pedidos genéricos como “corrija tudo”. Mudança desta regra exige instrução
-explícita do responsável.
+Determinação explícita do responsável: o Lovable não participa mais do projeto,
+em nenhuma frente. **Isto substitui a regra anterior (21/10/2026) de frontend
+exclusivo no Lovable**, que não vale mais — não seguir nada deste arquivo ou de
+outro documento que ainda a cite como regra vigente (histórico em
+`docs/DECISOES.md`). Claude edita `frontend/src/**` diretamente, do mesmo jeito
+que edita o resto do repositório (`domain/`, `lib/`, PHP), seguindo os padrões já
+estabelecidos — lógica de negócio vindo dos shims `@/domain`/`@/lib`, nunca
+duplicada inline nos componentes. Ver detalhes técnicos em `docs/ARQUITETURA.md`
+("Frontend: Claude, não mais Lovable").
 
-Codex pode auditar e revisar em modo de leitura, documentar achados e critérios
-no GitHub, validar testes/build e cuidar de backend, integração e publicação
-conforme as regras próprias. Correções de frontend devem ser feitas no Lovable;
-não implementar patches locais concorrentes para contornar essa responsabilidade.
-A sincronização fiel dos arquivos entre Lovable, Claude e GitHub é permitida e
-necessária, inclusive dos arquivos de hoje. Essa integração não transfere autoria
-do frontend ao Codex. Preservar versões atuais e revisar conflitos antes de integrar.
+Codex continua com auditoria, revisão, testes, CI, integração e publicação —
+agora também pode revisar/testar o frontend (deixou de ser território exclusivo
+do Lovable), mas correções de frontend em si são implementadas pelo Claude.
+Não há mais sincronização de arquivos com um projeto Lovable: não presumir essa
+etapa em nenhum fluxo novo.
 
 ## Ambiente de revisão visual
 
-O responsável se interessa pela versão publicada na Hostinger. Não abrir o app
-ou preview do Lovable no navegador para acompanhar tarefas ou validar entregas.
-Usar o conector para comunicação/sincronização e testes/build por ferramentas;
-a revisão visual final é no site publicado. Não confundir testes do Lovable com
-validação independente em produção.
+O responsável se interessa pela versão publicada na Hostinger. A revisão visual
+final é no site publicado (ou no preview local do `frontend/`, quando fizer
+sentido para a tarefa); não existe mais preview do Lovable para acompanhar
+tarefas ou validar entregas.
 
 ## Regras do projeto
 
@@ -38,7 +38,8 @@ validação independente em produção.
 - Desenvolvimento na Claude ou Codex → PR no GitHub → `main` → Hostinger via conector/API.
 - `main` é a branch padrão. Não usar branches antigas `claude/*` como base de novos trabalhos.
 - Registre problema, critérios de aceite, decisões, testes e limitações no GitHub.
-- Versão e histórico públicos vêm de frontend/src/data/versoes.json (autoria Lovable).
+- Versão e histórico públicos vêm de frontend/src/data/versoes.json (editado pelo
+  Claude, como o resto do frontend; não há mais autoria Lovable).
   Seguir docs/VERSIONAMENTO.md; gerar CHANGELOG.md com npm run changelog:gerar.
   Não incrementar versão por pequenos ajustes ou a cada commit.
 - Toda mudança de comportamento, configuração ou processo deve atualizar a documentação relacionada no mesmo PR.

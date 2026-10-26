@@ -2,11 +2,12 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnexarComparativo, ERRO_NAO_COMPARATIVO } from "@/components/importacao/AnexarComparativo";
 import { ERRO_PDF_GRANDE, excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
 import { mockApi } from "@/lib/mockApi";
-import type { AnexoImportado, Condominio, Exercicio } from "@/domain/types";
+import { demonstrativoVazio } from "@/domain/demonstrativo";
+import type { AnexoImportado, Condominio, Exercicio, Mensal } from "@/domain/types";
 
 const leitura = vi.hoisted(() => ({ texto: "" }));
 vi.mock("@/lib/pdfTexto", () => ({ extrairTextoPdf: async () => leitura.texto }));
@@ -72,6 +73,42 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     await mockApi.auth.entrar("admin", "admin123");
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("falha ao gravar o anexo depois dos meses: tentar de novo sobrescreve os mesmos meses, não duplica", async () => {
+    leitura.texto = COMPARATIVO;
+    const original = mockApi.salvar.bind(mockApi);
+    let falhouUmaVez = false;
+    vi.spyOn(mockApi, "salvar").mockImplementation(async (store, o) => {
+      if (store === "anexos_importacao" && !falhouUmaVez) {
+        falhouUmaVez = true;
+        throw new Error("Falha de rede simulada.");
+      }
+      return original(store, o);
+    });
+    const u = userEvent.setup();
+    await montar();
+    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Anexar e importar os meses" })).toBeEnabled());
+    const anexar = screen.getByRole("button", { name: "Anexar e importar os meses" });
+
+    // Primeira tentativa: os dois meses são gravados, mas o anexo falha (erro simulado) — o
+    // botão volta a ficar clicável (mutação terminou, com erro) sem a lista de mensais ter sido
+    // invalidada ainda.
+    await u.click(anexar);
+    await waitFor(() => expect(falhouUmaVez).toBe(true));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Anexar e importar os meses" })).toBeEnabled());
+    let mensais = await mockApi.listar<Mensal>("mensais");
+    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"))).toHaveLength(2);
+
+    await u.click(screen.getByRole("button", { name: "Anexar e importar os meses" }));
+    await waitFor(async () => expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(1));
+    mensais = await mockApi.listar<Mensal>("mensais");
+    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"))).toHaveLength(2);
+  });
+
   it("PDF que não é comparativo mostra o erro pedido e não grava nada", async () => {
     leitura.texto = PERIODO_UNICO;
     const u = userEvent.setup();
@@ -82,16 +119,22 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     expect(await mockApi.listar("anexos_importacao")).toEqual([]);
   });
 
-  it("comparativo: sugere condomínio e exercício do ano do PDF e grava o anexo com o PDF original", async () => {
+  it("comparativo: sugere condomínio e exercício do ano do PDF, grava o anexo e importa os meses sem conflito", async () => {
     leitura.texto = COMPARATIVO;
     const u = userEvent.setup();
     const router = await montar();
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
-    const anexar = await screen.findByRole("button", { name: "Anexar à prestação de contas" });
-    const [condo, exercicio] = screen.getAllByRole("combobox");
+    // A leitura do PDF é assíncrona (import dinâmico + extração de texto): espera o passo
+    // seguinte renderizar, não só o upload disparar o onChange.
+    const [condo, exercicio] = await screen.findAllByRole("combobox");
     expect(condo).toHaveTextContent("Residencial Jardim das Acácias");
     // As prestações carregam da API: espera a sugestão pelo ano do PDF aparecer.
     await waitFor(() => expect(exercicio).toHaveTextContent("Exercício 2025"));
+    // Nenhum dos dois meses (01/2025, 02/2025) conflita com relatório mensal existente (o seed do
+    // mock só vai até o mês atual de 2026) — os dois vêm marcados por padrão.
+    expect(screen.getByRole("checkbox", { name: /01\/2025/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /02\/2025/ })).toBeChecked();
+    const anexar = await screen.findByRole("button", { name: "Anexar e importar os meses" });
 
     await u.click(anexar);
     await waitFor(() => expect(router.state.location.pathname).toBe("/prestacao-contas/exe-acacias-2025"));
@@ -104,6 +147,59 @@ describe("Importador: anexar Comparativo Financeiro", () => {
       relatorio: { layout: "comparativo" },
     });
     expect(gravados[0]!.arquivoDataUrl).toMatch(/^data:application\/pdf;base64,/);
+
+    const mensais = await mockApi.listar<Mensal>("mensais");
+    const doComparativo = mensais.filter((m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"));
+    expect(doComparativo).toHaveLength(2);
+    const jan = doComparativo.find((m) => m.demonstrativo?.periodo.ini === "01/01/2025")!;
+    expect(jan.demonstrativo!.totais).toEqual({ saldoAnterior: 1000, receitas: 10000, despesas: 9000, saldoAtual: 2000 });
+  });
+
+  it("mês com relatório mensal já existente vem desmarcado; desmarcado não sobrescreve, marcado sobrescreve o mesmo registro", async () => {
+    const existente = await mockApi.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", {
+      condoId: "condo-acacias",
+      condoNome: "Residencial Jardim das Acácias",
+      demonstrativo: { ...demonstrativoVazio(""), periodo: { ini: "01/01/2025", fim: "31/01/2025" } },
+      origem: ["original.pdf"],
+      receber: { unidades: 3, valor: 999 },
+      notas: [],
+    });
+
+    leitura.texto = COMPARATIVO;
+    const u = userEvent.setup();
+    const router = await montar();
+    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
+    // Espera a lista refletir o relatório mensal já existente (useQuery), não só o primeiro
+    // render (que começa com a lista vazia, antes da consulta resolver).
+    await screen.findByText(/já existe um relatório mensal/);
+    const checkJan = screen.getByRole("checkbox", { name: /01\/2025/ });
+    const checkFev = screen.getByRole("checkbox", { name: /02\/2025/ });
+    expect(checkJan).not.toBeChecked();
+    expect(checkFev).toBeChecked();
+
+    // Deixa 01/2025 desmarcado (não sobrescreve) e envia só o 02/2025 novo.
+    await u.click(await screen.findByRole("button", { name: "Anexar e importar os meses" }));
+    await waitFor(async () => expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(1));
+    let mensais = await mockApi.listar<Mensal>("mensais");
+    expect(mensais.find((m) => m.id === existente.id)?.receber).toEqual({ unidades: 3, valor: 999 });
+    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.demonstrativo?.periodo.ini === "01/02/2025")).toHaveLength(1);
+
+    // O primeiro anexar navega pra prestação de contas (igual em produção); volta pro Importador
+    // antes de reabrir o diálogo pra anexar o segundo comparativo.
+    await waitFor(() => expect(router.state.location.pathname).toBe("/prestacao-contas/exe-acacias-2025"));
+    await router.navigate({ to: "/" });
+    await screen.findByRole("button", { name: "Anexar comparativo financeiro" });
+
+    // Reabre e agora marca 01/2025: sobrescreve o mesmo id, não duplica.
+    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 002.pdf"));
+    await u.click(await screen.findByRole("checkbox", { name: /01\/2025/ }));
+    await u.click(await screen.findByRole("button", { name: "Anexar e importar os meses" }));
+    await waitFor(async () => expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(2));
+    mensais = await mockApi.listar<Mensal>("mensais");
+    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.demonstrativo?.periodo.ini === "01/01/2025")).toHaveLength(1);
+    const jan = mensais.find((m) => m.id === existente.id)!;
+    expect(jan.demonstrativo!.totais.receitas).toBe(10000);
+    expect(jan.receber).toEqual({ unidades: null, valor: null });
   });
 
   it("PDF maior que 10 MB é recusado antes de ler e não grava nada", async () => {
@@ -115,7 +211,7 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), grande);
     expect(await screen.findByText(ERRO_PDF_GRANDE)).toBeInTheDocument();
     expect(ERRO_PDF_GRANDE).toBe("PDF maior que 10 MB — escolha um arquivo menor.");
-    expect(screen.queryByRole("button", { name: "Anexar à prestação de contas" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Anexar/ })).not.toBeInTheDocument();
     expect(await mockApi.listar("anexos_importacao")).toEqual([]);
   });
 
@@ -126,7 +222,7 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     const limite = pdf("limite.pdf");
     Object.defineProperty(limite, "size", { value: 10 * 1024 * 1024 });
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), limite);
-    expect(await screen.findByRole("button", { name: "Anexar à prestação de contas" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Anexar e importar os meses" })).toBeInTheDocument();
     expect(screen.queryByText(ERRO_PDF_GRANDE)).not.toBeInTheDocument();
   });
 });

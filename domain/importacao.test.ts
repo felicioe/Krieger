@@ -11,11 +11,14 @@ import {
   demonstrativoDoRelatorio,
   divergenciasImportacao,
   encontrarCondominio,
+  mensaisDoComparativo,
   novaImportacao,
   novoAnexoImportado,
   resumoConferencia,
 } from "@/domain/importacao";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
+import { condominioPadrao } from "@/domain/condominio";
+import type { Condominio, Mensal } from "@/domain/types";
 
 /** Linha com rótulo recuado e valores alinhados à direita nas colunas indicadas (posição do último caractere). */
 function linha(rotulo: string, recuo: number, valores: (string | null)[], fins: number[]): string {
@@ -206,6 +209,33 @@ describe("importação do PDF Systemar — comparativo", () => {
     expect(rel2.periodo).toEqual({ competenciaInicio: "07/2026", competenciaFim: "08/2026" });
     const d = demonstrativoDoRelatorio(rel2, "08/2026");
     expect(d.despesas.grupos.flatMap((g) => g.itens).some((i) => /Comparativo/i.test(i.nome))).toBe(false);
+  });
+
+  const condo = { ...condominioPadrao(), id: "c1", nome: "Estrelas do Mar" } as Condominio;
+
+  it("mensaisDoComparativo: um relatório mensal por mês do comparativo, sem conflito quando não há mensal existente", () => {
+    const r = mensaisDoComparativo(condo, rel, "comparativo.pdf", []);
+    expect(r.map((x) => x.mes)).toEqual(["07/2026", "08/2026"]);
+    expect(r.every((x) => x.existente === null)).toBe(true);
+    const ago = r.find((x) => x.mes === "08/2026")!;
+    expect(ago.registro.condoId).toBe("c1");
+    expect(ago.registro.demonstrativo?.totais).toEqual({ saldoAnterior: 2000, receitas: 10500, despesas: 9500, saldoAtual: 3000 });
+    expect(ago.competencia).toEqual({ mes: 8, ano: 2026 });
+  });
+
+  it("mensaisDoComparativo: acha o relatório mensal existente do mesmo condomínio/competência como conflito", () => {
+    const existente: Mensal = {
+      id: "m-ago",
+      condoId: "c1",
+      condoNome: "Estrelas do Mar",
+      demonstrativo: { ...demonstrativoVazio(""), periodo: { ini: "01/08/2026", fim: "31/08/2026" } },
+      origem: [],
+      receber: { unidades: null, valor: null },
+      notas: [],
+    };
+    const r = mensaisDoComparativo(condo, rel, "comparativo.pdf", [existente]);
+    expect(r.find((x) => x.mes === "08/2026")?.existente?.id).toBe("m-ago");
+    expect(r.find((x) => x.mes === "07/2026")?.existente).toBeNull();
   });
 });
 

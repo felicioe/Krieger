@@ -4,6 +4,7 @@ import { TabelaComparativo, pctTexto } from "@/components/previsto-realizado/Tab
 import { AvisoSemRealizado } from "@/components/previsto-realizado/AvisoSemRealizado";
 import { semRealizado } from "@/components/previsto-realizado/semRealizado";
 import { GraficoPizza } from "@/components/relatorio/GraficoPizza";
+import { GraficoEvolucaoMensal } from "@/components/relatorio/GraficoEvolucaoMensal";
 import { dataParaBR, formatBRL, formatData, formatNumeroBR } from "@/lib/format";
 import { dataVistoria } from "@/domain/painel";
 import { cn } from "@/lib/utils";
@@ -227,6 +228,16 @@ export function PreviaRelatorio({
             <>
               <h4 className="mb-2 mt-6 font-semibold">Despesas do exercício {e.ano} por grupo</h4>
               {rel.despesasGrupo.length ? <GraficoPizza dados={rel.despesasGrupo} /> : <Vazio>Sem despesas no demonstrativo.</Vazio>}
+            </>
+          )}
+          {e.mostrarEvolucaoMensal !== false && (
+            <>
+              <h4 className="mb-2 mt-6 font-semibold">Evolução mensal</h4>
+              {rel.evolucaoMensal.length ? (
+                <GraficoEvolucaoMensal pontos={rel.evolucaoMensal} />
+              ) : (
+                <Vazio>Sem relatórios mensais no período.</Vazio>
+              )}
             </>
           )}
         </Secao>

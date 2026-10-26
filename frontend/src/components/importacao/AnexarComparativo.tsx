@@ -5,6 +5,8 @@ import { FileUp, Loader2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
@@ -13,11 +15,11 @@ import { ERRO_PDF_GRANDE, LIMITE_PDF_ANEXO, textoCondominioLido, textoPeriodo } 
 import { api, mensagemErro } from "@/lib/api";
 import { novoId } from "@/lib/id";
 import { lerComoDataUrl } from "@/lib/arquivo";
-import { formatBytes } from "@/lib/format";
+import { formatBRL, formatBytes } from "@/lib/format";
 import { chaves, listaQuery } from "@/lib/queries";
 import { lerRelatorio, type RelatorioLido } from "@/domain/pdfParser";
-import { anoDoRelatorio, colunaPadrao, encontrarCondominio, novoAnexoImportado } from "@/domain/importacao";
-import type { AnexoImportado, Condominio, Exercicio } from "@/domain/types";
+import { anoDoRelatorio, colunaPadrao, encontrarCondominio, mensaisDoComparativo, novoAnexoImportado, type MesComparativo } from "@/domain/importacao";
+import type { AnexoImportado, Condominio, Exercicio, Mensal } from "@/domain/types";
 
 /** Mensagem pedida para PDFs que não são o Comparativo Financeiro. */
 export const ERRO_NAO_COMPARATIVO = "Este PDF não parece ser um Comparativo Financeiro; verifique se é o relatório certo.";
@@ -142,10 +144,19 @@ function PassoAnexar({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: exercicios = [], isPending: carregando } = useQuery(listaQuery<Exercicio>("exercicios"));
+  const {
+    data: mensaisExistentes = [],
+    isPending: carregandoMensais,
+    isError: erroMensais,
+  } = useQuery(listaQuery<Mensal>("mensais"));
+  // Enquanto a lista de mensais não carrega (ou falha), não há como saber se um mês conflita com
+  // um relatório já existente — confirmar nesse estado arriscaria criar duplicado sem avisar.
+  const confereConflitos = !carregandoMensais && !erroMensais;
   const rel = lido.relatorio;
   const encontrado = encontrarCondominio(condominios, rel.condominio);
   const [condoId, setCondoId] = useState<string>(encontrado?.id ?? "");
   const anoSugerido = anoDoRelatorio(rel, colunaPadrao(rel, "exercicios"));
+  const [selecionados, setSelecionados] = useState<Record<string, boolean>>({});
 
   const doCondo = useMemo(
     () => exercicios.filter((x) => x.condoId === condoId).sort((a, b) => (Number(b.ano) || 0) - (Number(a.ano) || 0)),
@@ -168,17 +179,49 @@ function PassoAnexar({
     .map((c) => ({ valor: c.id, rotulo: c.codigo ? `${c.codigo} · ${c.nome}` : c.nome }));
   const opcoesExercicio = doCondo.map((x) => ({ valor: x.id, rotulo: `Exercício ${x.ano}` }));
 
+  // Meses do comparativo viram relatórios mensais de verdade (não só o PDF anexado como referência):
+  // o comparativo é, na prática, um balancete mês a mês. Não depende do exercício escolhido acima —
+  // um relatório mensal não pertence a um exercício, só ao condomínio e à competência.
+  const mesesComparativo: MesComparativo[] = useMemo(
+    () => (condo ? mensaisDoComparativo(condo, rel, lido.arquivo, mensaisExistentes) : []),
+    [condo, rel, lido.arquivo, mensaisExistentes],
+  );
+  const estaSelecionado = (m: MesComparativo) => selecionados[m.mes] ?? !m.existente;
+  const selecionarMes = (mes: string, v: boolean) => setSelecionados((s) => ({ ...s, [mes]: v }));
+  const mesesSelecionados = mesesComparativo.filter(estaSelecionado);
+
+  // IDs fixos por mês/anexo (gerados uma vez, reaproveitados numa nova tentativa): se a gravação
+  // de um mês for bem-sucedida mas a de outro mês ou a do anexo falhar depois, confirmar de novo
+  // sobrescreve os mesmos registros em vez de duplicá-los (a consulta de mensais só é invalidada
+  // em onSuccess, então o mês recém-criado ainda apareceria como novo numa nova tentativa).
+  const idsNovos = useRef<Record<string, string>>({});
+  const idAnexo = useRef(novoId());
+  const idParaMes = (m: MesComparativo) => {
+    if (m.existente) return m.existente.id;
+    if (!idsNovos.current[m.mes]) idsNovos.current[m.mes] = novoId();
+    return idsNovos.current[m.mes]!;
+  };
+
   const anexar = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!exercicio) throw new Error("Escolha a prestação de contas.");
-      return api.salvar<AnexoImportado>("anexos_importacao", {
+      if (!confereConflitos) throw new Error("Aguarde o carregamento dos relatórios mensais antes de confirmar.");
+      await Promise.all(
+        mesesSelecionados.map((m) => api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", { ...m.registro, id: idParaMes(m) })),
+      );
+      await api.salvar<AnexoImportado>("anexos_importacao", {
         ...novoAnexoImportado(exercicio.id, "comparativo_financeiro", rel, lido.arquivo, lido.dataUrl),
-        id: novoId(),
+        id: idAnexo.current,
       });
+      return mesesSelecionados.length;
     },
-    onSuccess: () => {
+    onSuccess: (qtdMeses) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("anexos_importacao") });
-      toast.success(`Comparativo anexado à prestação de contas ${exercicio?.ano ?? ""}.`);
+      if (qtdMeses) queryClient.invalidateQueries({ queryKey: chaves.store("mensais") });
+      toast.success(
+        `Comparativo anexado à prestação de contas ${exercicio?.ano ?? ""}` +
+          (qtdMeses ? ` e ${qtdMeses} relatório${qtdMeses > 1 ? "s" : ""} mensa${qtdMeses > 1 ? "is" : "l"} importado${qtdMeses > 1 ? "s" : ""}.` : "."),
+      );
       antesDeNavegar();
       fechar();
       if (exercicio) focarConteudoApos(navigate({ to: "/prestacao-contas/$id", params: { id: exercicio.id } }));
@@ -256,13 +299,56 @@ function PassoAnexar({
         </Alert>
       )}
 
+      {condoId && mesesComparativo.length > 0 && (
+        <div className="grid gap-2 rounded-md border p-3 text-sm">
+          <p className="font-medium">Relatórios mensais deste comparativo</p>
+          <p className="text-xs text-muted-foreground">
+            O comparativo é um balancete mês a mês; cada mês marcado vira (ou atualiza) um relatório mensal de verdade,
+            usado no Previsto × Realizado, na inadimplência e nos gráficos — não depende da prestação de contas escolhida acima.
+          </p>
+          <ul className="grid gap-1.5">
+            {mesesComparativo.map((m) => {
+              const id = `mes-comparativo-${m.mes.replace("/", "-")}`;
+              const t = m.registro.demonstrativo?.totais;
+              return (
+                <li key={m.mes} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 max-md:min-h-11 pointer-coarse:min-h-11">
+                  <Checkbox id={id} checked={estaSelecionado(m)} onCheckedChange={(v) => selecionarMes(m.mes, v === true)} />
+                  <Label htmlFor={id} className="min-w-0 break-words font-normal">
+                    <span className="num font-medium">{m.mes}</span>
+                    {t && (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        — receitas {formatBRL(t.receitas)} · despesas {formatBRL(t.despesas)} · saldo {formatBRL(t.saldoAtual)}
+                      </span>
+                    )}
+                    {m.existente && <span className="text-warning-foreground"> (já existe um relatório mensal — marque para sobrescrever)</span>}
+                  </Label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {!!condo && !confereConflitos && (
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="size-3.5 animate-spin" />
+          {erroMensais
+            ? "Não foi possível conferir conflitos com relatórios mensais já existentes — tente de novo."
+            : "Conferindo conflitos com relatórios mensais já existentes…"}
+        </p>
+      )}
+
       <DialogFooter>
         <Button variant="outline" onClick={fechar} disabled={anexar.isPending}>
           Cancelar
         </Button>
-        <Button onClick={() => anexar.mutate()} disabled={!exercicio || anexar.isPending}>
+        <Button
+          onClick={() => anexar.mutate()}
+          disabled={!exercicio || anexar.isPending || (!!condo && !confereConflitos)}
+        >
           {anexar.isPending && <Loader2 className="animate-spin" />}
-          Anexar à prestação de contas
+          {mesesSelecionados.length > 0 ? "Anexar e importar os meses" : "Anexar à prestação de contas"}
         </Button>
       </DialogFooter>
     </>

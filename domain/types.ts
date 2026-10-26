@@ -208,6 +208,7 @@ export interface Exercicio extends ComId {
   };
   mostrarAnalise?: boolean;
   mostrarPizza?: boolean;
+  mostrarEvolucaoMensal?: boolean;
   /** Campo novo (opcional): escolhas do relatório final. "Análise gráfica" usa mostrarAnalise/mostrarPizza. */
   relatorioFinal?: {
     /** Seções incluídas (ausente = incluída). */

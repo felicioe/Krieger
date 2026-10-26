@@ -1,5 +1,11 @@
 # Frontend: Lovable, revisão e publicação
 
+> **Obsoleto desde 24/10/2026.** O Lovable foi descontinuado no projeto (ver
+> `docs/DECISOES.md`, "Lovable descontinuado: frontend e todo o código passam
+> a ser do Claude", e `docs/ARQUITETURA.md`, "Frontend: Claude, não mais
+> Lovable"). Este documento descreve o fluxo de trabalho até essa data e fica
+> só como histórico — não é mais a regra vigente.
+
 ## Responsabilidades
 
 Frontend é exclusivo do Lovable por determinação permanente do responsável

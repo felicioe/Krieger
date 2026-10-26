@@ -1,5 +1,34 @@
 # Estado atual e passagem de contexto
 
+## Gráfico de evolução mensal no Relatório Final; comparativo vira relatórios mensais — 25/10/2026
+
+Duas adições ao Relatório Final, pedidas pelo usuário após eu reconstruir o
+gráfico de barras existente como precedente técnico:
+
+- **Gráfico "Evolução mensal"** (receitas/despesas/saldo ao longo do
+  exercício): novo em `domain/relatorioFinal.ts` (`evolucaoMensal`),
+  `frontend/src/components/relatorio/GraficoEvolucaoMensal.tsx` (prévia,
+  recharts) e `frontend/src/lib/documento/graficos.ts` (`linhaSvg`, PDF/Word).
+  Testado com dado real do Comparativo Financeiro do Urban Classic (extraído
+  localmente via `lerRelatorio`, nunca commitado) antes de integrar — achados
+  conferidos: legenda limpa em 320px/200%, nada sobreposto. Igual aos outros
+  gráficos da "Análise gráfica", tem seu próprio checkbox
+  (`mostrarEvolucaoMensal`) pra selecionar/desmarcar independente — pedido
+  explícito do usuário, pra não travar o relatório quando um gráfico não tem
+  dado.
+- **Comparativo Financeiro agora também vira relatórios mensais de verdade**,
+  não só um PDF anexado como referência: `domain/importacao.ts`
+  (`mensaisDoComparativo`, reaproveita `mensalImportado` por mês) +
+  `AnexarComparativo.tsx` mostra cada mês do comparativo com checkbox —
+  marcado por padrão se não existe relatório mensal daquele mês ainda,
+  desmarcado com aviso se já existe (pra não sobrescrever sem querer). Um
+  relatório mensal não pertence a um exercício (só a competência + condomínio),
+  então isso não depende de qual prestação de contas foi escolhida pra anexar
+  o PDF — mesmo um comparativo que cruza dois exercícios importa os meses sem
+  conflito. Validado ao vivo (Playwright) com o comparativo real do Urban
+  Classic anexado ao condomínio de exemplo: 4 meses novos + 1 sobrescrito,
+  sem erro de JS, toast certo.
+
 ## Segunda queda de banco (causada por mim) e correção — 25/10/2026
 
 Ao reconectar o auto-deploy do Git (abaixo), o próprio ato de salvar a

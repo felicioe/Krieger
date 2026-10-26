@@ -89,6 +89,25 @@ export function inadimplencia(mensais: Mensal[]): { linhas: LinhaInadimplencia[]
   return { linhas, final };
 }
 
+export interface PontoEvolucaoMensal {
+  mes: string;
+  receitas: number;
+  despesas: number;
+  saldo: number;
+}
+
+/** Receitas, despesas e saldo mês a mês (gráfico de evolução); meses sem demonstrativo ficam de fora. */
+export function evolucaoMensal(mensais: Mensal[]): PontoEvolucaoMensal[] {
+  return mensais
+    .filter((m) => m.demonstrativo)
+    .map((m) => ({
+      mes: rotuloCompetencia(competenciaMensal(m)),
+      receitas: m.demonstrativo!.totais.receitas,
+      despesas: m.demonstrativo!.totais.despesas,
+      saldo: m.demonstrativo!.totais.saldoAtual,
+    }));
+}
+
 export interface NotaConsolidada {
   mes: string;
   rubrica: string;
@@ -142,6 +161,7 @@ export interface RelatorioFinal {
   comparativo: ResultadoComparativo;
   mensais: Mensal[];
   inadimplencia: ReturnType<typeof inadimplencia>;
+  evolucaoMensal: PontoEvolucaoMensal[];
   notas: NotaConsolidada[];
   agua: ReturnType<typeof consumoAgua>;
   despesasGrupo: { nome: string; valor: number }[];
@@ -170,6 +190,7 @@ export function montarRelatorioFinal(entrada: {
   });
   const mensais = mensaisDoRelatorio(e.condoId, entrada.mensais, comparativo);
   const inad = inadimplencia(mensais);
+  const evolucao = evolucaoMensal(mensais);
   const notas = notasConsolidadas(mensais);
 
   const c: ItemConferencia[] = [];
@@ -278,6 +299,7 @@ export function montarRelatorioFinal(entrada: {
     comparativo,
     mensais,
     inadimplencia: inad,
+    evolucaoMensal: evolucao,
     notas,
     agua: consumoAgua(e),
     despesasGrupo: despesasPorGrupo(d),

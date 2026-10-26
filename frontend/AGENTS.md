@@ -1,15 +1,11 @@
-<!-- LOVABLE:BEGIN -->
-> [!IMPORTANT]
-> This project is connected to [Lovable](https://lovable.dev). Avoid rewriting
-> published git history — force pushing, or rebasing/amending/squashing commits
-> that are already pushed — as it rewrites history on Lovable's side and the
-> user will likely lose their project history.
->
-> Commits you push to the connected branch sync back to Lovable and show up in
-> the editor, so keep the branch in a working state.
-<!-- LOVABLE:END -->
-
 # Architecture rules
+
+Lovable is discontinued in this project since 24/10/2026 (see
+`docs/DECISOES.md`, "Lovable descontinuado", and `docs/ARQUITETURA.md`); this
+project is no longer connected to it, and `frontend/src/**` is edited directly
+like the rest of the repo. References to Lovable below are historical/technical
+context (e.g. why hostnames or CDN pointers were avoided), not an active
+integration.
 
 - No backend of our own (no Lovable Cloud/Supabase, no server functions): the app is a static SPA that talks to an existing PHP API (`api.php`, `auth.php`) on the same domain — production hosting is plain PHP shared hosting.
 - All data/auth access goes through `src/lib/api.ts`; it picks `mockApi.ts` (localStorage) on `*.lovable.app`, `*.lovableproject.com` and localhost, otherwise `realApi.ts`. Both implement `ApiAdapter` in `apiTypes.ts` — keep them in sync so the preview behaves like production.

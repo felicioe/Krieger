@@ -25,8 +25,11 @@ da mais recente para a mais antiga. Login e Registro de Alterações leem os
 mesmos dados públicos. Não colocar credenciais, nomes/dados de clientes,
 valores financeiros ou detalhes de exploração no histórico público.
 
-1. No Lovable, atualizar os dados do marco e a versão atual, preservando versões anteriores.
-2. Sincronizar fielmente para a branch GitHub da entrega, sem alterar autoria frontend.
+1. Editar `frontend/src/data/versoes.json` (atualizar os dados do marco e a versão
+   atual, preservando versões anteriores) — desde 24/10/2026 direto no Claude,
+   junto com o resto do frontend; o arquivo não passa mais pelo Lovable (ver
+   `docs/DECISOES.md`, "Lovable descontinuado").
+2. Commitar na branch da entrega.
 3. Executar npm run changelog:gerar para atualizar CHANGELOG.md a partir do JSON.
 4. Revisar a descrição em linguagem do usuário e executar npm run changelog:check.
 5. PR, testes, CI, main, artefato e Hostinger conforme PUBLICACAO.md.

@@ -17,7 +17,7 @@ import { condominioPadrao, nomeParaRelatorio } from "./condominio";
 import { exercicioPadrao } from "./exercicio";
 import { centavos, demonstrativoVazio, recalcularDemonstrativo } from "./demonstrativo";
 import { formatBRL } from "../lib/format";
-import { competenciaMensal, mensalPadrao, periodoDoMes, type Competencia } from "./mensal";
+import { competenciaMensal, mensalPadrao, ordemCompetencia, periodoDoMes, type Competencia } from "./mensal";
 import {
   cadastroBasico,
   type ConsideracoesFinaisLidas,
@@ -373,6 +373,35 @@ export function mensalImportado(
     },
     competencia,
   };
+}
+
+export interface MesComparativo {
+  mes: string; // "mm/aaaa", como em rel.meses
+  competencia: Competencia | null;
+  registro: Omit<Mensal, "id">;
+  /** Relatório mensal já existente para este condomínio e competência, se houver (conflito a confirmar). */
+  existente: Mensal | null;
+}
+
+/**
+ * Um relatório mensal já existente para o mesmo condomínio/competência (ex.: importado
+ * individualmente antes) é um conflito a resolver na tela, não decidido aqui.
+ */
+export function mensaisDoComparativo(
+  condo: Condominio,
+  rel: RelatorioLido,
+  arquivo: string,
+  mensaisExistentes: Mensal[],
+): MesComparativo[] {
+  return (rel.meses ?? []).map((mes) => {
+    const { registro, competencia } = mensalImportado(condo, rel, mes, arquivo);
+    const existente =
+      competencia &&
+      mensaisExistentes.find(
+        (m) => m.condoId === condo.id && ordemCompetencia(competenciaMensal(m)) === ordemCompetencia(competencia),
+      );
+    return { mes, competencia, registro, existente: existente || null };
+  });
 }
 
 // Rótulos dos itens que este módulo acrescenta a `extras`: ao reaplicar (reimportação do mesmo

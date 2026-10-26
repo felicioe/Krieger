@@ -267,6 +267,60 @@ export function pizzaSvg(fatias: { nome: string; valor: number }[], largura = 48
   return envolver(largura, altura, partes);
 }
 
+/**
+ * Linhas de evolução ao longo de categorias ordenadas (ex.: receitas/despesas/saldo mês a mês).
+ * Eixo Y compartilhado entre as séries; eixo X com uma categoria por ponto.
+ */
+export function linhaSvg(categorias: string[], series: Serie[], largura = 480): Grafico {
+  const FONTE_EIXO = 8;
+  const todos = series.flatMap((s) => s.valores);
+  const n = categorias.length;
+  // Os rótulos das extremidades ficam centralizados exatamente na borda do gráfico (m.esq / largura-m.dir);
+  // a margem de cada lado precisa caber a metade da largura do rótulo, senão ele é cortado na rasterização.
+  const margemRotulo = (c: string | undefined) => (c ? larguraTexto(c, FONTE_EIXO) / 2 + 6 : 0);
+  const m = {
+    esq: Math.max(46, margemRotulo(categorias[0])),
+    dir: Math.max(10, margemRotulo(categorias[n - 1])),
+    topo: 30,
+    base: 24,
+  };
+  const w = largura - m.esq - m.dir;
+  const h = 190;
+  const altura = Math.ceil(m.topo + h + m.base);
+
+  const maxBruto = Math.max(0, ...todos);
+  const minBruto = Math.min(0, ...todos);
+  const passo = passoBonito(maxBruto - minBruto, 4);
+  const max = Math.ceil(maxBruto / passo) * passo || passo;
+  const min = Math.floor(minBruto / passo) * passo;
+  const escalaY = (v: number) => m.topo + h - ((v - min) / (max - min || 1)) * h;
+  const escalaX = (i: number) => (n <= 1 ? m.esq + w / 2 : m.esq + (i / (n - 1)) * w);
+
+  const partes: string[] = [];
+  for (let v = min; v <= max + passo / 2; v += passo) {
+    partes.push(
+      `<line x1="${m.esq}" x2="${m.esq + w}" y1="${escalaY(v)}" y2="${escalaY(v)}" stroke="#e3e8ee" stroke-width="0.7"/>`,
+    );
+    partes.push(
+      `<text x="${m.esq - 6}" y="${escalaY(v) + 3}" text-anchor="end" font-size="${FONTE_EIXO}" fill="#5f6b7a">${esc(eixo(v))}</text>`,
+    );
+  }
+  categorias.forEach((c, i) => {
+    partes.push(
+      `<text x="${escalaX(i)}" y="${m.topo + h + 15}" text-anchor="middle" font-size="${FONTE_EIXO}" fill="#5f6b7a">${esc(c)}</text>`,
+    );
+  });
+  series.forEach((s) => {
+    const pontos = s.valores.map((v, i) => `${escalaX(i)},${escalaY(v)}`).join(" ");
+    partes.push(`<polyline points="${pontos}" fill="none" stroke="${s.cor}" stroke-width="1.8"/>`);
+    s.valores.forEach((v, i) =>
+      partes.push(`<circle cx="${escalaX(i)}" cy="${escalaY(v)}" r="2.4" fill="${s.cor}"/>`),
+    );
+  });
+  legendaSeries(series, m.esq, partes);
+  return envolver(largura, altura, partes);
+}
+
 function envolver(largura: number, altura: number, partes: string[]): Grafico {
   return {
     largura,

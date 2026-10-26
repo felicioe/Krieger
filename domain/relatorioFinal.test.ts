@@ -3,7 +3,7 @@ import { condominioPadrao } from "@/domain/condominio";
 import { recalcularDemonstrativo } from "@/domain/demonstrativo";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { mensalPadrao } from "@/domain/mensal";
-import { alternarSecao, consumoAgua, inadimplencia, montarRelatorioFinal, notasConsolidadas, secoesIncluidas } from "@/domain/relatorioFinal";
+import { alternarSecao, consumoAgua, evolucaoMensal, inadimplencia, montarRelatorioFinal, notasConsolidadas, secoesIncluidas } from "@/domain/relatorioFinal";
 import type { Condominio, Exercicio, Mensal } from "@/domain/types";
 
 const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias", unidades: 10 };
@@ -65,6 +65,25 @@ describe("relatório final", () => {
     const outroAno = { ...mensal(1, 100), id: "x", demonstrativo: { ...mensal(1, 100).demonstrativo!, periodo: { ini: "01/01/2025", fim: "31/01/2025" } } };
     const r = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [mensal(1, 10), mensal(2, 20), mensal(3, 30), outroAno] });
     expect(r.mensais.map((m) => m.id)).toEqual(["m1", "m2"]);
+  });
+
+  it("evolução mensal mapeia receitas, despesas e saldo de cada mês, em ordem", () => {
+    const comTotais = (m: Mensal, t: { receitas: number; despesas: number; saldoAtual: number }): Mensal => ({
+      ...m,
+      demonstrativo: { ...m.demonstrativo!, totais: { ...m.demonstrativo!.totais, ...t } },
+    });
+    const r = evolucaoMensal([
+      comTotais(mensal(1, null), { receitas: 5000, despesas: 3000, saldoAtual: 2000 }),
+      comTotais(mensal(2, null), { receitas: 5500, despesas: 3200, saldoAtual: 2300 }),
+    ]);
+    expect(r).toEqual([
+      { mes: "01/2026", receitas: 5000, despesas: 3000, saldo: 2000 },
+      { mes: "02/2026", receitas: 5500, despesas: 3200, saldo: 2300 },
+    ]);
+  });
+
+  it("mês sem demonstrativo fica de fora da evolução mensal", () => {
+    expect(evolucaoMensal([{ ...mensal(1, null), demonstrativo: null }, mensal(2, null)])).toHaveLength(1);
   });
 
   it("consumo de água soma as despesas da rubrica de água; o valor manual prevalece", () => {
