@@ -274,7 +274,16 @@ export function pizzaSvg(fatias: { nome: string; valor: number }[], largura = 48
 export function linhaSvg(categorias: string[], series: Serie[], largura = 480): Grafico {
   const FONTE_EIXO = 8;
   const todos = series.flatMap((s) => s.valores);
-  const m = { esq: 46, dir: 10, topo: 30, base: 24 };
+  const n = categorias.length;
+  // Os rótulos das extremidades ficam centralizados exatamente na borda do gráfico (m.esq / largura-m.dir);
+  // a margem de cada lado precisa caber a metade da largura do rótulo, senão ele é cortado na rasterização.
+  const margemRotulo = (c: string | undefined) => (c ? larguraTexto(c, FONTE_EIXO) / 2 + 6 : 0);
+  const m = {
+    esq: Math.max(46, margemRotulo(categorias[0])),
+    dir: Math.max(10, margemRotulo(categorias[n - 1])),
+    topo: 30,
+    base: 24,
+  };
   const w = largura - m.esq - m.dir;
   const h = 190;
   const altura = Math.ceil(m.topo + h + m.base);
@@ -285,7 +294,6 @@ export function linhaSvg(categorias: string[], series: Serie[], largura = 480): 
   const max = Math.ceil(maxBruto / passo) * passo || passo;
   const min = Math.floor(minBruto / passo) * passo;
   const escalaY = (v: number) => m.topo + h - ((v - min) / (max - min || 1)) * h;
-  const n = categorias.length;
   const escalaX = (i: number) => (n <= 1 ? m.esq + w / 2 : m.esq + (i / (n - 1)) * w);
 
   const partes: string[] = [];

@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnexarComparativo, ERRO_NAO_COMPARATIVO } from "@/components/importacao/AnexarComparativo";
 import { ERRO_PDF_GRANDE, excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
 import { mockApi } from "@/lib/mockApi";
@@ -73,6 +73,42 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     await mockApi.auth.entrar("admin", "admin123");
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("falha ao gravar o anexo depois dos meses: tentar de novo sobrescreve os mesmos meses, não duplica", async () => {
+    leitura.texto = COMPARATIVO;
+    const original = mockApi.salvar.bind(mockApi);
+    let falhouUmaVez = false;
+    vi.spyOn(mockApi, "salvar").mockImplementation(async (store, o) => {
+      if (store === "anexos_importacao" && !falhouUmaVez) {
+        falhouUmaVez = true;
+        throw new Error("Falha de rede simulada.");
+      }
+      return original(store, o);
+    });
+    const u = userEvent.setup();
+    await montar();
+    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Anexar e importar os meses" })).toBeEnabled());
+    const anexar = screen.getByRole("button", { name: "Anexar e importar os meses" });
+
+    // Primeira tentativa: os dois meses são gravados, mas o anexo falha (erro simulado) — o
+    // botão volta a ficar clicável (mutação terminou, com erro) sem a lista de mensais ter sido
+    // invalidada ainda.
+    await u.click(anexar);
+    await waitFor(() => expect(falhouUmaVez).toBe(true));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Anexar e importar os meses" })).toBeEnabled());
+    let mensais = await mockApi.listar<Mensal>("mensais");
+    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"))).toHaveLength(2);
+
+    await u.click(screen.getByRole("button", { name: "Anexar e importar os meses" }));
+    await waitFor(async () => expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(1));
+    mensais = await mockApi.listar<Mensal>("mensais");
+    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"))).toHaveLength(2);
+  });
+
   it("PDF que não é comparativo mostra o erro pedido e não grava nada", async () => {
     leitura.texto = PERIODO_UNICO;
     const u = userEvent.setup();
@@ -88,7 +124,9 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     const u = userEvent.setup();
     const router = await montar();
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
-    const [condo, exercicio] = screen.getAllByRole("combobox");
+    // A leitura do PDF é assíncrona (import dinâmico + extração de texto): espera o passo
+    // seguinte renderizar, não só o upload disparar o onChange.
+    const [condo, exercicio] = await screen.findAllByRole("combobox");
     expect(condo).toHaveTextContent("Residencial Jardim das Acácias");
     // As prestações carregam da API: espera a sugestão pelo ano do PDF aparecer.
     await waitFor(() => expect(exercicio).toHaveTextContent("Exercício 2025"));
@@ -129,7 +167,7 @@ describe("Importador: anexar Comparativo Financeiro", () => {
 
     leitura.texto = COMPARATIVO;
     const u = userEvent.setup();
-    await montar();
+    const router = await montar();
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
     // Espera a lista refletir o relatório mensal já existente (useQuery), não só o primeiro
     // render (que começa com a lista vazia, antes da consulta resolver).
@@ -144,7 +182,13 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     await waitFor(async () => expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(1));
     let mensais = await mockApi.listar<Mensal>("mensais");
     expect(mensais.find((m) => m.id === existente.id)?.receber).toEqual({ unidades: 3, valor: 999 });
-    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.demonstrativo?.periodo.ini === "02/01/2025")).toHaveLength(1);
+    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.demonstrativo?.periodo.ini === "01/02/2025")).toHaveLength(1);
+
+    // O primeiro anexar navega pra prestação de contas (igual em produção); volta pro Importador
+    // antes de reabrir o diálogo pra anexar o segundo comparativo.
+    await waitFor(() => expect(router.state.location.pathname).toBe("/prestacao-contas/exe-acacias-2025"));
+    await router.navigate({ to: "/" });
+    await screen.findByRole("button", { name: "Anexar comparativo financeiro" });
 
     // Reabre e agora marca 01/2025: sobrescreve o mesmo id, não duplica.
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 002.pdf"));

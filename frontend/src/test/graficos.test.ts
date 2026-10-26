@@ -5,7 +5,7 @@ import { corDoGrafico } from "@/components/app/coresGrafico";
 vi.mock("@/lib/documento/imagens", () => ({
   svgParaPng: async () => "data:image/png;base64,AAAA",
 }));
-const { barrasSvg, blocoGrafico, corDocumento, larguraTexto, pizzaSvg, quebrarTexto } =
+const { barrasSvg, blocoGrafico, corDocumento, larguraTexto, linhaSvg, pizzaSvg, quebrarTexto } =
   await import("@/lib/documento/graficos");
 
 const GRUPOS = [
@@ -86,5 +86,27 @@ describe("gráficos do PDF/Word com muitos grupos", () => {
     const b = await blocoGrafico(g);
     expect(b.altura).toBeLessThanOrEqual(640);
     expect(b.largura / b.altura).toBeCloseTo(g.largura / g.altura, 1);
+  });
+});
+
+describe("gráfico de evolução mensal (linhaSvg)", () => {
+  it("rótulo da última competência (ex.: 12/2026) não é cortado na borda direita", () => {
+    const categorias = ["01/2026", "02/2026", "03/2026", "12/2026"];
+    const g = linhaSvg(categorias, series(categorias.length));
+    const m = g.svg.match(/<text x="([\d.]+)"[^>]*text-anchor="middle"[^>]*>12\/2026<\/text>/);
+    expect(m).not.toBeNull();
+    const cx = Number(m![1]);
+    const meiaLargura = larguraTexto("12/2026", 8) / 2;
+    expect(cx + meiaLargura).toBeLessThanOrEqual(g.largura);
+  });
+
+  it("rótulo da primeira competência não extrapola a borda esquerda", () => {
+    const categorias = ["01/2026", "02/2026", "03/2026", "12/2026"];
+    const g = linhaSvg(categorias, series(categorias.length));
+    const m = g.svg.match(/<text x="([\d.]+)"[^>]*text-anchor="middle"[^>]*>01\/2026<\/text>/);
+    expect(m).not.toBeNull();
+    const cx = Number(m![1]);
+    const meiaLargura = larguraTexto("01/2026", 8) / 2;
+    expect(cx - meiaLargura).toBeGreaterThanOrEqual(0);
   });
 });

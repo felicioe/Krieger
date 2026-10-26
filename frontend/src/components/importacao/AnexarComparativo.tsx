@@ -144,7 +144,14 @@ function PassoAnexar({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: exercicios = [], isPending: carregando } = useQuery(listaQuery<Exercicio>("exercicios"));
-  const { data: mensaisExistentes = [] } = useQuery(listaQuery<Mensal>("mensais"));
+  const {
+    data: mensaisExistentes = [],
+    isPending: carregandoMensais,
+    isError: erroMensais,
+  } = useQuery(listaQuery<Mensal>("mensais"));
+  // Enquanto a lista de mensais não carrega (ou falha), não há como saber se um mês conflita com
+  // um relatório já existente — confirmar nesse estado arriscaria criar duplicado sem avisar.
+  const confereConflitos = !carregandoMensais && !erroMensais;
   const rel = lido.relatorio;
   const encontrado = encontrarCondominio(condominios, rel.condominio);
   const [condoId, setCondoId] = useState<string>(encontrado?.id ?? "");
@@ -183,17 +190,28 @@ function PassoAnexar({
   const selecionarMes = (mes: string, v: boolean) => setSelecionados((s) => ({ ...s, [mes]: v }));
   const mesesSelecionados = mesesComparativo.filter(estaSelecionado);
 
+  // IDs fixos por mês/anexo (gerados uma vez, reaproveitados numa nova tentativa): se a gravação
+  // de um mês for bem-sucedida mas a de outro mês ou a do anexo falhar depois, confirmar de novo
+  // sobrescreve os mesmos registros em vez de duplicá-los (a consulta de mensais só é invalidada
+  // em onSuccess, então o mês recém-criado ainda apareceria como novo numa nova tentativa).
+  const idsNovos = useRef<Record<string, string>>({});
+  const idAnexo = useRef(novoId());
+  const idParaMes = (m: MesComparativo) => {
+    if (m.existente) return m.existente.id;
+    if (!idsNovos.current[m.mes]) idsNovos.current[m.mes] = novoId();
+    return idsNovos.current[m.mes]!;
+  };
+
   const anexar = useMutation({
     mutationFn: async () => {
       if (!exercicio) throw new Error("Escolha a prestação de contas.");
+      if (!confereConflitos) throw new Error("Aguarde o carregamento dos relatórios mensais antes de confirmar.");
       await Promise.all(
-        mesesSelecionados.map((m) =>
-          api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", { ...m.registro, ...(m.existente ? { id: m.existente.id } : {}) }),
-        ),
+        mesesSelecionados.map((m) => api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", { ...m.registro, id: idParaMes(m) })),
       );
       await api.salvar<AnexoImportado>("anexos_importacao", {
         ...novoAnexoImportado(exercicio.id, "comparativo_financeiro", rel, lido.arquivo, lido.dataUrl),
-        id: novoId(),
+        id: idAnexo.current,
       });
       return mesesSelecionados.length;
     },
@@ -312,11 +330,23 @@ function PassoAnexar({
         </div>
       )}
 
+      {!!condo && !confereConflitos && (
+        <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="size-3.5 animate-spin" />
+          {erroMensais
+            ? "Não foi possível conferir conflitos com relatórios mensais já existentes — tente de novo."
+            : "Conferindo conflitos com relatórios mensais já existentes…"}
+        </p>
+      )}
+
       <DialogFooter>
         <Button variant="outline" onClick={fechar} disabled={anexar.isPending}>
           Cancelar
         </Button>
-        <Button onClick={() => anexar.mutate()} disabled={!exercicio || anexar.isPending}>
+        <Button
+          onClick={() => anexar.mutate()}
+          disabled={!exercicio || anexar.isPending || (!!condo && !confereConflitos)}
+        >
           {anexar.isPending && <Loader2 className="animate-spin" />}
           {mesesSelecionados.length > 0 ? "Anexar e importar os meses" : "Anexar à prestação de contas"}
         </Button>
