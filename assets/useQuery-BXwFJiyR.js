@@ -1,0 +1,1 @@
+import{c as e,l as t}from"./queries-BNr2IscR.js";function n(n,r){return e(n,t,r)}export{n as t};
