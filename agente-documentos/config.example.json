@@ -1,0 +1,5 @@
+{
+  "apiBaseUrl": "https://SEU_DOMINIO/krieger",
+  "login": "usuario_servico",
+  "senha": "SENHA_DO_USUARIO_DE_SERVICO"
+}

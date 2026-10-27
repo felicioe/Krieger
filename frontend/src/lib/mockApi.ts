@@ -3,7 +3,7 @@
  * Guarda tudo no localStorage e imita as regras e mensagens da API PHP.
  * Usuário semente: admin / admin123 (perfil admin).
  */
-import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type Importacao, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
+import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type ConsultaHistoricoItem, type Importacao, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
 import { condominioPadrao, normalizarCondominio } from "@/domain/condominio";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
@@ -24,6 +24,7 @@ const CHAVE_EXEMPLO_EDITAIS = "krieger-mock-exemplo-editais-v1";
 const CHAVE_EXEMPLO_ATAS = "krieger-mock-exemplo-atas-v1";
 const CHAVE_EXEMPLO_MODELO_V2 = "krieger-mock-exemplo-modelo-v2";
 const CHAVE_BACKUPS = "krieger-mock-backups-v1";
+const CHAVE_CONSULTA_HISTORICO = "krieger-mock-consulta-historico-v1";
 const MAX_TENTATIVAS = 5;
 const BLOQUEIO_MIN = 15;
 
@@ -436,6 +437,8 @@ function dados(): Dados {
 const usuarios = () => ler<UsuarioMock[]>(CHAVE_USUARIOS, usuariosSemente);
 type BackupRegistroMock = BackupRegistro & { dados: Backup };
 const backups = () => ler<BackupRegistroMock[]>(CHAVE_BACKUPS, () => []);
+type ConsultaHistoricoMock = ConsultaHistoricoItem & { condoId: string };
+const consultaHistorico = () => ler<ConsultaHistoricoMock[]>(CHAVE_CONSULTA_HISTORICO, () => []);
 const semDados = ({ dados: _dados, ...r }: BackupRegistroMock): BackupRegistro => r;
 
 function publico(u: UsuarioMock): UsuarioAdmin {
@@ -724,6 +727,41 @@ export const mockApi: ApiAdapter = {
         throw new ApiError("Não é possível excluir o último administrador.", 400);
       }
       gravar(CHAVE_USUARIOS, lista.filter((x) => x.id !== id));
+    },
+  },
+  documentos: {
+    // Sem acervo indexado neste ambiente de demonstração — a busca real roda no servidor (FULLTEXT).
+    async perguntar(condoId: string, pergunta: string) {
+      await espera(300);
+      const eu = sessao();
+      const p = (pergunta || "").trim();
+      if (!p) throw new ApiError("Digite uma pergunta.", 400);
+      const historico = consultaHistorico();
+      historico.unshift({
+        id: novoId(),
+        usuarioId: eu.id,
+        condoId,
+        pergunta: p,
+        origem: "local",
+        tokensEntrada: 0,
+        tokensSaida: 0,
+        custoEstimadoCentavos: 0,
+        status: "sem_evidencia",
+        criadoEm: new Date().toISOString(),
+      });
+      gravar(CHAVE_CONSULTA_HISTORICO, historico.slice(0, 200));
+      return {
+        texto:
+          "Este é o ambiente de demonstração, sem documentos indexados. Configure a pasta de documentos no cadastro do condomínio e rode o agente de indexação para consultar de verdade.",
+        fontes: [],
+        semEvidencia: true,
+        origem: "local",
+      };
+    },
+    async historico(condoId: string) {
+      await espera();
+      sessao();
+      return clone(consultaHistorico().filter((h) => h.condoId === condoId));
     },
   },
 };

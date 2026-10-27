@@ -246,6 +246,17 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             <Field rotulo="Endereço (edital)" className="sm:col-span-6">
               <Input value={c.enderecoEdital} onChange={(e) => set("enderecoEdital", e.target.value)} />
             </Field>
+            <Field
+              rotulo="Pasta de documentos"
+              dica="Caminho da pasta deste condomínio no servidor de arquivos da empresa (NAS), usado pelo agente de indexação da Consulta de Documentos para localizar convenção/regimento/atas. Deixe em branco para não indexar este condomínio."
+              className="sm:col-span-6"
+            >
+              <Input
+                value={c.pastaDocumentos}
+                onChange={(e) => set("pastaDocumentos", e.target.value)}
+                placeholder="\\servidor\condominios\Nome do Condomínio"
+              />
+            </Field>
             <Field rotulo="Termo da administradora" dica="Como a administradora é citada nos documentos." className="sm:col-span-3">
               <Input value={c.administradoraTermo} onChange={(e) => set("administradoraTermo", e.target.value)} />
             </Field>

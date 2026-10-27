@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as TrocarSenhaRouteImport } from './routes/trocar-senha'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated.backup'
+import { Route as AuthenticatedConsultaDocumentosRouteImport } from './routes/_authenticated.consulta-documentos'
 import { Route as AuthenticatedEscritorioRouteImport } from './routes/_authenticated.escritorio'
 import { Route as AuthenticatedImportadorRouteImport } from './routes/_authenticated.importador'
 import { Route as AuthenticatedMinhaSenhaRouteImport } from './routes/_authenticated.minha-senha'
@@ -61,6 +62,12 @@ const AuthenticatedBackupRoute = AuthenticatedBackupRouteImport.update({
   path: '/backup',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedConsultaDocumentosRoute =
+  AuthenticatedConsultaDocumentosRouteImport.update({
+    id: '/consulta-documentos',
+    path: '/consulta-documentos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedEscritorioRoute = AuthenticatedEscritorioRouteImport.update({
   id: '/escritorio',
   path: '/escritorio',
@@ -190,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/trocar-senha': typeof TrocarSenhaRoute
   '/backup': typeof AuthenticatedBackupRoute
+  '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/importador': typeof AuthenticatedImportadorRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
@@ -218,6 +226,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/trocar-senha': typeof TrocarSenhaRoute
   '/backup': typeof AuthenticatedBackupRoute
+  '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/importador': typeof AuthenticatedImportadorRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
@@ -248,6 +257,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/trocar-senha': typeof TrocarSenhaRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
+  '/_authenticated/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/_authenticated/escritorio': typeof AuthenticatedEscritorioRoute
   '/_authenticated/importador': typeof AuthenticatedImportadorRoute
   '/_authenticated/minha-senha': typeof AuthenticatedMinhaSenhaRoute
@@ -278,6 +288,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/trocar-senha'
     | '/backup'
+    | '/consulta-documentos'
     | '/escritorio'
     | '/importador'
     | '/minha-senha'
@@ -306,6 +317,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/trocar-senha'
     | '/backup'
+    | '/consulta-documentos'
     | '/escritorio'
     | '/importador'
     | '/minha-senha'
@@ -335,6 +347,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/trocar-senha'
     | '/_authenticated/backup'
+    | '/_authenticated/consulta-documentos'
     | '/_authenticated/escritorio'
     | '/_authenticated/importador'
     | '/_authenticated/minha-senha'
@@ -401,6 +414,13 @@ declare module '@tanstack/react-router' {
       path: '/backup'
       fullPath: '/backup'
       preLoaderRoute: typeof AuthenticatedBackupRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/consulta-documentos': {
+      id: '/_authenticated/consulta-documentos'
+      path: '/consulta-documentos'
+      fullPath: '/consulta-documentos'
+      preLoaderRoute: typeof AuthenticatedConsultaDocumentosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/escritorio': {
@@ -562,6 +582,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteChildren {
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
+  AuthenticatedConsultaDocumentosRoute: typeof AuthenticatedConsultaDocumentosRoute
   AuthenticatedEscritorioRoute: typeof AuthenticatedEscritorioRoute
   AuthenticatedImportadorRoute: typeof AuthenticatedImportadorRoute
   AuthenticatedMinhaSenhaRoute: typeof AuthenticatedMinhaSenhaRoute
@@ -588,6 +609,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
+  AuthenticatedConsultaDocumentosRoute: AuthenticatedConsultaDocumentosRoute,
   AuthenticatedEscritorioRoute: AuthenticatedEscritorioRoute,
   AuthenticatedImportadorRoute: AuthenticatedImportadorRoute,
   AuthenticatedMinhaSenhaRoute: AuthenticatedMinhaSenhaRoute,

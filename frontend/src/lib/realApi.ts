@@ -1,4 +1,4 @@
-import type { Backup, BackupRegistro, Store, Usuario, UsuarioAdmin } from "@/domain/types";
+import type { Backup, BackupRegistro, ConsultaHistoricoItem, ConsultaResposta, Store, Usuario, UsuarioAdmin } from "@/domain/types";
 import { ApiError, type ApiAdapter, type ConfirmarImportacaoResposta } from "./apiTypes";
 
 /**
@@ -135,6 +135,14 @@ export const realApi: ApiAdapter = {
     },
     async usuarioExcluir(id: string) {
       await post("auth.php", { a: "usuario_excluir", id });
+    },
+  },
+  documentos: {
+    async perguntar(condoId: string, pergunta: string) {
+      return post<ConsultaResposta>("api_documentos.php?a=consulta_perguntar", { condoId, pergunta });
+    },
+    async historico(condoId: string) {
+      return lista<ConsultaHistoricoItem>(await req(`api_documentos.php?a=consulta_historico&condoId=${enc(condoId)}`));
     },
   },
 };

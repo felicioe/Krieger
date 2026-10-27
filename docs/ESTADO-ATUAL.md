@@ -1,5 +1,49 @@
 # Estado atual e passagem de contexto
 
+## Consulta Inteligente de Documentos — implementada, branch `consulta-documental-v1` — 27/10/2026
+
+Nova funcionalidade: perguntas em linguagem natural sobre convenção, regimento
+interno e atas de assembleia (nunca o acervo financeiro, que passa de 160 GB).
+Escopo decidido com o usuário durante o planejamento — ver
+`C:\Users\Evandro\.claude\plans\quiet-chasing-token.md` pelo plano completo
+aprovado. As 5 seções do plano estão implementadas e commitadas nesta branch:
+
+1. **Banco**: 4 tabelas novas em `schema.sql` (`kr_documentos`,
+   `kr_documento_trechos` com FULLTEXT, `kr_consulta_cache`,
+   `kr_consulta_historico`) — únicas do projeto que não seguem o padrão
+   `id+dados` JSON, porque precisam de índice relacional de verdade. Campo
+   `pastaDocumentos` em `Condominio` (sem tabela nova — `kr_condominios` já é
+   schemaless). **O usuário já rodou essas 4 tabelas no banco de produção**
+   antes mesmo do PR — inofensivo (`CREATE TABLE IF NOT EXISTS`, nada em
+   produção as referencia ainda).
+2. **Backend PHP**: `lib_documentos.php` (cache por hash da pergunta + versão
+   dos índices do condomínio, busca FULLTEXT, registro transacional de
+   documento+trechos), `lib_claude.php` (chamada via `curl` cru à API da
+   Anthropic — decisão deliberada de não usar o SDK oficial, já que o projeto
+   inteiro é PHP sem Composer; modelo `claude-haiku-5-5`), `api_documentos.php`
+   (novo endpoint: `documentos_manifesto`/`documentos_registrar` para o
+   agente, `consulta_perguntar`/`consulta_historico` para o app).
+3. **Agente local** (`agente-documentos/`, novo projeto Node/TypeScript, fora
+   do Hostinger): varre só os *nomes* de arquivo no NAS (nunca lê 160 GB de
+   conteúdo), classifica convenção/regimento/ata por regex, hash SHA-256 +
+   diff contra o manifesto remoto, extrai texto via `pdfjs-dist` com fallback
+   de OCR (`tesseract.js` + `@napi-rs/canvas`, renderização pura em
+   WebAssembly — sem binário nativo, sem AGPL). Pipeline de extração e OCR
+   testado manualmente com PDFs reais gerados para o teste (com e sem camada
+   de texto) antes de confiar nele.
+4. **Frontend**: rota `/consulta-documentos` (seletor de condomínio, pergunta,
+   resposta com origem cache/local/IA e fontes citadas, histórico), campo
+   "Pasta de documentos" no cadastro do condomínio. Verificado ao vivo no
+   navegador (modo mock).
+
+**A chave da API Anthropic já foi fornecida pelo usuário e está só em
+`config.local.php` desta máquina (fora do Git) — o usuário já aplicou o mesmo
+campo (`claude_api_key`) no `krieger-config.php` de produção.**
+
+Pendente: abrir PR para `main`; rodar o agente de verdade contra o NAS da
+empresa (só o usuário consegue, esta máquina não tem acesso); CI ainda não
+rodou nesta branch.
+
 ## PR #95 mesclado e publicado: evolução mensal + comparativo vira mensais — 26/10/2026
 
 PR #95 (abaixo) tinha CI vermelho e 3 achados do Codex review quando esta sessão

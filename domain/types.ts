@@ -108,6 +108,12 @@ export interface Condominio extends ComId {
   regras: RegraPreenchimento[];
   variacaoMetodo: VariacaoMetodo;
   variacaoParam: number | null;
+  /**
+   * Pasta-raiz deste condomínio no servidor de arquivos da empresa (NAS), digitada uma vez no
+   * cadastro — nunca detectada automaticamente, pra não indexar o condomínio errado por engano.
+   * Usada só pelo agente de indexação da Consulta de Documentos (convenção/regimento/atas).
+   */
+  pastaDocumentos: string;
 }
 
 // ---------- Demonstrativo ----------
@@ -373,6 +379,42 @@ export interface BackupRegistro {
 
 /** Conteúdo de um arquivo de backup: um array por store. */
 export type Backup = Partial<Record<Store, unknown[]>> & Record<string, unknown>;
+
+// ---------- Consulta Inteligente de Documentos ----------
+
+export type TipoDocumentoConsulta = "convencao" | "regimento" | "ata";
+
+/** Trecho de um documento indexado usado como evidência de uma resposta. */
+export interface ConsultaFonte {
+  documentoId: string;
+  arquivo: string;
+  tipo: TipoDocumentoConsulta;
+  paginaInicial: number;
+  paginaFinal: number;
+}
+
+export type ConsultaOrigem = "cache" | "local" | "claude";
+
+export interface ConsultaResposta {
+  texto: string;
+  fontes: ConsultaFonte[];
+  /** true quando não havia evidência suficiente nos documentos indexados. */
+  semEvidencia: boolean;
+  origem: ConsultaOrigem;
+}
+
+export interface ConsultaHistoricoItem {
+  id: string;
+  usuarioId: string;
+  pergunta: string;
+  origem: ConsultaOrigem;
+  tokensEntrada: number;
+  tokensSaida: number;
+  custoEstimadoCentavos: number;
+  status: "ok" | "sem_evidencia" | "erro";
+  /** ISO 8601 */
+  criadoEm: string;
+}
 
 // ---------- Usuários ----------
 
