@@ -12,6 +12,12 @@ import type { AnexoImportado, Condominio, Exercicio, Mensal } from "@/domain/typ
 const leitura = vi.hoisted(() => ({ texto: "" }));
 vi.mock("@/lib/pdfTexto", () => ({ extrairTextoPdf: async () => leitura.texto }));
 
+const receita = vi.hoisted(() => ({ dados: null as null | import("@/lib/receitaCnpj").DadosCnpjReceita }));
+vi.mock("@/lib/receitaCnpj", async () => {
+  const real = await vi.importActual<typeof import("@/lib/receitaCnpj")>("@/lib/receitaCnpj");
+  return { ...real, consultarCnpjReceita: async () => receita.dados };
+});
+
 function linha(rotulo: string, recuo: number, valores: string[], fins: number[]): string {
   let s = " ".repeat(recuo) + rotulo;
   valores.forEach((v, i) => {
@@ -23,6 +29,19 @@ const FINS = [44, 58, 72, 86];
 // Condomínio 001 / CNPJ do condomínio de exemplo do preview, exercício 2025.
 const COMPARATIVO = [
   "Condomínio: (001) - Residencial Jardim das Acácias - CNPJ: 12.345.678/0001-90",
+  "Comparativo Financeiro de 01/2025 a 02/2025",
+  linha("Competência", 0, ["01/2025", "02/2025", "Total", "Média"], FINS),
+  "(*) SALDO ANTERIOR",
+  linha("Banco do Brasil", 4, ["1.000,00", "2.000,00"], FINS),
+  "(+) RECEITAS",
+  linha("Taxa condominial", 4, ["10.000,00", "10.500,00", "20.500,00", "10.250,00"], FINS),
+  "(-) DESPESAS",
+  linha("Salários", 4, ["9.000,00", "9.500,00", "18.500,00", "9.250,00"], FINS),
+  "(=) SALDO ATUAL",
+  linha("Banco do Brasil", 4, ["2.000,00", "3.000,00"], FINS),
+].join("\n");
+const COMPARATIVO_NOVO = [
+  "Condomínio: (999) - Condomínio Teste Novo - CNPJ: 11.222.333/0001-81",
   "Comparativo Financeiro de 01/2025 a 02/2025",
   linha("Competência", 0, ["01/2025", "02/2025", "Total", "Média"], FINS),
   "(*) SALDO ANTERIOR",
@@ -245,5 +264,67 @@ describe("Excluir prestação de contas leva os anexos junto", () => {
     expect(restantes.map((a) => a.id)).toEqual(["a3"]);
     const exercicios = await mockApi.listar<Exercicio>("exercicios");
     expect(exercicios.some((x) => x.id === "exe-acacias-2025")).toBe(false);
+  });
+});
+
+describe("Pré-cadastro de condomínio a partir do comparativo", () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    await mockApi.auth.entrar("admin", "admin123");
+    receita.dados = null;
+  });
+
+  it("cadastra o condomínio com nome/CNPJ do PDF e endereço da Receita Federal, e já o seleciona", async () => {
+    receita.dados = {
+      razaoSocial: "CONDOMINIO TESTE NOVO",
+      logradouro: "RUA DAS FLORES",
+      numero: "123",
+      complemento: "",
+      bairro: "CENTRO",
+      municipio: "CURITIBA",
+      uf: "PR",
+      cep: "80000000",
+    };
+    leitura.texto = COMPARATIVO_NOVO;
+    const u = userEvent.setup();
+    await montar();
+    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo Novo.pdf"));
+    const botao = await screen.findByRole("button", { name: "Cadastrar como novo condomínio" });
+
+    await u.click(botao);
+
+    // O condomínio recém-criado não está na lista estática deste harness de teste (o app de
+    // verdade repassa a lista via useSuspenseQuery, que reage à invalidação; aqui é só uma prop
+    // fixa) — o sinal observável de que condoId mudou é esse aviso, que depende só do estado
+    // interno do componente, não da lista de condomínios.
+    await screen.findByText(/ainda não tem prestação de contas/);
+
+    const condominios = await mockApi.listar<Condominio>("condominios");
+    const novo = condominios.find((c) => c.nome === "Condomínio Teste Novo");
+    expect(novo).toMatchObject({
+      codigo: "999",
+      cnpj: "11.222.333/0001-81",
+      nomeRelatorio: "Condomínio Teste Novo",
+      enderecoEdital: "RUA DAS FLORES, 123 - CENTRO - CURITIBA/PR - CEP 80000-000",
+    });
+  });
+
+  it("sem resposta da Receita Federal, cadastra mesmo assim só sem o endereço", async () => {
+    receita.dados = null;
+    leitura.texto = COMPARATIVO_NOVO;
+    const u = userEvent.setup();
+    await montar();
+    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo Novo.pdf"));
+    const botao = await screen.findByRole("button", { name: "Cadastrar como novo condomínio" });
+
+    await u.click(botao);
+
+    await waitFor(async () => {
+      const condominios = await mockApi.listar<Condominio>("condominios");
+      expect(condominios.some((c) => c.nome === "Condomínio Teste Novo")).toBe(true);
+    });
+    const condominios = await mockApi.listar<Condominio>("condominios");
+    const novo = condominios.find((c) => c.nome === "Condomínio Teste Novo");
+    expect(novo?.enderecoEdital).toBe("");
   });
 });
