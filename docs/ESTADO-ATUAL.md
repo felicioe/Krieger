@@ -1,12 +1,12 @@
 # Estado atual e passagem de contexto
 
-## Consulta Inteligente de Documentos — implementada, branch `consulta-documental-v1` — 27/10/2026
+## Consulta Inteligente de Documentos — mesclada (PR #97/#98) e publicada — 27/10/2026
 
 Nova funcionalidade: perguntas em linguagem natural sobre convenção, regimento
 interno e atas de assembleia (nunca o acervo financeiro, que passa de 160 GB).
 Escopo decidido com o usuário durante o planejamento — ver
 `C:\Users\Evandro\.claude\plans\quiet-chasing-token.md` pelo plano completo
-aprovado. As 5 seções do plano estão implementadas e commitadas nesta branch:
+aprovado. As 5 seções do plano:
 
 1. **Banco**: 4 tabelas novas em `schema.sql` (`kr_documentos`,
    `kr_documento_trechos` com FULLTEXT, `kr_consulta_cache`,
@@ -40,9 +40,32 @@ aprovado. As 5 seções do plano estão implementadas e commitadas nesta branch:
 `config.local.php` desta máquina (fora do Git) — o usuário já aplicou o mesmo
 campo (`claude_api_key`) no `krieger-config.php` de produção.**
 
-Pendente: abrir PR para `main`; rodar o agente de verdade contra o NAS da
-empresa (só o usuário consegue, esta máquina não tem acesso); CI ainda não
-rodou nesta branch.
+**Mesclado em `main`**: PR #97 (`be1cba1`) e, logo em seguida, PR #98
+(`6a462b0`) — corrigindo uma lacuna encontrada só na hora de empacotar: o
+`scripts/package-hostinger.mjs` tinha uma lista fixa de arquivos PHP que não
+incluía os 3 novos (`api_documentos.php`, `lib_documentos.php`,
+`lib_claude.php`), que ficariam de fora do pacote publicado sem erro nenhum
+no build. Corrigido antes de publicar.
+
+**Publicado**: pacote gerado a partir de `6a462b0`, commitado em
+`deploy-hostinger` (`3b4fa98`, "Publica main 6a462b0"), auto-deploy da
+Hostinger confirmado ao vivo — `index.html` publicado referencia
+`index-BEIg8MDd.js` (hash exato do build), `auth.php?a=eu` responde 401,
+`api_documentos.php` responde 401 (exige login, não 404/500), `lib_documentos.php`
+acessado direto responde 403 (guarda de acesso direto funcionando). Sem erros
+de JS no console além dos 401/403 esperados dessa própria checagem.
+
+Pendente: rodar o agente de verdade contra o NAS da empresa (só o usuário
+consegue, esta máquina não tem acesso) e validar login/cadastro/consulta ao
+vivo com um usuário real (eu não entro com credencial de produção).
+
+**Nota operacional**: durante esta sessão, ao seguir as instruções deste
+documento pra configurar o `agente-documentos/` numa outra máquina, um
+`git clone` foi rodado de dentro desta mesma pasta de trabalho
+(`C:\Users\Evandro\projetos\krieger`), criando um clone aninhado
+`krieger\Krieger\` por engano. Identificado (sem nada próprio dentro, só
+cópia desatualizada do branch já mesclado) e removido. Rodar o clone do
+agente numa pasta separada, não dentro do repo já aberto.
 
 ## PR #95 mesclado e publicado: evolução mensal + comparativo vira mensais — 26/10/2026
 
