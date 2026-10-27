@@ -308,6 +308,21 @@ describe("confirmar importação numa chamada só (#69)", () => {
     const salvo = (await mockApi.listar<{ id: string; codigo: string }>("condominios")).find((c) => c.id === "cond-existente-2")!;
     expect(salvo.codigo).toBe("");
   });
+
+  it("condomínio restaurado de backup sem código/CNPJ (não só vazio): completa sem lançar", async () => {
+    // api.php só exige id+nome no backup; código/CNPJ podem faltar de verdade, não só vir vazios.
+    await mockApi.salvar("condominios", { id: "cond-sem-campos", nome: "Sem Campos" } as never);
+    await pendente("imp-6");
+    const r = await mockApi.confirmarImportacao({
+      ...pedido("imp-6", { id: "cond-sem-campos", camposComplementares: { codigo: "456", nome: null, cnpj: "99.999.999/0001-99" } }),
+      registro: { id: "reg-6", condoId: "cond-sem-campos", condoNome: "Sem Campos" } as never,
+    });
+    expect(r).toMatchObject({ criouCondominio: false, atualizouCadastro: true });
+    const salvo = (await mockApi.listar<{ id: string; codigo: string; nome: string; cnpj: string }>("condominios")).find((c) => c.id === "cond-sem-campos")!;
+    expect(salvo.nome).toBe("Sem Campos");
+    expect(salvo.codigo).toBe("456");
+    expect(salvo.cnpj).toBe("99.999.999/0001-99");
+  });
 });
 
 // ---------- #71: foco volta ao "Importar PDF" ----------

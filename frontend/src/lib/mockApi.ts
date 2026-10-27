@@ -532,7 +532,8 @@ export const mockApi: ApiAdapter = {
       const merge: Partial<Condominio> = {};
       for (const k of campos) {
         const v = (patch[k] ?? "").trim();
-        if (!atual[k].trim() && v) merge[k] = v;
+        // Um condomínio restaurado de backup pode não ter código/CNPJ (api.php só exige id+nome).
+        if (!(atual[k] ?? "").trim() && v) merge[k] = v;
       }
       if (Object.keys(merge).length) {
         d.condominios[condoIdx] = { ...atual, ...merge } as unknown as Registro;

@@ -344,10 +344,12 @@ export function condominioDoCadastro(c: { codigo: string | null; nome: string | 
  * correto já cadastrado. Quem usa isto pede confirmação explícita antes de gravar.
  */
 export function camposComplementares(
-  existente: { codigo: string; nome: string; cnpj: string },
+  existente: { codigo?: string | null; nome?: string | null; cnpj?: string | null },
   cad: { codigo: string | null; nome: string | null; cnpj: string | null },
 ): ("codigo" | "nome" | "cnpj")[] {
-  return (["codigo", "nome", "cnpj"] as const).filter((k) => !existente[k].trim() && (cad[k] ?? "").trim());
+  // Um condomínio restaurado de backup pode não ter código/CNPJ (api.php só exige id+nome) —
+  // trata ausente como vazio, não lança ao tentar completar esse cadastro.
+  return (["codigo", "nome", "cnpj"] as const).filter((k) => !(existente[k] ?? "").trim() && (cad[k] ?? "").trim());
 }
 
 /** Acrescenta o arquivo à origem do relatório, sem repetir. */

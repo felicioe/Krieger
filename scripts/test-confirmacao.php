@@ -69,10 +69,21 @@ $r=confirmar_importacao($pdo,$p);
 $assert(!$r['atualizouCadastro'], 'Nada deveria restar em branco pra complementar na segunda tentativa.');
 $cOk=json_decode($pdo->query("SELECT dados FROM kr_condominios WHERE id='c-ok'")->fetchColumn(),true);
 $assert($cOk['codigo']==='123', 'Campo já complementado foi sobrescrito numa segunda tentativa.');
+// Condomínio restaurado de backup pode não ter codigo/cnpj de verdade (api.php só exige id+nome),
+// não só vir em branco -- completar não pode lançar ao ler uma chave ausente do JSON.
+$stmt=$pdo->prepare('INSERT INTO kr_condominios VALUES (?, ?, NOW())');
+$stmt->execute(['c-sem-campos', json_encode(['id'=>'c-sem-campos','nome'=>'Sem Campos'], JSON_UNESCAPED_UNICODE)]);
+$semente('complementa3'); $p=$pedido('complementa3');
+$p['condominio']=['id'=>'c-sem-campos','camposComplementares'=>['codigo'=>'456','nome'=>null,'cnpj'=>'99.999.999/0001-99']];
+$p['registro']['condoId']='c-sem-campos'; $p['registro']['demonstrativo']['periodo']=['ini'=>'1/12/2026','fim'=>''];
+$r=confirmar_importacao($pdo,$p);
+$assert($r['atualizouCadastro'], 'Campos ausentes (não só em branco) deveriam ter sido completados.');
+$cSemCampos=json_decode($pdo->query("SELECT dados FROM kr_condominios WHERE id='c-sem-campos'")->fetchColumn(),true);
+$assert($cSemCampos['nome']==='Sem Campos' && $cSemCampos['codigo']==='456' && $cSemCampos['cnpj']==='99.999.999/0001-99', 'Completar cadastro sem código/cnpj prévios falhou.');
 $semente('anual','pendente','exercicios'); $p=$pedido('anual'); $p['destino']='exercicios';
 $p['condominio']=['id'=>'c-ok']; $p['registro']['condoId']='c-ok'; $p['registro']['ano']=2999;
 $r=confirmar_importacao($pdo,$p); $assert($r['registro']['ano']===2999, 'Limite do domínio foi alterado.');
-$assert($contar('condominios')===2 && $contar('mensais')===5 && $contar('exercicios')===1, 'Confirmações válidas incorretas.');
+$assert($contar('condominios')===3 && $contar('mensais')===6 && $contar('exercicios')===1, 'Confirmações válidas incorretas.');
 $stmt=$pdo->query("SELECT dados FROM kr_condominios WHERE id='c-ok'");
 $assert(json_decode($stmt->fetchColumn(),true)['nome']==='Condomínio fictício', 'Cadastro existente foi sobrescrito.');
 try {

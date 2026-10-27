@@ -348,6 +348,14 @@ describe("condomínio do relatório", () => {
       expect(camposComplementares(existente, cad)).toEqual(["cnpj"]);
     });
 
+    it("campo ausente (não só vazio) no cadastro existente também conta como em branco, sem lançar", () => {
+      // Um condomínio restaurado de backup pode não ter código/CNPJ (api.php só exige id+nome).
+      const existente = { nome: "Residencial X" } as { codigo: string; nome: string; cnpj: string };
+      const cad = { codigo: "001", nome: "Residencial X", cnpj: "12.345.678/0001-90" };
+      expect(() => camposComplementares(existente, cad)).not.toThrow();
+      expect(camposComplementares(existente, cad)).toEqual(["codigo", "cnpj"]);
+    });
+
     it("vazio quando não há nada a complementar (cadastro completo, ou PDF também em branco)", () => {
       expect(camposComplementares({ codigo: "001", nome: "X", cnpj: "12.345.678/0001-90" }, { codigo: "999", nome: "Y", cnpj: "00.000.000/0001-00" })).toEqual([]);
       expect(camposComplementares({ codigo: "", nome: "X", cnpj: "" }, { codigo: null, nome: "X", cnpj: null })).toEqual([]);
