@@ -18,7 +18,17 @@ import { lerComoDataUrl } from "@/lib/arquivo";
 import { formatBRL, formatBytes } from "@/lib/format";
 import { chaves, listaQuery } from "@/lib/queries";
 import { lerRelatorio, type RelatorioLido } from "@/domain/pdfParser";
-import { anoDoRelatorio, colunaPadrao, encontrarCondominio, mensaisDoComparativo, novoAnexoImportado, type MesComparativo } from "@/domain/importacao";
+import {
+  anoDoRelatorio,
+  colunaPadrao,
+  condominioDoCadastro,
+  encontrarCondominio,
+  mensaisDoComparativo,
+  novoAnexoImportado,
+  type MesComparativo,
+} from "@/domain/importacao";
+import { prepararCondominio } from "@/domain/condominio";
+import { consultarCnpjReceita, enderecoDaReceita } from "@/lib/receitaCnpj";
 import type { AnexoImportado, Condominio, Exercicio, Mensal } from "@/domain/types";
 
 /** Mensagem pedida para PDFs que não são o Comparativo Financeiro. */
@@ -168,6 +178,30 @@ function PassoAnexar({
   const exercicio = doCondo.find((x) => x.id === exercicioId);
   const condo = condominios.find((c) => c.id === condoId);
 
+  const criarCondominio = useMutation({
+    mutationFn: async () => {
+      const base = condominioDoCadastro(rel.condominio);
+      const cnpjDigitos = (rel.condominio.cnpj ?? "").replace(/\D/g, "");
+      const dadosReceita = cnpjDigitos.length === 14 ? await consultarCnpjReceita(cnpjDigitos) : null;
+      const preparado = prepararCondominio({
+        ...base,
+        enderecoEdital: dadosReceita ? enderecoDaReceita(dadosReceita) : base.enderecoEdital,
+      });
+      if (!preparado.ok) throw new Error(preparado.erro);
+      const condo = await api.salvar<Condominio>("condominios", { ...preparado.valor, id: novoId() });
+      return { condo, semEndereco: cnpjDigitos.length === 14 && !dadosReceita };
+    },
+    onSuccess: ({ condo, semEndereco }) => {
+      queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
+      setCondoId(condo.id);
+      toast.success(
+        "Condomínio pré-cadastrado a partir do PDF." +
+          (semEndereco ? " Não foi possível buscar o endereço na Receita Federal — complete manualmente." : ""),
+      );
+    },
+    onError: (e) => toast.error(mensagemErro(e)),
+  });
+
   const outro =
     !!condo &&
     !!(rel.condominio.codigo || rel.condominio.cnpj) &&
@@ -277,7 +311,22 @@ function PassoAnexar({
       {!encontrado && !condoId && (
         <Alert variant="warning">
           <TriangleAlert />
-          <AlertDescription>Não achei no cadastro o condomínio deste PDF. Escolha o condomínio e a prestação de contas.</AlertDescription>
+          <AlertDescription>
+            <p>Não achei no cadastro o condomínio deste PDF. Escolha um já cadastrado, ou pré-cadastre com os dados do PDF.</p>
+            {!!rel.condominio.nome && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="mt-2"
+                onClick={() => criarCondominio.mutate()}
+                disabled={criarCondominio.isPending}
+              >
+                {criarCondominio.isPending && <Loader2 className="animate-spin" />}
+                Cadastrar como novo condomínio
+              </Button>
+            )}
+          </AlertDescription>
         </Alert>
       )}
       {outro && (
