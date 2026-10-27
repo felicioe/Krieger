@@ -5,6 +5,7 @@ import type { ConsideracoesFinaisLidas, PrevisaoSugeridaLida } from "@/domain/pd
 import {
   COLUNA_TOTAL,
   anoDoRelatorio,
+  camposComplementares,
   camposFaltando,
   colunaPadrao,
   condominiosParecidos,
@@ -332,6 +333,25 @@ describe("condomínio do relatório", () => {
     });
     expect(imp.cadastro.revisar).toBe(true);
     expect(camposFaltando(imp.cadastro)).toEqual(["codigo", "nome", "cnpj"]);
+  });
+
+  describe("camposComplementares", () => {
+    it("só lista campos em branco no cadastro que o PDF traz preenchidos", () => {
+      const existente = { codigo: "", nome: "Residencial X", cnpj: "" };
+      const cad = { codigo: "001", nome: "Residencial X", cnpj: "12.345.678/0001-90" };
+      expect(camposComplementares(existente, cad)).toEqual(["codigo", "cnpj"]);
+    });
+
+    it("nunca lista um campo já preenchido no cadastro, mesmo que o PDF traga outro valor", () => {
+      const existente = { codigo: "001", nome: "Residencial X", cnpj: "" };
+      const cad = { codigo: "999", nome: "Residencial X", cnpj: "12.345.678/0001-90" };
+      expect(camposComplementares(existente, cad)).toEqual(["cnpj"]);
+    });
+
+    it("vazio quando não há nada a complementar (cadastro completo, ou PDF também em branco)", () => {
+      expect(camposComplementares({ codigo: "001", nome: "X", cnpj: "12.345.678/0001-90" }, { codigo: "999", nome: "Y", cnpj: "00.000.000/0001-00" })).toEqual([]);
+      expect(camposComplementares({ codigo: "", nome: "X", cnpj: "" }, { codigo: null, nome: "X", cnpj: null })).toEqual([]);
+    });
   });
 
   it("guarda Considerações finais e Previsão sugerida no staging quando o PDF trouxer essas páginas", () => {

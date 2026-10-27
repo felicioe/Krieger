@@ -279,6 +279,35 @@ describe("confirmar importação numa chamada só (#69)", () => {
       mockApi.confirmarImportacao(pedido("imp-3", { id: "cond-novo", nome: "Novo" })),
     ).rejects.toThrow(/descartada/);
   });
+
+  it("condomínio existente: camposComplementares só preenche o que está em branco, nunca sobrescreve", async () => {
+    await mockApi.salvar("condominios", { id: "cond-existente", codigo: "", nome: "Já Cadastrado", cnpj: "" });
+    await pendente("imp-4");
+    const r = await mockApi.confirmarImportacao({
+      ...pedido("imp-4", {
+        id: "cond-existente",
+        camposComplementares: { codigo: "123", nome: "Outro Nome (não deve substituir)", cnpj: "12.345.678/0001-90" },
+      }),
+      registro: { id: "reg-4", condoId: "cond-existente", condoNome: "Já Cadastrado" } as never,
+    });
+    expect(r).toMatchObject({ criouCondominio: false, atualizouCadastro: true });
+    const salvo = (await mockApi.listar<{ id: string; codigo: string; nome: string; cnpj: string }>("condominios")).find((c) => c.id === "cond-existente")!;
+    expect(salvo.nome).toBe("Já Cadastrado");
+    expect(salvo.codigo).toBe("123");
+    expect(salvo.cnpj).toBe("12.345.678/0001-90");
+  });
+
+  it("condomínio existente sem camposComplementares: não mexe no cadastro", async () => {
+    await mockApi.salvar("condominios", { id: "cond-existente-2", codigo: "", nome: "Outro Já Cadastrado", cnpj: "" });
+    await pendente("imp-5");
+    const r = await mockApi.confirmarImportacao({
+      ...pedido("imp-5", { id: "cond-existente-2" }),
+      registro: { id: "reg-5", condoId: "cond-existente-2", condoNome: "Outro Já Cadastrado" } as never,
+    });
+    expect(r).toMatchObject({ criouCondominio: false, atualizouCadastro: false });
+    const salvo = (await mockApi.listar<{ id: string; codigo: string }>("condominios")).find((c) => c.id === "cond-existente-2")!;
+    expect(salvo.codigo).toBe("");
+  });
 });
 
 // ---------- #71: foco volta ao "Importar PDF" ----------

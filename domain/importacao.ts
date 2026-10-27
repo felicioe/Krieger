@@ -337,6 +337,19 @@ export function condominioDoCadastro(c: { codigo: string | null; nome: string | 
   return { ...condominioPadrao(), codigo: (c.codigo ?? "").trim(), nome, nomeRelatorio: nome, cnpj: (c.cnpj ?? "").trim() };
 }
 
+/**
+ * Campos do cadastro já existente (código/nome/CNPJ) que estão em branco mas o PDF conferido
+ * traz preenchidos — candidatos a completar o cadastro. Nunca inclui um campo que o cadastro já
+ * tem preenchido, mesmo que o PDF traga outro valor: evita um erro de OCR sobrescrever um dado
+ * correto já cadastrado. Quem usa isto pede confirmação explícita antes de gravar.
+ */
+export function camposComplementares(
+  existente: { codigo: string; nome: string; cnpj: string },
+  cad: { codigo: string | null; nome: string | null; cnpj: string | null },
+): ("codigo" | "nome" | "cnpj")[] {
+  return (["codigo", "nome", "cnpj"] as const).filter((k) => !existente[k].trim() && (cad[k] ?? "").trim());
+}
+
 /** Acrescenta o arquivo à origem do relatório, sem repetir. */
 export function origemComArquivo(origem: string[] | string | null | undefined, arquivo: string): string[] {
   const lista = Array.isArray(origem) ? origem : origem ? [origem] : [];

@@ -511,7 +511,7 @@ export const mockApi: ApiAdapter = {
     if (imp.status === "confirmado") {
       const ja = imp.registroId ? d[destino].find((x) => x.id === imp.registroId) : undefined;
       if (!ja) throw new ApiError("Esta importação já foi confirmada, mas o registro gravado não foi encontrado.", 409);
-      return clone({ registro: ja, condominioId: imp.condominioId ?? "", criouCondominio: false, reutilizado: true }) as unknown as ConfirmarImportacaoResposta;
+      return clone({ registro: ja, condominioId: imp.condominioId ?? "", criouCondominio: false, atualizouCadastro: false, reutilizado: true }) as unknown as ConfirmarImportacaoResposta;
     }
     if (imp.status !== "pendente") throw new ApiError("Esta importação foi descartada e não pode ser confirmada.", 409);
     const condoId = pedido.condominio?.id;
@@ -519,8 +519,26 @@ export const mockApi: ApiAdapter = {
     if (!condoId || !registro?.id) throw new ApiError("Dados incompletos para confirmar a importação.", 400);
     if (registro["condoId"] !== condoId) throw new ApiError("O registro não pertence ao condomínio informado.", 400);
     if (d[destino].some((x) => x.id === registro.id)) throw new ApiError("Já existe um registro com este identificador.", 409);
-    const existe = d.condominios.some((c) => c.id === condoId);
+    const condoIdx = d.condominios.findIndex((c) => c.id === condoId);
+    const existe = condoIdx >= 0;
     if (!existe && !("nome" in pedido.condominio)) throw new ApiError("Condomínio não encontrado.", 404);
+    // Campos complementares: só os que o cadastro existente ainda tem em branco (defesa adicional,
+    // além da checagem já feita no cliente antes de pedir confirmação ao usuário).
+    let atualizouCadastro = false;
+    if (existe && "camposComplementares" in pedido.condominio && pedido.condominio.camposComplementares) {
+      const atual = d.condominios[condoIdx] as unknown as Condominio;
+      const patch = pedido.condominio.camposComplementares;
+      const campos: ("codigo" | "nome" | "cnpj")[] = ["codigo", "nome", "cnpj"];
+      const merge: Partial<Condominio> = {};
+      for (const k of campos) {
+        const v = (patch[k] ?? "").trim();
+        if (!atual[k].trim() && v) merge[k] = v;
+      }
+      if (Object.keys(merge).length) {
+        d.condominios[condoIdx] = { ...atual, ...merge } as unknown as Registro;
+        atualizouCadastro = true;
+      }
+    }
     // Tudo validado: uma única gravação (não sobra condomínio sem relatório nem importação pendente).
     if (!existe) d.condominios.push(clone(pedido.condominio) as unknown as Registro);
     d[destino].push(clone(registro));
@@ -532,7 +550,7 @@ export const mockApi: ApiAdapter = {
       registroId: registro.id,
     } as unknown as Registro;
     gravar(CHAVE_DADOS, d);
-    return clone({ registro, condominioId: condoId, criouCondominio: !existe, reutilizado: false }) as unknown as ConfirmarImportacaoResposta;
+    return clone({ registro, condominioId: condoId, criouCondominio: !existe, atualizouCadastro, reutilizado: false }) as unknown as ConfirmarImportacaoResposta;
   },
   async importar(backup: Backup, substituir: boolean) {
     await espera(300);

@@ -54,10 +54,25 @@ $assert($contar('condominios') === 2 && $contar('mensais') === 2, 'Casos inváli
 $semente('inicio'); $p=$pedido('inicio'); $p['condominio']=['id'=>'c-ok','nome'=>'Não substituir cadastro'];
 $p['registro']['condoId']='c-ok'; $p['registro']['demonstrativo']['periodo']=['ini'=>'1/9/2026','fim'=>''];
 $assert(!confirmar_importacao($pdo,$p)['criouCondominio'], 'Cadastro existente foi recriado.');
+$semente('complementa'); $p=$pedido('complementa');
+$p['condominio']=['id'=>'c-ok','camposComplementares'=>['codigo'=>'123','nome'=>'Não deve substituir','cnpj'=>'12.345.678/0001-90']];
+$p['registro']['condoId']='c-ok'; $p['registro']['demonstrativo']['periodo']=['ini'=>'1/10/2026','fim'=>''];
+$r=confirmar_importacao($pdo,$p);
+$assert($r['atualizouCadastro'], 'Campos complementares deveriam ter sido aplicados.');
+$cOk=json_decode($pdo->query("SELECT dados FROM kr_condominios WHERE id='c-ok'")->fetchColumn(),true);
+$assert($cOk['nome']==='Condomínio fictício', 'Campo já preenchido (nome) foi sobrescrito por complementar.');
+$assert($cOk['codigo']==='123' && $cOk['cnpj']==='12.345.678/0001-90', 'Campos em branco não foram completados.');
+$semente('complementa2'); $p=$pedido('complementa2');
+$p['condominio']=['id'=>'c-ok','camposComplementares'=>['codigo'=>'999','nome'=>null,'cnpj'=>null]];
+$p['registro']['condoId']='c-ok'; $p['registro']['demonstrativo']['periodo']=['ini'=>'1/11/2026','fim'=>''];
+$r=confirmar_importacao($pdo,$p);
+$assert(!$r['atualizouCadastro'], 'Nada deveria restar em branco pra complementar na segunda tentativa.');
+$cOk=json_decode($pdo->query("SELECT dados FROM kr_condominios WHERE id='c-ok'")->fetchColumn(),true);
+$assert($cOk['codigo']==='123', 'Campo já complementado foi sobrescrito numa segunda tentativa.');
 $semente('anual','pendente','exercicios'); $p=$pedido('anual'); $p['destino']='exercicios';
 $p['condominio']=['id'=>'c-ok']; $p['registro']['condoId']='c-ok'; $p['registro']['ano']=2999;
 $r=confirmar_importacao($pdo,$p); $assert($r['registro']['ano']===2999, 'Limite do domínio foi alterado.');
-$assert($contar('condominios')===2 && $contar('mensais')===3 && $contar('exercicios')===1, 'Confirmações válidas incorretas.');
+$assert($contar('condominios')===2 && $contar('mensais')===5 && $contar('exercicios')===1, 'Confirmações válidas incorretas.');
 $stmt=$pdo->query("SELECT dados FROM kr_condominios WHERE id='c-ok'");
 $assert(json_decode($stmt->fetchColumn(),true)['nome']==='Condomínio fictício', 'Cadastro existente foi sobrescrito.');
 try {
