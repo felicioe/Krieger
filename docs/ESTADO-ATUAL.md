@@ -1,5 +1,26 @@
 # Estado atual e passagem de contexto
 
+## Anexar Comparativo: pré-cadastro de condomínio (PR #99) — mesclada e publicada — 27/10/2026
+
+Ao anexar um Comparativo Financeiro de um condomínio ainda não cadastrado, o
+diálogo agora mostra um botão "Cadastrar como novo condomínio": cria o
+registro com nome/código/CNPJ do PDF e busca o endereço na Receita Federal
+via BrasilAPI (dados públicos, sem chave) — se a consulta falhar, cadastra
+mesmo assim, só sem o endereço. Seleciona o condomínio criado automaticamente.
+Pedido pelo usuário ao notar, num comparativo real (Urban Classic), que o
+diálogo só aceitava condomínio já cadastrado.
+
+Mesclado em `main` (`31e4357`) e publicado em `deploy-hostinger` (`e05e0df`,
+"Publica main 31e4357") — auto-deploy confirmado ao vivo (`index.html`
+referencia `index-Y77hE_bw.js`, hash exato do build; `auth.php?a=eu` responde
+401; sem erros de JS além dos esperados da própria checagem).
+
+Testes: função de formatação de endereço (4 testes) + 2 testes novos no
+fluxo do diálogo (com e sem resposta da Receita) — 185 testes de frontend no
+total. Não verificado com upload de PDF real num navegador de verdade (a
+ferramenta de navegador desta sessão não tem como simular upload de
+arquivo) — coberto só por teste automatizado + CI verde.
+
 ## Consulta Inteligente de Documentos — mesclada (PR #97/#98) e publicada — 27/10/2026
 
 Nova funcionalidade: perguntas em linguagem natural sobre convenção, regimento
