@@ -75,4 +75,8 @@ export const api = {
     usuarioSalvar: (u: UsuarioSalvar) => guarda(() => impl().auth.usuarioSalvar(u)),
     usuarioExcluir: (id: string) => guarda(() => impl().auth.usuarioExcluir(id)),
   },
+  documentos: {
+    perguntar: (condoId: string, pergunta: string) => guarda(() => impl().documentos.perguntar(condoId, pergunta)),
+    historico: (condoId: string) => guarda(() => impl().documentos.historico(condoId)),
+  },
 };

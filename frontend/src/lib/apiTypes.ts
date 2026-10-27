@@ -2,6 +2,8 @@ import type {
   Backup,
   BackupRegistro,
   Condominio,
+  ConsultaHistoricoItem,
+  ConsultaResposta,
   DestinoImportacao,
   Exercicio,
   Mensal,
@@ -74,5 +76,10 @@ export interface ApiAdapter {
     usuarios(): Promise<UsuarioAdmin[]>;
     usuarioSalvar(u: UsuarioSalvar): Promise<unknown>;
     usuarioExcluir(id: string): Promise<void>;
+  };
+  /** Consulta Inteligente de Documentos (convenção/regimento/atas) — ver docs/ESTADO-ATUAL.md. */
+  documentos: {
+    perguntar(condoId: string, pergunta: string): Promise<ConsultaResposta>;
+    historico(condoId: string): Promise<ConsultaHistoricoItem[]>;
   };
 }
