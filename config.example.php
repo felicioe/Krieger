@@ -9,4 +9,7 @@ return [
   'dbname' => 'SEU_BANCO',
   'user' => 'SEU_USUARIO_BD',
   'pass' => 'SUA_SENHA_BD',
+  // Opcional — só é lida pela Consulta Inteligente de Documentos (lib_claude.php). Sem ela,
+  // a busca local (FULLTEXT) continua funcionando normalmente, só não interpreta por IA.
+  'claude_api_key' => 'SUA_CHAVE_CLAUDE',
 ];

@@ -108,6 +108,12 @@ export interface Condominio extends ComId {
   regras: RegraPreenchimento[];
   variacaoMetodo: VariacaoMetodo;
   variacaoParam: number | null;
+  /**
+   * Pasta-raiz deste condomínio no servidor de arquivos da empresa (NAS), digitada uma vez no
+   * cadastro — nunca detectada automaticamente, pra não indexar o condomínio errado por engano.
+   * Usada só pelo agente de indexação da Consulta de Documentos (convenção/regimento/atas).
+   */
+  pastaDocumentos: string;
 }
 
 // ---------- Demonstrativo ----------

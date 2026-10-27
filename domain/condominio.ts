@@ -35,6 +35,7 @@ export function condominioPadrao(): Omit<Condominio, "id"> {
     regras: [],
     variacaoMetodo: "manual",
     variacaoParam: null,
+    pastaDocumentos: "",
   };
 }
 
