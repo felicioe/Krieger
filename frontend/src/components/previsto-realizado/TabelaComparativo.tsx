@@ -71,7 +71,16 @@ function Valores({ t, forte, compacta }: { t: Totais; forte?: boolean; compacta?
  * Tabela por rubrica e grupo. `compacta` (prévia da folha impressa): sem o "/mês", sem a coluna
  * Situação (vira o marcador "*" no percentual, com legenda), células mais justas — igual ao PDF/Word.
  */
-export function TabelaComparativo({ r, compacta = false }: { r: ResultadoComparativo; compacta?: boolean }) {
+export function TabelaComparativo({
+  r,
+  compacta = false,
+  mostrarAnaliticas = true,
+}: {
+  r: ResultadoComparativo;
+  compacta?: boolean;
+  /** false = esconde as linhas por rubrica (contas analíticas), só os totais por grupo e geral. */
+  mostrarAnaliticas?: boolean;
+}) {
   if (r.grupos.length === 0) {
     return <p className="text-sm text-muted-foreground">A previsão deste exercício não tem despesas lançadas.</p>;
   }
@@ -108,29 +117,30 @@ export function TabelaComparativo({ r, compacta = false }: { r: ResultadoCompara
                   {g.nome || "Sem grupo"}
                 </TableCell>
               </TableRow>
-              {g.linhas.map((l) => (
-                <TableRow key={`${l.tipo}-${l.nome}`}>
-                  <TableCell className={compacta ? "pl-4" : "pl-6"}>
-                    {l.tipo === "ajuste" && (
-                      <span className={cn("mr-1.5 font-semibold", l.sinal === "-" ? "text-destructive" : "text-primary")}>
-                        {l.sinal === "-" ? "−" : "+"}
-                      </span>
-                    )}
-                    <span>{l.nome || "Sem nome"}</span>
-                    {l.tipo === "ajuste" && (
-                      <Badge variant="outline" className="ml-2 align-middle text-[10px] font-medium text-muted-foreground">
-                        ajuste
-                      </Badge>
-                    )}
-                    {l.tipo === "rubrica" && l.previstoAnual === 0 && l.realizado !== 0 && (
-                      <Badge variant="warning" className="ml-2 align-middle text-[10px]">
-                        não prevista
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <Valores t={l} compacta={compacta} />
-                </TableRow>
-              ))}
+              {mostrarAnaliticas &&
+                g.linhas.map((l) => (
+                  <TableRow key={`${l.tipo}-${l.nome}`}>
+                    <TableCell className={compacta ? "pl-4" : "pl-6"}>
+                      {l.tipo === "ajuste" && (
+                        <span className={cn("mr-1.5 font-semibold", l.sinal === "-" ? "text-destructive" : "text-primary")}>
+                          {l.sinal === "-" ? "−" : "+"}
+                        </span>
+                      )}
+                      <span>{l.nome || "Sem nome"}</span>
+                      {l.tipo === "ajuste" && (
+                        <Badge variant="outline" className="ml-2 align-middle text-[10px] font-medium text-muted-foreground">
+                          ajuste
+                        </Badge>
+                      )}
+                      {l.tipo === "rubrica" && l.previstoAnual === 0 && l.realizado !== 0 && (
+                        <Badge variant="warning" className="ml-2 align-middle text-[10px]">
+                          não prevista
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <Valores t={l} compacta={compacta} />
+                  </TableRow>
+                ))}
               <TableRow className="border-b-2 hover:bg-transparent">
                 <TableCell className={cn("font-semibold text-primary", compacta ? "pl-4" : "pl-6 text-sm")}>Total {g.nome || "sem grupo"}</TableCell>
                 <Valores t={g.totais} forte compacta={compacta} />

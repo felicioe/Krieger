@@ -182,6 +182,18 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                             {s.titulo}
                           </Label>
                         </div>
+                        {s.id === "previstoRealizado" && rel.secoes.previstoRealizado && (
+                          <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
+                            <Checkbox
+                              id="secao-contas-analiticas"
+                              checked={e.mostrarContasAnaliticas !== false}
+                              onCheckedChange={(v) => mudar({ mostrarContasAnaliticas: v === true })}
+                            />
+                            <Label htmlFor="secao-contas-analiticas" className="min-w-0 break-words text-xs font-normal text-muted-foreground">
+                              Mostrar contas analíticas (desmarcado: só os totais por grupo)
+                            </Label>
+                          </div>
+                        )}
                         {s.id === "analise" && rel.secoes.analise && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox id="secao-pizza" checked={e.mostrarPizza !== false} onCheckedChange={(v) => mudar({ mostrarPizza: v === true })} />

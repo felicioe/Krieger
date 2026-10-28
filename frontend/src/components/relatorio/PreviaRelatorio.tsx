@@ -209,7 +209,7 @@ export function PreviaRelatorio({
           {rel.comparativo.grupos.length > 0 && semRealizado(rel.comparativo) ? (
             <AvisoSemRealizado r={rel.comparativo} />
           ) : (
-            <TabelaComparativo r={rel.comparativo} compacta />
+            <TabelaComparativo r={rel.comparativo} compacta mostrarAnaliticas={e.mostrarContasAnaliticas !== false} />
           )}
         </Secao>
       )}

@@ -153,7 +153,7 @@ export async function documentoRelatorioFinal(o: {
     );
     if (c.grupos.length === 0) b.push(vazio("A previsão deste exercício não tem despesas lançadas."));
     else if (semRealizado(c)) b.push(avisoSemRealizado(c));
-    else b.push(...tabelaComparativo(rel.comparativo));
+    else b.push(...tabelaComparativo(rel.comparativo, e.mostrarContasAnaliticas !== false));
   }
 
   if (rel.secoes.analise) {
@@ -280,19 +280,21 @@ export function colunasComparativo(ate: string): Coluna[] {
   ];
 }
 
-/** Tabela por rubrica e grupo + legenda do marcador de situação. */
-export function tabelaComparativo(c: ResultadoComparativo): Bloco[] {
+/** Tabela por rubrica e grupo + legenda do marcador de situação. `mostrarAnaliticas` false esconde as linhas por rubrica. */
+export function tabelaComparativo(c: ResultadoComparativo, mostrarAnaliticas = true): Bloco[] {
   const linhas: LinhaTabela[] = [];
   for (const g of c.grupos) {
     linhas.push({ celulas: [g.nome || "Sem grupo"], estilo: "grupo" });
-    for (const x of g.linhas) {
-      const nome: Texto = [
-        ...(x.tipo === "ajuste" ? [{ texto: x.sinal === "-" ? "− " : "+ ", negrito: true }] : []),
-        { texto: x.nome || "Sem nome" },
-        ...(x.tipo === "ajuste" ? [{ texto: " (ajuste)", suave: true }] : []),
-        ...(x.tipo === "rubrica" && x.previstoAnual === 0 && x.realizado !== 0 ? [{ texto: " (não prevista)", suave: true }] : []),
-      ];
-      linhas.push({ celulas: [nome, ...valores(x)], recuo: true });
+    if (mostrarAnaliticas) {
+      for (const x of g.linhas) {
+        const nome: Texto = [
+          ...(x.tipo === "ajuste" ? [{ texto: x.sinal === "-" ? "− " : "+ ", negrito: true }] : []),
+          { texto: x.nome || "Sem nome" },
+          ...(x.tipo === "ajuste" ? [{ texto: " (ajuste)", suave: true }] : []),
+          ...(x.tipo === "rubrica" && x.previstoAnual === 0 && x.realizado !== 0 ? [{ texto: " (não prevista)", suave: true }] : []),
+        ];
+        linhas.push({ celulas: [nome, ...valores(x)], recuo: true });
+      }
     }
     linhas.push({ celulas: [`Total ${g.nome || "sem grupo"}`, ...valores(g.totais)], estilo: "subtotal", recuo: true });
   }
