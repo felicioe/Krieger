@@ -1,6 +1,12 @@
 import { centavos } from "./demonstrativo";
 import { arredondarValor } from "./previsao";
-import type { AjustePrevisao, Arredondamento, PrevisaoSugeridaExercicio } from "./types";
+import type {
+  AjustePrevisao,
+  Arredondamento,
+  DivergenciaPrevisaoSugerida,
+  PrevisaoSugeridaExercicio,
+  TotaisPrevisaoSugeridaPdf,
+} from "./types";
 import type { PrevisaoSugeridaLida } from "./pdfParser";
 
 /**
@@ -45,6 +51,18 @@ export interface ResultadoPrevisaoSugeridaPorUnidade {
 
 const assinado = (item: Pick<AjustePrevisao, "sinal" | "valor">): number => (item.sinal === "-" ? -Math.abs(item.valor) : Math.abs(item.valor));
 
+/** Totais que o PDF já traz prontos (lidos à parte das categorias) — frozen na importação, pra
+ * comparar com o recalculado a qualquer momento depois, mesmo após editar deduções/variação. */
+export function totaisPdfDoPv(pv: PrevisaoSugeridaLida): TotaisPrevisaoSugeridaPdf {
+  return {
+    totalDespesasAno: pv.totalDespesasAno,
+    totalOrdinario: pv.totalOrdinario,
+    rateioAnualSugerido: pv.rateioAnualSugerido,
+    rateioMensalSugerido: pv.rateioMensalSugerido,
+    indiceSugerido: pv.indiceSugerido,
+  };
+}
+
 /** Converte o que foi lido do PDF (`lerPrevisaoSugerida`) na estrutura editável, pronta pra salvar no exercício. */
 export function previsaoSugeridaDoPdf(pv: PrevisaoSugeridaLida): PrevisaoSugeridaExercicio {
   const deducoes: AjustePrevisao[] = [];
@@ -56,6 +74,7 @@ export function previsaoSugeridaDoPdf(pv: PrevisaoSugeridaLida): PrevisaoSugerid
     categorias: pv.categorias.map((c) => ({ ...c })),
     deducoes,
     variacao: { sinal: (pv.variacaoSugerida ?? 0) < 0 ? "-" : "+", valor: Math.abs(pv.variacaoSugerida ?? 0) },
+    totaisPdf: totaisPdfDoPv(pv),
   };
 }
 
@@ -73,33 +92,47 @@ export function calcularPrevisaoSugerida(p: PrevisaoSugeridaExercicio): Resultad
   return { totalDespesasAno, totalDespesasMedia, deducoesTotal, totalOrdinario, variacaoValor, totalFinal, rateioMensalSugerido, rateioMensalAtual, indiceSugerido };
 }
 
-export interface DivergenciaPrevisaoSugerida {
-  campo: string;
-  doPdf: number;
-  calculado: number;
-}
-
 /**
- * Compara os totais que o PDF do Systemar já traz prontos (lidos por `lerPrevisaoSugerida`) com o
- * que o sistema recalcula a partir das categorias/dedução/variação extraídas do mesmo PDF. Os dois
- * deveriam bater sempre — se divergirem é sinal de erro de leitura (ex.: uma linha de subtotal foi
- * reconhecida como categoria de despesa, duplicando o total; caso real achado no Residencial Santa
- * Cecília), não algo que precise de revisão manual relatório por relatório.
+ * Compara os totais que o PDF do Systemar já traz prontos com o que o sistema recalcula a partir
+ * das categorias/dedução/variação. Os dois deveriam bater sempre que os valores não tiverem sido
+ * editados — se divergirem é sinal de erro de leitura (ex.: uma linha de subtotal foi reconhecida
+ * como categoria de despesa, duplicando o total; caso real achado no Residencial Santa Cecília) ou
+ * de uma edição manual das deduções/variação que afastou o resultado do que o PDF sugeria — o
+ * chamador decide o que fazer com isso (ver `validarPrevisaoSugeridaDoPdf`, usado na importação, e a
+ * tela de Previsão orçamentária, que usa esta função diretamente com os totais já salvos no
+ * exercício, pra reavaliar a qualquer momento, mesmo depois de editar).
  */
-export function validarPrevisaoSugeridaDoPdf(pv: PrevisaoSugeridaLida): DivergenciaPrevisaoSugerida[] {
-  const r = calcularPrevisaoSugerida(previsaoSugeridaDoPdf(pv));
+export function compararComTotaisPdf(
+  r: ResultadoPrevisaoSugerida,
+  totaisPdf: TotaisPrevisaoSugeridaPdf | null | undefined,
+): DivergenciaPrevisaoSugerida[] {
+  if (!totaisPdf) return [];
   const divergencias: DivergenciaPrevisaoSugerida[] = [];
   const cmp = (campo: string, doPdf: number | null, calculado: number | null, tolerancia: number) => {
     if (doPdf !== null && calculado !== null && Math.abs(doPdf - calculado) > tolerancia) {
       divergencias.push({ campo, doPdf, calculado });
     }
   };
-  cmp("Total das despesas do ano", pv.totalDespesasAno, r.totalDespesasAno, 0.02);
-  cmp("Total ordinário", pv.totalOrdinario, r.totalOrdinario, 0.02);
-  cmp("Sugestão de rateio anual ordinário", pv.rateioAnualSugerido, r.totalFinal, 0.02);
-  cmp("Sugestão de rateio mensal ordinário", pv.rateioMensalSugerido, r.rateioMensalSugerido, 0.02);
-  cmp("Índice sugerido para correção", pv.indiceSugerido, r.indiceSugerido, 0.05);
+  cmp("Total das despesas do ano", totaisPdf.totalDespesasAno, r.totalDespesasAno, 0.02);
+  cmp("Total ordinário", totaisPdf.totalOrdinario, r.totalOrdinario, 0.02);
+  cmp("Sugestão de rateio anual ordinário", totaisPdf.rateioAnualSugerido, r.totalFinal, 0.02);
+  cmp("Sugestão de rateio mensal ordinário", totaisPdf.rateioMensalSugerido, r.rateioMensalSugerido, 0.02);
+  cmp("Índice sugerido para correção", totaisPdf.indiceSugerido, r.indiceSugerido, 0.05);
   return divergencias;
+}
+
+/** Mesma comparação, direto do que foi lido na importação (antes de ter um exercício salvo). */
+export function validarPrevisaoSugeridaDoPdf(pv: PrevisaoSugeridaLida): DivergenciaPrevisaoSugerida[] {
+  return compararComTotaisPdf(calcularPrevisaoSugerida(previsaoSugeridaDoPdf(pv)), totaisPdfDoPv(pv));
+}
+
+/** Identifica o conjunto de divergências atual, pra saber se um aceite anterior (`DivergenciaAceita`)
+ * ainda vale ou se os valores mudaram desde então (nova edição de deduções/variação, por exemplo). */
+export function chaveDivergencia(divergencias: DivergenciaPrevisaoSugerida[]): string {
+  return divergencias
+    .map((d) => `${d.campo}:${d.doPdf.toFixed(2)}:${d.calculado.toFixed(2)}`)
+    .sort()
+    .join("|");
 }
 
 /** Quadro "previsão por unidade" — só para comparar/validar, não altera o rateio mensal sugerido. */

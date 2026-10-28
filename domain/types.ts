@@ -15,7 +15,8 @@ export type Store =
   | "config"
   | "importacoes"
   | "atas"
-  | "anexos_importacao";
+  | "anexos_importacao"
+  | "decisoes_previsao";
 
 export const STORES: Store[] = [
   "condominios",
@@ -27,6 +28,7 @@ export const STORES: Store[] = [
   "importacoes",
   "atas",
   "anexos_importacao",
+  "decisoes_previsao",
 ];
 
 export interface ComId {
@@ -156,6 +158,35 @@ export interface AjustePrevisao {
  * exercício, com ajustes/fundo de reserva/unidades): esta parte das categorias de despesa já
  * realizadas conforme o PDF, com linhas de dedução e variação editáveis pelo usuário.
  */
+/** Totais que o PDF do Systemar já traz prontos, lidos uma vez na importação — referência fixa para
+ * comparar com o que o sistema recalcula a partir das categorias/deduções/variação (que continuam
+ * editáveis depois). Qualquer um pode vir `null` quando o PDF não trouxer aquele total. */
+export interface TotaisPrevisaoSugeridaPdf {
+  totalDespesasAno: number | null;
+  totalOrdinario: number | null;
+  rateioAnualSugerido: number | null;
+  rateioMensalSugerido: number | null;
+  /** % */
+  indiceSugerido: number | null;
+}
+
+/** Uma divergência entre um total do PDF e o que o sistema recalculou. */
+export interface DivergenciaPrevisaoSugerida {
+  campo: string;
+  doPdf: number;
+  calculado: number;
+}
+
+/** Marca de que o usuário viu a(s) divergência(s) atual(is) e decidiu manter os valores calculados
+ * mesmo assim. `chave` identifica o conjunto de divergências aceito — se os valores mudarem (nova
+ * edição de deduções/variação), a chave muda e a aceitação anterior deixa de valer. */
+export interface DivergenciaAceita {
+  chave: string;
+  em: string;
+  por: string;
+  porNome: string;
+}
+
 export interface PrevisaoSugeridaExercicio {
   /** Rateio mensal utilizado no ano anterior, lido do PDF — referência para o índice sugerido. */
   rateioMensalAtual: number | null;
@@ -165,6 +196,23 @@ export interface PrevisaoSugeridaExercicio {
   deducoes: AjustePrevisao[];
   /** Variação de despesas sugeridas, + ou -. */
   variacao: { sinal: "+" | "-"; valor: number };
+  /** Campo novo (opcional): totais do PDF, para comparar com o recalculado a qualquer momento. */
+  totaisPdf?: TotaisPrevisaoSugeridaPdf | null;
+  /** Campo novo (opcional): aceite registrado de uma divergência mantida. */
+  divergenciaAceita?: DivergenciaAceita | null;
+}
+
+/** Registro de log (store `decisoes_previsao`): o sistema apontou uma divergência na Previsão
+ * sugerida e o usuário decidiu manter os valores calculados mesmo assim. */
+export interface DecisaoDivergenciaPrevisao extends ComId {
+  condoId: string;
+  condoNome: string;
+  exercicioId: string;
+  ano: number | string;
+  campos: DivergenciaPrevisaoSugerida[];
+  aceitoPor: string;
+  aceitoPorNome: string;
+  aceitoEm: string;
 }
 
 export interface Exercicio extends ComId {

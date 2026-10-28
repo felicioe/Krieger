@@ -19,6 +19,7 @@ import { Route as AuthenticatedEscritorioRouteImport } from './routes/_authentic
 import { Route as AuthenticatedImportadorRouteImport } from './routes/_authenticated.importador'
 import { Route as AuthenticatedMinhaSenhaRouteImport } from './routes/_authenticated.minha-senha'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated.painel'
+import { Route as AuthenticatedPrevisaoDivergenciasRouteImport } from './routes/_authenticated.previsao-divergencias'
 import { Route as AuthenticatedPrevisaoOrcamentariaRouteImport } from './routes/_authenticated.previsao-orcamentaria'
 import { Route as AuthenticatedPrevistoRealizadoRouteImport } from './routes/_authenticated.previsto-realizado'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated.usuarios'
@@ -88,6 +89,12 @@ const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
   path: '/painel',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPrevisaoDivergenciasRoute =
+  AuthenticatedPrevisaoDivergenciasRouteImport.update({
+    id: '/previsao-divergencias',
+    path: '/previsao-divergencias',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPrevisaoOrcamentariaRoute =
   AuthenticatedPrevisaoOrcamentariaRouteImport.update({
     id: '/previsao-orcamentaria',
@@ -202,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/importador': typeof AuthenticatedImportadorRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/previsao-divergencias': typeof AuthenticatedPrevisaoDivergenciasRoute
   '/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
   '/previsto-realizado': typeof AuthenticatedPrevistoRealizadoRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
@@ -231,6 +239,7 @@ export interface FileRoutesByTo {
   '/importador': typeof AuthenticatedImportadorRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/painel': typeof AuthenticatedPainelRoute
+  '/previsao-divergencias': typeof AuthenticatedPrevisaoDivergenciasRoute
   '/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
   '/previsto-realizado': typeof AuthenticatedPrevistoRealizadoRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
@@ -262,6 +271,7 @@ export interface FileRoutesById {
   '/_authenticated/importador': typeof AuthenticatedImportadorRoute
   '/_authenticated/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
+  '/_authenticated/previsao-divergencias': typeof AuthenticatedPrevisaoDivergenciasRoute
   '/_authenticated/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
   '/_authenticated/previsto-realizado': typeof AuthenticatedPrevistoRealizadoRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/importador'
     | '/minha-senha'
     | '/painel'
+    | '/previsao-divergencias'
     | '/previsao-orcamentaria'
     | '/previsto-realizado'
     | '/usuarios'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/importador'
     | '/minha-senha'
     | '/painel'
+    | '/previsao-divergencias'
     | '/previsao-orcamentaria'
     | '/previsto-realizado'
     | '/usuarios'
@@ -352,6 +364,7 @@ export interface FileRouteTypes {
     | '/_authenticated/importador'
     | '/_authenticated/minha-senha'
     | '/_authenticated/painel'
+    | '/_authenticated/previsao-divergencias'
     | '/_authenticated/previsao-orcamentaria'
     | '/_authenticated/previsto-realizado'
     | '/_authenticated/usuarios'
@@ -449,6 +462,13 @@ declare module '@tanstack/react-router' {
       path: '/painel'
       fullPath: '/painel'
       preLoaderRoute: typeof AuthenticatedPainelRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/previsao-divergencias': {
+      id: '/_authenticated/previsao-divergencias'
+      path: '/previsao-divergencias'
+      fullPath: '/previsao-divergencias'
+      preLoaderRoute: typeof AuthenticatedPrevisaoDivergenciasRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/previsao-orcamentaria': {
@@ -587,6 +607,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedImportadorRoute: typeof AuthenticatedImportadorRoute
   AuthenticatedMinhaSenhaRoute: typeof AuthenticatedMinhaSenhaRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
+  AuthenticatedPrevisaoDivergenciasRoute: typeof AuthenticatedPrevisaoDivergenciasRoute
   AuthenticatedPrevisaoOrcamentariaRoute: typeof AuthenticatedPrevisaoOrcamentariaRoute
   AuthenticatedPrevistoRealizadoRoute: typeof AuthenticatedPrevistoRealizadoRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
@@ -614,6 +635,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedImportadorRoute: AuthenticatedImportadorRoute,
   AuthenticatedMinhaSenhaRoute: AuthenticatedMinhaSenhaRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
+  AuthenticatedPrevisaoDivergenciasRoute:
+    AuthenticatedPrevisaoDivergenciasRoute,
   AuthenticatedPrevisaoOrcamentariaRoute:
     AuthenticatedPrevisaoOrcamentariaRoute,
   AuthenticatedPrevistoRealizadoRoute: AuthenticatedPrevistoRealizadoRoute,

@@ -15,11 +15,12 @@ import { PainelPrevisaoSugerida } from "@/components/previsao/PainelPrevisaoSuge
 import { api } from "@/lib/api";
 import { chaves, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
+import { novoId } from "@/lib/id";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { calcularPrevisao } from "@/domain/previsao";
-import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
-import type { Condominio, Exercicio } from "@/domain/types";
+import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
+import type { Condominio, DecisaoDivergenciaPrevisao, Exercicio } from "@/domain/types";
 
 type Busca = { exercicio?: string };
 
@@ -120,6 +121,17 @@ function EditorPrevisao({
   }, [e.previsaoSugerida, unidades, e.prev?.fundoReservaPct, e.arredondamento]);
   const parcial = aba === "sugerida" ? !!e.previsaoSugerida && valorUnidadeSugerida === null : resultado.rateioSugerido === null;
 
+  // Divergência entre os totais do PDF (congelados em previsaoSugerida.totaisPdf) e o recalculado a
+  // partir das categorias/deduções/variação atuais — reavaliada a cada edição, independente da aba
+  // aberta, porque Salvar grava o exercício inteiro.
+  const divergenciasPv = useMemo(() => {
+    if (!e.previsaoSugerida) return [];
+    return compararComTotaisPdf(calcularPrevisaoSugerida(e.previsaoSugerida), e.previsaoSugerida.totaisPdf);
+  }, [e.previsaoSugerida]);
+  const chaveDivergenciaAtual = useMemo(() => chaveDivergencia(divergenciasPv), [divergenciasPv]);
+  const divergenciaPendente = divergenciasPv.length > 0 && e.previsaoSugerida?.divergenciaAceita?.chave !== chaveDivergenciaAtual;
+  const chaveAceitaAntesDoSalvar = useRef<string | null>(null);
+
   const sujoRef = useRef(sujo);
   sujoRef.current = sujo;
   useBlocker({
@@ -133,6 +145,25 @@ function EditorPrevisao({
       const n = normalizarExercicio(salvo);
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
       queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
+      const aceite = n.previsaoSugerida?.divergenciaAceita;
+      if (aceite && aceite.chave !== chaveAceitaAntesDoSalvar.current) {
+        const campos = compararComTotaisPdf(calcularPrevisaoSugerida(n.previsaoSugerida!), n.previsaoSugerida!.totaisPdf);
+        if (campos.length > 0) {
+          api
+            .salvar<DecisaoDivergenciaPrevisao>("decisoes_previsao", {
+              id: novoId(),
+              condoId: n.condoId,
+              condoNome: n.condoNome || condominio?.nome || "",
+              exercicioId: n.id,
+              ano: n.ano,
+              campos,
+              aceitoPor: aceite.por,
+              aceitoPorNome: aceite.porNome,
+              aceitoEm: aceite.em,
+            })
+            .catch(() => undefined); // não bloqueia o salvamento da previsão; só o log de auditoria falharia
+        }
+      }
       setE(n);
       setSalvoJson(JSON.stringify(n));
       toast.success("Previsão orçamentária salva.");
@@ -141,6 +172,12 @@ function EditorPrevisao({
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
+    if (divergenciaPendente) {
+      toast.error('Confirme a divergência da Previsão sugerida (aba "Sugerida pelo Systemar") antes de salvar.');
+      setAba("sugerida");
+      return;
+    }
+    chaveAceitaAntesDoSalvar.current = (JSON.parse(salvoJson) as Exercicio).previsaoSugerida?.divergenciaAceita?.chave ?? null;
     salvar.mutate(prepararExercicio(e));
   }
 
@@ -161,6 +198,11 @@ function EditorPrevisao({
             {parcial && (
               <Badge variant="warning" title="Falta dado para o valor por unidade. Salvar continua permitido.">
                 Resultado parcial
+              </Badge>
+            )}
+            {divergenciaPendente && (
+              <Badge variant="warning" title='Confirme na aba "Sugerida pelo Systemar" antes de salvar.'>
+                Divergência com o PDF
               </Badge>
             )}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}

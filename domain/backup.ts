@@ -24,4 +24,5 @@ export const ROTULO_STORE: Record<Store, string> = {
   importacoes: "Importações",
   atas: "Atas",
   anexos_importacao: "Anexos de importação",
+  decisoes_previsao: "Divergências aceitas na previsão",
 };
