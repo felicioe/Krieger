@@ -1,5 +1,37 @@
 # Estado atual e passagem de contexto
 
+## Corrige total das despesas duplicado na Previsão sugerida (PR #103) — mesclada e publicada — 28/10/2026
+
+Investigando o Residencial Santa Cecília a pedido do usuário (índice sugerido
+importado diferente do calculado): o PDF do Systemar traz a linha de subtotal
+como "Total das despesas **exercício** de 2025/2026" (sem a palavra "do"), mas
+`lerPrevisaoSugerida` (`domain/pdfParser.ts`) só reconhecia "do período"/"do
+exercício". A linha virava uma categoria de despesa a mais, duplicando o total
+das despesas do ano (R$ 74.296,38 → R$ 148.592,76) e, por tabela, o rateio
+mensal sugerido e o índice de correção (+133,98% em vez do valor real).
+
+Corrigido o regex (aceita "do" opcional) e, a pedido do usuário, criada
+validação automática: `validarPrevisaoSugeridaDoPdf()`
+(`domain/previsaoSugerida.ts`) compara os totais que o próprio PDF já traz
+prontos (total ordinário, rateio anual/mensal sugerido, índice) com o que o
+sistema recalcula a partir das categorias lidas — pega esse tipo de erro de
+leitura automaticamente, mesmo em variações de rótulo ainda não vistas, sem
+depender de revisão manual relatório por relatório. A tela de confirmação de
+importação (`ResumoImportacao.tsx`) mostra essas divergências como aviso antes
+de confirmar.
+
+O exercício 2026 do Santa Cecília já importado em produção ficou com a
+categoria duplicada (a lista de categorias não é editável na tela — só
+deduções/variação são). Ação pendente do usuário: usar "Importar PDF" na
+prestação de contas desse exercício, com o mesmo arquivo original, para
+sobrescrever a previsão sugerida com a leitura corrigida (não duplica o
+exercício; usa o fluxo de importação em modo "editor").
+
+Mesclada em `main` (`34929a5`) e publicada em `deploy-hostinger` (`a91f55d`)
+— auto-deploy confirmado ao vivo (`index.html` referencia `index-CKpCxe2s.js`,
+hash exato do último build; `auth.php?a=eu` responde 200 com a sessão
+logada; console sem erros novos).
+
 ## Corrige campo de valor espremido em Deduções/Ajustes da previsão (PR #102) — mesclada e publicada — 28/10/2026
 
 Bug de layout achado numa captura de tela do usuário: nas listas "Deduções" e
