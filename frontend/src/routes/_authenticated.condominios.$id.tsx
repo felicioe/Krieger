@@ -1,7 +1,7 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, CalendarPlus, ChevronsDownUp, ChevronsUpDown, Loader2, Megaphone, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarPlus, ChevronsDownUp, ChevronsUpDown, Loader2, Megaphone, RefreshCw, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import { chaves, itemQuery } from "@/lib/queries";
 import { mascaraCNPJ } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
+import { consultarCnpjReceita, enderecoDaReceita } from "@/lib/receitaCnpj";
 import type { Arredondamento, Condominio, ModoRegra, VariacaoMetodo } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/condominios/$id")({
@@ -126,6 +127,27 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
 
   const set = <K extends keyof Condominio>(campo: K, valor: Condominio[K]) =>
     setC((atual) => ({ ...atual, [campo]: valor }));
+
+  const [buscandoReceita, setBuscandoReceita] = useState(false);
+  async function atualizarPelaReceita() {
+    const digitos = c.cnpj.replace(/\D/g, "");
+    if (digitos.length !== 14) {
+      toast.error("Informe um CNPJ completo antes de atualizar pela Receita Federal.");
+      return;
+    }
+    setBuscandoReceita(true);
+    try {
+      const dados = await consultarCnpjReceita(digitos);
+      if (!dados) {
+        toast.error("Não foi possível encontrar esse CNPJ na Receita Federal.");
+        return;
+      }
+      set("enderecoEdital", enderecoDaReceita(dados));
+      toast.success("Endereço atualizado a partir da Receita Federal. Revise e salve.");
+    } finally {
+      setBuscandoReceita(false);
+    }
+  }
 
   const salvar = useMutation({
     mutationFn: (dados: Condominio) => api.salvar("condominios", dados),
@@ -243,8 +265,18 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             <Field rotulo="Variação padrão" dica="Usada na previsão orçamentária." className="sm:col-span-2">
               <PercentualInput value={c.variacaoPadrao} onChange={(v) => set("variacaoPadrao", v)} />
             </Field>
-            <Field rotulo="Endereço (edital)" className="sm:col-span-6">
-              <Input value={c.enderecoEdital} onChange={(e) => set("enderecoEdital", e.target.value)} />
+            <Field
+              rotulo="Endereço (edital)"
+              dica="O botão preenche a partir do CNPJ, usando os dados públicos da Receita Federal — revise antes de salvar."
+              className="sm:col-span-6"
+            >
+              <div className="flex gap-2">
+                <Input value={c.enderecoEdital} onChange={(e) => set("enderecoEdital", e.target.value)} className="flex-1" />
+                <Button type="button" variant="outline" onClick={atualizarPelaReceita} disabled={buscandoReceita}>
+                  {buscandoReceita ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                  Atualizar pela Receita
+                </Button>
+              </div>
             </Field>
             <Field
               rotulo="Pasta de documentos"
