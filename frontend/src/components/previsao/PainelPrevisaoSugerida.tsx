@@ -98,7 +98,7 @@ export function PainelPrevisaoSugerida({
             itens={p.deducoes}
             onChange={(deducoes) => setP({ deducoes })}
             novo={() => ({ id: novoId(), descricao: "", sinal: "-", valor: 0 })}
-            colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)] @2xl:grid-cols-[5.75rem_minmax(0,1fr)_9.5rem]"
+            colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)] @xl:grid-cols-[5.75rem_minmax(0,1fr)_9.5rem]"
             cabecalhos={["Sinal", "Descrição", "Valor anual"]}
             reordenavel={false}
             rotuloAdicionar="Adicionar dedução"
@@ -107,7 +107,7 @@ export function PainelPrevisaoSugerida({
               <>
                 <SinalToggle valor={d.sinal} onChange={(sinal) => up({ sinal })} rotulo="Sinal da dedução" />
                 <Input aria-label="Descrição" placeholder="Descrição da dedução" value={d.descricao} onChange={(ev) => up({ descricao: ev.target.value })} />
-                <div className="col-span-full sm:col-span-1">
+                <div className="col-span-full @min-[12rem]:col-span-1 @min-[12rem]:col-start-2 @xl:col-start-auto">
                   <DinheiroInput aria-label="Valor anual" value={d.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
                 </div>
               </>

@@ -166,7 +166,7 @@ export function PainelPrevisao({
             itens={ajustes}
             onChange={(v) => setPrev({ ajustes: v })}
             novo={() => ({ id: novoId(), descricao: "", sinal: "+", valor: 0 })}
-            colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)] @2xl:grid-cols-[5.75rem_minmax(0,1fr)_9.5rem]"
+            colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)] @xl:grid-cols-[5.75rem_minmax(0,1fr)_9.5rem]"
             cabecalhos={["Sinal", "Descrição e grupo", "Valor anual"]}
             reordenavel={false}
             rotuloAdicionar="Adicionar ajuste"
@@ -175,10 +175,10 @@ export function PainelPrevisao({
               <>
                 <SinalToggle valor={a.sinal} onChange={(sinal) => up({ sinal })} rotulo="Sinal do ajuste" />
                 <Input aria-label="Descrição" placeholder="Descrição do ajuste" value={a.descricao} onChange={(ev) => up({ descricao: ev.target.value })} />
-                <div className="col-span-full sm:col-span-1">
+                <div className="col-span-full @min-[12rem]:col-span-1 @min-[12rem]:col-start-2 @xl:col-start-auto">
                   <DinheiroInput aria-label="Valor anual" value={a.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
                 </div>
-                <div className="col-span-full mb-2 flex items-center gap-2 sm:col-start-2">
+                <div className="col-span-full mb-2 flex items-center gap-2 @min-[12rem]:col-start-2">
                   <span className="text-xs text-muted-foreground">Grupo</span>
                   <Selecao
                     aria-label="Grupo do ajuste"
