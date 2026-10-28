@@ -215,6 +215,8 @@ export interface Exercicio extends ComId {
   mostrarAnalise?: boolean;
   mostrarPizza?: boolean;
   mostrarEvolucaoMensal?: boolean;
+  /** Linhas por rubrica (contas analíticas) na seção Previsto × Realizado; false = só os totais por grupo. */
+  mostrarContasAnaliticas?: boolean;
   /** Campo novo (opcional): escolhas do relatório final. "Análise gráfica" usa mostrarAnalise/mostrarPizza. */
   relatorioFinal?: {
     /** Seções incluídas (ausente = incluída). */

@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -53,6 +55,7 @@ function PaginaComparativo() {
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
   const [tolerancia, setTolerancia] = useState<number | null>(TOLERANCIA_PADRAO);
+  const [mostrarAnaliticas, setMostrarAnaliticas] = useState(true);
 
   const exercicios = useMemo(
     () =>
@@ -179,8 +182,23 @@ function PaginaComparativo() {
               <GraficoComparativo r={r} />
             </SectionCard>
 
-            <SectionCard titulo="Por rubrica" descricao={`Diferença = realizado − previsto até ${ate}. Tolerância de ${pctTexto(r.tolerancia).replace("+", "")}.`}>
-              <TabelaComparativo r={r} />
+            <SectionCard
+              titulo="Por rubrica"
+              descricao={`Diferença = realizado − previsto até ${ate}. Tolerância de ${pctTexto(r.tolerancia).replace("+", "")}.`}
+              acoes={
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="mostrar-analiticas"
+                    checked={mostrarAnaliticas}
+                    onCheckedChange={(v) => setMostrarAnaliticas(v === true)}
+                  />
+                  <Label htmlFor="mostrar-analiticas" className="text-sm font-normal text-muted-foreground">
+                    Mostrar contas analíticas
+                  </Label>
+                </div>
+              }
+            >
+              <TabelaComparativo r={r} mostrarAnaliticas={mostrarAnaliticas} />
             </SectionCard>
           </>
         )}
