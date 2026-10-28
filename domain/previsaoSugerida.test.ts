@@ -3,6 +3,8 @@ import { lerPrevisaoSugerida } from "@/domain/pdfParser";
 import {
   calcularPrevisaoSugerida,
   calcularPrevisaoSugeridaPorUnidade,
+  chaveDivergencia,
+  compararComTotaisPdf,
   previsaoSugeridaDoPdf,
   validarPrevisaoSugeridaDoPdf,
 } from "@/domain/previsaoSugerida";
@@ -41,6 +43,17 @@ describe("previsaoSugeridaDoPdf", () => {
     ]);
     expect(p.deducoes).toEqual([{ id: "ded-agua-gas", descricao: "Parte água e gás", sinal: "-", valor: 30000 }]);
     expect(p.variacao).toEqual({ sinal: "+", valor: 10000 });
+  });
+
+  it("guarda os totais que o PDF já traz prontos (totaisPdf), pra comparar depois mesmo após editar", () => {
+    const p = previsaoSugeridaDoPdf(pv);
+    expect(p.totaisPdf).toEqual({
+      totalDespesasAno: 190000,
+      totalOrdinario: 160000,
+      rateioAnualSugerido: 170000,
+      rateioMensalSugerido: 14166.67,
+      indiceSugerido: 7.5,
+    });
   });
 
   it("sem dedução nem variação no PDF, não cria linha de dedução e a variação fica zerada", () => {
@@ -96,6 +109,37 @@ describe("validarPrevisaoSugeridaDoPdf", () => {
     const ordinario = divergencias.find((d) => d.campo === "Total ordinário")!;
     expect(ordinario.doPdf).toBe(160000); // o PDF informa este total à parte, numa linha própria
     expect(ordinario.calculado).toBe(350000); // 380000 (categorias, já duplicadas) - 30000 (dedução)
+  });
+});
+
+describe("compararComTotaisPdf e chaveDivergencia", () => {
+  const resultado = calcularPrevisaoSugerida({
+    rateioMensalAtual: 20000,
+    categorias: [{ nome: "Pessoal", anual: 150000, media: 12500 }],
+    deducoes: [],
+    variacao: { sinal: "+", valor: 0 },
+  });
+
+  it("sem totaisPdf (exercício sem previsão sugerida do PDF, ou campo ausente em dado antigo), não há divergência", () => {
+    expect(compararComTotaisPdf(resultado, null)).toEqual([]);
+    expect(compararComTotaisPdf(resultado, undefined)).toEqual([]);
+  });
+
+  it("chaveDivergencia é estável independente da ordem e vazia sem divergências", () => {
+    expect(chaveDivergencia([])).toBe("");
+    const a = [
+      { campo: "Total ordinário", doPdf: 160000, calculado: 350000 },
+      { campo: "Índice sugerido para correção", doPdf: 7.5, calculado: 50 },
+    ];
+    const b = [a[1]!, a[0]!]; // mesmas divergências, ordem diferente
+    expect(chaveDivergencia(a)).toBe(chaveDivergencia(b));
+    expect(chaveDivergencia(a)).not.toBe("");
+  });
+
+  it("chaveDivergencia muda se um valor mudar (aceite anterior deixa de valer)", () => {
+    const a = [{ campo: "Total ordinário", doPdf: 160000, calculado: 350000 }];
+    const b = [{ campo: "Total ordinário", doPdf: 160000, calculado: 351000 }];
+    expect(chaveDivergencia(a)).not.toBe(chaveDivergencia(b));
   });
 });
 

@@ -241,6 +241,10 @@ function PaginasExtras({
                 </li>
               ))}
             </ul>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Esse aviso continua disponível depois de confirmar, na Previsão orçamentária desse exercício (aba “Sugerida pelo
+              Systemar”) — é lá que dá pra concluir a análise e, se mantiver os valores calculados, confirmar a divergência.
+            </p>
           </AlertDescription>
         </Alert>
       )}

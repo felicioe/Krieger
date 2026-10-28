@@ -1,19 +1,26 @@
 import { useId, useMemo, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { TriangleAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { DinheiroInput, PercentualInput, Selecao } from "@/components/app/inputs";
-import { formatBRL, formatNumeroBR } from "@/lib/format";
+import { formatBRL, formatDataHora, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
 import { cn } from "@/lib/utils";
-import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
+import { useUsuario } from "@/lib/auth";
+import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
 import type { AjustePrevisao, Exercicio, PrevisaoSugeridaExercicio } from "@/domain/types";
 import { ARREDONDAMENTO, CaixaUnidades } from "./PainelPrevisao";
 import { QuadroAvisos, SemValor, SituacaoResultado } from "./AvisosPrevisao";
 import { SinalToggle } from "./SinalToggle";
+
+const formatoCampoDivergencia = (campo: string, valor: number) =>
+  campo === "Índice sugerido para correção" ? `${formatNumeroBR(valor)}%` : formatBRL(valor);
 
 const pct = (n: number | null | undefined) => (n === null || n === undefined ? "—" : `${n > 0 ? "+" : ""}${formatNumeroBR(n)}%`);
 const comSinal = (n: number) => `${n < 0 ? "−" : ""}${formatBRL(Math.abs(n))}`;
@@ -32,13 +39,23 @@ export function PainelPrevisaoSugerida({
   condoId: string;
   onChange: (parcial: Partial<Exercicio>) => void;
 }) {
+  const usuario = useUsuario();
   const r = useMemo(() => calcularPrevisaoSugerida(p), [p]);
+  const divergencias = useMemo(() => compararComTotaisPdf(r, p.totaisPdf), [r, p.totaisPdf]);
+  const chaveAtual = useMemo(() => chaveDivergencia(divergencias), [divergencias]);
+  const divergenciaAceita = divergencias.length > 0 && p.divergenciaAceita?.chave === chaveAtual;
   const fundoReservaPct = e.prev?.fundoReservaPct ?? null;
   const u = useMemo(
     () => calcularPrevisaoSugeridaPorUnidade(r.rateioMensalSugerido, unidades, fundoReservaPct ?? 0, e.arredondamento),
     [r.rateioMensalSugerido, unidades, fundoReservaPct, e.arredondamento],
   );
   const setP = (parcial: Partial<PrevisaoSugeridaExercicio>) => onChange({ previsaoSugerida: { ...p, ...parcial } });
+  const aceitarDivergencia = (aceitar: boolean) =>
+    setP({
+      divergenciaAceita: aceitar
+        ? { chave: chaveAtual, em: new Date().toISOString(), por: usuario?.id ?? "", porNome: usuario?.nome || usuario?.login || "" }
+        : null,
+    });
   const prev = e.prev ?? { modo: "tradicional" as const, ajustes: [] };
   const idQuadro = `${useId()}-avisos`;
   const parcial = u.valorUnidade === null;
@@ -56,7 +73,38 @@ export function PainelPrevisaoSugerida({
     : [];
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
+    <div className="space-y-6">
+      {divergencias.length > 0 && (
+        <Alert variant="warning">
+          <TriangleAlert />
+          <AlertDescription>
+            <p className="font-semibold">
+              Os totais que o PDF do Systemar já traz prontos não batem com o que foi recalculado a partir das categorias, deduções e
+              variação atuais. Confira a página “Previsão orçamentária ordinária sugerida” do PDF antes de manter estes valores.
+            </p>
+            <ul className="mt-1.5 list-disc pl-4">
+              {divergencias.map((d) => (
+                <li key={d.campo}>
+                  {d.campo}: PDF informa {formatoCampoDivergencia(d.campo, d.doPdf)}, sistema calculou {formatoCampoDivergencia(d.campo, d.calculado)}.
+                </li>
+              ))}
+            </ul>
+            <label className="mt-3 flex items-start gap-2 text-sm font-normal">
+              <Checkbox checked={divergenciaAceita} onCheckedChange={(v) => aceitarDivergencia(v === true)} className="mt-0.5" />
+              <span>
+                Estou ciente da diferença e confirmo que os valores calculados acima estão corretos, mesmo diferentes do PDF. Necessário
+                para salvar esta previsão.
+              </span>
+            </label>
+            {divergenciaAceita && p.divergenciaAceita && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Confirmado por {p.divergenciaAceita.porNome || "—"} em {formatDataHora(p.divergenciaAceita.em)}.
+              </p>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
       <div className="min-w-0 space-y-6">
         <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
         <SectionCard titulo="Categorias de despesa" descricao="Efetivamente realizado no ano, como veio do PDF do Systemar.">
@@ -200,6 +248,7 @@ export function PainelPrevisaoSugerida({
           </div>
         </section>
       </aside>
+      </div>
     </div>
   );
 }

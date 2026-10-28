@@ -1,5 +1,54 @@
 # Estado atual e passagem de contexto
 
+## Divergência da Previsão sugerida: visível após a importação, com aceite e log (PR #104) — 28/10/2026
+
+Pedido do usuário depois do PR #103: o aviso de divergência (PDF × recalculado)
+só aparecia na tela de confirmação da importação, difícil de concluir a
+análise ali. Pediu que ficasse visível depois, que uma divergência mantida
+exigisse aceite explícito do usuário, e um log dessas decisões.
+
+**Ação necessária em produção — nova tabela**: `kr_decisoes_previsao`
+(schema.sql), mesmo padrão `id+dados+atualizado_em` das demais, store nova
+`decisoes_previsao` em `domain/types.ts`/`api.php`. **Precisa rodar o
+`CREATE TABLE IF NOT EXISTS` via phpMyAdmin em produção** antes do log
+funcionar contra a API real (mesma pendência que `kr_backups` teve) — sem
+isso, o registro do log falha silenciosamente (`catch(() => undefined)`, não
+bloqueia o salvamento da previsão) mas a tela "Divergências da previsão" fica
+vazia.
+
+Mudanças:
+
+- `domain/types.ts`: `PrevisaoSugeridaExercicio` ganha `totaisPdf` (totais do
+  PDF, congelados na importação — antes eram lidos e descartados) e
+  `divergenciaAceita` (chave + quem + quando). Novo tipo
+  `DecisaoDivergenciaPrevisao` (o registro do log).
+- `domain/previsaoSugerida.ts`: `compararComTotaisPdf(resultado, totaisPdf)`
+  substitui a comparação feita só a partir do `pv` da importação — agora
+  reutilizável a qualquer momento com os totais já salvos no exercício, mesmo
+  depois de editar deduções/variação. `chaveDivergencia()` identifica o
+  conjunto de divergências atual, pra saber se um aceite anterior ainda vale.
+- Tela Previsão orçamentária (`PainelPrevisaoSugerida.tsx` +
+  `_authenticated.previsao-orcamentaria.tsx`): mostra o aviso permanentemente
+  (não só na importação), com checkbox "estou ciente e confirmo" — sem
+  marcar, **Salvar é bloqueado** (toast + troca pra aba certa). Editar
+  deduções/variação de novo muda a `chave` e invalida um aceite anterior,
+  reexigindo confirmação.
+- Ao salvar com um aceite novo, grava um registro em `decisoes_previsao`
+  (condomínio, exercício, campos divergentes com PDF×calculado, quem/quando
+  aceitou). Nova tela **Divergências da previsão** (`/previsao-divergencias`,
+  no menu em Financeiro) lista esse log, mais recente primeiro.
+- `ResumoImportacao.tsx`: aviso da importação ganhou uma linha apontando pra
+  esse novo lugar permanente.
+
+Testado manualmente em `npm run dev` local (mock): injetei uma previsão
+sugerida com `totaisPdf` divergente via `localStorage`, confirmei o aviso, o
+bloqueio do Salvar sem o aceite, o toast de erro, o salvamento com o aceite
+marcado, a nota "Confirmado por Administrador em ...", e o registro aparecendo
+em `/previsao-divergencias`. `npm test`/`typecheck`/`docs:check` na raiz e
+`tsc --noEmit` no frontend limpos; `vitest` do frontend com o mesmo flake
+pré-existente de `localStorage.clear()` (171 passaram, 15 falharam, nenhum dos
+arquivos afetados).
+
 ## Corrige total das despesas duplicado na Previsão sugerida (PR #103) — mesclada e publicada — 28/10/2026
 
 Investigando o Residencial Santa Cecília a pedido do usuário (índice sugerido

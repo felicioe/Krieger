@@ -52,6 +52,16 @@ CREATE TABLE IF NOT EXISTS kr_anexos_importacao (
   atualizado_em DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Log: toda vez que a Previsão sugerida (categorias lidas do PDF) diverge dos totais que o próprio
+-- PDF já trazia prontos (ver `domain/previsaoSugerida.ts`) e o usuário decide manter os valores
+-- calculados mesmo assim. Mesmo padrão id/dados das demais tabelas; o JSON em `dados` segue
+-- `DecisaoDivergenciaPrevisao` (domain/types.ts). Só gravado, nunca editado/apagado pela tela.
+CREATE TABLE IF NOT EXISTS kr_decisoes_previsao (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Controle de acesso: usuários do sistema (perfil 'admin' ou 'user') e controle de tentativas de login.
 CREATE TABLE IF NOT EXISTS kr_usuarios (
   id VARCHAR(32) PRIMARY KEY,

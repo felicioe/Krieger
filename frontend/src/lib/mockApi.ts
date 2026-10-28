@@ -141,6 +141,7 @@ function semente(): Dados {
     importacoes: [],
     anexos_importacao: [],
     atas: [ataExemplo(assembleias[0] as Registro, condominios[0] as Registro)],
+    decisoes_previsao: [],
   };
 }
 
