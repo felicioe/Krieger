@@ -1,5 +1,30 @@
 # Estado atual e passagem de contexto
 
+## Corrige campo de valor espremido em Deduções/Ajustes da previsão (PR #102) — mesclada e publicada — 28/10/2026
+
+Bug de layout achado numa captura de tela do usuário: nas listas "Deduções" e
+"Ajustes da previsão" (Previsão orçamentária) e no checkbox "Procurador" da
+lista de Presentes (Atas), o campo de valor ficava espremido na coluna
+estreita do sinal (~5.75rem) em larguras intermediárias de tela, cortando
+visualmente o valor digitado.
+
+Causa: essas linhas usam o grid por `@container` de `RepeatableList`, mas o
+campo de valor usava a variante de viewport `sm:col-span-1`/`sm:col-start-2`
+para se reposicionar — os dois sistemas de breakpoint são independentes, e em
+larguras onde o container ainda estava no estágio de 2 colunas, o `sm:`
+(quase sempre ativo em desktop) fazia o campo cair, por posicionamento
+automático, na coluna errada. Trocado por variantes `@container` equivalentes
+e antecipado o estágio de 3 colunas (sinal + descrição + valor lado a lado)
+de `@2xl` para `@xl` nas duas listas de previsão. Revisado o resto do sistema
+(`grep` por `sm:col-span-1`/`sm:col-start`): as demais ocorrências são em
+grids comuns (não `@container`), sem o bug.
+
+Mesclada em `main` (`3d7755c`) e publicada em `deploy-hostinger` (`fc3ffe6`)
+— auto-deploy confirmado ao vivo (`index.html` referencia `index-6OjR_jAN.js`,
+hash exato do último build; `auth.php?a=eu` responde 401; tela de login
+renderiza normalmente). Validado visualmente em `npm run dev` local antes do
+PR, nas duas listas afetadas, em largura estreita e larga.
+
 ## Atualizar cadastro pela Receita Federal (PR #100) e ocultar contas analíticas no Previsto × Realizado (PR #101) — mescladas e publicadas — 28/10/2026
 
 Dois pedidos do usuário na mesma mensagem, implementados em branches/PRs
