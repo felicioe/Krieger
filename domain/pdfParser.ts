@@ -530,8 +530,9 @@ export function lerPrevisaoSugerida(texto: string): PrevisaoSugeridaLida | null 
       const nome = m[1]!.trim();
       const anual = paraNumero(m[2]!);
       const media = paraNumero(m[3]!);
-      // O rótulo varia por condomínio/exercício: "do período" ou "do exercício de AAAA/AAAA".
-      if (/^Total das despesas do (per[íi]odo|exerc[íi]cio)/i.test(nome)) {
+      // O rótulo varia por condomínio/exercício: "do período", "do exercício de AAAA/AAAA" ou,
+      // nalguns relatórios, sem o "do" ("Total das despesas exercício de AAAA/AAAA").
+      if (/^Total das despesas (?:do\s+)?(per[íi]odo|exerc[íi]cio)/i.test(nome)) {
         totalDespesasAno = anual;
         totalDespesasMedia = media;
       } else {

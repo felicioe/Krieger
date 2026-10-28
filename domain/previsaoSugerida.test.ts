@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { lerPrevisaoSugerida } from "@/domain/pdfParser";
-import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
+import {
+  calcularPrevisaoSugerida,
+  calcularPrevisaoSugeridaPorUnidade,
+  previsaoSugeridaDoPdf,
+  validarPrevisaoSugeridaDoPdf,
+} from "@/domain/previsaoSugerida";
 import type { PrevisaoSugeridaExercicio } from "@/domain/types";
 
 describe("previsaoSugeridaDoPdf", () => {
@@ -42,6 +47,55 @@ describe("previsaoSugeridaDoPdf", () => {
     const semExtra = previsaoSugeridaDoPdf({ ...pv, deducao: null, variacaoSugerida: null });
     expect(semExtra.deducoes).toEqual([]);
     expect(semExtra.variacao).toEqual({ sinal: "+", valor: 0 });
+  });
+});
+
+describe("validarPrevisaoSugeridaDoPdf", () => {
+  const previsaoSugerida = [
+    "CONDOMÍNIO RESIDENCIAL JARDIM TESTE",
+    "PREVISÃO ORÇAMENTÁRIA ORDINÁRIA",
+    "SUGERIDA PARA O EXERCÍCIO DE 2026/2027.",
+    "Valor total do rateio ordinário mensal utilizado atualmente ",
+    "para obter os valores cobrados de condomínio .............. R$ 20.000,00 ",
+    "efetivamente realizado no ano média mês ",
+    "Departamento pessoal ..................... R$ 150.000,00 R$ 12.500,00 ",
+    "Manutenções .............................. R$ 40.000,00 R$ 3.333,33 ",
+    "Total das despesas do período ............ R$ 190.000,00 R$ 15.833,33 ",
+    "Despesas a deduzir (parte água e gás) .... R$-30.000,00 ",
+    "Total de despesas consideradas ordinárias. R$ 160.000,00 ",
+    "Variação de despesas sugeridas p/ 2026/27. R$ 10.000,00 ",
+    "Sugestão de rateio anual ordinário ....... R$ 170.000,00 ",
+    "Sugestão de rateio mensal ordinário ....................... R$ 14.166,67 ",
+    // Consistente com os demais valores: 14.166,67 / 20.000,00 - 1 ≈ -29,17% (não um valor arbitrário).
+    "Índice sugerido para correção do condomínio ............... -29,17% ",
+    "Cidade Exemplo, 31 de outubro de 2026. ",
+  ].join("\n");
+
+  it("sem divergência, quando os totais do PDF batem com o recalculado", () => {
+    const pv = lerPrevisaoSugerida(previsaoSugerida)!;
+    expect(validarPrevisaoSugeridaDoPdf(pv)).toEqual([]);
+  });
+
+  it("acusa divergência quando uma linha de subtotal vira categoria falsa (caso real: Residencial Santa Cecília)", () => {
+    // Rótulo que o parser não reconhece como linha de total (ex.: faltando "do", como no PDF real do
+    // Santa Cecília) vira uma categoria a mais, duplicando o total das despesas do ano — e por tabela
+    // o total ordinário, o rateio sugerido e o índice, mesmo esses vindo de linhas à parte no PDF.
+    const comSubtotalDuplicado = previsaoSugerida.replace(
+      "Total das despesas do período ............ R$ 190.000,00 R$ 15.833,33 ",
+      "Subtotal período .......................... R$ 190.000,00 R$ 15.833,33 ",
+    );
+    const pv = lerPrevisaoSugerida(comSubtotalDuplicado)!;
+    expect(pv.totalDespesasAno).toBeNull(); // a linha de total nem foi reconhecida como tal
+    const divergencias = validarPrevisaoSugeridaDoPdf(pv);
+    expect(divergencias.length).toBeGreaterThan(0);
+    const campos = divergencias.map((d) => d.campo);
+    expect(campos).toContain("Total ordinário");
+    expect(campos).toContain("Sugestão de rateio anual ordinário");
+    expect(campos).toContain("Sugestão de rateio mensal ordinário");
+    expect(campos).toContain("Índice sugerido para correção");
+    const ordinario = divergencias.find((d) => d.campo === "Total ordinário")!;
+    expect(ordinario.doPdf).toBe(160000); // o PDF informa este total à parte, numa linha própria
+    expect(ordinario.calculado).toBe(350000); // 380000 (categorias, já duplicadas) - 30000 (dedução)
   });
 });
 
