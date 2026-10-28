@@ -51,7 +51,7 @@ describe("TabelaComparativo (tela)", () => {
 describe("tabelaComparativo (PDF/Word)", () => {
   it("inclui as linhas por rubrica por padrão", () => {
     const [bloco] = tabelaComparativo(comparativoFixture());
-    const linhas = bloco!.tipo === "tabela" ? bloco.linhas : [];
+    const linhas = bloco?.tipo === "tabela" ? bloco.linhas : [];
     const nomes = linhas.map((l) => JSON.stringify(l.celulas[0]));
     expect(nomes.some((n) => n.includes("Salários"))).toBe(true);
     expect(nomes.some((n) => n.includes("Total Pessoal"))).toBe(true);
@@ -59,7 +59,7 @@ describe("tabelaComparativo (PDF/Word)", () => {
 
   it("mostrarAnaliticas=false esconde as rubricas, mantendo grupo e totais", () => {
     const [bloco] = tabelaComparativo(comparativoFixture(), false);
-    const linhas = bloco!.tipo === "tabela" ? bloco.linhas : [];
+    const linhas = bloco?.tipo === "tabela" ? bloco.linhas : [];
     const nomes = linhas.map((l) => JSON.stringify(l.celulas[0]));
     expect(nomes.some((n) => n.includes("Salários"))).toBe(false);
     expect(nomes.some((n) => n.includes("Encargos sociais"))).toBe(false);
