@@ -161,6 +161,19 @@ describe("lerPrevisaoSugerida", () => {
     expect(pv?.totalOrdinario).toBe(160000);
     expect(pv?.indiceSugerido).toBe(7.5);
   });
+
+  it("reconhece o total sem o 'do' (achado no PDF real do Residencial Santa Cecília: duplicava a despesa)", () => {
+    const semDo = previsaoSugerida.replace(
+      "Total das despesas do período ............ R$ 190.000,00 R$ 15.833,33 ",
+      "Total das despesas exercício de 2025/2026  R$ 190.000,00 R$ 15.833,33 ",
+    );
+    const pv = lerPrevisaoSugerida(semDo);
+    expect(pv?.categorias).toEqual([
+      { nome: "Departamento pessoal", anual: 150000, media: 12500 },
+      { nome: "Manutenções", anual: 40000, media: 3333.33 },
+    ]);
+    expect(pv?.totalDespesasAno).toBe(190000);
+  });
 });
 
 describe("aplicarConsideracoesAoExercicio", () => {

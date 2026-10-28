@@ -4,6 +4,7 @@ import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { ROTULO_LAYOUT, colunasDoRelatorio, resumoConferencia } from "@/domain/importacao";
+import { validarPrevisaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
 import type { ConsideracoesFinaisLidas, PrevisaoSugeridaLida, RelatorioLido } from "@/domain/pdfParser";
 import type { Demonstrativo, DestinoImportacao } from "@/domain/types";
 import { contagem } from "@/components/app/textos";
@@ -182,6 +183,9 @@ function PaginasExtras({
 }) {
   if (!cf && !pv) return null;
   const naPrestacao = destino !== "mensais";
+  const divergencias = pv ? validarPrevisaoSugeridaDoPdf(pv) : [];
+  const formatoCampo = (campo: string, valor: number) =>
+    campo === "Índice sugerido para correção" ? `${formatNumeroBR(valor)}%` : formatBRL(valor);
   const detalhes = cf
     ? [
         cf.administracao.length > 0 && `${contagem(cf.administracao.length, "membro", "membros")} da administração`,
@@ -193,32 +197,53 @@ function PaginasExtras({
     : [];
 
   return (
-    <Alert>
-      <Info />
-      <AlertDescription>
-        <ul className="grid gap-1.5">
-          {cf && (
-            <li>
-              <span className="font-medium">Considerações finais lidas</span>
-              {detalhes.length > 0 && <> ({detalhes.join(", ")})</>}.{" "}
-              {naPrestacao
-                ? "Esses dados preenchem as Considerações finais da prestação de contas (tela Relatório final) e continuam editáveis."
-                : "Elas só são usadas na prestação de contas; o relatório mensal não as utiliza."}
-            </li>
-          )}
-          {pv && (
-            <li>
-              <span className="font-medium">Previsão orçamentária sugerida lida</span>
-              {pv.categorias.length > 0 && <> ({pv.categorias.length} categoria(s) de despesa</>}
-              {pv.categorias.length > 0 && pv.rateioMensalSugerido != null && <>, rateio mensal sugerido no PDF {formatBRL(pv.rateioMensalSugerido)}</>}
-              {pv.categorias.length > 0 && <>)</>}.{" "}
-              {naPrestacao
-                ? "Ela preenche o menu Previsão orçamentária, onde as deduções e a variação continuam editáveis."
-                : "Ela só é usada na prestação de contas."}
-            </li>
-          )}
-        </ul>
-      </AlertDescription>
-    </Alert>
+    <>
+      <Alert>
+        <Info />
+        <AlertDescription>
+          <ul className="grid gap-1.5">
+            {cf && (
+              <li>
+                <span className="font-medium">Considerações finais lidas</span>
+                {detalhes.length > 0 && <> ({detalhes.join(", ")})</>}.{" "}
+                {naPrestacao
+                  ? "Esses dados preenchem as Considerações finais da prestação de contas (tela Relatório final) e continuam editáveis."
+                  : "Elas só são usadas na prestação de contas; o relatório mensal não as utiliza."}
+              </li>
+            )}
+            {pv && (
+              <li>
+                <span className="font-medium">Previsão orçamentária sugerida lida</span>
+                {pv.categorias.length > 0 && <> ({pv.categorias.length} categoria(s) de despesa</>}
+                {pv.categorias.length > 0 && pv.rateioMensalSugerido != null && <>, rateio mensal sugerido no PDF {formatBRL(pv.rateioMensalSugerido)}</>}
+                {pv.categorias.length > 0 && <>)</>}.{" "}
+                {naPrestacao
+                  ? "Ela preenche o menu Previsão orçamentária, onde as deduções e a variação continuam editáveis."
+                  : "Ela só é usada na prestação de contas."}
+              </li>
+            )}
+          </ul>
+        </AlertDescription>
+      </Alert>
+      {divergencias.length > 0 && (
+        <Alert variant="warning">
+          <TriangleAlert />
+          <AlertDescription>
+            <p className="font-semibold">
+              Previsão sugerida: os totais que o PDF já traz prontos não batem com o que o sistema recalculou a partir das categorias
+              lidas. Provável erro de leitura (ex.: uma linha de subtotal reconhecida como categoria de despesa) — confira a página
+              “Previsão orçamentária ordinária sugerida” do PDF antes de confirmar.
+            </p>
+            <ul className="mt-1.5 list-disc pl-4">
+              {divergencias.map((d) => (
+                <li key={d.campo}>
+                  {d.campo}: PDF informa {formatoCampo(d.campo, d.doPdf)}, sistema calculou {formatoCampo(d.campo, d.calculado)}.
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      )}
+    </>
   );
 }

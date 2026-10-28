@@ -73,6 +73,35 @@ export function calcularPrevisaoSugerida(p: PrevisaoSugeridaExercicio): Resultad
   return { totalDespesasAno, totalDespesasMedia, deducoesTotal, totalOrdinario, variacaoValor, totalFinal, rateioMensalSugerido, rateioMensalAtual, indiceSugerido };
 }
 
+export interface DivergenciaPrevisaoSugerida {
+  campo: string;
+  doPdf: number;
+  calculado: number;
+}
+
+/**
+ * Compara os totais que o PDF do Systemar já traz prontos (lidos por `lerPrevisaoSugerida`) com o
+ * que o sistema recalcula a partir das categorias/dedução/variação extraídas do mesmo PDF. Os dois
+ * deveriam bater sempre — se divergirem é sinal de erro de leitura (ex.: uma linha de subtotal foi
+ * reconhecida como categoria de despesa, duplicando o total; caso real achado no Residencial Santa
+ * Cecília), não algo que precise de revisão manual relatório por relatório.
+ */
+export function validarPrevisaoSugeridaDoPdf(pv: PrevisaoSugeridaLida): DivergenciaPrevisaoSugerida[] {
+  const r = calcularPrevisaoSugerida(previsaoSugeridaDoPdf(pv));
+  const divergencias: DivergenciaPrevisaoSugerida[] = [];
+  const cmp = (campo: string, doPdf: number | null, calculado: number | null, tolerancia: number) => {
+    if (doPdf !== null && calculado !== null && Math.abs(doPdf - calculado) > tolerancia) {
+      divergencias.push({ campo, doPdf, calculado });
+    }
+  };
+  cmp("Total das despesas do ano", pv.totalDespesasAno, r.totalDespesasAno, 0.02);
+  cmp("Total ordinário", pv.totalOrdinario, r.totalOrdinario, 0.02);
+  cmp("Sugestão de rateio anual ordinário", pv.rateioAnualSugerido, r.totalFinal, 0.02);
+  cmp("Sugestão de rateio mensal ordinário", pv.rateioMensalSugerido, r.rateioMensalSugerido, 0.02);
+  cmp("Índice sugerido para correção", pv.indiceSugerido, r.indiceSugerido, 0.05);
+  return divergencias;
+}
+
 /** Quadro "previsão por unidade" — só para comparar/validar, não altera o rateio mensal sugerido. */
 export function calcularPrevisaoSugeridaPorUnidade(
   rateioMensalSugerido: number,
