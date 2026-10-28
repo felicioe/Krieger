@@ -1,13 +1,13 @@
 # Estado atual e passagem de contexto
 
-## Divergência da Previsão sugerida: visível após a importação, com aceite e log (PR #104) — 28/10/2026
+## Divergência da Previsão sugerida: visível após a importação, com aceite e log (PR #104) — mesclada e publicada — 28/10/2026
 
 Pedido do usuário depois do PR #103: o aviso de divergência (PDF × recalculado)
 só aparecia na tela de confirmação da importação, difícil de concluir a
 análise ali. Pediu que ficasse visível depois, que uma divergência mantida
 exigisse aceite explícito do usuário, e um log dessas decisões.
 
-**Ação necessária em produção — nova tabela**: `kr_decisoes_previsao`
+**Ação pendente em produção — nova tabela**: `kr_decisoes_previsao`
 (schema.sql), mesmo padrão `id+dados+atualizado_em` das demais, store nova
 `decisoes_previsao` em `domain/types.ts`/`api.php`. **Precisa rodar o
 `CREATE TABLE IF NOT EXISTS` via phpMyAdmin em produção** antes do log
@@ -48,6 +48,30 @@ em `/previsao-divergencias`. `npm test`/`typecheck`/`docs:check` na raiz e
 `tsc --noEmit` no frontend limpos; `vitest` do frontend com o mesmo flake
 pré-existente de `localStorage.clear()` (171 passaram, 15 falharam, nenhum dos
 arquivos afetados).
+
+Mesclada em `main` (`f3ccadb`) e publicada em `deploy-hostinger` (`4a5045e`)
+— auto-deploy confirmado ao vivo (`index.html` referencia `index-D0PSPOsB.js`,
+hash exato do último build; `auth.php?a=eu` responde 200 com a sessão logada;
+console sem erros novos). `/previsao-divergencias` ao vivo confirma o erro
+esperado — "Tabela do banco ausente: ... kr_decisoes_previsao doesn't exist.
+Aplique schema.sql" — tratado com mensagem amigável, não uma tela quebrada;
+some assim que a tabela for criada.
+
+**Achado ao validar o Santa Cecília ao vivo**: o usuário já havia reimportado
+o PDF entre o PR #103 e este, então a categoria duplicada já sumiu (Total das
+despesas: R$ 74.296,38, correto). Mas esse exercício foi salvo ANTES deste PR
+existir, então não tem `totaisPdf` gravado — o aviso de divergência não
+aparece para ele (dado antigo, sem campo novo; é o comportamento esperado).
+Reimportar o mesmo PDF mais uma vez agora preencheria `totaisPdf` e revelaria
+uma divergência real, não relacionada ao bug já corrigido: com a única dedução
+do PDF ("Parte água e gás", R$ 17.105,93) e despesas de R$ 74.296,38, o total
+ordinário bate matematicamente em R$ 57.190,45 (índice +1,77%) — mas a linha
+"Total de despesas consideradas ordinárias" do próprio PDF diz R$ 63.190,45
+(índice +12,44%), exatamente R$ 6.000,00 a mais. As três linhas que o PDF
+mesmo imprime (despesas, dedução, total ordinário) não se reconciliam entre
+si — indício de inconsistência no PDF de origem (Systemar), não um bug do
+sistema. Vale conferir com o escritório/Systemar se há uma dedução adicional
+de R$ 6.000 não detalhada em "Despesas a deduzir".
 
 ## Corrige total das despesas duplicado na Previsão sugerida (PR #103) — mesclada e publicada — 28/10/2026
 
