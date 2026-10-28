@@ -1,5 +1,40 @@
 # Estado atual e passagem de contexto
 
+## Atualizar cadastro pela Receita Federal (PR #100) e ocultar contas analíticas no Previsto × Realizado (PR #101) — mescladas e publicadas — 28/10/2026
+
+Dois pedidos do usuário na mesma mensagem, implementados em branches/PRs
+separados por não terem arquivos em comum:
+
+- **PR #100**: botão "Atualizar pela Receita" ao lado do campo "Endereço
+  (edital)" no cadastro do condomínio — reaproveita a mesma integração
+  BrasilAPI já usada no pré-cadastro do Anexar Comparativo (PR #99), sem
+  duplicar lógica. Só preenche o campo; o usuário revisa e salva normalmente.
+- **PR #101**: checkbox "Mostrar contas analíticas" na tela Previsto ×
+  Realizado (preferência visual, não persiste) e checkbox próprio
+  `mostrarContasAnaliticas` no Relatório Final, aninhado em "Previsto ×
+  Realizado" na lista de seções — controla a mesma tabela na prévia e no
+  PDF/Word gerado, mesmo padrão de `mostrarPizza`/`mostrarEvolucaoMensal`.
+
+CI do PR #101 quebrou por `TS18048` (`bloco` possivelmente `undefined` em
+`src/test/tabelaComparativo.test.tsx`, por causa de `bloco!.tipo === "tabela"
+? bloco.linhas : []` — o `!` não narrowa a segunda referência); corrigido
+trocando para `bloco?.tipo === "tabela" ? bloco.linhas : []`.
+
+Mescladas em `main` (`146cbea` e `9adf953`) e publicadas em
+`deploy-hostinger` (`2319af1` e `7e78b6c`) — auto-deploy confirmado ao vivo
+(`index.html` referencia `index-CY0M48zq.js`, hash exato do último build;
+`auth.php?a=eu` responde 401; sem erros de JS além do 401 esperado).
+
+Testes: 189 testes de frontend (14 arquivos novos desde a última publicação,
+incluindo os 4 de `tabelaComparativo.test.tsx`); `npx tsc --noEmit` limpo na
+raiz e no frontend. Verificado ao vivo no navegador antes de abrir os PRs:
+botão da Receita preenchendo o endereço real, checkbox da tela e checkbox do
+Relatório Final escondendo as linhas por rubrica corretamente.
+
+Regra combinada com o usuário nesta sessão: a partir de agora, PR com CI
+verde e sem decisão pendente para o usuário é mesclado e publicado sem
+perguntar de novo a cada vez (ver memória `feedback_auto_merge_publish.md`).
+
 ## Anexar Comparativo: pré-cadastro de condomínio (PR #99) — mesclada e publicada — 27/10/2026
 
 Ao anexar um Comparativo Financeiro de um condomínio ainda não cadastrado, o
