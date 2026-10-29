@@ -1,6 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { AlertTriangle, Building2, FileSpreadsheet, Megaphone, type LucideIcon } from "lucide-react";
+import {
+  AlertTriangle,
+  Building2,
+  Calculator,
+  ChevronRight,
+  FileSpreadsheet,
+  FlameKindling,
+  Megaphone,
+  ShieldCheck,
+  SquareCheckBig,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +22,15 @@ import { DataTable } from "@/components/app/DataTable";
 import { itemQuery, listaQuery } from "@/lib/queries";
 import { dataParaBR, formatData } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
-import { backupAtrasado, calcularVencimentos, diasDesdeBackup, proximasAssembleias } from "@/domain/painel";
+import {
+  backupAtrasado,
+  calcularPendenciasAjuste,
+  calcularVencimentos,
+  diasDesdeBackup,
+  proximasAssembleias,
+  type PendenciaAjuste,
+  type TipoVencimento,
+} from "@/domain/painel";
 import type { Assembleia, Condominio, ConfigBackup, Exercicio } from "@/domain/types";
 import { haDias, prazoDias } from "@/components/app/textos";
 
@@ -28,6 +48,22 @@ export const Route = createFileRoute("/_authenticated/painel")({
 
 const TIPO_ASSEMBLEIA = { ordinaria: "Ordinária", extraordinaria: "Extraordinária" } as const;
 const MODALIDADE = { online: "On-line", presencial: "Presencial", hibrida: "Híbrida" } as const;
+
+const ICONE_VENCIMENTO: Record<TipoVencimento, LucideIcon> = {
+  seguro: ShieldCheck,
+  extintores: FlameKindling,
+  vistoria: SquareCheckBig,
+  mandato: Users,
+};
+
+const ICONE_PENDENCIA: Record<PendenciaAjuste["tipo"], LucideIcon> = {
+  alerta_cadastro: Building2,
+  divergencia_previsao: Calculator,
+};
+
+function urgenciaVencimento(dias: number): "alerta" | "warning" | "secondary" {
+  return dias < 0 ? "alerta" : dias <= 30 ? "warning" : "secondary";
+}
 
 function Indicador({ titulo, valor, icone: Icone, to }: { titulo: string; valor: number; icone: LucideIcon; to: string }) {
   // #82: com texto 200% em 320 px a palavra "CONDOMÍNIOS" + ícone + p-5 passavam da coluna;
@@ -52,6 +88,7 @@ function Painel() {
 
   const hoje = new Date();
   const vencimentos = calcularVencimentos(condos, hoje, 90);
+  const pendencias = calcularPendenciasAjuste(condos, exercicios);
   const proximas = proximasAssembleias(assembleias, hoje, 5);
   const nomeCondo = (id: string) => condos.find((c) => c.id === id)?.nome ?? "Condomínio não encontrado";
   const diasBackup = diasDesdeBackup(backup?.em, hoje);
@@ -77,6 +114,46 @@ function Painel() {
         </Alert>
       )}
 
+      {pendencias.length > 0 && (
+        <SectionCard
+          className="mb-6 border-destructive/30"
+          titulo="Pendências de ajuste"
+          descricao="Precisam de atenção para os relatórios ficarem corretos — clique para abrir e resolver."
+        >
+          <ul className="divide-y">
+            {pendencias.map((p, i) => {
+              const Icone = ICONE_PENDENCIA[p.tipo];
+              const miolo = (
+                <>
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                    <Icone className="size-4" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-medium text-foreground">{p.condoNome}</span>
+                    <span className="block break-words text-xs text-muted-foreground">{p.descricao}</span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                </>
+              );
+              const classe = "alvo-toque flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 hover:text-primary";
+              return (
+                <li key={`${p.tipo}-${p.condoId}-${p.exercicioId ?? i}`}>
+                  {p.tipo === "divergencia_previsao" ? (
+                    <Link to="/previsao-orcamentaria" search={{ exercicio: p.exercicioId! }} className={classe}>
+                      {miolo}
+                    </Link>
+                  ) : (
+                    <Link to="/condominios/$id" params={{ id: p.condoId }} className={classe}>
+                      {miolo}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </SectionCard>
+      )}
+
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Indicador titulo="Condomínios" valor={condos.length} icone={Building2} to="/condominios" />
         <Indicador titulo="Prestações de contas" valor={exercicios.length} icone={FileSpreadsheet} to="/prestacao-contas" />
@@ -84,35 +161,41 @@ function Painel() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SectionCard titulo="Atenção" descricao="Vencimentos nos próximos 90 dias e itens vencidos">
+        <SectionCard titulo="Vencimentos e prazos" descricao="Próximos 90 dias e itens já vencidos.">
           {vencimentos.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum vencimento nos próximos 90 dias.</p>
           ) : (
             <ul className="divide-y">
-              {vencimentos.map((v, i) => (
-                // #82: o selo de prazo não encolhia (shrink-0) e passava da página em 320 px com texto 200%.
-                // Agora desce para a linha de baixo quando não cabe ao lado do nome e quebra o texto se preciso.
-                <li
-                  key={`${v.condoId}-${v.tipo}-${i}`}
-                  className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1.5 py-2.5 first:pt-0 last:pb-0"
-                >
-                  <div className="min-w-0 flex-[1_1_6rem]">
-                    <Link
-                      to="/condominios/$id"
-                      params={{ id: v.condoId }}
-                      className="alvo-toque block break-words text-sm font-medium text-foreground hover:text-primary hover:underline"
-                    >
-                      {v.condoNome}
-                    </Link>
-                    <div className="break-words text-xs text-muted-foreground">
-                      {v.descricao} · {dataParaBR(v.data)}
+              {vencimentos.map((v, i) => {
+                const Icone = ICONE_VENCIMENTO[v.tipo];
+                return (
+                  // #82: o selo de prazo não encolhia (shrink-0) e passava da página em 320 px com texto 200%.
+                  // Agora desce para a linha de baixo quando não cabe ao lado do nome e quebra o texto se preciso.
+                  <li
+                    key={`${v.condoId}-${v.tipo}-${i}`}
+                    className="flex flex-wrap items-start gap-3 py-2.5 first:pt-0 last:pb-0"
+                  >
+                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <Icone className="size-4" aria-hidden />
+                    </span>
+                    <div className="min-w-0 flex-[1_1_6rem]">
+                      <Link
+                        to="/condominios/$id"
+                        params={{ id: v.condoId }}
+                        className="alvo-toque block break-words text-sm font-medium text-foreground hover:text-primary hover:underline"
+                      >
+                        {v.condoNome}
+                      </Link>
+                      <div className="break-words text-xs text-muted-foreground">
+                        {v.descricao} · {dataParaBR(v.data)}
+                      </div>
                     </div>
-                  </div>
-                  <Badge variant={v.dias < 0 ? "alerta" : v.dias <= 30 ? "warning" : "secondary"} className="max-w-full">
-                    {prazoDias(v.dias)}
-                  </Badge>
-                </li>
-              ))}
+                    <Badge variant={urgenciaVencimento(v.dias)} className="ml-auto max-w-full shrink-0">
+                      {prazoDias(v.dias)}
+                    </Badge>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </SectionCard>

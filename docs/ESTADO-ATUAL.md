@@ -1,5 +1,26 @@
 # Estado atual e passagem de contexto
 
+## Painel: bloco "Pendências de ajuste" (cadastro + previsão) + reorganização dos vencimentos — 29/10/2026
+
+Pedido do usuário depois do importador de Listagem de Condomínios: ele gostou da ideia de
+centralizar o aviso de divergência no Painel, e pediu 2 blocos — um bem visual com itens que
+precisam de ajuste pra algum relatório ficar correto (com link direto pra onde corrigir), e o
+painel de vencimentos de hoje, só com uma distribuição visual melhor.
+
+- `domain/painel.ts`: `calcularPendenciasAjuste(condominios, exercicios)` reúne duas fontes:
+  `Condominio.alertaCadastro` (CNPJ ausente/duplicado, da Listagem de Condomínios) e a Previsão
+  sugerida "em conferência" (reaproveita `compararComTotaisPdf`/`chaveDivergencia` de
+  `domain/previsaoSugerida.ts` — mesma lógica da PR #105, sem duplicar). Primeiro teste desse
+  arquivo (`domain/painel.test.ts` não existia).
+- `_authenticated.painel.tsx`: novo card "Pendências de ajuste" (borda vermelha, ícone por tipo,
+  clicável — linka pro cadastro do condomínio ou pra Previsão orçamentária daquele exercício já
+  com o filtro certo), só aparece quando há pendência. O card de vencimentos (renomeado "Vencimentos
+  e prazos") ganhou um ícone por tipo (seguro/extintores/vistoria/mandato) pra ficar mais fácil de
+  escanear, mesma lista de antes.
+- Testado em `npm run dev` local contra os 192 condomínios já importados nesta sessão: a lista
+  bateu exatamente com os 19 alertas de CNPJ confirmados antes; clicar numa pendência abriu o
+  cadastro certo, com o alerta e o botão "Dispensar" já lá.
+
 ## Novo importador: Listagem Completa de Condomínios (Systemar) — aguardando validação do usuário — 29/10/2026
 
 Pedido do usuário: um 4º tipo de importador de PDF pra "Listagem Completa de Condomínios" do
