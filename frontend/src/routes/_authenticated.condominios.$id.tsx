@@ -1,10 +1,11 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, CalendarPlus, ChevronsDownUp, ChevronsUpDown, Loader2, Megaphone, RefreshCw, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, CalendarPlus, ChevronsDownUp, ChevronsUpDown, Loader2, Megaphone, RefreshCw, Save, TriangleAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -228,6 +229,20 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
         }
       />
 
+      {c.alertaCadastro && (
+        <Alert variant="destructive" className="mb-6">
+          <TriangleAlert />
+          <AlertDescription>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span>{c.alertaCadastro}</span>
+              <Button type="button" size="sm" variant="outline" onClick={() => set("alertaCadastro", null)}>
+                Dispensar alerta
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <form id="form-condominio" onSubmit={enviar} className="space-y-6" noValidate>
         <SectionCard titulo="Dados gerais" descricao="O essencial para começar. O nome é obrigatório; o resto pode ser completado depois.">
           <div className="grid gap-4 sm:grid-cols-6">
@@ -264,6 +279,9 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             </Field>
             <Field rotulo="Variação padrão" dica="Usada na previsão orçamentária." className="sm:col-span-2">
               <PercentualInput value={c.variacaoPadrao} onChange={(v) => set("variacaoPadrao", v)} />
+            </Field>
+            <Field rotulo="Área total (m²)" dica="Informativo, lido da Listagem de Condomínios." className="sm:col-span-2">
+              <NumeroInput value={c.areaTotalM2 ?? null} onChange={(v) => set("areaTotalM2", v)} />
             </Field>
             <Field
               rotulo="Endereço (edital)"
@@ -324,15 +342,22 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           <RepeatableList
             itens={c.administracao}
             onChange={(v) => set("administracao", v)}
-            novo={() => ({ cargo: "", nome: "", mandatoFim: "" })}
-            colunas="@2xl:grid-cols-[12rem_1fr_8rem]"
-            cabecalhos={["Cargo", "Nome", "Fim do mandato"]}
+            novo={() => ({ cargo: "", nome: "", mandatoFim: "", identificacao: "", telefone: "" })}
+            colunas="grid-cols-1 @2xl:grid-cols-[8rem_7rem_minmax(0,1fr)_10rem_8rem]"
+            cabecalhos={["Cargo", "Identificação", "Nome", "Telefone", "Fim do mandato"]}
             rotuloAdicionar="Adicionar membro"
             vazio="Nenhum membro da administração informado."
             render={(m, up) => (
               <>
                 <Input aria-label="Cargo" placeholder="Cargo" value={m.cargo} onChange={(e) => up({ cargo: e.target.value })} />
+                <Input
+                  aria-label="Identificação"
+                  placeholder="Unidade, sala, box..."
+                  value={m.identificacao ?? ""}
+                  onChange={(e) => up({ identificacao: e.target.value })}
+                />
                 <Input aria-label="Nome" placeholder="Nome" value={m.nome} onChange={(e) => up({ nome: e.target.value })} />
+                <Input aria-label="Telefone" placeholder="Telefone" value={m.telefone ?? ""} onChange={(e) => up({ telefone: e.target.value })} />
                 <MesAnoInput aria-label="Fim do mandato" value={m.mandatoFim} onChange={(v) => up({ mandatoFim: v })} />
               </>
             )}

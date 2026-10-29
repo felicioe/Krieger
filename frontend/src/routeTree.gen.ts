@@ -17,6 +17,7 @@ import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedConsultaDocumentosRouteImport } from './routes/_authenticated.consulta-documentos'
 import { Route as AuthenticatedEscritorioRouteImport } from './routes/_authenticated.escritorio'
 import { Route as AuthenticatedImportadorRouteImport } from './routes/_authenticated.importador'
+import { Route as AuthenticatedImportadorCondominiosRouteImport } from './routes/_authenticated.importador-condominios'
 import { Route as AuthenticatedMinhaSenhaRouteImport } from './routes/_authenticated.minha-senha'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated.painel'
 import { Route as AuthenticatedPrevisaoOrcamentariaRouteImport } from './routes/_authenticated.previsao-orcamentaria'
@@ -78,6 +79,12 @@ const AuthenticatedImportadorRoute = AuthenticatedImportadorRouteImport.update({
   path: '/importador',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedImportadorCondominiosRoute =
+  AuthenticatedImportadorCondominiosRouteImport.update({
+    id: '/importador-condominios',
+    path: '/importador-condominios',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedMinhaSenhaRoute = AuthenticatedMinhaSenhaRouteImport.update({
   id: '/minha-senha',
   path: '/minha-senha',
@@ -200,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/importador': typeof AuthenticatedImportadorRoute
+  '/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
@@ -229,6 +237,7 @@ export interface FileRoutesByTo {
   '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/importador': typeof AuthenticatedImportadorRoute
+  '/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
@@ -260,6 +269,7 @@ export interface FileRoutesById {
   '/_authenticated/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/_authenticated/escritorio': typeof AuthenticatedEscritorioRoute
   '/_authenticated/importador': typeof AuthenticatedImportadorRoute
+  '/_authenticated/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
   '/_authenticated/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
@@ -291,6 +301,7 @@ export interface FileRouteTypes {
     | '/consulta-documentos'
     | '/escritorio'
     | '/importador'
+    | '/importador-condominios'
     | '/minha-senha'
     | '/painel'
     | '/previsao-orcamentaria'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/consulta-documentos'
     | '/escritorio'
     | '/importador'
+    | '/importador-condominios'
     | '/minha-senha'
     | '/painel'
     | '/previsao-orcamentaria'
@@ -350,6 +362,7 @@ export interface FileRouteTypes {
     | '/_authenticated/consulta-documentos'
     | '/_authenticated/escritorio'
     | '/_authenticated/importador'
+    | '/_authenticated/importador-condominios'
     | '/_authenticated/minha-senha'
     | '/_authenticated/painel'
     | '/_authenticated/previsao-orcamentaria'
@@ -435,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/importador'
       fullPath: '/importador'
       preLoaderRoute: typeof AuthenticatedImportadorRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/importador-condominios': {
+      id: '/_authenticated/importador-condominios'
+      path: '/importador-condominios'
+      fullPath: '/importador-condominios'
+      preLoaderRoute: typeof AuthenticatedImportadorCondominiosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/minha-senha': {
@@ -585,6 +605,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedConsultaDocumentosRoute: typeof AuthenticatedConsultaDocumentosRoute
   AuthenticatedEscritorioRoute: typeof AuthenticatedEscritorioRoute
   AuthenticatedImportadorRoute: typeof AuthenticatedImportadorRoute
+  AuthenticatedImportadorCondominiosRoute: typeof AuthenticatedImportadorCondominiosRoute
   AuthenticatedMinhaSenhaRoute: typeof AuthenticatedMinhaSenhaRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedPrevisaoOrcamentariaRoute: typeof AuthenticatedPrevisaoOrcamentariaRoute
@@ -612,6 +633,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedConsultaDocumentosRoute: AuthenticatedConsultaDocumentosRoute,
   AuthenticatedEscritorioRoute: AuthenticatedEscritorioRoute,
   AuthenticatedImportadorRoute: AuthenticatedImportadorRoute,
+  AuthenticatedImportadorCondominiosRoute:
+    AuthenticatedImportadorCondominiosRoute,
   AuthenticatedMinhaSenhaRoute: AuthenticatedMinhaSenhaRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedPrevisaoOrcamentariaRoute:

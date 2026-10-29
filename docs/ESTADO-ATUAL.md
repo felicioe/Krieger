@@ -1,5 +1,51 @@
 # Estado atual e passagem de contexto
 
+## Novo importador: Listagem Completa de Condomínios (Systemar) — aguardando validação do usuário — 29/10/2026
+
+Pedido do usuário: um 4º tipo de importador de PDF pra "Listagem Completa de Condomínios" do
+Systemar (relatório único com todos os condomínios do escritório — código, nome, CNPJ, endereço,
+área total e administração). Plano completo (confirmado com o usuário via 3 perguntas antes de
+implementar) em `C:\Users\Evandro\.claude\plans\quiet-chasing-token.md`.
+
+Decisões confirmadas: (1) quando houver CNPJ, atualiza o nome automaticamente pela razão social da
+Receita Federal; (2) sem CNPJ na listagem, casa pelo código (`Condominio.codigo`) — quando o CNPJ
+se repete entre dois condomínios da própria listagem, **não trava o cadastro**, só sinaliza com um
+alerta vermelho (`Condominio.alertaCadastro`), visível na lista de condomínios e no cadastro, com
+botão para dispensar manualmente; (3) exclui por padrão (mas deixa visível/marcável na prévia) as
+linhas da própria Krieger Assessoria Contábil (CNPJ 05.248.266/0001-71, aparece 2×) e qualquer linha
+"TESTE -".
+
+Campos novos: `Condominio.areaTotalM2`, `Condominio.alertaCadastro`,
+`MembroAdministracao.identificacao`/`.telefone` (cargo já era texto livre — "editável" já era o
+comportamento). **Nenhuma tabela nova** — tudo cabe no JSON já existente de `kr_condominios`, sem
+SQL a rodar em produção.
+
+Arquivos principais: `domain/pdfParser.ts` (`lerListagemCondominios` — parser novo, testado contra
+o texto real extraído do PDF do usuário via o mesmo pipeline do app, não contra a extração do Read
+tool, que não preserva o mesmo espaçamento em colunas — ver comentário no parser);
+`domain/importacaoListagemCondominios.ts` (`analisarListagemCondominios` — reaproveita
+`encontrarCondominio`/`domain/importacao.ts` para o match, calcula só os campos que mudaram);
+`frontend/src/lib/receitaCnpj.ts` (`consultarCnpjsEmLote` — lote sequencial com atraso, reaproveita
+`consultarCnpjReceita` já existente); `frontend/src/components/importacao/ImportarListagemCondominios.tsx`
++ rota `/importador-condominios` (prévia com status por linha, badge de alerta, progresso da
+consulta à Receita e do salvamento); administração no cadastro do condomínio ganhou colunas
+Identificação e Telefone.
+
+**Testado pelo agente contra o PDF real do usuário** (`283_102026.pdf`, 192 condomínios, 35
+páginas) em `npm run dev` local (mock): parser bate exatamente com o rodapé "Total:192"; achou e
+sinalizou corretamente vários pares de CNPJ repetido (alguns claramente o mesmo condomínio em dois
+blocos — ex. torre/garagem, residencial/comercial — não só os 2 que eu tinha achado olhando à mão);
+excluiu por padrão só as 2 linhas da Krieger e a 1 "TESTE -"; consulta em lote à Receita Federal
+rodou de verdade (176 CNPJs, ~176 chamadas reais à BrasilAPI) e atualizou nomes/endereços; salvamento
+dos 189 condomínios selecionados concluído sem erro; conferido um condomínio importado (Urban
+Classic, código 166) com administração, telefone e identificação corretos, e o badge vermelho
+aparecendo nos duplicados (ex. código 070/071).
+
+**Pendente**: o plano marcou explicitamente "sem PR/merge/publish até o usuário validar o resultado
+contra o PDF real" — ainda não abri PR. Antes de prosseguir, o usuário deveria rodar o importador
+ele mesmo (ou revisar o código) e confirmar que o resultado faz sentido, já que é dado real de
+produção (~190 condomínios) sendo criado/atualizado em lote pela primeira vez.
+
 ## Divergência da Previsão sugerida: redesenho (janela + "Em conferência", sem menu/tela própria) — 29/10/2026
 
 Feedback do usuário sobre o PR #104 (mesmo dia seguinte): a tela/menu dedicados

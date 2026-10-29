@@ -556,3 +556,130 @@ export function lerPrevisaoSugerida(texto: string): PrevisaoSugeridaLida | null 
     indiceSugerido: indiceSugeridoDoBloco(bloco),
   };
 }
+
+// ---------- Listagem Completa de Condomínios ----------
+
+export interface MembroDaListagem {
+  cargo: string;
+  identificacao: string | null;
+  nome: string;
+  telefone: string | null;
+}
+
+export interface CondominioDaListagem {
+  codigo: string;
+  nome: string;
+  /** Como veio no relatório (pode não ter 14 dígitos — alguns registros do Systemar trazem outro tipo de código). */
+  cnpj: string | null;
+  endereco: string;
+  bairro: string;
+  cidade: string;
+  uf: string;
+  cep: string;
+  areaTotalM2: number | null;
+  administracao: MembroDaListagem[];
+}
+
+// Linhas de cabeçalho/rodapé que se repetem em toda página — nunca são dado de condomínio.
+const LISTAGEM_BOILERPLATE =
+  /Sistema de Condom[íi]nios Auto-Gest[ãa]o|Listagem Completa de Condom[íi]nios|^\s*Cod\.\s+Nome do Condom[íi]nio|^\s*Endere[çc]o\s{2,}Bairro|^\s*Cidade\s{2,}UF\s{2,}CEP|KRIEGER ASSESSORIA CONT[ÁA]BIL E CONDOMINIAL LTDA|^\s*Total:\d+\s*$/i;
+
+// "<código> - <nome>[  <cnpj>]  <área total m², 6 casas decimais>" — o cnpj é opcional (quando
+// ausente, "nome" vai direto pra área, sem a lacuna extra no meio).
+const LISTAGEM_LINHA_CONDO = /^\s*(\d+)\s*-\s*(.+?)\s{2,}([\d.]+,\d{6})\s*$/;
+
+// "Cargo[ N]: (identificação opcional) Nome [  telefone/observações, resto da linha]".
+const LISTAGEM_LINHA_ADMIN = /^\s*(S[íi]ndico|Subs[íi]ndico|Conselheiro(?:\s*\d+)?):\s*(?:\(([^)]*)\)\s*)?(.+?)(?:\s{2,}(\S.*))?$/;
+
+function colunas(linha: string): string[] {
+  return linha
+    .split(/\s{2,}/)
+    .map((s) => s.trim())
+    .filter((s) => s !== "");
+}
+
+/**
+ * Lê a "Listagem Completa de Condomínios" do Systemar (relatório único com todos os
+ * condomínios — código, nome, CNPJ, endereço, área total e administração). Cada condomínio ocupa
+ * um bloco de linhas fixo: código+nome(+cnpj)+área, endereço+bairro, cidade+UF+CEP, a linha fixa
+ * "Síndico/Conselheiro Telefone" e, por fim, os membros da administração (ordem não é previsível —
+ * não assumir Síndico primeiro). `texto` já deve vir com o layout em espaços preservado (mesma
+ * convenção das demais funções deste arquivo — ver cabeçalho).
+ */
+export function lerListagemCondominios(texto: string): CondominioDaListagem[] | null {
+  if (!/Listagem Completa de Condom[íi]nios/i.test(texto)) return null;
+
+  const linhas: string[] = [];
+  for (const pagina of texto.split("\f")) {
+    for (const linha of pagina.split(/\r?\n/)) {
+      if (!linha.trim() || LISTAGEM_BOILERPLATE.test(linha)) continue;
+      linhas.push(linha);
+    }
+  }
+
+  const condominios: CondominioDaListagem[] = [];
+  let atual: CondominioDaListagem | null = null;
+  let fase: "endereco" | "cidade" | "marcador" | "admin" = "admin";
+
+  for (const linha of linhas) {
+    const mCondo = linha.match(LISTAGEM_LINHA_CONDO);
+    if (mCondo) {
+      if (atual) condominios.push(atual);
+      const [, codigo, meio, areaStr] = mCondo;
+      const partes = colunas(meio!);
+      const nome = (partes.length > 1 ? partes.slice(0, -1).join(" ") : (partes[0] ?? "")).trim();
+      const cnpjBruto = partes.length > 1 ? partes[partes.length - 1]! : null;
+      atual = {
+        codigo: codigo!.trim(),
+        nome,
+        cnpj: cnpjBruto,
+        endereco: "",
+        bairro: "",
+        cidade: "",
+        uf: "",
+        cep: "",
+        areaTotalM2: paraNumero(areaStr!),
+        administracao: [],
+      };
+      fase = "endereco";
+      continue;
+    }
+    if (!atual) continue; // resíduo de cabeçalho/rodapé não reconhecido — ignora, tolerante
+
+    if (fase === "endereco") {
+      const partes = colunas(linha);
+      atual.bairro = partes.length ? partes[partes.length - 1]! : "";
+      atual.endereco = partes.slice(0, -1).join(" ");
+      fase = "cidade";
+      continue;
+    }
+    if (fase === "cidade") {
+      const partes = colunas(linha);
+      atual.cidade = partes[0] ?? "";
+      atual.uf = partes[1] ?? "";
+      atual.cep = partes[2] ?? "";
+      fase = "marcador";
+      continue;
+    }
+    if (fase === "marcador") {
+      // Linha fixa "Síndico/Conselheiro Telefone" — só marca o início da administração.
+      fase = "admin";
+      continue;
+    }
+
+    const mAdmin = linha.match(LISTAGEM_LINHA_ADMIN);
+    if (mAdmin) {
+      const [, cargo, identificacao, nome, telefone] = mAdmin;
+      atual.administracao.push({
+        cargo: cargo!.trim(),
+        identificacao: identificacao?.trim() || null,
+        nome: nome!.trim(),
+        telefone: telefone?.trim() || null,
+      });
+    }
+    // Linha que não bate com nada reconhecido (continuação improvável de uma anterior) — ignora.
+  }
+  if (atual) condominios.push(atual);
+
+  return condominios;
+}
