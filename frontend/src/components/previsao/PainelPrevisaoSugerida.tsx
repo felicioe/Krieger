@@ -1,9 +1,11 @@
-import { useId, useMemo, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { TriangleAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -13,8 +15,16 @@ import { formatBRL, formatDataHora, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
 import { cn } from "@/lib/utils";
 import { useUsuario } from "@/lib/auth";
+import { listaQuery } from "@/lib/queries";
 import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
-import type { AjustePrevisao, Exercicio, PrevisaoSugeridaExercicio } from "@/domain/types";
+import type {
+  AjustePrevisao,
+  DecisaoDivergenciaPrevisao,
+  DecisaoDivergenciaPrevisaoSugerida,
+  DivergenciaPrevisaoSugerida,
+  Exercicio,
+  PrevisaoSugeridaExercicio,
+} from "@/domain/types";
 import { ARREDONDAMENTO, CaixaUnidades } from "./PainelPrevisao";
 import { QuadroAvisos, SemValor, SituacaoResultado } from "./AvisosPrevisao";
 import { SinalToggle } from "./SinalToggle";
@@ -39,23 +49,14 @@ export function PainelPrevisaoSugerida({
   condoId: string;
   onChange: (parcial: Partial<Exercicio>) => void;
 }) {
-  const usuario = useUsuario();
   const r = useMemo(() => calcularPrevisaoSugerida(p), [p]);
   const divergencias = useMemo(() => compararComTotaisPdf(r, p.totaisPdf), [r, p.totaisPdf]);
-  const chaveAtual = useMemo(() => chaveDivergencia(divergencias), [divergencias]);
-  const divergenciaAceita = divergencias.length > 0 && p.divergenciaAceita?.chave === chaveAtual;
   const fundoReservaPct = e.prev?.fundoReservaPct ?? null;
   const u = useMemo(
     () => calcularPrevisaoSugeridaPorUnidade(r.rateioMensalSugerido, unidades, fundoReservaPct ?? 0, e.arredondamento),
     [r.rateioMensalSugerido, unidades, fundoReservaPct, e.arredondamento],
   );
   const setP = (parcial: Partial<PrevisaoSugeridaExercicio>) => onChange({ previsaoSugerida: { ...p, ...parcial } });
-  const aceitarDivergencia = (aceitar: boolean) =>
-    setP({
-      divergenciaAceita: aceitar
-        ? { chave: chaveAtual, em: new Date().toISOString(), por: usuario?.id ?? "", porNome: usuario?.nome || usuario?.login || "" }
-        : null,
-    });
   const prev = e.prev ?? { modo: "tradicional" as const, ajustes: [] };
   const idQuadro = `${useId()}-avisos`;
   const parcial = u.valorUnidade === null;
@@ -74,36 +75,12 @@ export function PainelPrevisaoSugerida({
 
   return (
     <div className="space-y-6">
-      {divergencias.length > 0 && (
-        <Alert variant="warning">
-          <TriangleAlert />
-          <AlertDescription>
-            <p className="font-semibold">
-              Os totais que o PDF do Systemar já traz prontos não batem com o que foi recalculado a partir das categorias, deduções e
-              variação atuais. Confira a página “Previsão orçamentária ordinária sugerida” do PDF antes de manter estes valores.
-            </p>
-            <ul className="mt-1.5 list-disc pl-4">
-              {divergencias.map((d) => (
-                <li key={d.campo}>
-                  {d.campo}: PDF informa {formatoCampoDivergencia(d.campo, d.doPdf)}, sistema calculou {formatoCampoDivergencia(d.campo, d.calculado)}.
-                </li>
-              ))}
-            </ul>
-            <label className="mt-3 flex items-start gap-2 text-sm font-normal">
-              <Checkbox checked={divergenciaAceita} onCheckedChange={(v) => aceitarDivergencia(v === true)} className="mt-0.5" />
-              <span>
-                Estou ciente da diferença e confirmo que os valores calculados acima estão corretos, mesmo diferentes do PDF. Necessário
-                para salvar esta previsão.
-              </span>
-            </label>
-            {divergenciaAceita && p.divergenciaAceita && (
-              <p className="mt-1.5 text-xs text-muted-foreground">
-                Confirmado por {p.divergenciaAceita.porNome || "—"} em {formatDataHora(p.divergenciaAceita.em)}.
-              </p>
-            )}
-          </AlertDescription>
-        </Alert>
-      )}
+      <PainelDivergenciaPrevisao
+        exercicio={e}
+        divergencias={divergencias}
+        decisao={p.decisaoDivergencia}
+        onDecidir={(decisao) => setP({ decisaoDivergencia: decisao })}
+      />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
       <div className="min-w-0 space-y-6">
         <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
@@ -250,6 +227,120 @@ export function PainelPrevisaoSugerida({
       </aside>
       </div>
     </div>
+  );
+}
+
+/**
+ * Divergência entre os totais do PDF e o recalculado: um banner permanente (estado "Em conferência"
+ * até confirmar) + uma janela que abre sozinha ao detectar uma divergência nova, com as opções
+ * "Confirmar" ou "Vou analisar depois" e o histórico de decisões já tomadas nesta prestação de
+ * contas. Nada aqui bloqueia o Salvar — a prestação de contas só continua sinalizada como pendente
+ * (ver badge na lista de Prestação de contas) até alguém confirmar.
+ */
+function PainelDivergenciaPrevisao({
+  exercicio: e,
+  divergencias,
+  decisao,
+  onDecidir,
+}: {
+  exercicio: Exercicio;
+  divergencias: DivergenciaPrevisaoSugerida[];
+  decisao: DecisaoDivergenciaPrevisaoSugerida | null | undefined;
+  onDecidir: (decisao: DecisaoDivergenciaPrevisaoSugerida) => void;
+}) {
+  const usuario = useUsuario();
+  const chaveAtual = useMemo(() => chaveDivergencia(divergencias), [divergencias]);
+  const resolvida = decisao?.chave === chaveAtual && decisao.status === "confirmado";
+  const emConferencia = divergencias.length > 0 && !resolvida;
+  const [aberto, setAberto] = useState(false);
+  const chaveAutoAberta = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (emConferencia && chaveAutoAberta.current !== chaveAtual) {
+      chaveAutoAberta.current = chaveAtual;
+      setAberto(true);
+    }
+  }, [emConferencia, chaveAtual]);
+
+  const historico = useQuery({
+    ...listaQuery<DecisaoDivergenciaPrevisao>("decisoes_previsao"),
+    select: (d) => d.filter((x) => x.exercicioId === e.id).sort((a, b) => (a.decididoEm < b.decididoEm ? 1 : -1)),
+    enabled: divergencias.length > 0,
+  });
+
+  if (divergencias.length === 0) return null;
+
+  function decidir(status: "confirmado" | "revisar_depois") {
+    onDecidir({ chave: chaveAtual, status, em: new Date().toISOString(), por: usuario?.id ?? "", porNome: usuario?.nome || usuario?.login || "" });
+    setAberto(false);
+  }
+
+  return (
+    <>
+      <Alert variant="warning">
+        <TriangleAlert />
+        <AlertDescription>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p>
+              <span className="font-semibold">{emConferencia ? "Em conferência: " : "Divergência confirmada: "}</span>
+              os totais que o PDF do Systemar já traz prontos não batem com o que foi recalculado.
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={() => setAberto(true)}>
+              {emConferencia ? "Revisar e decidir" : "Ver detalhes"}
+            </Button>
+          </div>
+          {resolvida && decisao && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Confirmado por {decisao.porNome || "—"} em {formatDataHora(decisao.em)}.
+            </p>
+          )}
+          {!resolvida && decisao?.status === "revisar_depois" && decisao.chave === chaveAtual && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Adiado por {decisao.porNome || "—"} em {formatDataHora(decisao.em)} — ainda precisa de uma decisão final.
+            </p>
+          )}
+        </AlertDescription>
+      </Alert>
+
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Divergência na Previsão sugerida</DialogTitle>
+            <DialogDescription>
+              Os totais que o PDF do Systemar já traz prontos não batem com o que foi recalculado a partir das categorias, deduções e
+              variação atuais. Confira a página “Previsão orçamentária ordinária sugerida” do PDF antes de decidir.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="list-disc space-y-1 pl-4 text-sm">
+            {divergencias.map((d) => (
+              <li key={d.campo}>
+                {d.campo}: PDF informa {formatoCampoDivergencia(d.campo, d.doPdf)}, sistema calculou {formatoCampoDivergencia(d.campo, d.calculado)}.
+              </li>
+            ))}
+          </ul>
+          {historico.data && historico.data.length > 0 && (
+            <div className="rounded-md border bg-muted/30 p-3 text-xs">
+              <p className="mb-1 font-medium text-foreground">Decisões anteriores nesta prestação de contas</p>
+              <ul className="space-y-1">
+                {historico.data.map((h) => (
+                  <li key={h.id}>
+                    {h.status === "confirmado" ? "Confirmado" : "Adiado"} por {h.decididoPorNome || "—"} em {formatDataHora(h.decididoEm)}.
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button type="button" variant="outline" onClick={() => decidir("revisar_depois")}>
+              Vou analisar depois
+            </Button>
+            <Button type="button" onClick={() => decidir("confirmado")}>
+              Confirmar valores calculados
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

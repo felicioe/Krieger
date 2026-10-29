@@ -126,8 +126,9 @@ export function validarPrevisaoSugeridaDoPdf(pv: PrevisaoSugeridaLida): Divergen
   return compararComTotaisPdf(calcularPrevisaoSugerida(previsaoSugeridaDoPdf(pv)), totaisPdfDoPv(pv));
 }
 
-/** Identifica o conjunto de divergências atual, pra saber se um aceite anterior (`DivergenciaAceita`)
- * ainda vale ou se os valores mudaram desde então (nova edição de deduções/variação, por exemplo). */
+/** Identifica o conjunto de divergências atual, pra saber se uma decisão anterior
+ * (`DecisaoDivergenciaPrevisaoSugerida`) ainda vale ou se os valores mudaram desde então (nova
+ * edição de deduções/variação, por exemplo). */
 export function chaveDivergencia(divergencias: DivergenciaPrevisaoSugerida[]): string {
   return divergencias
     .map((d) => `${d.campo}:${d.doPdf.toFixed(2)}:${d.calculado.toFixed(2)}`)
