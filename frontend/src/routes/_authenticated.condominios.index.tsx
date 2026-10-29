@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { listaQuery } from "@/lib/queries";
@@ -63,7 +64,16 @@ function ListaCondominios() {
           {
             chave: "nome",
             titulo: "Nome",
-            render: (c: Condominio) => <span className="font-medium text-foreground">{c.nome}</span>,
+            render: (c: Condominio) => (
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-foreground">{c.nome}</span>
+                {c.alertaCadastro && (
+                  <Badge variant="destructive" title={c.alertaCadastro}>
+                    Alerta
+                  </Badge>
+                )}
+              </span>
+            ),
           },
           { chave: "cnpj", titulo: "CNPJ", className: "num whitespace-nowrap" },
           {

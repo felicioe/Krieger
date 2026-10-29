@@ -42,6 +42,10 @@ export interface MembroAdministracao {
   nome: string;
   /** mm/aaaa */
   mandatoFim?: string;
+  /** Campo novo (opcional): referência entre parênteses no relatório (unidade, sala, box, "Externo" etc.). */
+  identificacao?: string;
+  /** Campo novo (opcional). */
+  telefone?: string;
 }
 
 export interface Cobertura {
@@ -116,6 +120,14 @@ export interface Condominio extends ComId {
    * Usada só pelo agente de indexação da Consulta de Documentos (convenção/regimento/atas).
    */
   pastaDocumentos: string;
+  /** Campo novo (opcional): área total do condomínio (m²), lida da Listagem de Condomínios. */
+  areaTotalM2?: number | null;
+  /**
+   * Campo novo (opcional): problema achado na última importação da Listagem de Condomínios (ex.:
+   * CNPJ ausente ou usado por outro condomínio da mesma listagem) — não bloqueia nada, só fica
+   * visível (lista de condomínios e cadastro) até alguém revisar e dispensar manualmente.
+   */
+  alertaCadastro?: string | null;
 }
 
 // ---------- Demonstrativo ----------
