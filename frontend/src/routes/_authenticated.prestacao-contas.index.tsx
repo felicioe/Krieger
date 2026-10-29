@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { FileUp, Loader2, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,6 +20,7 @@ import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
 import { exercicioPadrao, normalizarExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { calcularPrevisao } from "@/domain/previsao";
+import { calcularPrevisaoSugerida, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/")({
@@ -32,7 +34,16 @@ export const Route = createFileRoute("/_authenticated/prestacao-contas/")({
   component: ListaExercicios,
 });
 
-type Linha = Exercicio & { previsto: number | null; despesas: number };
+type Linha = Exercicio & { previsto: number | null; despesas: number; emConferencia: boolean };
+
+/** Divergência (PDF × recalculado) na previsão sugerida ainda sem decisão "confirmado" — ver PainelPrevisaoSugerida. */
+function temDivergenciaEmConferencia(e: Exercicio): boolean {
+  if (!e.previsaoSugerida) return false;
+  const divergencias = compararComTotaisPdf(calcularPrevisaoSugerida(e.previsaoSugerida), e.previsaoSugerida.totaisPdf);
+  if (divergencias.length === 0) return false;
+  const decisao = e.previsaoSugerida.decisaoDivergencia;
+  return !(decisao?.chave === chaveDivergencia(divergencias) && decisao.status === "confirmado");
+}
 
 function ListaExercicios() {
   const navigate = useNavigate();
@@ -49,7 +60,13 @@ function ListaExercicios() {
         const e = normalizarExercicio(raw);
         const condo = porId.get(e.condoId);
         const r = calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, condo?.unidades ?? null);
-        return { ...e, condoNome: e.condoNome || condo?.nome || "", previsto: r.rateioSugerido, despesas: r.base };
+        return {
+          ...e,
+          condoNome: e.condoNome || condo?.nome || "",
+          previsto: r.rateioSugerido,
+          despesas: r.base,
+          emConferencia: temDivergenciaEmConferencia(e),
+        };
       })
       .filter((e) => !q || e.condoNome.toLowerCase().includes(q) || String(e.ano).includes(q))
       .sort((a, b) => Number(b.ano) - Number(a.ano) || a.condoNome.localeCompare(b.condoNome, "pt-BR"));
@@ -90,7 +107,16 @@ function ListaExercicios() {
           {
             chave: "condoNome",
             titulo: "Condomínio",
-            render: (e) => <span className="font-medium text-foreground">{e.condoNome}</span>,
+            render: (e) => (
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-foreground">{e.condoNome}</span>
+                {e.emConferencia && (
+                  <Badge variant="warning" title='Divergência entre o PDF e o recalculado na Previsão sugerida, ainda sem decisão "confirmado".'>
+                    Em conferência
+                  </Badge>
+                )}
+              </span>
+            ),
           },
           {
             chave: "despesas",

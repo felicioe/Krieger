@@ -1,5 +1,53 @@
 # Estado atual e passagem de contexto
 
+## Divergência da Previsão sugerida: redesenho (janela + "Em conferência", sem menu/tela própria) — 29/10/2026
+
+Feedback do usuário sobre o PR #104 (mesmo dia seguinte): a tela/menu dedicados
+("Divergências da previsão") não eram o lugar certo. Pediu: a divergência
+ligada à própria prestação de contas, uma janela que informe e peça um "Confirmado"
+ou "Vou analisar depois", e a prestação de contas marcada como "Em conferência"
+enquanto não houver confirmação. Confirmado com o usuário (AskUserQuestion)
+antes de implementar: badge na lista de Prestação de contas, janela abre
+sozinha ao detectar divergência, log mantido mas só visível dentro da própria
+prestação de contas (sem tela/menu separados).
+
+Mudanças (substituem o design do PR #104, sem reverter a correção de bug do
+PR #103):
+
+- Removida a rota `/previsao-divergencias` e o item de menu correspondente.
+- `domain/types.ts`: `PrevisaoSugeridaExercicio.divergenciaAceita` virou
+  `decisaoDivergencia` (tipo `DecisaoDivergenciaPrevisaoSugerida`, com
+  `status: "confirmado" | "revisar_depois"` — antes só existia o aceite).
+  `DecisaoDivergenciaPrevisao` (log) ganhou o mesmo `status` e os campos
+  renomeados para `decididoPor`/`decididoPorNome`/`decididoEm` (antes
+  `aceitoPor`/etc., nome que não fazia sentido pra uma decisão "revisar
+  depois"). Mesma tabela `kr_decisoes_previsao` de antes — nenhuma mudança de
+  schema.sql/api.php nesta entrega, só do formato do JSON salvo em `dados`.
+- `PainelPrevisaoSugerida.tsx`: o aviso em linha com checkbox virou um banner
+  compacto ("Em conferência" ou "Divergência confirmada") + uma janela
+  (`Dialog`) que **abre sozinha** ao detectar uma divergência nova, com os
+  valores PDF × calculado, o histórico de decisões já tomadas nesta prestação
+  de contas (busca `decisoes_previsao` filtrando por `exercicioId`), e os
+  botões "Vou analisar depois" / "Confirmar valores calculados". Reabre via
+  "Revisar e decidir" a qualquer momento.
+- **Deixou de bloquear o Salvar** (diferença do PR #104): qualquer decisão
+  (ou nenhuma) permite salvar; o que muda é só o status "Em conferência"
+  ficar visível — na própria tela (badge no cabeçalho) e na lista de
+  Prestação de contas (badge ao lado do nome do condomínio).
+- Log: grava uma entrada em `decisoes_previsao` a cada decisão nova
+  (confirmado OU revisar depois, não só confirmado) — e agora invalida a
+  query da lista depois de gravar (faltava isso no PR #104; sem a
+  invalidação, o histórico na janela não atualizava até recarregar a
+  página — achado testando manualmente).
+
+Testado manualmente em `npm run dev` local (mock): janela abrindo sozinha,
+"Vou analisar depois" salvando e mantendo "Em conferência" (cabeçalho + lista),
+reabrindo a janela e vendo o histórico ("Adiado por Administrador em..."),
+"Confirmar valores calculados" resolvendo (badge some do cabeçalho e da
+lista). `npm test`/`typecheck`/`docs:check` na raiz e `tsc --noEmit` no
+frontend limpos; `vitest` do frontend com o mesmo flake pré-existente de
+`localStorage.clear()` (171/15/3, nenhum arquivo afetado).
+
 ## Divergência da Previsão sugerida: visível após a importação, com aceite e log (PR #104) — mesclada e publicada — 28/10/2026
 
 Pedido do usuário depois do PR #103: o aviso de divergência (PDF × recalculado)

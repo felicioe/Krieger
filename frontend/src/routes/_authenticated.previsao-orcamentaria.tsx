@@ -122,15 +122,16 @@ function EditorPrevisao({
   const parcial = aba === "sugerida" ? !!e.previsaoSugerida && valorUnidadeSugerida === null : resultado.rateioSugerido === null;
 
   // Divergência entre os totais do PDF (congelados em previsaoSugerida.totaisPdf) e o recalculado a
-  // partir das categorias/deduções/variação atuais — reavaliada a cada edição, independente da aba
-  // aberta, porque Salvar grava o exercício inteiro.
+  // partir das categorias/deduções/variação atuais — "em conferência" até confirmar (não bloqueia o
+  // Salvar; só sinaliza, aqui e na lista de Prestação de contas).
   const divergenciasPv = useMemo(() => {
     if (!e.previsaoSugerida) return [];
     return compararComTotaisPdf(calcularPrevisaoSugerida(e.previsaoSugerida), e.previsaoSugerida.totaisPdf);
   }, [e.previsaoSugerida]);
   const chaveDivergenciaAtual = useMemo(() => chaveDivergencia(divergenciasPv), [divergenciasPv]);
-  const divergenciaPendente = divergenciasPv.length > 0 && e.previsaoSugerida?.divergenciaAceita?.chave !== chaveDivergenciaAtual;
-  const chaveAceitaAntesDoSalvar = useRef<string | null>(null);
+  const decisao = e.previsaoSugerida?.decisaoDivergencia;
+  const emConferencia = divergenciasPv.length > 0 && !(decisao?.chave === chaveDivergenciaAtual && decisao.status === "confirmado");
+  const chaveDecisaoAntesDoSalvar = useRef<string | null>(null);
 
   const sujoRef = useRef(sujo);
   sujoRef.current = sujo;
@@ -145,8 +146,8 @@ function EditorPrevisao({
       const n = normalizarExercicio(salvo);
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
       queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
-      const aceite = n.previsaoSugerida?.divergenciaAceita;
-      if (aceite && aceite.chave !== chaveAceitaAntesDoSalvar.current) {
+      const decidida = n.previsaoSugerida?.decisaoDivergencia;
+      if (decidida && decidida.chave !== chaveDecisaoAntesDoSalvar.current) {
         const campos = compararComTotaisPdf(calcularPrevisaoSugerida(n.previsaoSugerida!), n.previsaoSugerida!.totaisPdf);
         if (campos.length > 0) {
           api
@@ -157,10 +158,12 @@ function EditorPrevisao({
               exercicioId: n.id,
               ano: n.ano,
               campos,
-              aceitoPor: aceite.por,
-              aceitoPorNome: aceite.porNome,
-              aceitoEm: aceite.em,
+              status: decidida.status,
+              decididoPor: decidida.por,
+              decididoPorNome: decidida.porNome,
+              decididoEm: decidida.em,
             })
+            .then(() => queryClient.invalidateQueries({ queryKey: chaves.lista("decisoes_previsao") }))
             .catch(() => undefined); // não bloqueia o salvamento da previsão; só o log de auditoria falharia
         }
       }
@@ -172,12 +175,7 @@ function EditorPrevisao({
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
-    if (divergenciaPendente) {
-      toast.error('Confirme a divergência da Previsão sugerida (aba "Sugerida pelo Systemar") antes de salvar.');
-      setAba("sugerida");
-      return;
-    }
-    chaveAceitaAntesDoSalvar.current = (JSON.parse(salvoJson) as Exercicio).previsaoSugerida?.divergenciaAceita?.chave ?? null;
+    chaveDecisaoAntesDoSalvar.current = (JSON.parse(salvoJson) as Exercicio).previsaoSugerida?.decisaoDivergencia?.chave ?? null;
     salvar.mutate(prepararExercicio(e));
   }
 
@@ -200,9 +198,9 @@ function EditorPrevisao({
                 Resultado parcial
               </Badge>
             )}
-            {divergenciaPendente && (
-              <Badge variant="warning" title='Confirme na aba "Sugerida pelo Systemar" antes de salvar.'>
-                Divergência com o PDF
+            {emConferencia && (
+              <Badge variant="warning" title='Ver a aba "Sugerida pelo Systemar" para revisar e decidir.'>
+                Em conferência
               </Badge>
             )}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}

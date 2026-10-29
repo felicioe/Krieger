@@ -177,11 +177,14 @@ export interface DivergenciaPrevisaoSugerida {
   calculado: number;
 }
 
-/** Marca de que o usuário viu a(s) divergência(s) atual(is) e decidiu manter os valores calculados
- * mesmo assim. `chave` identifica o conjunto de divergências aceito — se os valores mudarem (nova
- * edição de deduções/variação), a chave muda e a aceitação anterior deixa de valer. */
-export interface DivergenciaAceita {
+/** Marca de que o usuário viu a(s) divergência(s) atual(is) e decidiu o que fazer: `"confirmado"`
+ * (mantém os valores calculados) ou `"revisar_depois"` (adia a decisão — a prestação de contas
+ * continua aparecendo como "Em conferência" até virar `"confirmado"`). `chave` identifica o conjunto
+ * de divergências decidido — se os valores mudarem (nova edição de deduções/variação), a chave muda
+ * e a decisão anterior deixa de valer, voltando a pedir decisão. */
+export interface DecisaoDivergenciaPrevisaoSugerida {
   chave: string;
+  status: "confirmado" | "revisar_depois";
   em: string;
   por: string;
   porNome: string;
@@ -198,21 +201,23 @@ export interface PrevisaoSugeridaExercicio {
   variacao: { sinal: "+" | "-"; valor: number };
   /** Campo novo (opcional): totais do PDF, para comparar com o recalculado a qualquer momento. */
   totaisPdf?: TotaisPrevisaoSugeridaPdf | null;
-  /** Campo novo (opcional): aceite registrado de uma divergência mantida. */
-  divergenciaAceita?: DivergenciaAceita | null;
+  /** Campo novo (opcional): decisão registrada sobre a divergência atual (confirmada ou adiada). */
+  decisaoDivergencia?: DecisaoDivergenciaPrevisaoSugerida | null;
 }
 
-/** Registro de log (store `decisoes_previsao`): o sistema apontou uma divergência na Previsão
- * sugerida e o usuário decidiu manter os valores calculados mesmo assim. */
+/** Log (store `decisoes_previsao`): toda vez que o sistema aponta uma divergência na Previsão
+ * sugerida e o usuário decide algo sobre ela — confirmar os valores calculados ou adiar a decisão.
+ * Mostrado dentro da própria prestação de contas (Previsão orçamentária), não numa tela separada. */
 export interface DecisaoDivergenciaPrevisao extends ComId {
   condoId: string;
   condoNome: string;
   exercicioId: string;
   ano: number | string;
   campos: DivergenciaPrevisaoSugerida[];
-  aceitoPor: string;
-  aceitoPorNome: string;
-  aceitoEm: string;
+  status: "confirmado" | "revisar_depois";
+  decididoPor: string;
+  decididoPorNome: string;
+  decididoEm: string;
 }
 
 export interface Exercicio extends ComId {

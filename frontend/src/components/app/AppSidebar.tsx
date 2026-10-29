@@ -17,7 +17,6 @@ import {
   LogOut,
   Megaphone,
   ScrollText,
-  TriangleAlert,
   UserRound,
   Users,
   type LucideIcon,
@@ -49,7 +48,6 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     itens: [
       { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet },
       { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator },
-      { titulo: "Divergências da previsão", to: "/previsao-divergencias", icone: TriangleAlert },
       { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows },
       { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange },
       { titulo: "Importador", to: "/importador", icone: FileUp },
