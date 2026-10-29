@@ -12,7 +12,7 @@ import { novaAtaDeAssembleia } from "@/domain/ata";
 import { normalizarAssembleia } from "@/domain/edital";
 import { dataParaBR, dataParaISO } from "./format";
 import { novoId } from "./id";
-import { ApiError, type ApiAdapter, type ConfirmarImportacaoResposta, type Registro } from "./apiTypes";
+import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type Registro } from "./apiTypes";
 
 const CHAVE_DADOS = "krieger-mock-dados-v1";
 const CHAVE_USUARIOS = "krieger-mock-usuarios-v1";
@@ -464,6 +464,11 @@ function validarStore(s: string): Store {
   return s as Store;
 }
 
+const codigoCondoNormal = (s: unknown) => {
+  const d = String(s ?? "").replace(/\D/g, "");
+  return d ? d.padStart(3, "0") : "";
+};
+
 export const mockApi: ApiAdapter = {
   async listar<T>(store: Store) {
     await espera();
@@ -481,9 +486,20 @@ export const mockApi: ApiAdapter = {
     sessao();
     const d = dados();
     const s = validarStore(store);
-    const id = (o.id || novoId()).slice(0, 64);
+    let id = (o.id || novoId()).slice(0, 64);
+    let i = d[s].findIndex((x) => x.id === id);
+    if (s === "condominios" && i < 0) {
+      const objIn = o as Record<string, unknown>;
+      const cod = codigoCondoNormal(objIn["codigo"]);
+      const cnpj = String(objIn["cnpj"] ?? "").replace(/\D/g, "");
+      if (cod) {
+        i = d.condominios.findIndex((x) => codigoCondoNormal(x["codigo"]) === cod);
+      } else if (cnpj) {
+        i = d.condominios.findIndex((x) => String(x["cnpj"] ?? "").replace(/\D/g, "") === cnpj);
+      }
+      if (i >= 0) id = d.condominios[i]!.id;
+    }
     const obj = { ...clone(o), id } as unknown as Registro;
-    const i = d[s].findIndex((x) => x.id === id);
     if (i >= 0) d[s][i] = obj;
     else d[s].push(obj);
     gravar(CHAVE_DADOS, d);
@@ -626,6 +642,66 @@ export const mockApi: ApiAdapter = {
         CHAVE_BACKUPS,
         backups().filter((x) => x.id !== id),
       );
+    },
+  },
+  manutencao: {
+    async contagens(): Promise<ContagensLimpeza> {
+      await espera();
+      exigirAdmin();
+      const d = dados();
+      return {
+        condominios: d.condominios.length,
+        exercicios: d.exercicios.length,
+        mensais: d.mensais.length,
+        assembleias: d.assembleias.length,
+        atas: d.atas.length,
+        modelos: d.modelos.length,
+        importacoes: d.importacoes.length,
+        anexos_importacao: d.anexos_importacao.length,
+        decisoes_previsao: d.decisoes_previsao.length,
+        documentos: consultaHistorico().length,
+        backups: backups().length,
+      };
+    },
+    async limpar(alvo: AlvoLimpeza) {
+      await espera();
+      exigirAdmin();
+      const d = dados();
+      const storesOperacionais: Exclude<Store, "config">[] = [
+        "condominios",
+        "exercicios",
+        "mensais",
+        "assembleias",
+        "atas",
+        "modelos",
+        "importacoes",
+        "anexos_importacao",
+        "decisoes_previsao",
+      ];
+      let apagados = 0;
+      if (alvo === "tudo") {
+        for (const s of storesOperacionais) {
+          apagados += d[s].length;
+          d[s] = [];
+        }
+        const h = consultaHistorico();
+        apagados += h.length;
+        gravar(CHAVE_CONSULTA_HISTORICO, []);
+        gravar(CHAVE_DADOS, d);
+      } else if (alvo === "documentos") {
+        const h = consultaHistorico();
+        apagados = h.length;
+        gravar(CHAVE_CONSULTA_HISTORICO, []);
+      } else if (alvo === "backups") {
+        const b = backups();
+        apagados = b.length;
+        gravar(CHAVE_BACKUPS, []);
+      } else {
+        apagados = d[alvo].length;
+        d[alvo] = [];
+        gravar(CHAVE_DADOS, d);
+      }
+      return { ok: true as const, apagados };
     },
   },
   auth: {

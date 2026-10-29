@@ -5,12 +5,12 @@
  */
 import type { Backup, Store, UsuarioSalvar } from "@/domain/types";
 import { novoId } from "./id";
-import { ApiError, type ApiAdapter, type ConfirmarImportacaoPedido } from "./apiTypes";
+import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoPedido } from "./apiTypes";
 import { realApi } from "./realApi";
 import { mockApi } from "./mockApi";
 
 export { ApiError } from "./apiTypes";
-export type { ConfirmarImportacaoPedido, ConfirmarImportacaoResposta } from "./apiTypes";
+export type { AlvoLimpeza, ConfirmarImportacaoPedido, ConfirmarImportacaoResposta, ContagensLimpeza } from "./apiTypes";
 
 export function usandoMock(): boolean {
   if (typeof window === "undefined") return false;
@@ -63,6 +63,10 @@ export const api = {
     baixar: (id: string) => guarda(() => impl().backup.baixar(id)),
     restaurar: (id: string, substituir: boolean) => guarda(() => impl().backup.restaurar(id, substituir)),
     excluir: (id: string) => guarda(() => impl().backup.excluir(id)),
+  },
+  manutencao: {
+    contagens: () => guarda(() => impl().manutencao.contagens()),
+    limpar: (alvo: AlvoLimpeza) => guarda(() => impl().manutencao.limpar(alvo)),
   },
   auth: {
     eu: () => impl().auth.eu(),

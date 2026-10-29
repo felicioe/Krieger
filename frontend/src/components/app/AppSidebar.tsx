@@ -17,6 +17,7 @@ import {
   LogOut,
   Megaphone,
   ScrollText,
+  Trash2,
   UserRound,
   Users,
   type LucideIcon,
@@ -29,7 +30,7 @@ import { Marca } from "./Marca";
 import { sair, useUsuario } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-type Item = { titulo: string; to: string; icone: LucideIcon };
+type Item = { titulo: string; to: string; icone: LucideIcon; apenasAdmin?: boolean; perigoso?: boolean };
 
 /**
  * Menu agrupado por rotina do escritório. Painel e Condomínios ficam soltos no topo (uso diário);
@@ -67,6 +68,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     itens: [
       { titulo: "Escritório", to: "/escritorio", icone: Briefcase },
       { titulo: "Backup", to: "/backup", icone: DatabaseBackup },
+      { titulo: "Limpeza de Dados", to: "/limpeza-dados", icone: Trash2, apenasAdmin: true, perigoso: true },
     ],
   },
 ];
@@ -84,10 +86,17 @@ function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | 
     <Link
       to={item.to}
       onClick={aoNavegar}
-      className={classeItem}
-      activeProps={{ className: classeAtivo }}
+      className={cn(
+        classeItem,
+        item.perigoso && "text-red-400 hover:bg-red-950/60 hover:text-red-300 font-medium",
+      )}
+      activeProps={{
+        className: item.perigoso
+          ? "bg-red-950/80 border-red-500 text-red-200 font-semibold"
+          : classeAtivo,
+      }}
     >
-      <Icone className="size-4 shrink-0 opacity-90" />
+      <Icone className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-400 opacity-100")} />
       <span className="min-w-0 break-words">{item.titulo}</span>
     </Link>
   );
@@ -146,11 +155,13 @@ export function ConteudoMenu({
                 </p>
               )}
               <ul aria-labelledby={g.titulo ? idTitulo : undefined}>
-                {g.itens.map((item) => (
-                  <li key={item.to}>
-                    <ItemMenu item={item} aoNavegar={aoNavegar} />
-                  </li>
-                ))}
+                {g.itens
+                  .filter((item) => !item.apenasAdmin || usuario?.perfil === "admin")
+                  .map((item) => (
+                    <li key={item.to}>
+                      <ItemMenu item={item} aoNavegar={aoNavegar} />
+                    </li>
+                  ))}
               </ul>
             </div>
           );

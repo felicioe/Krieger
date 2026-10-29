@@ -11,7 +11,7 @@ import { DataTable, type Coluna } from "@/components/app/DataTable";
 import { SectionCard } from "@/components/app/SectionCard";
 import { api, mensagemErro } from "@/lib/api";
 import { novoId } from "@/lib/id";
-import { chaves } from "@/lib/queries";
+import { chaves, listaQuery } from "@/lib/queries";
 import { consultarCnpjsEmLote, enderecoDaReceita } from "@/lib/receitaCnpj";
 import { lerListagemCondominios, type CondominioDaListagem } from "@/domain/pdfParser";
 import {
@@ -36,6 +36,8 @@ type Progresso = { feito: number; total: number };
 export function ImportarListagemCondominios({ condominios }: { condominios: Condominio[] }) {
   const queryClient = useQueryClient();
   const entrada = useRef<HTMLInputElement>(null);
+  // Preserva o mesmo id por código se o salvamento precisar ser repetido após falha parcial de rede.
+  const idsNovosRef = useRef<Record<string, string>>({});
   const [lendo, setLendo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [linhas, setLinhas] = useState<CondominioDaListagem[] | null>(null);
@@ -58,13 +60,16 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
     setProgressoReceita(null);
     setLendo(true);
     try {
+      const condominiosAtuais = await queryClient
+        .fetchQuery({ ...listaQuery<Condominio>("condominios"), staleTime: 0 })
+        .catch(() => condominios);
       const { extrairTextoPdf } = await import("@/lib/pdfTexto");
       const texto = await extrairTextoPdf(arquivo);
       const lidas = lerListagemCondominios(texto);
       if (!lidas) throw new Error(ERRO_NAO_LISTAGEM);
       setLinhas(lidas);
 
-      const previa = analisarListagemCondominios(lidas, condominios, new Map());
+      const previa = analisarListagemCondominios(lidas, condominiosAtuais, new Map());
       const iniciais: Record<string, boolean> = {};
       for (const r of previa) iniciais[r.linha.codigo] = !r.excluidoPorPadrao;
       setSelecionados(iniciais);
@@ -92,19 +97,22 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
       setProgressoSalvar({ feito: 0, total: escolhidos.length });
       for (let i = 0; i < escolhidos.length; i++) {
         const r = escolhidos[i]!;
-        const dados = { ...(r.existente ?? {}), ...r.proposto, id: r.existente?.id ?? novoId() } as Condominio;
+        const idNovo = (idsNovosRef.current[r.linha.codigo] ??= novoId());
+        const dados = { ...(r.existente ?? {}), ...r.proposto, id: r.existente?.id ?? idNovo } as Condominio;
         await api.salvar<Condominio>("condominios", dados);
         setProgressoSalvar({ feito: i + 1, total: escolhidos.length });
       }
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
       toast.success("Listagem de condomínios importada.");
       setLinhas(null);
       setSelecionados({});
       setProgressoSalvar(null);
     },
     onError: (e) => toast.error(mensagemErro(e)),
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
+    },
   });
 
   const receitaEmAndamento = !!progressoReceita && progressoReceita.total > 0 && progressoReceita.feito < progressoReceita.total;

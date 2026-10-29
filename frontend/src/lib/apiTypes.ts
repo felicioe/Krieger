@@ -53,6 +53,22 @@ export type ConfirmarImportacaoResposta = {
   reutilizado: boolean;
 };
 
+export type AlvoLimpeza =
+  | "tudo"
+  | "condominios"
+  | "exercicios"
+  | "mensais"
+  | "assembleias"
+  | "atas"
+  | "modelos"
+  | "importacoes"
+  | "anexos_importacao"
+  | "decisoes_previsao"
+  | "documentos"
+  | "backups";
+
+export type ContagensLimpeza = Record<Exclude<AlvoLimpeza, "tudo">, number>;
+
 /** Contrato único de acesso a dados — implementado pela API PHP e pelo mock. */
 export interface ApiAdapter {
   listar<T = Registro>(store: Store): Promise<T[]>;
@@ -72,6 +88,11 @@ export interface ApiAdapter {
     baixar(id: string): Promise<Backup>;
     restaurar(id: string, substituir: boolean): Promise<unknown>;
     excluir(id: string): Promise<void>;
+  };
+  /** Limpeza administrativa de cadastros em massa (somente perfil admin). */
+  manutencao: {
+    contagens(): Promise<ContagensLimpeza>;
+    limpar(alvo: AlvoLimpeza): Promise<{ ok: true; apagados: number }>;
   };
   auth: {
     /** null quando não autenticado (401). */

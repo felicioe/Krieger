@@ -8,6 +8,7 @@ export const chaves = {
   store: (store: Store) => ["store", store] as const,
   usuarios: ["auth", "usuarios"] as const,
   backups: ["backups"] as const,
+  limpezaContagens: ["manutencao", "contagens"] as const,
   consultaHistorico: (condoId: string) => ["documentos", "historico", condoId] as const,
 };
 
@@ -33,6 +34,12 @@ export const backupsQuery = () =>
   queryOptions({
     queryKey: chaves.backups,
     queryFn: () => api.backup.listar(),
+  });
+
+export const limpezaContagensQuery = () =>
+  queryOptions({
+    queryKey: chaves.limpezaContagens,
+    queryFn: () => api.manutencao.contagens(),
   });
 
 export const consultaHistoricoQuery = (condoId: string) =>

@@ -1,5 +1,5 @@
 import type { Backup, BackupRegistro, ConsultaHistoricoItem, ConsultaResposta, Store, Usuario, UsuarioAdmin } from "@/domain/types";
-import { ApiError, type ApiAdapter, type ConfirmarImportacaoResposta } from "./apiTypes";
+import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza } from "./apiTypes";
 
 /**
  * Adaptador da API PHP existente (api.php / auth.php no mesmo diretório do site).
@@ -102,6 +102,14 @@ export const realApi: ApiAdapter = {
     },
     async excluir(id: string) {
       await post(`api.php?a=backup_excluir&id=${enc(id)}`, {});
+    },
+  },
+  manutencao: {
+    async contagens() {
+      return req<ContagensLimpeza>("api.php?a=limpar_contagens");
+    },
+    async limpar(alvo: AlvoLimpeza) {
+      return post<{ ok: true; apagados: number }>("api.php?a=limpar_dados", { alvo });
     },
   },
   auth: {

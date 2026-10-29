@@ -1,5 +1,16 @@
 # Estado atual e passagem de contexto
 
+## Correção de duplicação na importação de condomínios + Menu administrativo "Limpeza de Dados" — 29/10/2026
+
+Pedido do usuário após notar 344 condomínios duplicados ao importar a Listagem de Condomínios mais de uma vez e solicitar um menu administrativo em vermelho (restrito a administradores) para apagar todos os cadastros ou cada categoria individualmente:
+
+- **Antiduplicação de condomínios**:
+  - `api.php` (`resolver_id_condominio`) e `frontend/src/lib/mockApi.ts`: ao salvar na store `condominios`, verifica se já existe registro com o mesmo `codigo` normalizado (ou `cnpj` quando sem código) e reaproveita o `id` existente em vez de criar duplicata.
+  - `frontend/src/components/importacao/ImportarListagemCondominios.tsx`: busca lista fresca de condomínios (`staleTime: 0`) ao abrir o PDF, preserva `id` estável por código durante retentativas (`idsNovosRef`) e invalida a query de condomínios no `onSettled` (mesmo após falha parcial de rede).
+- **Menu e tela "Limpeza de Dados" (Zona de Perigo)**:
+  - `frontend/src/components/app/AppSidebar.tsx`: item **Limpeza de Dados** em vermelho no grupo "Administração", visível exclusivamente para `perfil === "admin"`.
+  - `frontend/src/routes/_authenticated.limpeza-dados.tsx` + `api.php` (`a=limpar_contagens` e `a=limpar_dados`): permite apagar todos os cadastros operacionais de uma só vez (preservando `kr_usuarios` e `kr_config`) ou apagar individualmente cada uma das 11 categorias (`condominios`, `exercicios`, `mensais`, `assembleias`, `atas`, `modelos`, `importacoes`, `anexos_importacao`, `decisoes_previsao`, `documentos` e `backups`), sempre com contagem em tempo real e diálogo de confirmação.
+
 ## Completar cadastro do condomínio com dados complementares do PDF na importação (PR #96) — mesclada e publicada — 29/10/2026
 
 O PR #96 (branch `completar-cadastro-condominio-na-importacao`, com revisão do Codex já tratada em `74a6c04` para código/CNPJ ausentes em backups) estava aberto e com CI verde. Mesclado em `main` (`45fec1c`) e publicado em `deploy-hostinger` (`c5db6bf`, bundle `index-REnUhuWE.js`):

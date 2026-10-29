@@ -18,6 +18,7 @@ import { Route as AuthenticatedConsultaDocumentosRouteImport } from './routes/_a
 import { Route as AuthenticatedEscritorioRouteImport } from './routes/_authenticated.escritorio'
 import { Route as AuthenticatedImportadorRouteImport } from './routes/_authenticated.importador'
 import { Route as AuthenticatedImportadorCondominiosRouteImport } from './routes/_authenticated.importador-condominios'
+import { Route as AuthenticatedLimpezaDadosRouteImport } from './routes/_authenticated.limpeza-dados'
 import { Route as AuthenticatedMinhaSenhaRouteImport } from './routes/_authenticated.minha-senha'
 import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated.painel'
 import { Route as AuthenticatedPrevisaoOrcamentariaRouteImport } from './routes/_authenticated.previsao-orcamentaria'
@@ -83,6 +84,12 @@ const AuthenticatedImportadorCondominiosRoute =
   AuthenticatedImportadorCondominiosRouteImport.update({
     id: '/importador-condominios',
     path: '/importador-condominios',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedLimpezaDadosRoute =
+  AuthenticatedLimpezaDadosRouteImport.update({
+    id: '/limpeza-dados',
+    path: '/limpeza-dados',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedMinhaSenhaRoute = AuthenticatedMinhaSenhaRouteImport.update({
@@ -208,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/importador': typeof AuthenticatedImportadorRoute
   '/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
+  '/limpeza-dados': typeof AuthenticatedLimpezaDadosRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
@@ -238,6 +246,7 @@ export interface FileRoutesByTo {
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/importador': typeof AuthenticatedImportadorRoute
   '/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
+  '/limpeza-dados': typeof AuthenticatedLimpezaDadosRoute
   '/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/painel': typeof AuthenticatedPainelRoute
   '/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
@@ -270,6 +279,7 @@ export interface FileRoutesById {
   '/_authenticated/escritorio': typeof AuthenticatedEscritorioRoute
   '/_authenticated/importador': typeof AuthenticatedImportadorRoute
   '/_authenticated/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
+  '/_authenticated/limpeza-dados': typeof AuthenticatedLimpezaDadosRoute
   '/_authenticated/minha-senha': typeof AuthenticatedMinhaSenhaRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRoute
   '/_authenticated/previsao-orcamentaria': typeof AuthenticatedPrevisaoOrcamentariaRoute
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/escritorio'
     | '/importador'
     | '/importador-condominios'
+    | '/limpeza-dados'
     | '/minha-senha'
     | '/painel'
     | '/previsao-orcamentaria'
@@ -332,6 +343,7 @@ export interface FileRouteTypes {
     | '/escritorio'
     | '/importador'
     | '/importador-condominios'
+    | '/limpeza-dados'
     | '/minha-senha'
     | '/painel'
     | '/previsao-orcamentaria'
@@ -363,6 +375,7 @@ export interface FileRouteTypes {
     | '/_authenticated/escritorio'
     | '/_authenticated/importador'
     | '/_authenticated/importador-condominios'
+    | '/_authenticated/limpeza-dados'
     | '/_authenticated/minha-senha'
     | '/_authenticated/painel'
     | '/_authenticated/previsao-orcamentaria'
@@ -455,6 +468,13 @@ declare module '@tanstack/react-router' {
       path: '/importador-condominios'
       fullPath: '/importador-condominios'
       preLoaderRoute: typeof AuthenticatedImportadorCondominiosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/limpeza-dados': {
+      id: '/_authenticated/limpeza-dados'
+      path: '/limpeza-dados'
+      fullPath: '/limpeza-dados'
+      preLoaderRoute: typeof AuthenticatedLimpezaDadosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/minha-senha': {
@@ -606,6 +626,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEscritorioRoute: typeof AuthenticatedEscritorioRoute
   AuthenticatedImportadorRoute: typeof AuthenticatedImportadorRoute
   AuthenticatedImportadorCondominiosRoute: typeof AuthenticatedImportadorCondominiosRoute
+  AuthenticatedLimpezaDadosRoute: typeof AuthenticatedLimpezaDadosRoute
   AuthenticatedMinhaSenhaRoute: typeof AuthenticatedMinhaSenhaRoute
   AuthenticatedPainelRoute: typeof AuthenticatedPainelRoute
   AuthenticatedPrevisaoOrcamentariaRoute: typeof AuthenticatedPrevisaoOrcamentariaRoute
@@ -635,6 +656,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedImportadorRoute: AuthenticatedImportadorRoute,
   AuthenticatedImportadorCondominiosRoute:
     AuthenticatedImportadorCondominiosRoute,
+  AuthenticatedLimpezaDadosRoute: AuthenticatedLimpezaDadosRoute,
   AuthenticatedMinhaSenhaRoute: AuthenticatedMinhaSenhaRoute,
   AuthenticatedPainelRoute: AuthenticatedPainelRoute,
   AuthenticatedPrevisaoOrcamentariaRoute:

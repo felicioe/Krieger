@@ -119,9 +119,10 @@ describe("bloco da conta no menu lateral", () => {
     expect(router.state.location.pathname).toBe("/");
   });
 
-  it("administrador vê Usuários; usuário comum não", async () => {
+  it("administrador vê Usuários e Limpeza de Dados; usuário comum não", async () => {
     const { user, pronto } = montar({ perfil: "usuario", nome: "João" });
     await pronto();
+    expect(screen.queryByRole("link", { name: "Limpeza de Dados" })).toBeNull();
     await user.click(botaoConta("João"));
     expect(botaoConta("João")).toHaveAccessibleName(/Usuário$/);
     expect(screen.queryByRole("link", { name: "Usuários" })).toBeNull();

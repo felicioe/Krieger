@@ -323,6 +323,47 @@ describe("confirmar importação numa chamada só (#69)", () => {
     expect(salvo.codigo).toBe("456");
     expect(salvo.cnpj).toBe("99.999.999/0001-99");
   });
+
+  it("salvar condomínio com código já existente reaproveita o id e não duplica o cadastro", async () => {
+    await mockApi.salvar("condominios", {
+      id: "cond-notre-dame-1",
+      codigo: "006",
+      nome: "Residencial Notre Dame",
+      cnpj: "00.356.681/0001-25",
+    });
+    const res2 = await mockApi.salvar("condominios", {
+      id: "cond-notre-dame-2-duplicado",
+      codigo: "6",
+      nome: "CONDOMINIO RESIDENCIAL NOTRE DAME",
+      cnpj: "00.356.681/0001-25",
+    });
+    expect(res2.id).toBe("cond-notre-dame-1");
+    const lista = (await mockApi.listar<{ id: string; codigo: string; nome: string }>("condominios")).filter(
+      (c) => c.codigo === "006" || c.codigo === "6",
+    );
+    expect(lista).toHaveLength(1);
+    expect(lista[0]!.id).toBe("cond-notre-dame-1");
+    expect(lista[0]!.nome).toBe("CONDOMINIO RESIDENCIAL NOTRE DAME");
+  });
+
+  it("manutencao.limpar apaga condomínios individualmente ou todos os cadastros operacionais", async () => {
+    const antes = await mockApi.manutencao.contagens();
+    expect(antes.condominios).toBeGreaterThan(0);
+
+    const rCondo = await mockApi.manutencao.limpar("condominios");
+    expect(rCondo.ok).toBe(true);
+    expect(rCondo.apagados).toBe(antes.condominios);
+    expect((await mockApi.manutencao.contagens()).condominios).toBe(0);
+
+    const rTudo = await mockApi.manutencao.limpar("tudo");
+    expect(rTudo.ok).toBe(true);
+    const depois = await mockApi.manutencao.contagens();
+    expect(depois.condominios).toBe(0);
+    expect(depois.exercicios).toBe(0);
+    expect(depois.mensais).toBe(0);
+    expect(depois.assembleias).toBe(0);
+    expect(depois.atas).toBe(0);
+  });
 });
 
 // ---------- #71: foco volta ao "Importar PDF" ----------
