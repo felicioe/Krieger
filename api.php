@@ -15,6 +15,68 @@ function id_valido($v): string {
   return $v;
 }
 
+function codigo_condo_normal(?string $s): string {
+  $d = preg_replace('/\D/', '', (string) ($s ?? ''));
+  return $d !== '' ? str_pad($d, 3, '0', STR_PAD_LEFT) : '';
+}
+
+/**
+ * Evita duplicar condomínio quando o cliente envia um novo id aleatório para um condomínio cujo
+ * código (ou CNPJ, quando sem código) já está cadastrado em kr_condominios.
+ */
+function resolver_id_condominio(PDO $pdo, array $o, string $idProposto): string {
+  $chk = $pdo->prepare('SELECT id FROM kr_condominios WHERE id = ?');
+  $chk->execute([$idProposto]);
+  if ($chk->fetchColumn()) return $idProposto;
+
+  $cod = codigo_condo_normal(is_string($o['codigo'] ?? null) ? $o['codigo'] : '');
+  $cnpj = preg_replace('/\D/', '', is_string($o['cnpj'] ?? null) ? $o['cnpj'] : '');
+  if ($cod === '' && $cnpj === '') return $idProposto;
+
+  $linhas = $pdo->query('SELECT id, dados FROM kr_condominios')->fetchAll();
+  foreach ($linhas as $r) {
+    $ex = json_decode((string) $r['dados'], true);
+    if (!is_array($ex)) continue;
+    $exCod = codigo_condo_normal(is_string($ex['codigo'] ?? null) ? $ex['codigo'] : '');
+    if ($cod !== '' && $exCod === $cod) {
+      return (string) $r['id'];
+    }
+  }
+  if ($cod === '' && $cnpj !== '') {
+    foreach ($linhas as $r) {
+      $ex = json_decode((string) $r['dados'], true);
+      if (!is_array($ex)) continue;
+      $exCnpj = preg_replace('/\D/', '', is_string($ex['cnpj'] ?? null) ? $ex['cnpj'] : '');
+      if ($exCnpj === $cnpj) {
+        return (string) $r['id'];
+      }
+    }
+  }
+  return $idProposto;
+}
+
+$ALVOS_LIMPEZA = [
+  'condominios' => ['kr_condominios'],
+  'exercicios' => ['kr_exercicios'],
+  'mensais' => ['kr_mensais'],
+  'assembleias' => ['kr_assembleias'],
+  'atas' => ['kr_atas'],
+  'modelos' => ['kr_modelos'],
+  'importacoes' => ['kr_importacoes'],
+  'anexos_importacao' => ['kr_anexos_importacao'],
+  'decisoes_previsao' => ['kr_decisoes_previsao'],
+  'documentos' => ['kr_documento_trechos', 'kr_documentos', 'kr_consulta_cache', 'kr_consulta_historico'],
+  'backups' => ['kr_backups'],
+];
+
+function contar_tabela_seguro(PDO $pdo, string $tb): int {
+  try {
+    return (int) $pdo->query('SELECT COUNT(*) FROM ' . $tb)->fetchColumn();
+  } catch (Throwable) {
+    return 0;
+  }
+}
+
 $STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao'];
 $tabela = fn(string $s) => 'kr_' . $s;
 
@@ -216,6 +278,54 @@ try {
     saida(['ok' => true]);
   }
 
+  if ($a === 'limpar_contagens') {
+    if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem consultar ou limpar cadastros em massa.', 403);
+    $contagens = [];
+    foreach ($ALVOS_LIMPEZA as $chave => $tabelas) {
+      if ($chave === 'documentos') {
+        $contagens[$chave] =
+          contar_tabela_seguro($pdo, 'kr_documentos') +
+          contar_tabela_seguro($pdo, 'kr_consulta_cache') +
+          contar_tabela_seguro($pdo, 'kr_consulta_historico');
+      } else {
+        $contagens[$chave] = contar_tabela_seguro($pdo, $tabelas[0]);
+      }
+    }
+    saida($contagens);
+  }
+
+  if ($a === 'limpar_dados') {
+    if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem apagar cadastros em massa.', 403);
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST para apagar cadastros.', 405);
+    $alvo = is_string($param('alvo')) ? $param('alvo') : '';
+    $chavesAlvo = [];
+    if ($alvo === 'tudo') {
+      $chavesAlvo = ['condominios', 'exercicios', 'mensais', 'assembleias', 'atas', 'modelos', 'importacoes', 'anexos_importacao', 'decisoes_previsao', 'documentos'];
+    } elseif (isset($ALVOS_LIMPEZA[$alvo])) {
+      $chavesAlvo = [$alvo];
+    } else {
+      erro('Categoria de limpeza inválida.');
+    }
+    $apagados = 0;
+    $pdo->beginTransaction();
+    try {
+      foreach ($chavesAlvo as $ch) {
+        foreach ($ALVOS_LIMPEZA[$ch] as $tbLimpar) {
+          try {
+            $apagados += (int) $pdo->exec('DELETE FROM ' . $tbLimpar);
+          } catch (Throwable) {
+            // Tabela opcional ainda não criada no servidor — ignora com segurança.
+          }
+        }
+      }
+      $pdo->commit();
+    } catch (Throwable $e) {
+      if ($pdo->inTransaction()) $pdo->rollBack();
+      throw $e;
+    }
+    saida(['ok' => true, 'apagados' => $apagados]);
+  }
+
   if (!in_array($s, $STORES, true)) erro('Store inválida.');
   $tb = $tabela($s);
 
@@ -242,6 +352,10 @@ try {
           throw $e;
         }
         saida($salvo);
+      }
+      if ($s === 'condominios') {
+        $id = resolver_id_condominio($pdo, $o, $id);
+        $o['id'] = $id;
       }
       $o['atualizadoEm'] = date('c');
       $stmt = $pdo->prepare('REPLACE INTO ' . $tb . ' (id, dados, atualizado_em) VALUES (?, ?, ?)');

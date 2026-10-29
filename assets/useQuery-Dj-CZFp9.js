@@ -1,1 +1,0 @@
-import{c as e,l as t}from"./queries-Jzvn_rHh.js";function n(n,r){return e(n,t,r)}export{n as t};
