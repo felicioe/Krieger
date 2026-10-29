@@ -39,8 +39,9 @@ export function horaValida(h: string): boolean {
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(h.trim());
 }
 
-/** Responsável que assina por padrão: quem tem cargo de síndico(a); senão, o primeiro da administração. */
-function assinantePadrao(c: Condominio): { nome: string; cargo: string } {
+/** Responsável que assina por padrão: quem tem cargo de síndico(a); senão, o primeiro da administração.
+ * Reaproveitado também em `ata.ts` (presidente da mesa) — mesma pessoa preside a assembleia e assina o edital. */
+export function assinantePadrao(c: Condominio): { nome: string; cargo: string } {
   const a = c.administracao.find((x) => /^s[íi]ndic/i.test(x.cargo.trim())) ?? c.administracao[0];
   return { nome: a?.nome ?? "", cargo: a?.cargo ?? "" };
 }

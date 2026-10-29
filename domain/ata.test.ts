@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
 import { assembleiaPadrao } from "@/domain/edital";
-import { contarUnidadesPresentes, novaAtaDeAssembleia, prepararAta, validarAta, validarNovaAta, novoItemAta } from "@/domain/ata";
+import { ataEmBranco, contarUnidadesPresentes, novaAtaDeAssembleia, prepararAta, validarAta, validarNovaAta, novoItemAta } from "@/domain/ata";
 import type { Assembleia, Condominio } from "@/domain/types";
 
 const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias", unidades: 48 };
@@ -33,8 +33,25 @@ describe("atas", () => {
       { titulo: "Prestação de contas;", discussao: "", deliberacao: "", votos: { favor: 0, contra: 0, abstencao: 0 } },
       { titulo: "Assuntos gerais.", discussao: "", deliberacao: "", votos: { favor: 0, contra: 0, abstencao: 0 } },
     ]);
-    expect(ata.mesa).toEqual({ presidente: "", secretario: "" });
+    expect(ata.mesa).toEqual({ presidente: "", secretario: "" }); // condo sem administração cadastrada
     expect(ata.presentes).toEqual([]);
+  });
+
+  it("presidente da mesa vem pré-preenchido com o síndico(a) do cadastro do condomínio (editável depois)", () => {
+    const comSindico: Condominio = {
+      ...condo,
+      administracao: [
+        { cargo: "Subsíndico", nome: "Fulano de Tal" },
+        { cargo: "Síndico", nome: "Ciclana Exemplo" },
+      ],
+    };
+    const ata = novaAtaDeAssembleia(edital, comSindico);
+    expect(ata.mesa).toEqual({ presidente: "Ciclana Exemplo", secretario: "" });
+  });
+
+  it("ata em branco (sem edital) também vem com o presidente pré-preenchido", () => {
+    const comSindico: Condominio = { ...condo, administracao: [{ cargo: "Síndico", nome: "Ciclana Exemplo" }] };
+    expect(ataEmBranco(comSindico).mesa).toEqual({ presidente: "Ciclana Exemplo", secretario: "" });
   });
 
   it("um edital tem no máximo uma ata", () => {
