@@ -46,6 +46,32 @@ contra o PDF real" — ainda não abri PR. Antes de prosseguir, o usuário dever
 ele mesmo (ou revisar o código) e confirmar que o resultado faz sentido, já que é dado real de
 produção (~190 condomínios) sendo criado/atualizado em lote pela primeira vez.
 
+**Achado ao escrever os testes**: os fixtures iniciais usavam linhas copiadas ao pé da letra do PDF
+real do usuário, incluindo nome e telefone de síndicos/conselheiros de verdade — o classificador de
+segurança do Claude Code bloqueou o primeiro commit por isso (`[Sensitive-Source Provenance]`), e
+com razão: dado pessoal de terceiros (LGPD) não deveria ir pro histórico do Git só porque é cômodo
+pra um teste. Reescrevi os dois arquivos de teste com nomes/CNPJs/telefones totalmente fictícios
+(mesmo padrão já usado em `pdfParser.consideracoes.test.ts` — "Fulano de Tal" etc.), preservando só
+os padrões estruturais reais (espaçamento em colunas, bloco sem CNPJ, endereço em branco, ordem
+imprevisível da administração). Vale lembrar disso em qualquer teste futuro que use um PDF real do
+usuário como referência.
+
+**Extensão pedida pelo usuário (mesma sessão): ligar o cadastro de administração a outros lugares
+do sistema que também guardam nome de síndico/diretoria.** Investigação encontrou 4 lugares
+independentes: `Condominio.administracao` (cadastro, recém-alimentado pelo importador acima),
+`Exercicio.consid.administracao` (cópia por prestação de contas), `Edital.assinante`/`.cargo`
+(quem assina o edital) e `Ata.mesa.presidente`/`.secretario` (mesa da assembleia). Achado: **2 das
+3 ligações já existiam** antes desta sessão — `considDoCondominio()` (`domain/exercicio.ts`) já
+copia `Condominio.administracao` pro novo exercício, e `assinantePadrao()` (`domain/edital.ts`,
+regex `/^s[íi]ndic/i` — bate "Síndico", não "Subsíndico") já preenche o assinante do edital. Só
+faltava a Ata: `assinantePadrao` exportado e reaproveitado em `novaAtaDeAssembleia`/`ataEmBranco`
+(`domain/ata.ts`) pra pré-preencher `mesa.presidente` com o síndico(a) atual — editável depois, já
+que quem preside nem sempre é exatamente o síndico registrado. `mesa.secretario` e `Ata.presentes`
+(lista de presença, são proprietários de unidade, não necessariamente administração) ficam de fora
+de propósito — não há um papel único e previsível pra sugerir automaticamente. Outros campos
+`nome`/`assinante` do sistema (usuários, config do escritório, backups) são de pessoas/entidades
+sem relação com a administração do condomínio — conferidos e descartados.
+
 ## Divergência da Previsão sugerida: redesenho (janela + "Em conferência", sem menu/tela própria) — 29/10/2026
 
 Feedback do usuário sobre o PR #104 (mesmo dia seguinte): a tela/menu dedicados
