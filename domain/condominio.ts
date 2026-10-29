@@ -36,6 +36,8 @@ export function condominioPadrao(): Omit<Condominio, "id"> {
     variacaoMetodo: "manual",
     variacaoParam: null,
     pastaDocumentos: "",
+    areaTotalM2: null,
+    alertaCadastro: null,
   };
 }
 

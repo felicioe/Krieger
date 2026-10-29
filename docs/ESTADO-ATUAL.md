@@ -1,5 +1,98 @@
 # Estado atual e passagem de contexto
 
+## Painel: bloco "Pendências de ajuste" (cadastro + previsão) + reorganização dos vencimentos — 29/10/2026
+
+Pedido do usuário depois do importador de Listagem de Condomínios: ele gostou da ideia de
+centralizar o aviso de divergência no Painel, e pediu 2 blocos — um bem visual com itens que
+precisam de ajuste pra algum relatório ficar correto (com link direto pra onde corrigir), e o
+painel de vencimentos de hoje, só com uma distribuição visual melhor.
+
+- `domain/painel.ts`: `calcularPendenciasAjuste(condominios, exercicios)` reúne duas fontes:
+  `Condominio.alertaCadastro` (CNPJ ausente/duplicado, da Listagem de Condomínios) e a Previsão
+  sugerida "em conferência" (reaproveita `compararComTotaisPdf`/`chaveDivergencia` de
+  `domain/previsaoSugerida.ts` — mesma lógica da PR #105, sem duplicar). Primeiro teste desse
+  arquivo (`domain/painel.test.ts` não existia).
+- `_authenticated.painel.tsx`: novo card "Pendências de ajuste" (borda vermelha, ícone por tipo,
+  clicável — linka pro cadastro do condomínio ou pra Previsão orçamentária daquele exercício já
+  com o filtro certo), só aparece quando há pendência. O card de vencimentos (renomeado "Vencimentos
+  e prazos") ganhou um ícone por tipo (seguro/extintores/vistoria/mandato) pra ficar mais fácil de
+  escanear, mesma lista de antes.
+- Testado em `npm run dev` local contra os 192 condomínios já importados nesta sessão: a lista
+  bateu exatamente com os 19 alertas de CNPJ confirmados antes; clicar numa pendência abriu o
+  cadastro certo, com o alerta e o botão "Dispensar" já lá.
+
+## Novo importador: Listagem Completa de Condomínios (Systemar) — aguardando validação do usuário — 29/10/2026
+
+Pedido do usuário: um 4º tipo de importador de PDF pra "Listagem Completa de Condomínios" do
+Systemar (relatório único com todos os condomínios do escritório — código, nome, CNPJ, endereço,
+área total e administração). Plano completo (confirmado com o usuário via 3 perguntas antes de
+implementar) em `C:\Users\Evandro\.claude\plans\quiet-chasing-token.md`.
+
+Decisões confirmadas: (1) quando houver CNPJ, atualiza o nome automaticamente pela razão social da
+Receita Federal; (2) sem CNPJ na listagem, casa pelo código (`Condominio.codigo`) — quando o CNPJ
+se repete entre dois condomínios da própria listagem, **não trava o cadastro**, só sinaliza com um
+alerta vermelho (`Condominio.alertaCadastro`), visível na lista de condomínios e no cadastro, com
+botão para dispensar manualmente; (3) exclui por padrão (mas deixa visível/marcável na prévia) as
+linhas da própria Krieger Assessoria Contábil (CNPJ 05.248.266/0001-71, aparece 2×) e qualquer linha
+"TESTE -".
+
+Campos novos: `Condominio.areaTotalM2`, `Condominio.alertaCadastro`,
+`MembroAdministracao.identificacao`/`.telefone` (cargo já era texto livre — "editável" já era o
+comportamento). **Nenhuma tabela nova** — tudo cabe no JSON já existente de `kr_condominios`, sem
+SQL a rodar em produção.
+
+Arquivos principais: `domain/pdfParser.ts` (`lerListagemCondominios` — parser novo, testado contra
+o texto real extraído do PDF do usuário via o mesmo pipeline do app, não contra a extração do Read
+tool, que não preserva o mesmo espaçamento em colunas — ver comentário no parser);
+`domain/importacaoListagemCondominios.ts` (`analisarListagemCondominios` — reaproveita
+`encontrarCondominio`/`domain/importacao.ts` para o match, calcula só os campos que mudaram);
+`frontend/src/lib/receitaCnpj.ts` (`consultarCnpjsEmLote` — lote sequencial com atraso, reaproveita
+`consultarCnpjReceita` já existente); `frontend/src/components/importacao/ImportarListagemCondominios.tsx`
++ rota `/importador-condominios` (prévia com status por linha, badge de alerta, progresso da
+consulta à Receita e do salvamento); administração no cadastro do condomínio ganhou colunas
+Identificação e Telefone.
+
+**Testado pelo agente contra o PDF real do usuário** (`283_102026.pdf`, 192 condomínios, 35
+páginas) em `npm run dev` local (mock): parser bate exatamente com o rodapé "Total:192"; achou e
+sinalizou corretamente vários pares de CNPJ repetido (alguns claramente o mesmo condomínio em dois
+blocos — ex. torre/garagem, residencial/comercial — não só os 2 que eu tinha achado olhando à mão);
+excluiu por padrão só as 2 linhas da Krieger e a 1 "TESTE -"; consulta em lote à Receita Federal
+rodou de verdade (176 CNPJs, ~176 chamadas reais à BrasilAPI) e atualizou nomes/endereços; salvamento
+dos 189 condomínios selecionados concluído sem erro; conferido um condomínio importado (Urban
+Classic, código 166) com administração, telefone e identificação corretos, e o badge vermelho
+aparecendo nos duplicados (ex. código 070/071).
+
+**Pendente**: o plano marcou explicitamente "sem PR/merge/publish até o usuário validar o resultado
+contra o PDF real" — ainda não abri PR. Antes de prosseguir, o usuário deveria rodar o importador
+ele mesmo (ou revisar o código) e confirmar que o resultado faz sentido, já que é dado real de
+produção (~190 condomínios) sendo criado/atualizado em lote pela primeira vez.
+
+**Achado ao escrever os testes**: os fixtures iniciais usavam linhas copiadas ao pé da letra do PDF
+real do usuário, incluindo nome e telefone de síndicos/conselheiros de verdade — o classificador de
+segurança do Claude Code bloqueou o primeiro commit por isso (`[Sensitive-Source Provenance]`), e
+com razão: dado pessoal de terceiros (LGPD) não deveria ir pro histórico do Git só porque é cômodo
+pra um teste. Reescrevi os dois arquivos de teste com nomes/CNPJs/telefones totalmente fictícios
+(mesmo padrão já usado em `pdfParser.consideracoes.test.ts` — "Fulano de Tal" etc.), preservando só
+os padrões estruturais reais (espaçamento em colunas, bloco sem CNPJ, endereço em branco, ordem
+imprevisível da administração). Vale lembrar disso em qualquer teste futuro que use um PDF real do
+usuário como referência.
+
+**Extensão pedida pelo usuário (mesma sessão): ligar o cadastro de administração a outros lugares
+do sistema que também guardam nome de síndico/diretoria.** Investigação encontrou 4 lugares
+independentes: `Condominio.administracao` (cadastro, recém-alimentado pelo importador acima),
+`Exercicio.consid.administracao` (cópia por prestação de contas), `Edital.assinante`/`.cargo`
+(quem assina o edital) e `Ata.mesa.presidente`/`.secretario` (mesa da assembleia). Achado: **2 das
+3 ligações já existiam** antes desta sessão — `considDoCondominio()` (`domain/exercicio.ts`) já
+copia `Condominio.administracao` pro novo exercício, e `assinantePadrao()` (`domain/edital.ts`,
+regex `/^s[íi]ndic/i` — bate "Síndico", não "Subsíndico") já preenche o assinante do edital. Só
+faltava a Ata: `assinantePadrao` exportado e reaproveitado em `novaAtaDeAssembleia`/`ataEmBranco`
+(`domain/ata.ts`) pra pré-preencher `mesa.presidente` com o síndico(a) atual — editável depois, já
+que quem preside nem sempre é exatamente o síndico registrado. `mesa.secretario` e `Ata.presentes`
+(lista de presença, são proprietários de unidade, não necessariamente administração) ficam de fora
+de propósito — não há um papel único e previsível pra sugerir automaticamente. Outros campos
+`nome`/`assinante` do sistema (usuários, config do escritório, backups) são de pessoas/entidades
+sem relação com a administração do condomínio — conferidos e descartados.
+
 ## Divergência da Previsão sugerida: redesenho (janela + "Em conferência", sem menu/tela própria) — 29/10/2026
 
 Feedback do usuário sobre o PR #104 (mesmo dia seguinte): a tela/menu dedicados

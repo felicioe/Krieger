@@ -1,5 +1,5 @@
 import { parseData } from "../lib/format";
-import { horaValida, MODALIDADES, TIPOS_ASSEMBLEIA } from "./edital";
+import { assinantePadrao, horaValida, MODALIDADES, TIPOS_ASSEMBLEIA } from "./edital";
 import type { Assembleia, Ata, Condominio } from "./types";
 
 /**
@@ -25,8 +25,10 @@ export const novoItemAta = (titulo = ""): ItemAta => ({
 
 /**
  * Ata nova a partir do edital: data, horário (1ª convocação), tipo, modalidade e local do edital;
- * cada linha da pauta vira um item (título = texto da pauta); total de unidades do condomínio.
- * Mesa, presentes, discussões, deliberações, votos, encerramento e observações ficam em branco.
+ * cada linha da pauta vira um item (título = texto da pauta); total de unidades do condomínio;
+ * presidente da mesa pré-preenchido com o síndico(a) do cadastro (mesma regra de
+ * `assinantePadrao`/edital.ts — editável depois, nem sempre é a mesma pessoa). Secretário,
+ * presentes, discussões, deliberações, votos, encerramento e observações ficam em branco.
  */
 export function novaAtaDeAssembleia(assembleia: Assembleia, condominio: Condominio): Omit<Ata, "id"> {
   return {
@@ -37,7 +39,7 @@ export function novaAtaDeAssembleia(assembleia: Assembleia, condominio: Condomin
     hora: assembleia.hora1,
     modalidade: assembleia.modalidade,
     local: assembleia.local,
-    mesa: { presidente: "", secretario: "" },
+    mesa: { presidente: assinantePadrao(condominio).nome, secretario: "" },
     presentes: [],
     quorum: { unidadesPresentes: 0, totalUnidades: condominio.unidades ?? 0 },
     itens: assembleia.pauta.map((p) => p.trim()).filter(Boolean).map((p) => novoItemAta(p)),
@@ -47,7 +49,7 @@ export function novaAtaDeAssembleia(assembleia: Assembleia, condominio: Condomin
   };
 }
 
-/** Ata sem edital vinculado: só o condomínio (e o total de unidades dele). */
+/** Ata sem edital vinculado: só o condomínio (e o total de unidades dele, e o presidente padrão). */
 export function ataEmBranco(condominio: Condominio): Omit<Ata, "id"> {
   return {
     condoId: condominio.id,
@@ -57,7 +59,7 @@ export function ataEmBranco(condominio: Condominio): Omit<Ata, "id"> {
     hora: "",
     modalidade: "presencial",
     local: "",
-    mesa: { presidente: "", secretario: "" },
+    mesa: { presidente: assinantePadrao(condominio).nome, secretario: "" },
     presentes: [],
     quorum: { unidadesPresentes: 0, totalUnidades: condominio.unidades ?? 0 },
     itens: [],

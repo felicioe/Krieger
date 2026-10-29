@@ -1,6 +1,6 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { CalendarRange, FileClock, FileSpreadsheet, GitCompareArrows } from "lucide-react";
+import { Building2, CalendarRange, FileClock, FileSpreadsheet, FileUp, GitCompareArrows } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -88,6 +88,23 @@ function Importador() {
             download. Não altera o demonstrativo.
           </p>
           <p>PDF de até 10 MB. Os anexos aparecem no fim da tela da prestação de contas.</p>
+        </CartaoImportacao>
+        <CartaoImportacao
+          icone={Building2}
+          titulo="Listagem de Condomínios"
+          acao={
+            <Button variant="outline" asChild>
+              <Link to="/importador-condominios">
+                <FileUp /> Importar listagem de condomínios
+              </Link>
+            </Button>
+          }
+        >
+          <p>
+            Relatório único com todos os condomínios do escritório: código, nome, CNPJ, endereço, área total e administração
+            (síndico, subsíndico, conselheiros). Cadastra os novos e atualiza só os campos que mudaram nos já existentes — com
+            prévia antes de confirmar.
+          </p>
         </CartaoImportacao>
       </div>
       <p className="mt-4 text-sm text-muted-foreground">

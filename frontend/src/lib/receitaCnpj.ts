@@ -40,6 +40,28 @@ export async function consultarCnpjReceita(cnpjSomenteDigitos: string): Promise<
   }
 }
 
+/**
+ * Mesma consulta, em lote — usada pela importação da Listagem de Condomínios (até ~190 CNPJs de
+ * uma vez). Sequencial, com atraso entre chamadas pra não estourar o rate limit público da
+ * BrasilAPI; uma falha isolada não interrompe o lote (mesma filosofia de `consultarCnpjReceita`).
+ * Chave do mapa: CNPJ só com dígitos.
+ */
+export async function consultarCnpjsEmLote(
+  cnpjs: string[],
+  aoProgresso?: (feito: number, total: number) => void,
+  atrasoMs = 350,
+): Promise<Map<string, DadosCnpjReceita | null>> {
+  const unicos = [...new Set(cnpjs.map((c) => c.replace(/\D/g, "")).filter((c) => c.length === 14))];
+  const resultado = new Map<string, DadosCnpjReceita | null>();
+  for (let i = 0; i < unicos.length; i++) {
+    const cnpj = unicos[i]!;
+    resultado.set(cnpj, await consultarCnpjReceita(cnpj));
+    aoProgresso?.(i + 1, unicos.length);
+    if (i < unicos.length - 1) await new Promise((r) => setTimeout(r, atrasoMs));
+  }
+  return resultado;
+}
+
 /** Endereço completo numa linha só, pronto para o campo "Endereço (edital)". */
 export function enderecoDaReceita(d: DadosCnpjReceita): string {
   const partes = [

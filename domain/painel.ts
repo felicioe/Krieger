@@ -1,5 +1,6 @@
 import { parseData, dataParaISO } from "../lib/format";
-import type { Assembleia, Condominio } from "./types";
+import { calcularPrevisaoSugerida, chaveDivergencia, compararComTotaisPdf } from "./previsaoSugerida";
+import type { Assembleia, Condominio, Exercicio } from "./types";
 
 export type TipoVencimento = "seguro" | "extintores" | "vistoria" | "mandato";
 
@@ -72,6 +73,55 @@ export function diasDesdeBackup(em: string | null | undefined, hoje: Date = new 
 export function backupAtrasado(em: string | null | undefined, hoje: Date = new Date()): boolean {
   const dias = diasDesdeBackup(em, hoje);
   return dias === null || dias > 30;
+}
+
+export type TipoPendencia = "alerta_cadastro" | "divergencia_previsao";
+
+export interface PendenciaAjuste {
+  tipo: TipoPendencia;
+  condoId: string;
+  condoNome: string;
+  descricao: string;
+  /** Só pra divergência de previsão: qual exercício abrir. */
+  exercicioId?: string;
+}
+
+/**
+ * Pendências que afetam a corretude de algum relatório — cada uma aponta pra um lugar específico
+ * pra corrigir, diferente dos vencimentos (que são só prazo, não erro de dado). Reúne
+ * `Condominio.alertaCadastro` (CNPJ ausente/duplicado na importação da Listagem de Condomínios) e
+ * a Previsão sugerida "em conferência" (divergência entre o PDF e o recalculado, ainda sem
+ * confirmar — ver `domain/previsaoSugerida.ts`).
+ */
+export function calcularPendenciasAjuste(condominios: Condominio[], exercicios: Exercicio[]): PendenciaAjuste[] {
+  const pendencias: PendenciaAjuste[] = [];
+  for (const c of condominios) {
+    if (c.alertaCadastro) {
+      pendencias.push({
+        tipo: "alerta_cadastro",
+        condoId: c.id,
+        condoNome: c.nome || c.nomeRelatorio || "(sem nome)",
+        descricao: c.alertaCadastro,
+      });
+    }
+  }
+  for (const e of exercicios) {
+    const p = e.previsaoSugerida;
+    if (!p) continue;
+    const divergencias = compararComTotaisPdf(calcularPrevisaoSugerida(p), p.totaisPdf);
+    if (divergencias.length === 0) continue;
+    const decisao = p.decisaoDivergencia;
+    const resolvida = decisao?.chave === chaveDivergencia(divergencias) && decisao.status === "confirmado";
+    if (resolvida) continue;
+    pendencias.push({
+      tipo: "divergencia_previsao",
+      condoId: e.condoId,
+      condoNome: e.condoNome || "(sem nome)",
+      descricao: `Previsão sugerida do exercício ${e.ano} em conferência`,
+      exercicioId: e.id,
+    });
+  }
+  return pendencias;
 }
 
 /** Próximas assembleias (data >= hoje), ordenadas, limitadas a `n`. */
