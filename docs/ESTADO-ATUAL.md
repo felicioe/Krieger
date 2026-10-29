@@ -1,5 +1,13 @@
 # Estado atual e passagem de contexto
 
+## Completar cadastro do condomínio com dados complementares do PDF na importação (PR #96) — mesclada e publicada — 29/10/2026
+
+O PR #96 (branch `completar-cadastro-condominio-na-importacao`, com revisão do Codex já tratada em `74a6c04` para código/CNPJ ausentes em backups) estava aberto e com CI verde. Mesclado em `main` (`45fec1c`) e publicado em `deploy-hostinger` (`c5db6bf`, bundle `index-REnUhuWE.js`):
+
+- `domain/importacao.ts`: `camposComplementares(existente, cad)` identifica campos em branco no cadastro existente (`codigo`, `nome`, `cnpj`) que o PDF conferido traz preenchidos, nunca sobrescrevendo campos já preenchidos.
+- `frontend/src/lib/apiTypes.ts`, `mockApi.ts` e `lib_importacao.php`: aplicam o complemento na mesma transação atômica de `confirmarImportacao`.
+- `_authenticated.importacoes.$id.tsx`: exibe diálogo de confirmação listando os campos que serão completados antes de gravar.
+
 ## Painel: bloco "Pendências de ajuste" (cadastro + previsão) + reorganização dos vencimentos — 29/10/2026
 
 Pedido do usuário depois do importador de Listagem de Condomínios: ele gostou da ideia de
