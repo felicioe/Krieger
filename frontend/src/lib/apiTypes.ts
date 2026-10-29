@@ -33,8 +33,12 @@ export type Registro = { id: string } & Record<string, unknown>;
 export type ConfirmarImportacaoPedido = {
   importacaoId: string;
   destino: DestinoImportacao;
-  /** Existente: só `{ id }`. Novo: o cadastro completo já preparado, com o id gerado. */
-  condominio: { id: string } | Condominio;
+  /**
+   * Existente: `{ id }`, com `camposComplementares` opcional (campos em branco no cadastro que o
+   * PDF traz preenchidos, já confirmados pelo usuário — ver `domain/importacao.ts`,
+   * `camposComplementares`). Novo: o cadastro completo já preparado, com o id gerado.
+   */
+  condominio: { id: string; camposComplementares?: { codigo: string | null; nome: string | null; cnpj: string | null } } | Condominio;
   registro: Mensal | Exercicio;
   cadastro: { codigo: string | null; nome: string | null; cnpj: string | null };
 };
@@ -43,6 +47,8 @@ export type ConfirmarImportacaoResposta = {
   registro: Mensal | Exercicio;
   condominioId: string;
   criouCondominio: boolean;
+  /** true quando algum campo complementar do cadastro existente foi preenchido nesta confirmação. */
+  atualizouCadastro: boolean;
   /** true quando a importação já estava confirmada e o registro gravado antes foi devolvido. */
   reutilizado: boolean;
 };

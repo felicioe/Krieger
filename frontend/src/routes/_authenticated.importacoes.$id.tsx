@@ -26,6 +26,7 @@ import { normalizarCondominio, prepararCondominio } from "@/domain/condominio";
 import {
   anoDoRelatorio,
   aplicarConsideracoesAoExercicio,
+  camposComplementares,
   camposFaltando,
   colunaPadrao,
   condominioDoCadastro,
@@ -93,10 +94,14 @@ function Conferencia({ imp }: { imp: Importacao }) {
   const [ano, setAno] = useState<number | null>(() => anoDoRelatorio(rel, colunaPadrao(rel, destino)));
   const [erroNome, setErroNome] = useState<string | null>(null);
   const [descartar, setDescartar] = useState(false);
+  const [confirmarComplemento, setConfirmarComplemento] = useState(false);
 
   // O que faltava no PDF fica destacado, mesmo depois de preenchido aqui.
   const faltavam = useMemo(() => new Set(camposFaltando(imp.cadastro ?? { codigo: null, nome: null, cnpj: null })), [imp.cadastro]);
   const existente = encontrarCondominio(condominios, cad);
+  // Campos do cadastro já existente que estão em branco e o PDF conferido traz preenchidos —
+  // oferece completar o cadastro, nunca sobrescrever um valor já cadastrado.
+  const complementares = useMemo(() => (existente ? camposComplementares(existente, cad) : []), [existente, cad]);
   const demonstrativo = useMemo(() => demonstrativoDoRelatorio(rel, coluna, cad.nome), [rel, coluna, cad.nome]);
   const rotulo = destino === "mensais" ? "relatório mensal" : "prestação de contas";
   // Ids definidos uma vez: repetir a confirmação (ex.: depois de falha de rede) manda o mesmo pedido.
@@ -143,12 +148,19 @@ function Conferencia({ imp }: { imp: Importacao }) {
       return api.confirmarImportacao({
         importacaoId: imp.id,
         destino,
-        condominio: existente ? { id: existente.id } : { ...novoValor!, id: ids.condominio },
+        condominio: existente
+          ? {
+              id: existente.id,
+              ...(complementares.length
+                ? { camposComplementares: { codigo: cad.codigo || null, nome: cad.nome || null, cnpj: cad.cnpj || null } }
+                : {}),
+            }
+          : { ...novoValor!, id: ids.condominio },
         registro,
         cadastro: { codigo: cad.codigo || null, nome: cad.nome || null, cnpj: cad.cnpj || null },
       });
     },
-    onSuccess: ({ registro, criouCondominio, reutilizado }) => {
+    onSuccess: ({ registro, criouCondominio, atualizouCadastro, reutilizado }) => {
       for (const s of ["condominios", destino, "importacoes"] as const) queryClient.invalidateQueries({ queryKey: chaves.store(s) });
       queryClient.setQueryData(chaves.item(destino, registro.id), registro);
       const gravado = destino === "mensais" ? "Relatório mensal gravado" : "Prestação de contas gravada";
@@ -157,7 +169,9 @@ function Conferencia({ imp }: { imp: Importacao }) {
       } else {
         // Só um registro recém-criado a partir do PDF ganha a conferência dos totais no primeiro Salvar.
         marcarCriadoPorPdf(destino, registro.id);
-        toast.success(criouCondominio ? `Condomínio cadastrado e ${rotulo} gravado a partir do PDF.` : `${gravado} a partir do PDF.`);
+        if (criouCondominio) toast.success(`Condomínio cadastrado e ${rotulo} gravado a partir do PDF.`);
+        else if (atualizouCadastro) toast.success(`Cadastro do condomínio completado e ${rotulo} gravado a partir do PDF.`);
+        else toast.success(`${gravado} a partir do PDF.`);
       }
       focarConteudoApos(
         destino === "mensais"
@@ -205,6 +219,10 @@ function Conferencia({ imp }: { imp: Importacao }) {
                       return;
                     }
                     setErroNome(null);
+                    if (existente && complementares.length) {
+                      setConfirmarComplemento(true);
+                      return;
+                    }
                     confirmar.mutate();
                   }}
                   disabled={confirmar.isPending}
@@ -307,6 +325,28 @@ function Conferencia({ imp }: { imp: Importacao }) {
           </fieldset>
         </SectionCard>
       </div>
+
+      <ConfirmDialog
+        aberto={confirmarComplemento}
+        aoMudar={setConfirmarComplemento}
+        titulo="Completar cadastro do condomínio?"
+        descricao={
+          <>
+            O condomínio <span className="font-medium">{existente?.nome}</span> já está cadastrado, mas sem estes dados
+            — o PDF conferido traz:
+            <ul className="mt-2 list-disc pl-5">
+              {complementares.map((k) => (
+                <li key={k}>
+                  <span className="font-medium">{ROTULO_CAMPO[k]}:</span> {cad[k]}
+                </li>
+              ))}
+            </ul>
+            Só esses campos (hoje em branco no cadastro) serão preenchidos; nada que já está cadastrado muda.
+          </>
+        }
+        rotuloConfirmar="Completar e gravar"
+        aoConfirmar={() => confirmar.mutateAsync()}
+      />
 
       <ConfirmDialog
         aberto={descartar}

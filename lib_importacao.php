@@ -50,7 +50,7 @@ function confirmar_importacao(PDO $pdo, array $pedido): array {
       $salvo = $ler($destino, $id($imp['registroId'] ?? null));
       if (!$salvo) throw new RuntimeException('A confirmação anterior perdeu o relatório vinculado. Confira a importação.', 409);
       $pdo->commit();
-      return ['registro' => $salvo, 'condominioId' => $id($imp['condominioId'] ?? $salvo['condoId'] ?? null), 'criouCondominio' => false, 'reutilizado' => true];
+      return ['registro' => $salvo, 'condominioId' => $id($imp['condominioId'] ?? $salvo['condoId'] ?? null), 'criouCondominio' => false, 'atualizouCadastro' => false, 'reutilizado' => true];
     }
     if (($imp['status'] ?? '') !== 'pendente') throw new RuntimeException('Esta importação não está pendente.', 409);
     // O lock do condomínio existente serializa confirmações concorrentes para o mesmo cadastro.
@@ -78,7 +78,26 @@ function confirmar_importacao(PDO $pdo, array $pedido): array {
       $mesmo = $destino === 'exercicios' ? (string)($outro['ano'] ?? '') === (string)$registro['ano'] : $periodo($outro) === $periodo($registro);
       if ($mesmo) throw new RuntimeException('Já existe um relatório deste condomínio para o período.', 409);
     }
-    if ($criou) $gravar('condominios', $condo, true);
+    $atualizouCadastro = false;
+    if ($criou) {
+      $gravar('condominios', $condo, true);
+    } else {
+      // Campos complementares: só os que o cadastro existente ainda tem em branco (defesa
+      // adicional, além da checagem já feita no cliente antes de pedir confirmação ao usuário).
+      $patch = $condo['camposComplementares'] ?? null;
+      if (is_array($patch)) {
+        $merge = [];
+        foreach (['codigo', 'nome', 'cnpj'] as $campo) {
+          $v = is_string($patch[$campo] ?? null) ? trim($patch[$campo]) : '';
+          if ($v !== '' && trim((string)($existente[$campo] ?? '')) === '') $merge[$campo] = $v;
+        }
+        if ($merge) {
+          $existente = array_merge($existente, $merge);
+          $gravar('condominios', $existente, false);
+          $atualizouCadastro = true;
+        }
+      }
+    }
     $salvo = $gravar($destino, $registro, true);
     $imp['status'] = 'confirmado';
     $imp['condominioId'] = $condoId;
@@ -86,7 +105,7 @@ function confirmar_importacao(PDO $pdo, array $pedido): array {
     $imp['cadastro'] = array_merge($imp['cadastro'] ?? [], $cadastro, ['revisar' => false]);
     $gravar('importacoes', $imp, false);
     $pdo->commit();
-    return ['registro' => $salvo, 'condominioId' => $condoId, 'criouCondominio' => $criou, 'reutilizado' => false];
+    return ['registro' => $salvo, 'condominioId' => $condoId, 'criouCondominio' => $criou, 'atualizouCadastro' => $atualizouCadastro, 'reutilizado' => false];
   } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     throw $e;
