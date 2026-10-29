@@ -21,6 +21,13 @@ painel de vencimentos de hoje, só com uma distribuição visual melhor.
   bateu exatamente com os 19 alertas de CNPJ confirmados antes; clicar numa pendência abriu o
   cadastro certo, com o alerta e o botão "Dispensar" já lá.
 
+**Mesclado e publicado — 29/10/2026**: PR #107 (squash, branch
+`importador-listagem-condominios-v2` apagada) — commit em `main` `d01acd8`. Publicado via
+worktree `deploy-hostinger` (commit `a8e032c`) — auto-deploy confirmado ao vivo (`index.html`
+referencia `index-B47s627X.js`, hash exato do último build; `auth.php?a=eu` responde 401; console
+sem erros além do 401 esperado). Branch órfã `importador-listagem-condominios` (histórico
+incorreto, substituída pela `-v2`) apagada do remoto.
+
 ## Novo importador: Listagem Completa de Condomínios (Systemar) — aguardando validação do usuário — 29/10/2026
 
 Pedido do usuário: um 4º tipo de importador de PDF pra "Listagem Completa de Condomínios" do
@@ -62,10 +69,9 @@ dos 189 condomínios selecionados concluído sem erro; conferido um condomínio 
 Classic, código 166) com administração, telefone e identificação corretos, e o badge vermelho
 aparecendo nos duplicados (ex. código 070/071).
 
-**Pendente**: o plano marcou explicitamente "sem PR/merge/publish até o usuário validar o resultado
-contra o PDF real" — ainda não abri PR. Antes de prosseguir, o usuário deveria rodar o importador
-ele mesmo (ou revisar o código) e confirmar que o resultado faz sentido, já que é dado real de
-produção (~190 condomínios) sendo criado/atualizado em lote pela primeira vez.
+**Validado e publicado — 29/10/2026**: usuário deu sinal verde explícito. PR #107 mesclado (squash)
+em `main` (`d01acd8`) e publicado via worktree `deploy-hostinger` (`a8e032c`) — mesma validação ao
+vivo do bloco acima (bundle `index-B47s627X.js`, `auth.php?a=eu` 401, console limpo).
 
 **Achado ao escrever os testes**: os fixtures iniciais usavam linhas copiadas ao pé da letra do PDF
 real do usuário, incluindo nome e telefone de síndicos/conselheiros de verdade — o classificador de
