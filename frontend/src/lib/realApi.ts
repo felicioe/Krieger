@@ -166,7 +166,7 @@ export const realApi: ApiAdapter = {
     async conteudo(id: string) {
       return req<DocumentoDriveConteudo>(`api_documentos.php?a=documento_conteudo&id=${enc(id)}`);
     },
-    async atualizar(dados: { id: string; nomeArquivo?: string; tipo?: TipoDocumentoConsulta; dataDocumento?: string }) {
+    async atualizar(dados: { id: string; nomeArquivo?: string; tipo?: TipoDocumentoConsulta; caminhoRelativo?: string; dataDocumento?: string }) {
       return post<{ ok: true; id: string; nomeArquivo: string; tipo: TipoDocumentoConsulta }>(
         "api_documentos.php?a=documento_atualizar",
         dados,

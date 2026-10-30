@@ -28,6 +28,16 @@ export function formatarTamanhoBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+export function dataUrlParaBlob(dataUrl: string): Blob {
+  const [cabecalho = "", dados = ""] = dataUrl.split(",");
+  const mimeMatch = cabecalho.match(/data:([^;]+)/);
+  const mime = mimeMatch?.[1] || "application/pdf";
+  const bin = atob(dados);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new Blob([bytes], { type: mime });
+}
+
 export function base64ParaBlob(base64OuDataUrl: string, mimePadrao = "application/pdf"): Blob {
   if (base64OuDataUrl.startsWith("data:")) {
     return dataUrlParaBlob(base64OuDataUrl);
@@ -89,16 +99,6 @@ export function blobParaDataUrl(blob: Blob): Promise<string> {
     r.onerror = () => reject(new Error("Falha ao ler o arquivo."));
     r.readAsDataURL(blob);
   });
-}
-
-export function dataUrlParaBlob(dataUrl: string): Blob {
-  const [cabecalho = "", dados = ""] = dataUrl.split(",");
-  const mimeMatch = cabecalho.match(/data:([^;]+)/);
-  const mime = mimeMatch?.[1] || "application/pdf";
-  const bin = atob(dados);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new Blob([bytes], { type: mime });
 }
 
 /**
@@ -211,14 +211,6 @@ export interface ResultadoProcessamentoDrive {
   trechos: { paginaInicial: number; paginaFinal: number; texto: string }[];
 }
 
-/**
- * Processa qualquer arquivo enviado para o Drive do condomínio:
- * - Se for PDF: extrai texto por página e guarda o PDF para visualização inline.
- * - Se for DOCX: extrai o texto do Word, gera versão PDF para visualização inline
- *   e guarda também o DOCX original se `manterOriginal` for true.
- * - Se for Imagem (JPG/PNG/WEBP): converte para PDF A4 para visualização inline
- *   e guarda também a imagem original se `manterOriginal` for true.
- */
 export async function processarArquivoParaDrive(opcoes: {
   arquivo: File;
   tipo?: TipoDocumentoConsulta;
@@ -279,7 +271,6 @@ export async function processarArquivoParaDrive(opcoes: {
     });
     const pdfDataUrl = await blobParaDataUrl(pdfBlob);
 
-    // Agrupa os parágrafos em páginas de ~2500 caracteres para indexação na IA
     const trechos: { paginaInicial: number; paginaFinal: number; texto: string }[] = [];
     let acumulador = "";
     let pagina = 1;
@@ -351,7 +342,6 @@ export async function processarArquivoParaDrive(opcoes: {
     };
   }
 
-  // Outros formatos
   const tituloBase = arquivo.name;
   const pdfBlob = await gerarPdf({
     titulo: tituloBase,
@@ -383,39 +373,33 @@ export async function processarArquivoParaDrive(opcoes: {
   };
 }
 
-function extrairApenasBase64(dataUrlOuBase64: string | null): string | null {
-  if (!dataUrlOuBase64) return null;
-  const idx = dataUrlOuBase64.indexOf(",");
-  return idx >= 0 ? dataUrlOuBase64.slice(idx + 1) : dataUrlOuBase64;
-}
-
 export async function processarArquivoParaRegistroDrive(
   arquivo: File,
   opcoes: {
+    condoId: string;
     tipo?: TipoDocumentoConsulta;
     dataDocumento?: string | null;
     manterOriginal?: boolean;
     caminhoRelativo?: string;
-  } = {},
+  },
 ): Promise<DocumentoDriveRegistro> {
   const r = await processarArquivoParaDrive({
     arquivo,
-    tipo: opcoes.tipo,
+    ...(opcoes.tipo ? { tipo: opcoes.tipo } : {}),
     manterOriginal: opcoes.manterOriginal ?? true,
   });
   return {
-    arquivo: r.nomeArquivo,
+    condoId: opcoes.condoId,
+    tipo: opcoes.tipo ?? r.tipo,
+    nomeArquivo: r.nomeArquivo,
     caminhoRelativo: opcoes.caminhoRelativo || r.nomeArquivo,
-    tipo: r.tipo,
+    hash: r.hash,
+    tamanho: r.tamanho,
+    paginas: r.paginas,
     dataDocumento: opcoes.dataDocumento ?? null,
-    hashArquivo: r.hash,
-    paginas: r.trechos.map((t) => t.texto),
     formatoOriginal: r.formatoOriginal,
-    pdfBase64: extrairApenasBase64(r.pdfDataUrl),
-    originalBase64: extrairApenasBase64(r.originalDataUrl),
-    mimeOriginal: arquivo.type || null,
-    nomeOriginal: arquivo.name,
-    tamanhoBytes: r.tamanho,
-    origemEnvio: "upload",
+    pdfDataUrl: r.pdfDataUrl,
+    originalDataUrl: r.originalDataUrl,
+    trechos: r.trechos,
   };
 }

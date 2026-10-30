@@ -122,6 +122,8 @@ export interface Condominio extends ComId {
   pastaDocumentos: string;
   /** Caminhos locais adicionais de documentos deste condomínio (além de `pastaDocumentos`). */
   caminhosDocumentos?: string[];
+  /** Pastas e subpastas cadastradas no Drive deste condomínio (ex.: ["Atas de Assembleia/2025", "Jurídico/Processos"]). */
+  pastasDrive?: string[];
   /** Campo novo (opcional): área total do condomínio (m²), lida da Listagem de Condomínios. */
   areaTotalM2?: number | null;
   /**
@@ -435,6 +437,8 @@ export interface ConfigEscritorio extends ComId {
   logo: string;
   /** largura / altura da imagem do logo */
   logoRatio: number | null;
+  /** Cadastro de categorias e pastas padrão do Drive de Documentos (com palavras-chave de auto-identificação). */
+  categoriasDrive?: CategoriaPastaDrive[];
 }
 
 export interface ConfigBackup extends ComId {
@@ -470,6 +474,17 @@ export type TipoDocumentoConsulta =
   | "outro";
 
 export type FormatoArquivoDrive = "pdf" | "docx" | "jpg" | "png" | "webp" | "outro";
+
+export interface CategoriaPastaDrive {
+  /** Código identificador da categoria/pasta (ex.: "convencao", "ata", "obras", "outro"). */
+  valor: TipoDocumentoConsulta;
+  /** Nome visível da categoria / pasta (ex.: "Convenção", "Atas de Assembleia", "Outros Documentos"). */
+  rotulo: string;
+  /** Palavras-chave usadas para identificar automaticamente documentos avulsos pelo nome do arquivo. */
+  palavrasChave: string[];
+  /** Se true, indica a pasta padrão ("Outros Documentos") que recebe arquivos avulsos não identificados. */
+  padraoOutros?: boolean;
+}
 
 export interface DocumentoDrive {
   id: string;

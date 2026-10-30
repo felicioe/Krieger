@@ -172,7 +172,7 @@ function PaginaConsultaDocumentos() {
     const totalDocs = Object.values(mapa).reduce((acc, n) => acc + n, 0);
     const condosComDoc = Object.values(mapa).filter((n) => n > 0).length;
     const listaCondos = opcoesCondominio(ordenados, true).map((op) => {
-      const qtd = mapa[op.value] ?? 0;
+      const qtd = mapa[op.valor] ?? 0;
       return {
         ...op,
         detalhe: [op.detalhe, qtd > 0 ? `${qtd} doc(s) na base` : "Sem docs na base"].filter(Boolean).join(" • "),
@@ -180,8 +180,8 @@ function PaginaConsultaDocumentos() {
     });
     return [
       {
-        value: "*",
-        label: "🌐 Todos os condomínios com documentos na base",
+        valor: "*",
+        rotulo: "🌐 Todos os condomínios com documentos na base",
         codigo: "TODOS",
         detalhe: `${condosComDoc} condomínio(s) com acervo • ${totalDocs} documento(s) indexado(s)`,
       },
@@ -325,7 +325,7 @@ function PaginaConsultaDocumentos() {
                   </SelectItem>
                   {docsDisponiveis.map((d) => (
                     <SelectItem key={d.id} value={d.id}>
-                      {d.arquivo} ({rotuloCategoriaDocumento(d.tipo)})
+                      {d.nomeArquivo} ({rotuloCategoriaDocumento(d.tipo)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -406,7 +406,7 @@ function PaginaConsultaDocumentos() {
                         navigate({
                           to: "/drive-documentos",
                           search: {
-                            condoId: f.condoId || (escopoId !== "*" ? escopoId : undefined),
+                            ...(f.condoId ? { condoId: f.condoId } : escopoId !== "*" ? { condoId: escopoId } : {}),
                             docId: f.documentoId,
                           },
                         })

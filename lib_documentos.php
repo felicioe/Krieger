@@ -3,15 +3,14 @@ declare(strict_types=1);
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) { http_response_code(403); exit; }
 
 // Drive de Documentos e Consulta Inteligente: armazenamento, busca local (FULLTEXT),
-// cache persistente e registro de documentos (qualquer categoria: convenção, regimento,
-// ata, seguro, contrato, laudo, notificação ou outro).
+// cache persistente e registro de documentos (qualquer categoria ou pasta/subpasta).
 
 const TIPOS_DOCUMENTO = ['convencao', 'regimento', 'ata', 'seguro', 'contrato', 'laudo', 'notificacao', 'outro'];
 const FORMATOS_ARQUIVO = ['pdf', 'docx', 'jpg', 'png', 'webp', 'outro'];
 
 /**
  * Garante de forma idempotente que a tabela auxiliar do Drive (`kr_drive_arquivos`) exista
- * e que `kr_documentos.tipo` aceite todas as categorias (migrando de ENUM para VARCHAR(32) se necessário).
+ * e que `kr_documentos.tipo` aceite todas as categorias (migrando de ENUM para VARCHAR(64) se necessário).
  */
 function garantir_esquema_documentos(PDO $pdo): void {
   static $verificado = false;
@@ -33,7 +32,7 @@ function garantir_esquema_documentos(PDO $pdo): void {
     $st = $pdo->query("SHOW COLUMNS FROM kr_documentos LIKE 'tipo'");
     $col = $st ? $st->fetch() : false;
     if ($col && isset($col['Type']) && stripos((string) $col['Type'], 'enum') !== false) {
-      $pdo->exec("ALTER TABLE kr_documentos MODIFY COLUMN tipo VARCHAR(32) NOT NULL DEFAULT 'outro'");
+      $pdo->exec("ALTER TABLE kr_documentos MODIFY COLUMN tipo VARCHAR(64) NOT NULL DEFAULT 'outro'");
     }
   } catch (Throwable $e) {
     error_log('[krieger] garantir_esquema_documentos: ' . $e->getMessage());
@@ -210,7 +209,7 @@ function listar_documentos_drive(PDO $pdo, string $condoId): array {
   return array_map(fn($r) => [
     'id' => $r['id'],
     'condoId' => $r['condo_id'],
-    'tipo' => in_array($r['tipo'], TIPOS_DOCUMENTO, true) ? $r['tipo'] : 'outro',
+    'tipo' => trim((string) ($r['tipo'] ?? '')) ?: 'outro',
     'nomeArquivo' => $r['nome_arquivo'],
     'caminhoRelativo' => $r['caminho_relativo'],
     'hash' => $r['hash'],
@@ -259,10 +258,10 @@ function obter_conteudo_documento(PDO $pdo, string $id): ?array {
   ];
 }
 
-/** Atualiza metadados do documento no Drive (renomear, mudar categoria ou data). */
+/** Atualiza metadados do documento no Drive (renomear, mudar pasta/subpasta, categoria ou data). */
 function atualizar_documento_drive(PDO $pdo, string $id, array $campos): array {
   garantir_esquema_documentos($pdo);
-  $st = $pdo->prepare('SELECT id, condo_id, nome_arquivo, tipo FROM kr_documentos WHERE id = ?');
+  $st = $pdo->prepare('SELECT id, condo_id, nome_arquivo, tipo, caminho_relativo FROM kr_documentos WHERE id = ?');
   $st->execute([$id]);
   $atual = $st->fetch();
   if (!$atual) throw new InvalidArgumentException('Documento não encontrado.');
@@ -270,12 +269,15 @@ function atualizar_documento_drive(PDO $pdo, string $id, array $campos): array {
   $novoNome = isset($campos['nomeArquivo']) && is_string($campos['nomeArquivo']) && trim($campos['nomeArquivo']) !== ''
     ? trim($campos['nomeArquivo'])
     : (string) $atual['nome_arquivo'];
-  $novoTipo = isset($campos['tipo']) && is_string($campos['tipo']) && in_array($campos['tipo'], TIPOS_DOCUMENTO, true)
-    ? $campos['tipo']
+  $novoTipo = isset($campos['tipo']) && is_string($campos['tipo']) && trim($campos['tipo']) !== ''
+    ? substr(trim($campos['tipo']), 0, 64)
     : (string) $atual['tipo'];
+  $novoCaminho = isset($campos['caminhoRelativo']) && is_string($campos['caminhoRelativo']) && trim($campos['caminhoRelativo']) !== ''
+    ? trim($campos['caminhoRelativo'])
+    : (string) ($atual['caminho_relativo'] ?? $novoNome);
 
-  $pdo->prepare('UPDATE kr_documentos SET nome_arquivo = ?, tipo = ? WHERE id = ?')
-    ->execute([$novoNome, $novoTipo, $id]);
+  $pdo->prepare('UPDATE kr_documentos SET nome_arquivo = ?, tipo = ?, caminho_relativo = ? WHERE id = ?')
+    ->execute([$novoNome, $novoTipo, $novoCaminho, $id]);
 
   if (isset($campos['dataDocumento']) && is_string($campos['dataDocumento'])) {
     $pdo->prepare('UPDATE kr_drive_arquivos SET data_documento = ?, atualizado_em = ? WHERE id = ?')
@@ -306,8 +308,7 @@ function excluir_documento_drive(PDO $pdo, string $id): void {
 function registrar_documento(PDO $pdo, array $doc): array {
   garantir_esquema_documentos($pdo);
   $condoId = is_string($doc['condoId'] ?? null) ? $doc['condoId'] : '';
-  $tipo = is_string($doc['tipo'] ?? null) ? $doc['tipo'] : 'outro';
-  if (!in_array($tipo, TIPOS_DOCUMENTO, true)) $tipo = 'outro';
+  $tipo = is_string($doc['tipo'] ?? null) && trim($doc['tipo']) !== '' ? substr(trim($doc['tipo']), 0, 64) : 'outro';
   $caminho = is_string($doc['caminhoRelativo'] ?? null) ? $doc['caminhoRelativo'] : '';
   $hash = is_string($doc['hash'] ?? null) ? $doc['hash'] : '';
   $trechos = is_array($doc['trechos'] ?? null) ? $doc['trechos'] : [];
@@ -405,7 +406,7 @@ function consulta_perguntar(PDO $pdo, string $condoId, string $pergunta, string 
   $fontes = array_map(fn($t) => [
     'documentoId' => $t['documento_id'],
     'arquivo' => $t['nome_arquivo'],
-    'tipo' => in_array($t['tipo'], TIPOS_DOCUMENTO, true) ? $t['tipo'] : 'outro',
+    'tipo' => trim((string) ($t['tipo'] ?? '')) ?: 'outro',
     'paginaInicial' => (int) $t['pagina_inicial'],
     'paginaFinal' => (int) $t['pagina_final'],
     'condoId' => $t['condo_id'] ?? $condoId,

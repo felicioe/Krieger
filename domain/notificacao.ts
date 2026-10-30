@@ -1,5 +1,5 @@
 import { formatBRL, parseData } from "../lib/format";
-import type { Condominio, ConfigEscritorio, TipoDocumentoConsulta } from "./types";
+import type { CategoriaPastaDrive, Condominio, ConfigEscritorio, TipoDocumentoConsulta } from "./types";
 
 export type ModalidadeNotificacao = "notificacao" | "notificacao_multa" | "reincidencia_multa";
 
@@ -9,46 +9,268 @@ export const MODALIDADES_NOTIFICACAO: { valor: ModalidadeNotificacao; rotulo: st
   { valor: "reincidencia_multa", rotulo: "2ª Notificação e Multa (Reincidência)", tituloPadrao: "2ª NOTIFICAÇÃO E MULTA" },
 ];
 
-export const CATEGORIAS_DOCUMENTO: { valor: TipoDocumentoConsulta; rotulo: string }[] = [
-  { valor: "convencao", rotulo: "Convenção" },
-  { valor: "regimento", rotulo: "Regimento Interno" },
-  { valor: "ata", rotulo: "Ata de Assembleia" },
-  { valor: "seguro", rotulo: "Seguro / Apólice" },
-  { valor: "contrato", rotulo: "Contrato" },
-  { valor: "laudo", rotulo: "Laudo / Vistoria" },
-  { valor: "notificacao", rotulo: "Notificação / Multa" },
-  { valor: "outro", rotulo: "Outros Documentos" },
+export const CATEGORIAS_DOCUMENTO_PADRAO: CategoriaPastaDrive[] = [
+  {
+    valor: "convencao",
+    rotulo: "Convenção",
+    palavrasChave: ["convencao", "convenção", "instituicao", "instituição"],
+  },
+  {
+    valor: "regimento",
+    rotulo: "Regimento Interno",
+    palavrasChave: ["regimento", "regulamento", "normas"],
+  },
+  {
+    valor: "ata",
+    rotulo: "Atas de Assembleia",
+    palavrasChave: ["ata", "atas", "assembleia", "ago", "age"],
+  },
+  {
+    valor: "seguro",
+    rotulo: "Seguros e Apólices",
+    palavrasChave: ["seguro", "apolice", "apólice", "sinistro"],
+  },
+  {
+    valor: "contrato",
+    rotulo: "Contratos e Prestadores",
+    palavrasChave: ["contrato", "aditivo", "prestador", "terceiriz"],
+  },
+  {
+    valor: "laudo",
+    rotulo: "Laudos e Vistorias",
+    palavrasChave: ["laudo", "vistoria", "extintor", "bomba", "spda", "art", "rrt"],
+  },
+  {
+    valor: "notificacao",
+    rotulo: "Notificações e Multas",
+    palavrasChave: ["notificacao", "notificação", "notif", "multa", "advertencia", "advertência"],
+  },
+  {
+    valor: "outro",
+    rotulo: "Outros Documentos",
+    palavrasChave: [],
+    padraoOutros: true,
+  },
 ];
 
-export const ROTULO_CATEGORIA_DOCUMENTO: Record<TipoDocumentoConsulta, string> = {
+export const CATEGORIAS_DOCUMENTO: { valor: TipoDocumentoConsulta; rotulo: string }[] =
+  CATEGORIAS_DOCUMENTO_PADRAO.map((c) => ({ valor: c.valor, rotulo: c.rotulo }));
+
+export const ROTULO_CATEGORIA_DOCUMENTO: Record<string, string> = {
   convencao: "Convenção",
   regimento: "Regimento Interno",
-  ata: "Ata",
-  seguro: "Seguro",
-  contrato: "Contrato",
-  laudo: "Laudo / Vistoria",
-  notificacao: "Notificação / Multa",
-  outro: "Outros",
+  ata: "Atas de Assembleia",
+  seguro: "Seguros e Apólices",
+  contrato: "Contratos e Prestadores",
+  laudo: "Laudos e Vistorias",
+  notificacao: "Notificações e Multas",
+  outro: "Outros Documentos",
 };
 
-export function rotuloCategoriaDocumento(tipo: TipoDocumentoConsulta): string {
-  return ROTULO_CATEGORIA_DOCUMENTO[tipo] ?? "Outros";
+function semAcentoMinusculo(texto: string): string {
+  return texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+export function gerarSlugCategoria(rotulo: string): TipoDocumentoConsulta {
+  const base = semAcentoMinusculo(rotulo)
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 32);
+  return (base || "outro") as TipoDocumentoConsulta;
+}
+
+/** Retorna a lista ativa de categorias/pastas garantindo que "Outros Documentos" esteja sempre presente. */
+export function obterCategoriasDrive(customizadas?: CategoriaPastaDrive[] | null): CategoriaPastaDrive[] {
+  if (!Array.isArray(customizadas) || customizadas.length === 0) {
+    return CATEGORIAS_DOCUMENTO_PADRAO;
+  }
+  const limpas = customizadas.filter((c) => c && typeof c.rotulo === "string" && c.rotulo.trim() !== "");
+  if (limpas.length === 0) return CATEGORIAS_DOCUMENTO_PADRAO;
+  const temOutro = limpas.some((c) => c.valor === "outro" || c.padraoOutros);
+  if (!temOutro) {
+    return [
+      ...limpas,
+      { valor: "outro", rotulo: "Outros Documentos", palavrasChave: [], padraoOutros: true },
+    ];
+  }
+  return limpas;
+}
+
+export function pastaPadraoOutros(categorias?: CategoriaPastaDrive[] | null): CategoriaPastaDrive {
+  const lista = obterCategoriasDrive(categorias);
+  return (
+    lista.find((c) => c.padraoOutros || c.valor === "outro") ?? {
+      valor: "outro",
+      rotulo: "Outros Documentos",
+      palavrasChave: [],
+      padraoOutros: true,
+    }
+  );
+}
+
+export function rotuloCategoriaDocumento(
+  tipo: TipoDocumentoConsulta | string,
+  categorias?: CategoriaPastaDrive[] | null,
+): string {
+  const lista = obterCategoriasDrive(categorias);
+  const achada = lista.find((c) => c.valor === tipo);
+  if (achada) return achada.rotulo;
+  return ROTULO_CATEGORIA_DOCUMENTO[tipo] ?? (tipo || "Outros Documentos");
 }
 
 /** Classifica automaticamente a categoria sugerida pelo nome do arquivo, caindo em "outro" se não reconhecer. */
-export function classificarDocumentoPorNome(nomeArquivo: string): TipoDocumentoConsulta {
-  const n = nomeArquivo
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+export function classificarDocumentoPorNome(
+  nomeArquivo: string,
+  categorias?: CategoriaPastaDrive[] | null,
+): TipoDocumentoConsulta {
+  const nomeSemExt = nomeArquivo.replace(/\.[^.]+$/, "");
+  const n = semAcentoMinusculo(nomeSemExt);
+  const lista = obterCategoriasDrive(categorias);
+
+  // 1. Checa palavras-chave configuradas nas categorias
+  for (const cat of lista) {
+    if (cat.padraoOutros || cat.valor === "outro") continue;
+    for (const kw of cat.palavrasChave ?? []) {
+      const k = semAcentoMinusculo(kw);
+      if (!k) continue;
+      if (k.length <= 3) {
+        const regCurta = new RegExp(`(?:^|[^a-z0-9])${k}(?:$|[^a-z0-9])`, "i");
+        if (regCurta.test(n)) return cat.valor;
+      } else if (n.includes(k)) {
+        return cat.valor;
+      }
+    }
+  }
+
+  // 2. Regras nativas de segurança caso as palavras-chave padrão não tenham batido
   if (/convenc/.test(n)) return "convencao";
   if (/regiment|regulament/.test(n)) return "regimento";
   if (/\batas?\b|assemble/.test(n)) return "ata";
   if (/apolice|segur/.test(n)) return "seguro";
   if (/contrat/.test(n)) return "contrato";
   if (/laudo|vistori|extintor|bomba/.test(n)) return "laudo";
-  if (/notificac|multa|advertenc/.test(n)) return "notificacao";
+  if (/notificac|notif_|multa|advertenc/.test(n)) return "notificacao";
   return "outro";
+}
+
+export interface AlocacaoPastaDrive {
+  /** Pasta ou caminho de pasta/subpasta no Drive (ex.: "Atas/2025", "Convenção", "Outros Documentos"). */
+  pasta: string;
+  /** Categoria associada ao documento. */
+  tipo: TipoDocumentoConsulta;
+  /** Caminho relativo completo salvo no documento (ex.: "Atas/2025/Ata_AGO.pdf"). */
+  caminhoRelativo: string;
+  /** Regra que determinou a pasta de destino. */
+  regra: "subpasta_origem" | "auto_nome" | "outros_padrao" | "manual";
+}
+
+/**
+ * Resolve em qual pasta/subpasta e categoria o documento deve entrar ao subir:
+ * 1. Se veio de importação de pasta e possui pasta/subpasta interna (`caminhoRelativoOrigem` com subdiretórios),
+ *    mantém e cadastra automaticamente as pastas e subpastas de origem.
+ * 2. Se foi enviado fora de pasta (avulso ou na raiz da pasta selecionada):
+ *    - Se o usuário escolheu manualmente uma pasta específica diferente de "automatico", usa essa pasta;
+ *    - Caso contrário, tenta identificar automaticamente pelo nome do arquivo usando as categorias cadastradas;
+ *    - Se não identificar automaticamente, aloca na pasta "Outros Documentos".
+ */
+export function resolverAlocacaoDocumentoDrive(opcoes: {
+  nomeArquivo: string;
+  caminhoRelativoOrigem?: string | null;
+  pastaManual?: string | null;
+  categorias?: CategoriaPastaDrive[] | null;
+}): AlocacaoPastaDrive {
+  const lista = obterCategoriasDrive(opcoes.categorias);
+  const outros = pastaPadraoOutros(lista);
+  const nomeLimpo = opcoes.nomeArquivo.split(/[\\/]/).pop() || opcoes.nomeArquivo;
+
+  // Verifica se o arquivo veio de uma estrutura de pastas/subpastas (webkitRelativePath)
+  const bruto = (opcoes.caminhoRelativoOrigem ?? "").replace(/\\/g, "/").trim();
+  const partes = bruto
+    .split("/")
+    .map((p) => p.trim())
+    .filter(Boolean);
+
+  // Quando o navegador envia via webkitdirectory, partes[0] é a pasta-raiz escolhida (ex.: "Santa Cecilia"),
+  // partes[1..n-2] são as pastas/subpastas internas (ex.: ["Atas", "2025"]) e partes[n-1] é o arquivo.
+  if (partes.length >= 3) {
+    const subpastas = partes.slice(1, -1).join("/");
+    const primeiraSubpasta = partes[1]!;
+    // Tenta vincular a categoria pela primeira pasta ou pelo nome do arquivo
+    const catPorPasta = classificarDocumentoPorNome(primeiraSubpasta, lista);
+    const catPorNome = classificarDocumentoPorNome(nomeLimpo, lista);
+    const tipo = catPorPasta !== "outro" ? catPorPasta : catPorNome;
+    return {
+      pasta: subpastas,
+      tipo,
+      caminhoRelativo: `${subpastas}/${nomeLimpo}`,
+      regra: "subpasta_origem",
+    };
+  }
+
+  // Se o usuário definiu uma pasta manualmente (que não seja "automatico")
+  const manual = (opcoes.pastaManual ?? "").trim();
+  if (manual && manual !== "automatico") {
+    const catCorrespondente = lista.find(
+      (c) => semAcentoMinusculo(c.rotulo) === semAcentoMinusculo(manual) || c.valor === manual,
+    );
+    const pastaNome = catCorrespondente ? catCorrespondente.rotulo : manual.replace(/^\/+|\/+$/g, "");
+    const tipo = catCorrespondente
+      ? catCorrespondente.valor
+      : classificarDocumentoPorNome(`${pastaNome} ${nomeLimpo}`, lista);
+    return {
+      pasta: pastaNome,
+      tipo,
+      caminhoRelativo: `${pastaNome}/${nomeLimpo}`,
+      regra: "manual",
+    };
+  }
+
+  // Arquivo avulso (fora de pasta): tenta identificar automaticamente pelo nome
+  const tipoAuto = classificarDocumentoPorNome(nomeLimpo, lista);
+  if (tipoAuto !== "outro") {
+    const cat = lista.find((c) => c.valor === tipoAuto);
+    const nomePasta = cat ? cat.rotulo : rotuloCategoriaDocumento(tipoAuto, lista);
+    return {
+      pasta: nomePasta,
+      tipo: tipoAuto,
+      caminhoRelativo: `${nomePasta}/${nomeLimpo}`,
+      regra: "auto_nome",
+    };
+  }
+
+  // Não identificado automaticamente e fora de pasta -> vai para "Outros Documentos"
+  return {
+    pasta: outros.rotulo,
+    tipo: "outro",
+    caminhoRelativo: `${outros.rotulo}/${nomeLimpo}`,
+    regra: "outros_padrao",
+  };
+}
+
+/** Extrai o caminho da pasta/subpasta de um documento já salvo no Drive. */
+export function extrairPastaDoDocumento(
+  doc: { caminhoRelativo?: string | null; tipo?: TipoDocumentoConsulta | string | null; nomeArquivo?: string | null },
+  categorias?: CategoriaPastaDrive[] | null,
+): string {
+  const lista = obterCategoriasDrive(categorias);
+  const outros = pastaPadraoOutros(lista);
+  const cam = (doc.caminhoRelativo ?? "").replace(/\\/g, "/").trim();
+  const partes = cam
+    .split("/")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (partes.length >= 2) {
+    return partes.slice(0, -1).join("/");
+  }
+  const tipo = doc.tipo ?? "outro";
+  if (tipo && tipo !== "outro") {
+    return rotuloCategoriaDocumento(tipo, lista);
+  }
+  return outros.rotulo;
 }
 
 export interface DadosNotificacao {

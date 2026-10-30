@@ -82,7 +82,7 @@ export const api = {
     resumo: () => guarda(() => impl().documentos.resumo()),
     registrar: (doc: DocumentoDriveRegistro) => guarda(() => impl().documentos.registrar(doc)),
     conteudo: (id: string) => guarda(() => impl().documentos.conteudo(id)),
-    atualizar: (dados: { id: string; nomeArquivo?: string; tipo?: TipoDocumentoConsulta; dataDocumento?: string }) =>
+    atualizar: (dados: { id: string; nomeArquivo?: string; tipo?: TipoDocumentoConsulta; caminhoRelativo?: string; dataDocumento?: string }) =>
       guarda(() => impl().documentos.atualizar(dados)),
     excluir: (id: string) => guarda(() => impl().documentos.excluir(id)),
     perguntar: (condoId: string, pergunta: string, documentoId?: string) =>

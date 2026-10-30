@@ -100,6 +100,7 @@ export interface ApiAdapter {
       id: string;
       nomeArquivo?: string;
       tipo?: TipoDocumentoConsulta;
+      caminhoRelativo?: string;
       dataDocumento?: string;
     }): Promise<{ ok: true; id: string; nomeArquivo: string; tipo: TipoDocumentoConsulta }>;
     excluir(id: string): Promise<void>;

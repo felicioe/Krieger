@@ -116,6 +116,13 @@ Implementação dividida em dois menus complementares no grupo **Assembleias e d
    - Flag **`[ ] Emitir Notificação / Multa em Word (.DOCX) a partir desta base legal`** que abre os campos de preenchimento (Condomínio, Modalidade: Apenas Notificação, Notificação e Multa ou 2ª Notificação e Multa, Condômino/Proprietário, Unidade, Inquilino opcional, Ocorrência, Base Legal preenchida pela IA, Enquadramento e Valor da Multa com valor por extenso automático `valorPorExtensoBRL`) e gera o `.DOCX` editável fiel ao layout oficial da Krieger.
 
 
+## Drive: Categorias e Pastas, subpastas automáticas e "Outros Documentos" — 30/10/2026
+
+- Modal `⚙️ Categorias e Pastas`: CRUD de categorias (rótulo + palavras-chave de identificação automática, em `ConfigEscritorio.categoriasDrive`) e subpastas por condomínio (`Condominio.pastasDrive`).
+- Ao subir uma pasta (`webkitdirectory`), pastas e subpastas dos arquivos são cadastradas automaticamente (`kr_documentos.caminho_relativo`) e exibidas em árvore navegável com breadcrumb.
+- Arquivos avulsos: identificação automática pelo nome via palavras-chave; sem identificação, vão para `📦 Outros Documentos`.
+- Não exige SQL manual: `garantir_esquema_documentos` (`lib_documentos.php`) migra automaticamente (`tipo VARCHAR(64)`).
+
 ## Pesquisa inline de condomínio na Consulta de Documentos — 30/10/2026
 
 Pedido do usuário para incluir pesquisa inline no seletor de condomínio da tela **Consulta de Documentos** (`/consulta-documentos`), facilitando encontrar qualquer condomínio sem precisar rolar toda a lista:

@@ -448,6 +448,33 @@ type DocumentoDriveMock = DocumentoDrive & {
 };
 const driveDocumentos = () => ler<DocumentoDriveMock[]>(CHAVE_DRIVE_DOCUMENTOS, () => []);
 const semConteudoDrive = ({ pdfBase64: _p, originalBase64: _o, paginasTexto: _t, ...doc }: DocumentoDriveMock): DocumentoDrive => doc;
+
+function normalizarDocMock(n: DocumentoDriveRegistro, existente?: DocumentoDriveMock): DocumentoDriveMock {
+  const agora = new Date().toISOString();
+  const trechos = Array.isArray(n.trechos) ? n.trechos : [];
+  const pdfDataUrl = n.pdfDataUrl ?? existente?.pdfBase64 ?? null;
+  const originalDataUrl = n.originalDataUrl ?? existente?.originalBase64 ?? null;
+  return {
+    id: existente ? existente.id : `doc-${novoId()}`,
+    condoId: n.condoId,
+    tipo: n.tipo || "outro",
+    nomeArquivo: n.nomeArquivo,
+    caminhoRelativo: n.caminhoRelativo || n.nomeArquivo,
+    hash: n.hash,
+    tamanho: n.tamanho ?? 0,
+    paginas: n.paginas ?? Math.max(1, trechos.length),
+    dataDocumento: n.dataDocumento || agora.slice(0, 10),
+    formatoOriginal: n.formatoOriginal ?? "pdf",
+    temPdf: Boolean(pdfDataUrl),
+    temOriginal: Boolean(originalDataUrl),
+    status: "ok",
+    erro: null,
+    indexadoEm: agora,
+    pdfBase64: pdfDataUrl,
+    originalBase64: originalDataUrl,
+    paginasTexto: trechos.map((t) => t.texto),
+  };
+}
 const semDados = ({ dados: _dados, ...r }: BackupRegistroMock): BackupRegistro => r;
 
 function publico(u: UsuarioMock): UsuarioAdmin {
@@ -852,48 +879,22 @@ export const mockApi: ApiAdapter = {
       }
       return contagem;
     },
-    async registrar(condoId: string, novos: DocumentoDriveRegistro[], removerAusentes?: boolean) {
-      await espera(200);
+    async registrar(doc: DocumentoDriveRegistro) {
+      await espera(150);
       sessao();
-      if (!condoId) throw new ApiError("Condomínio obrigatório.", 400);
-      let lista = driveDocumentos();
-      if (removerAusentes) {
-        const hashes = new Set(novos.map((n) => n.hashArquivo));
-        lista = lista.filter((d) => d.condoId !== condoId || hashes.has(d.hashArquivo));
-      }
-      let inseridos = 0;
-      for (const n of novos) {
-        const idx = lista.findIndex((d) => d.condoId === condoId && d.hashArquivo === n.hashArquivo);
-        const paginasTexto = Array.isArray(n.paginas) ? n.paginas : [];
-        const doc: DocumentoDriveMock = {
-          id: idx >= 0 ? lista[idx]!.id : (n.id || novoId()),
-          condoId,
-          arquivo: n.arquivo,
-          caminhoRelativo: n.caminhoRelativo || n.arquivo,
-          tipo: n.tipo || "outro",
-          dataDocumento: n.dataDocumento ?? null,
-          hashArquivo: n.hashArquivo,
-          paginas: paginasTexto.length,
-          indexadoEm: new Date().toISOString(),
-          formatoOriginal: n.formatoOriginal ?? "pdf",
-          temPdf: Boolean(n.pdfBase64) || (idx >= 0 && Boolean(lista[idx]!.pdfBase64)),
-          temOriginal: Boolean(n.originalBase64) || (idx >= 0 && Boolean(lista[idx]!.originalBase64)),
-          mimeOriginal: n.mimeOriginal ?? null,
-          nomeOriginal: n.nomeOriginal ?? n.arquivo,
-          tamanhoBytes: n.tamanhoBytes ?? 0,
-          origemEnvio: n.origemEnvio ?? "upload",
-          pdfBase64: n.pdfBase64 ?? (idx >= 0 ? lista[idx]!.pdfBase64 : null),
-          originalBase64: n.originalBase64 ?? (idx >= 0 ? lista[idx]!.originalBase64 : null),
-          paginasTexto,
-        };
-        if (idx >= 0) lista[idx] = doc;
-        else {
-          lista.unshift(doc);
-          inseridos++;
-        }
-      }
+      if (!doc.condoId) throw new ApiError("Condomínio obrigatório.", 400);
+      const lista = driveDocumentos();
+      const idx = lista.findIndex((d) => d.condoId === doc.condoId && (d.caminhoRelativo === doc.caminhoRelativo || d.hash === doc.hash));
+      const normalizado = normalizarDocMock(doc, idx >= 0 ? lista[idx] : undefined);
+      if (idx >= 0) lista[idx] = normalizado;
+      else lista.unshift(normalizado);
       gravar(CHAVE_DRIVE_DOCUMENTOS, lista);
-      return { ok: true as const, inseridos, removidos: 0 };
+      return {
+        id: normalizado.id,
+        condoId: normalizado.condoId,
+        tipo: normalizado.tipo,
+        indexadoEm: normalizado.indexadoEm,
+      };
     },
     async conteudo(id: string): Promise<DocumentoDriveConteudo> {
       await espera();
@@ -902,36 +903,33 @@ export const mockApi: ApiAdapter = {
       if (!doc) throw new ApiError("Documento não encontrado.", 404);
       return clone({
         id: doc.id,
-        condoId: doc.condoId,
-        arquivo: doc.arquivo,
-        tipo: doc.tipo,
+        nomeArquivo: doc.nomeArquivo,
         formatoOriginal: doc.formatoOriginal ?? "pdf",
-        mimeOriginal: doc.mimeOriginal ?? null,
-        nomeOriginal: doc.nomeOriginal ?? doc.arquivo,
-        tamanhoBytes: doc.tamanhoBytes ?? 0,
-        pdfBase64: doc.pdfBase64 ?? null,
-        originalBase64: doc.originalBase64 ?? null,
-        temPdf: Boolean(doc.pdfBase64),
-        temOriginal: Boolean(doc.originalBase64),
+        pdfDataUrl: doc.pdfBase64 ?? null,
+        originalDataUrl: doc.originalBase64 ?? null,
       });
     },
-    async atualizar(id, dadosDoc) {
+    async atualizar(dadosDoc) {
       await espera();
       sessao();
       const lista = driveDocumentos();
-      const doc = lista.find((d) => d.id === id);
+      const doc = lista.find((d) => d.id === dadosDoc.id);
       if (!doc) throw new ApiError("Documento não encontrado.", 404);
-      if (typeof dadosDoc.arquivo === "string" && dadosDoc.arquivo.trim()) doc.arquivo = dadosDoc.arquivo.trim();
+      if (typeof dadosDoc.nomeArquivo === "string" && dadosDoc.nomeArquivo.trim()) {
+        doc.nomeArquivo = dadosDoc.nomeArquivo.trim();
+      }
       if (dadosDoc.tipo) doc.tipo = dadosDoc.tipo;
+      if (typeof dadosDoc.caminhoRelativo === "string" && dadosDoc.caminhoRelativo.trim()) {
+        doc.caminhoRelativo = dadosDoc.caminhoRelativo.trim();
+      }
       if (dadosDoc.dataDocumento !== undefined) doc.dataDocumento = dadosDoc.dataDocumento;
       gravar(CHAVE_DRIVE_DOCUMENTOS, lista);
-      return { ok: true as const };
+      return { ok: true as const, id: doc.id, nomeArquivo: doc.nomeArquivo, tipo: doc.tipo };
     },
     async excluir(id: string) {
       await espera();
       sessao();
       gravar(CHAVE_DRIVE_DOCUMENTOS, driveDocumentos().filter((d) => d.id !== id));
-      return { ok: true as const };
     },
     // Sem acervo indexado neste ambiente de demonstração — a busca real roda no servidor (FULLTEXT).
     async perguntar(condoId: string, pergunta: string, _documentoId?: string) {
