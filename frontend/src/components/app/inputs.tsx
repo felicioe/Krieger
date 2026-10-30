@@ -1,8 +1,11 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { forwardRef, useEffect, useRef, useState, type ComponentPropsWithoutRef, type InputHTMLAttributes } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { forwardRef, useEffect, useMemo, useRef, useState, type ComponentPropsWithoutRef, type InputHTMLAttributes } from "react";
+import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatNumeroBR, mascaraData, mascaraHora, mascaraMesAno, parseNumeroBR } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { Condominio } from "@/domain/types";
 
 type BaseProps = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "defaultValue">;
 
@@ -173,5 +176,261 @@ export function Selecao<V extends string>({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+// ---- Seleção com pesquisa inline (Combobox) ----
+
+export interface OpcaoBusca<V extends string = string> {
+  valor: V;
+  rotulo: string;
+  /** Texto adicional considerado na pesquisa (ex.: código, razão social, CNPJ). */
+  busca?: string | undefined;
+  /** Etiqueta curta exibida ao lado do rótulo (ex.: código do condomínio). */
+  detalhe?: string | undefined;
+}
+
+function normalizarTextoBusca(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+/**
+ * Monta as opções de condomínio já ordenadas e prontas para pesquisa inline
+ * por código, nome, nome no relatório ou CNPJ.
+ */
+export function opcoesCondominio(
+  condominios: Condominio[],
+  usarNomeRelatorio = false,
+): OpcaoBusca<string>[] {
+  const obterRotulo = (c: Condominio) => (usarNomeRelatorio ? c.nomeRelatorio || c.nome : c.nome);
+  return [...condominios]
+    .sort((a, b) => obterRotulo(a).localeCompare(obterRotulo(b), "pt-BR"))
+    .map((c) => ({
+      valor: c.id,
+      rotulo: obterRotulo(c),
+      detalhe: c.codigo?.trim() || undefined,
+      busca: [c.codigo, c.nome, c.nomeRelatorio, c.cnpj].filter(Boolean).join(" "),
+    }));
+}
+
+/**
+ * Seleção com pesquisa inline para listas extensas (como condomínios).
+ * Ao clicar ou digitar no campo, abre a lista com campo de busca imediato
+ * por nome, código ou CNPJ (ignorando acentos e maiúsculas/minúsculas).
+ */
+export function SelecaoBusca<V extends string>({
+  id,
+  value,
+  onChange,
+  opcoes,
+  placeholder = "Selecione",
+  placeholderBusca = "Pesquisar por nome, código ou CNPJ...",
+  textoVazio = "Nenhum resultado encontrado.",
+  className,
+  ...atributos
+}: {
+  id?: string;
+  value: V | "" | null | undefined;
+  onChange: (v: V) => void;
+  opcoes: OpcaoBusca<V>[];
+  placeholder?: string;
+  placeholderBusca?: string;
+  textoVazio?: string;
+  className?: string;
+} & AtributosTrigger) {
+  const [aberto, setAberto] = useState(false);
+  const [termo, setTermo] = useState("");
+  const [indiceAtivo, setIndiceAtivo] = useState(0);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listaRef = useRef<HTMLDivElement>(null);
+
+  const selecionada = useMemo(() => opcoes.find((o) => o.valor === value), [opcoes, value]);
+
+  const filtradas = useMemo(() => {
+    const palavras = normalizarTextoBusca(termo).split(/\s+/).filter(Boolean);
+    if (palavras.length === 0) return opcoes;
+    return opcoes.filter((o) => {
+      const alvo = normalizarTextoBusca([o.rotulo, o.detalhe, o.busca].filter(Boolean).join(" "));
+      const apenasDigitos = alvo.replace(/\D/g, "");
+      return palavras.every((p) => {
+        const pDigitos = p.replace(/\D/g, "");
+        return alvo.includes(p) || (pDigitos.length >= 2 && apenasDigitos.includes(pDigitos));
+      });
+    });
+  }, [opcoes, termo]);
+
+  useEffect(() => {
+    if (!aberto) {
+      setTermo("");
+      return;
+    }
+    const idxAtual = filtradas.findIndex((o) => o.valor === value);
+    setIndiceAtivo(idxAtual >= 0 ? idxAtual : 0);
+  }, [aberto]);
+
+  useEffect(() => {
+    setIndiceAtivo(0);
+  }, [termo]);
+
+  useEffect(() => {
+    if (!aberto || !listaRef.current) return;
+    const item = listaRef.current.querySelector<HTMLElement>(`[data-indice="${indiceAtivo}"]`);
+    item?.scrollIntoView?.({ block: "nearest" });
+  }, [aberto, indiceAtivo]);
+
+  function escolher(valor: V) {
+    onChange(valor);
+    setAberto(false);
+    triggerRef.current?.focus();
+  }
+
+  return (
+    <Popover open={aberto} onOpenChange={setAberto}>
+      <PopoverTrigger asChild>
+        <button
+          ref={triggerRef}
+          id={id}
+          type="button"
+          role="combobox"
+          aria-expanded={aberto}
+          aria-haspopup="listbox"
+          data-placeholder={selecionada ? undefined : ""}
+          onKeyDown={(e) => {
+            if (atributos.disabled) return;
+            if (!aberto && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+              e.preventDefault();
+              setTermo(e.key);
+              setAberto(true);
+            } else if (!aberto && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
+              e.preventDefault();
+              setAberto(true);
+            }
+          }}
+          className={cn(
+            "flex min-h-9 max-md:min-h-11 pointer-coarse:min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-md border border-control bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background cursor-pointer data-[placeholder]:text-muted-foreground focus:outline-none focus:border-ring focus:ring-1 focus:ring-ring aria-[invalid=true]:border-destructive aria-[invalid=true]:focus:ring-destructive disabled:cursor-not-allowed disabled:opacity-50",
+            className,
+          )}
+          {...atributos}
+        >
+          {selecionada ? (
+            <span className="flex min-w-0 items-center gap-2 text-left">
+              {selecionada.detalhe && (
+                <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+                  {selecionada.detalhe}
+                </span>
+              )}
+              <span className="min-w-0 break-words">{selecionada.rotulo}</span>
+            </span>
+          ) : (
+            <span className="min-w-0 break-words text-left text-muted-foreground">{placeholder}</span>
+          )}
+          <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
+            <Search className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />
+            <ChevronDown className="h-4 w-4" aria-hidden="true" />
+          </span>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          inputRef.current?.focus();
+        }}
+        className="w-(--radix-popover-trigger-width) min-w-[18rem] max-w-[calc(100vw-2rem)] p-0"
+      >
+        <div className="flex items-center border-b px-3 py-1.5">
+          <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <input
+            ref={inputRef}
+            type="text"
+            value={termo}
+            onChange={(e) => setTermo(e.target.value)}
+            placeholder={placeholderBusca}
+            aria-label={placeholderBusca}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                if (filtradas.length > 0) {
+                  setIndiceAtivo((atual) => (atual + 1) % filtradas.length);
+                }
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                if (filtradas.length > 0) {
+                  setIndiceAtivo((atual) => (atual - 1 + filtradas.length) % filtradas.length);
+                }
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                const item = filtradas[indiceAtivo];
+                if (item) escolher(item.valor);
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                setAberto(false);
+                triggerRef.current?.focus();
+              }
+            }}
+            className="flex h-8 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          />
+          {termo && (
+            <button
+              type="button"
+              onClick={() => {
+                setTermo("");
+                inputRef.current?.focus();
+              }}
+              aria-label="Limpar pesquisa"
+              className="ml-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+        <div
+          ref={listaRef}
+          role="listbox"
+          aria-label="Opções disponíveis"
+          className="max-h-72 overflow-y-auto overflow-x-hidden p-1"
+        >
+          {filtradas.length === 0 ? (
+            <p className="px-3 py-6 text-center text-sm text-muted-foreground">{textoVazio}</p>
+          ) : (
+            filtradas.map((o, i) => {
+              const selecionado = o.valor === value;
+              return (
+                <button
+                  key={o.valor}
+                  type="button"
+                  role="option"
+                  data-indice={i}
+                  aria-selected={selecionado}
+                  onClick={() => escolher(o.valor)}
+                  onMouseMove={() => setIndiceAtivo(i)}
+                  className={cn(
+                    "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-left text-sm outline-none",
+                    i === indiceAtivo ? "bg-accent text-accent-foreground" : "hover:bg-accent/60",
+                  )}
+                >
+                  {o.detalhe && (
+                    <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+                      {o.detalhe}
+                    </span>
+                  )}
+                  <span className="min-w-0 flex-1 break-words">{o.rotulo}</span>
+                  {selecionado && (
+                    <span className="absolute right-2 flex h-3.5 w-3.5 items-center justify-center">
+                      <Check className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

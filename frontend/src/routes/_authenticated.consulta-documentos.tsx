@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
-import { Selecao } from "@/components/app/inputs";
+import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api, mensagemErro } from "@/lib/api";
 import { consultaHistoricoQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
@@ -77,7 +77,7 @@ function PaginaConsultaDocumentos() {
     );
   }
 
-  const opcoesCondo = ordenados.map((c) => ({ valor: c.id, rotulo: c.nomeRelatorio || c.nome }));
+  const opcoesCondo = opcoesCondominio(ordenados, true);
   const semPasta = !condo?.pastaDocumentos?.trim();
 
   function enviar(e: FormEvent) {
@@ -92,8 +92,18 @@ function PaginaConsultaDocumentos() {
       <PageHeader titulo="Consulta de Documentos" descricao="Perguntas sobre convenção, regimento interno e atas de assembleia do condomínio." />
 
       <SectionCard titulo="Condomínio">
-        <Field rotulo="Condomínio" className="max-w-md">
-          <Selecao value={condoId} onChange={(id) => navigate({ search: { condoId: id }, replace: true })} opcoes={opcoesCondo} />
+        <Field
+          rotulo="Condomínio"
+          dica="Clique no campo e digite o nome, código ou CNPJ para filtrar."
+          className="max-w-lg"
+        >
+          <SelecaoBusca
+            value={condoId}
+            onChange={(id) => navigate({ search: { condoId: id }, replace: true })}
+            opcoes={opcoesCondo}
+            placeholder="Escolha o condomínio"
+            placeholderBusca="Pesquisar condomínio por nome, código ou CNPJ..."
+          />
         </Field>
         {semPasta && (
           <Alert variant="warning" className="mt-4">

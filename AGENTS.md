@@ -34,7 +34,7 @@ tarefas ou validar entregas.
 
 ## Regras do projeto
 
-- Comunicação, issues, PRs e documentação em pt-BR.
+- Comunicação, resumos de ferramentas (`toolSummary`), commits, issues, PRs e documentação **sempre 100% em pt-BR** (nunca usar outro idioma).
 - Desenvolvimento na Claude ou Codex → PR no GitHub → `main` → Hostinger via conector/API.
 - `main` é a branch padrão. Não usar branches antigas `claude/*` como base de novos trabalhos.
 - Registre problema, critérios de aceite, decisões, testes e limitações no GitHub.
