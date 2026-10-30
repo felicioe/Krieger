@@ -203,7 +203,6 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                             />
                             <Label htmlFor="secao-previsao-por-unidade" className="min-w-0 break-words text-xs font-normal text-muted-foreground">
                               Previsão orçamentária por unidade
-                              {rel.unidadesOrigem === "relatorioMensal" && " (nº de unidades do relatório mensal)"}
                             </Label>
                           </div>
                         )}

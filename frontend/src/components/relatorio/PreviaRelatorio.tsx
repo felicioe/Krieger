@@ -114,13 +114,7 @@ export function PreviaRelatorio({
           {...(d?.periodo.ini && d.periodo.fim ? { sub: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.` } : {})}
         >
           {e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade ? (
-            <PrevisaoSugeridaPrevia
-              e={e}
-              previsao={e.previsaoSugerida}
-              r={rel.previsaoSugerida}
-              u={rel.previsaoSugeridaPorUnidade}
-              unidadesOrigem={rel.unidadesOrigem}
-            />
+            <PrevisaoSugeridaPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} u={rel.previsaoSugeridaPorUnidade} />
           ) : (
             <>
           <RolagemTabela className=""><table className="w-full">
@@ -175,10 +169,7 @@ export function PreviaRelatorio({
               <Linha nome="Mensal (÷ 12)" valor={rel.previsao.mensal} />
               {e.mostrarPrevisaoPorUnidade !== false && rel.previsao.unidades !== null && (
                 <>
-                  <Linha
-                    nome={`Cota por unidade (÷ ${rel.previsao.unidades} unidades${rel.unidadesOrigem === "relatorioMensal" ? ", do relatório mensal" : ""})`}
-                    valor={rel.previsao.cotaUnidade}
-                  />
+                  <Linha nome={`Cota por unidade (÷ ${rel.previsao.unidades} unidades)`} valor={rel.previsao.cotaUnidade} />
                   <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(rel.previsao.fundoReservaPct)}%`} valor={rel.previsao.reservaUnidade} />
                   <Linha nome="Valor por unidade" valor={rel.previsao.rateioSugerido} forte />
                 </>
@@ -482,13 +473,11 @@ function PrevisaoSugeridaPrevia({
   previsao: p,
   r,
   u,
-  unidadesOrigem,
 }: {
   e: Exercicio;
   previsao: PrevisaoSugeridaExercicio;
   r: ResultadoPrevisaoSugerida;
   u: ResultadoPrevisaoSugeridaPorUnidade;
-  unidadesOrigem: "cadastro" | "relatorioMensal" | null;
 }) {
   const fundo = e.prev?.fundoReservaPct ?? 0;
   const mostrarPorUnidade = e.mostrarPrevisaoPorUnidade !== false && u.unidades !== null;
@@ -543,10 +532,7 @@ function PrevisaoSugeridaPrevia({
             <tbody>
               <tr>
                 <td className="px-3 py-1">Unidades</td>
-                <td className="num px-3 py-1 text-right">
-                  {u.unidades}
-                  {unidadesOrigem === "relatorioMensal" && <span className="text-muted-foreground"> (do relatório mensal)</span>}
-                </td>
+                <td className="num px-3 py-1 text-right">{u.unidades}</td>
               </tr>
               <Linha nome="Cota por unidade" valor={u.cotaUnidade} />
               <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`} valor={u.reservaUnidade} />

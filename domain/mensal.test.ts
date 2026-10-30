@@ -1,15 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
 import { recalcularDemonstrativo } from "@/domain/demonstrativo";
-import {
-  competenciaMensal,
-  mensalPadrao,
-  periodoDoMes,
-  prepararMensal,
-  relatorioAnterior,
-  unidadesDoUltimoRelatorio,
-  validarMensal,
-} from "@/domain/mensal";
+import { competenciaMensal, mensalPadrao, periodoDoMes, prepararMensal, relatorioAnterior, validarMensal } from "@/domain/mensal";
 import type { Condominio, Mensal } from "@/domain/types";
 
 const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias" };
@@ -44,24 +36,6 @@ describe("relatório mensal", () => {
     const dez = comSaldo(12, 2025);
     expect(relatorioAnterior("c1", { mes: 1, ano: 2026 }, [dez])?.id).toBe("m12");
     expect(relatorioAnterior("outro", { mes: 1, ano: 2026 }, [dez])).toBeNull();
-  });
-
-  it("unidades do último relatório mensal com essa informação (quantidade de unidades lida do PDF)", () => {
-    const comUnidades = (mes: number, ano: number, unidades: number | null): Mensal => ({
-      ...comSaldo(mes, ano),
-      receber: { unidades, valor: unidades ? 1000 : null },
-    });
-    expect(unidadesDoUltimoRelatorio("c1", [])).toBeNull();
-    expect(unidadesDoUltimoRelatorio("c1", [comUnidades(1, 2026, null)])).toBeNull();
-    // pega o mais recente entre os que têm o dado, ignorando os sem
-    expect(
-      unidadesDoUltimoRelatorio("c1", [
-        comUnidades(1, 2026, 48),
-        comUnidades(3, 2026, 50),
-        comUnidades(2, 2026, null),
-        { ...comUnidades(1, 2026, 99), id: "outro", condoId: "outro-condo" },
-      ]),
-    ).toBe(50);
   });
 
   it("um único relatório por condomínio e mês", () => {

@@ -113,10 +113,9 @@ describe("relatório final", () => {
     expect(r.previsaoSugerida?.rateioMensalSugerido).toBe(10000); // 120000 / 12
     // unidades = 10 (condo), fundoReservaPct = 10%: cota 1000 + reserva 100 = 1100
     expect(r.previsaoSugeridaPorUnidade).toEqual({ unidades: 10, cotaUnidade: 1000, reservaUnidade: 100, valorUnidade: 1100 });
-    expect(r.unidadesOrigem).toBe("cadastro");
   });
 
-  it("sem unidades no cadastro, usa o nº de unidades do relatório mensal mais recente; sem nenhum dos dois, oculta", () => {
+  it("sem unidades no cadastro, o quadro por unidade fica nulo (não usa unidades inadimplentes do relatório mensal como total)", () => {
     const semCadastro: Condominio = { ...condo, unidades: null };
     const e: Exercicio = {
       ...exercicio(4000),
@@ -129,22 +128,13 @@ describe("relatório final", () => {
       },
     };
 
-    const semNada = montarRelatorioFinal({ exercicio: e, condominio: semCadastro, escritorio: null, mensais: [] });
-    expect(semNada.unidadesOrigem).toBeNull();
-    expect(semNada.previsaoSugeridaPorUnidade?.unidades).toBeNull();
+    // mensal(1, 100) grava receber.unidades = 2 (unidades inadimplentes, não o total do condomínio)
+    // — mesmo presente, não deve ser usado como divisor do rateio por unidade.
+    const semCadastroComMensal = montarRelatorioFinal({ exercicio: e, condominio: semCadastro, escritorio: null, mensais: [mensal(1, 100)] });
+    expect(semCadastroComMensal.previsaoSugeridaPorUnidade?.unidades).toBeNull();
+    expect(semCadastroComMensal.previsao.unidades).toBeNull();
 
-    const comFallback = montarRelatorioFinal({
-      exercicio: e,
-      condominio: semCadastro,
-      escritorio: null,
-      mensais: [mensal(1, 100)], // mensal() grava receber.unidades = 2 quando há valor
-    });
-    expect(comFallback.unidadesOrigem).toBe("relatorioMensal");
-    expect(comFallback.previsaoSugeridaPorUnidade?.unidades).toBe(2);
-
-    // cadastro preenchido tem prioridade sobre o relatório mensal
     const comCadastro = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [mensal(1, 100)] });
-    expect(comCadastro.unidadesOrigem).toBe("cadastro");
     expect(comCadastro.previsaoSugeridaPorUnidade?.unidades).toBe(10);
   });
 

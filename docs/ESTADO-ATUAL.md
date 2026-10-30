@@ -1,37 +1,39 @@
 # Estado atual e passagem de contexto
 
-## Previsão orçamentária por unidade: fonte alternativa (relatório mensal) + ocultar quando vazio — 30/10/2026
+## Previsão orçamentária por unidade: checkbox + nunca mostrar zerada — 30/10/2026 (PR #108)
 
 Pedido do usuário ao revisar um Relatório Final real: o bloco "Previsão orçamentária por unidade"
 (Unidades/Cota/Reserva/Valor por unidade) sempre saía "—" nesse condomínio, porque dependia só do
-campo manual `Condominio.unidades` (cadastro), que nunca tinha sido preenchido. Investigação achou
-outra fonte real: o PDF do relatório mensal já traz "Quantidade de Unidades" na seção Contas a
-receber, lida e gravada automaticamente a cada importação (`Mensal.receber.unidades`) — só não
-estava ligada a esse cálculo. Decisão do usuário: usar essa fonte como alternativa (opção B), manter
-um checkbox pra incluir/excluir o bloco do relatório, e nunca mostrar o bloco zerado mesmo com o
-checkbox marcado.
+campo manual `Condominio.unidades` (cadastro), que nunca tinha sido preenchido. Não faz sentido
+apresentar um relatório com informação zerada.
 
-- `domain/mensal.ts`: `unidadesDoUltimoRelatorio(condoId, mensais)` — acha o relatório mensal mais
-  recente desse condomínio com `receber.unidades` preenchido.
-- `domain/relatorioFinal.ts` (`montarRelatorioFinal`): `unidades` agora é
-  `condominio.unidades ?? unidadesDoUltimoRelatorio(...)` — cadastro tem prioridade; novo campo
-  `RelatorioFinal.unidadesOrigem` ("cadastro" | "relatorioMensal" | null) registra de onde veio,
-  pra anotar isso no relatório ("… (do relatório mensal)").
-- `domain/types.ts`: `Exercicio.mostrarPrevisaoPorUnidade` (novo, default true) — mesmo padrão de
-  `mostrarContasAnaliticas`/`mostrarEvolucaoMensal`.
+**Tentativa errada, corrigida antes de mesclar (achado do Codex review no PR #108, P1):** a primeira
+versão desta mudança tentava usar `Mensal.receber.unidades` como alternativa quando o cadastro está
+vazio — mas esse campo é "**unidades inadimplentes**" (contas a receber em atraso, rótulo explícito
+na tela do relatório mensal e no documento gerado, "N de total unidades"), não o total de unidades do
+condomínio. Usar como divisor do rateio geraria cota por unidade muito maior que a real (ex.: 2
+inadimplentes de 50 unidades vira "cota ÷ 2" em vez de "cota ÷ 50"). Não existe hoje, no sistema,
+nenhuma fonte confiável e automática do total de unidades além do cadastro — revertido antes de
+publicar; `domain/mensal.ts` não ganhou a função `unidadesDoUltimoRelatorio` que chegou a existir
+localmente.
+
+O que ficou, então, é só a parte segura do pedido:
+
+- `domain/types.ts`: `Exercicio.mostrarPrevisaoPorUnidade` (novo, default true) — checkbox pra
+  incluir/excluir o bloco do relatório, mesmo padrão de `mostrarContasAnaliticas`/`mostrarEvolucaoMensal`.
 - `frontend/src/documentos/relatorioFinal.ts` e `PreviaRelatorio.tsx`: os dois lugares que mostram
   esse bloco (previsão tradicional, embutida no resumo, e previsão sugerida do Systemar, bloco
-  próprio) só renderizam quando `mostrarPrevisaoPorUnidade !== false` **e** o nº de unidades não é
-  null — sem exceção, mesmo com o checkbox marcado, pra nunca sair um bloco zerado no PDF/Word.
+  próprio) só renderizam quando `mostrarPrevisaoPorUnidade !== false` **e** o nº de unidades (do
+  cadastro) não é null — nunca um bloco zerado no PDF/Word, mesmo com o checkbox marcado.
 - `_authenticated.relatorio-final.$id.tsx`: checkbox novo na lista de seções, aninhado em "Previsão
-  orçamentária" (mesmo padrão visual dos outros `mostrarX`), só aparece quando há algum nº de
-  unidades pra mostrar (cadastro ou relatório mensal).
+  orçamentária", só aparece quando há unidades no cadastro pra mostrar.
 
-Testado: `domain/mensal.test.ts` (nova função, inclusive escolhendo o mês mais recente entre vários
-com o dado) e `domain/relatorioFinal.test.ts` (prioridade cadastro > relatório mensal > nenhum dos
-dois, com `unidadesOrigem` em cada caso) — 174 testes de domínio. `npx tsc --noEmit` limpo na raiz e
-no frontend; 191 testes de frontend. `npm run docs:check` limpo. Ainda não publicado — falta abrir
-PR e mesclar em `main`.
+Quem quiser esse bloco funcionando precisa preencher "Unidades" no cadastro do condomínio — não tem
+atalho automático.
+
+Testado: `domain/relatorioFinal.test.ts` (sem unidades no cadastro, o quadro fica nulo mesmo com
+relatório mensal presente) — 173 testes de domínio. `npx tsc --noEmit` limpo na raiz e no frontend;
+192 testes de frontend. `npm run docs:check` limpo.
 
 ## Pesquisa inline de condomínio na Consulta de Documentos — 30/10/2026
 

@@ -77,7 +77,7 @@ export async function documentoRelatorioFinal(o: {
   if (rel.secoes.previsao && e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade) {
     b.push(titulo("previsao", `Previsão orçamentária — Exercício ${e.ano}`));
     if (d?.periodo.ini && d.periodo.fim) b.push({ tipo: "paragrafo", texto: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.`, suave: true, tamanho: "pequeno" });
-    b.push(...blocosPrevisaoSugerida(e, e.previsaoSugerida, rel.previsaoSugerida, rel.previsaoSugeridaPorUnidade, rel.unidadesOrigem));
+    b.push(...blocosPrevisaoSugerida(e, e.previsaoSugerida, rel.previsaoSugerida, rel.previsaoSugeridaPorUnidade));
   } else if (rel.secoes.previsao) {
     const p = rel.previsao;
     b.push(titulo("previsao", `Previsão orçamentária — Exercício ${e.ano}`));
@@ -122,10 +122,7 @@ export async function documentoRelatorioFinal(o: {
         l("Mensal (÷ 12)", p.mensal),
         ...(mostrarPorUnidadeTrad
           ? [
-              l(
-                `Cota por unidade (÷ ${p.unidades} unidades${rel.unidadesOrigem === "relatorioMensal" ? ", do relatório mensal" : ""})`,
-                p.cotaUnidade,
-              ),
+              l(`Cota por unidade (÷ ${p.unidades} unidades)`, p.cotaUnidade),
               l(`(+) Reserva por unidade ${formatNumeroBR(p.fundoReservaPct)}%`, p.reservaUnidade),
               l("Valor por unidade", p.rateioSugerido, { estilo: "total" }),
             ]
@@ -386,7 +383,6 @@ function blocosPrevisaoSugerida(
   p: PrevisaoSugeridaExercicio,
   r: ResultadoPrevisaoSugerida,
   u: ResultadoPrevisaoSugeridaPorUnidade,
-  unidadesOrigem: "cadastro" | "relatorioMensal" | null,
 ): Bloco[] {
   const fundo = e.prev?.fundoReservaPct ?? 0;
   const mostrarPorUnidade = e.mostrarPrevisaoPorUnidade !== false && u.unidades !== null;
@@ -419,7 +415,7 @@ function blocosPrevisaoSugerida(
       ? [
           { tipo: "titulo", nivel: 3, texto: "Previsão orçamentária por unidade" } as Bloco,
           resumo([
-            { celulas: ["Unidades", `${u.unidades}${unidadesOrigem === "relatorioMensal" ? " (do relatório mensal)" : ""}`] },
+            { celulas: ["Unidades", String(u.unidades)] },
             l("Cota por unidade", u.cotaUnidade),
             l(`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`, u.reservaUnidade),
             l("Valor por unidade", u.valorUnidade, { estilo: "total" }),
