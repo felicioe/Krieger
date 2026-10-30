@@ -1,6 +1,6 @@
 import { formatBRL } from "../lib/format";
 import { centavos } from "./demonstrativo";
-import { normalizarMensal, competenciaMensal, ordemCompetencia, rotuloCompetencia } from "./mensal";
+import { normalizarMensal, competenciaMensal, ordemCompetencia, rotuloCompetencia, unidadesDoUltimoRelatorio } from "./mensal";
 import { calcularPrevisao, expressaoDeducao, type ResultadoPrevisao } from "./previsao";
 import {
   calcularPrevisaoSugerida,
@@ -158,6 +158,13 @@ export interface RelatorioFinal {
    */
   previsaoSugerida: ResultadoPrevisaoSugerida | null;
   previsaoSugeridaPorUnidade: ResultadoPrevisaoSugeridaPorUnidade | null;
+  /**
+   * De onde veio o nº de unidades usado nos dois cálculos "por unidade" acima: do cadastro do
+   * condomínio (`Condominio.unidades`, manual) ou, na falta dele, do relatório mensal mais recente
+   * que já traz essa informação (lida automaticamente do PDF). `null` quando nenhuma das duas existe
+   * — nesse caso os blocos "por unidade" do relatório ficam ocultos (ver `mostrarPrevisaoPorUnidade`).
+   */
+  unidadesOrigem: "cadastro" | "relatorioMensal" | null;
   comparativo: ResultadoComparativo;
   mensais: Mensal[];
   inadimplencia: ReturnType<typeof inadimplencia>;
@@ -178,7 +185,10 @@ export function montarRelatorioFinal(entrada: {
 }): RelatorioFinal {
   const { exercicio: e, condominio, escritorio } = entrada;
   const secoes = secoesIncluidas(e);
-  const unidades = condominio?.unidades ?? null;
+  const unidadesCadastro = condominio?.unidades ?? null;
+  const unidadesRelatorioMensal = unidadesCadastro ? null : unidadesDoUltimoRelatorio(e.condoId, entrada.mensais);
+  const unidades = unidadesCadastro ?? unidadesRelatorioMensal;
+  const unidadesOrigem: RelatorioFinal["unidadesOrigem"] = unidadesCadastro ? "cadastro" : unidadesRelatorioMensal ? "relatorioMensal" : null;
   const previsao = calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, unidades);
   const previsaoSugerida = e.previsaoSugerida ? calcularPrevisaoSugerida(e.previsaoSugerida) : null;
   const previsaoSugeridaPorUnidade = previsaoSugerida
@@ -296,6 +306,7 @@ export function montarRelatorioFinal(entrada: {
     previsao,
     previsaoSugerida,
     previsaoSugeridaPorUnidade,
+    unidadesOrigem,
     comparativo,
     mensais,
     inadimplencia: inad,

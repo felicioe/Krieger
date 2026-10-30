@@ -282,6 +282,12 @@ export interface Exercicio extends ComId {
   mostrarEvolucaoMensal?: boolean;
   /** Linhas por rubrica (contas analíticas) na seção Previsto × Realizado; false = só os totais por grupo. */
   mostrarContasAnaliticas?: boolean;
+  /**
+   * Bloco "Previsão orçamentária por unidade" (Unidades/Cota/Reserva/Valor por unidade), nos dois
+   * modos de previsão; false = oculto. Mesmo marcado, fica oculto quando não há nº de unidades (nem
+   * no cadastro, nem no relatório mensal mais recente) — nunca mostra o bloco zerado.
+   */
+  mostrarPrevisaoPorUnidade?: boolean;
   /** Campo novo (opcional): escolhas do relatório final. "Análise gráfica" usa mostrarAnalise/mostrarPizza. */
   relatorioFinal?: {
     /** Seções incluídas (ausente = incluída). */

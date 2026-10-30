@@ -114,7 +114,13 @@ export function PreviaRelatorio({
           {...(d?.periodo.ini && d.periodo.fim ? { sub: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.` } : {})}
         >
           {e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade ? (
-            <PrevisaoSugeridaPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} u={rel.previsaoSugeridaPorUnidade} />
+            <PrevisaoSugeridaPrevia
+              e={e}
+              previsao={e.previsaoSugerida}
+              r={rel.previsaoSugerida}
+              u={rel.previsaoSugeridaPorUnidade}
+              unidadesOrigem={rel.unidadesOrigem}
+            />
           ) : (
             <>
           <RolagemTabela className=""><table className="w-full">
@@ -167,9 +173,16 @@ export function PreviaRelatorio({
               <Linha nome="(−) Ajustes" valor={rel.previsao.ajustesMenos} />
               <Linha nome="Anual ajustado" valor={rel.previsao.totalAnual} forte />
               <Linha nome="Mensal (÷ 12)" valor={rel.previsao.mensal} />
-              <Linha nome={`Cota por unidade (÷ ${rel.previsao.unidades ?? "—"} unidades)`} valor={rel.previsao.cotaUnidade} />
-              <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(rel.previsao.fundoReservaPct)}%`} valor={rel.previsao.reservaUnidade} />
-              <Linha nome="Valor por unidade" valor={rel.previsao.rateioSugerido} forte />
+              {e.mostrarPrevisaoPorUnidade !== false && rel.previsao.unidades !== null && (
+                <>
+                  <Linha
+                    nome={`Cota por unidade (÷ ${rel.previsao.unidades} unidades${rel.unidadesOrigem === "relatorioMensal" ? ", do relatório mensal" : ""})`}
+                    valor={rel.previsao.cotaUnidade}
+                  />
+                  <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(rel.previsao.fundoReservaPct)}%`} valor={rel.previsao.reservaUnidade} />
+                  <Linha nome="Valor por unidade" valor={rel.previsao.rateioSugerido} forte />
+                </>
+              )}
               <Linha nome="Rateio atual" valor={rel.previsao.rateioAtual} />
               <tr>
                 <td className="px-3 py-1">Índice de reajuste</td>
@@ -469,13 +482,16 @@ function PrevisaoSugeridaPrevia({
   previsao: p,
   r,
   u,
+  unidadesOrigem,
 }: {
   e: Exercicio;
   previsao: PrevisaoSugeridaExercicio;
   r: ResultadoPrevisaoSugerida;
   u: ResultadoPrevisaoSugeridaPorUnidade;
+  unidadesOrigem: "cadastro" | "relatorioMensal" | null;
 }) {
   const fundo = e.prev?.fundoReservaPct ?? 0;
+  const mostrarPorUnidade = e.mostrarPrevisaoPorUnidade !== false && u.unidades !== null;
   const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
   return (
     <>
@@ -520,18 +536,25 @@ function PrevisaoSugeridaPrevia({
           {e.rateioAprovado != null && <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />}
         </tbody>
       </table></RolagemTabela>
-      <h4 className="mb-1 mt-5 font-semibold">Previsão orçamentária por unidade</h4>
-      <RolagemTabela className=""><table className="w-full rounded-sm bg-muted/50">
-        <tbody>
-          <tr>
-            <td className="px-3 py-1">Unidades</td>
-            <td className="num px-3 py-1 text-right">{u.unidades ?? "—"}</td>
-          </tr>
-          <Linha nome="Cota por unidade" valor={u.cotaUnidade} />
-          <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`} valor={u.reservaUnidade} />
-          <Linha nome="Valor por unidade" valor={u.valorUnidade} forte />
-        </tbody>
-      </table></RolagemTabela>
+      {mostrarPorUnidade && (
+        <>
+          <h4 className="mb-1 mt-5 font-semibold">Previsão orçamentária por unidade</h4>
+          <RolagemTabela className=""><table className="w-full rounded-sm bg-muted/50">
+            <tbody>
+              <tr>
+                <td className="px-3 py-1">Unidades</td>
+                <td className="num px-3 py-1 text-right">
+                  {u.unidades}
+                  {unidadesOrigem === "relatorioMensal" && <span className="text-muted-foreground"> (do relatório mensal)</span>}
+                </td>
+              </tr>
+              <Linha nome="Cota por unidade" valor={u.cotaUnidade} />
+              <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`} valor={u.reservaUnidade} />
+              <Linha nome="Valor por unidade" valor={u.valorUnidade} forte />
+            </tbody>
+          </table></RolagemTabela>
+        </>
+      )}
     </>
   );
 }

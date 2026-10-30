@@ -1,5 +1,38 @@
 # Estado atual e passagem de contexto
 
+## Previsão orçamentária por unidade: fonte alternativa (relatório mensal) + ocultar quando vazio — 30/10/2026
+
+Pedido do usuário ao revisar um Relatório Final real: o bloco "Previsão orçamentária por unidade"
+(Unidades/Cota/Reserva/Valor por unidade) sempre saía "—" nesse condomínio, porque dependia só do
+campo manual `Condominio.unidades` (cadastro), que nunca tinha sido preenchido. Investigação achou
+outra fonte real: o PDF do relatório mensal já traz "Quantidade de Unidades" na seção Contas a
+receber, lida e gravada automaticamente a cada importação (`Mensal.receber.unidades`) — só não
+estava ligada a esse cálculo. Decisão do usuário: usar essa fonte como alternativa (opção B), manter
+um checkbox pra incluir/excluir o bloco do relatório, e nunca mostrar o bloco zerado mesmo com o
+checkbox marcado.
+
+- `domain/mensal.ts`: `unidadesDoUltimoRelatorio(condoId, mensais)` — acha o relatório mensal mais
+  recente desse condomínio com `receber.unidades` preenchido.
+- `domain/relatorioFinal.ts` (`montarRelatorioFinal`): `unidades` agora é
+  `condominio.unidades ?? unidadesDoUltimoRelatorio(...)` — cadastro tem prioridade; novo campo
+  `RelatorioFinal.unidadesOrigem` ("cadastro" | "relatorioMensal" | null) registra de onde veio,
+  pra anotar isso no relatório ("… (do relatório mensal)").
+- `domain/types.ts`: `Exercicio.mostrarPrevisaoPorUnidade` (novo, default true) — mesmo padrão de
+  `mostrarContasAnaliticas`/`mostrarEvolucaoMensal`.
+- `frontend/src/documentos/relatorioFinal.ts` e `PreviaRelatorio.tsx`: os dois lugares que mostram
+  esse bloco (previsão tradicional, embutida no resumo, e previsão sugerida do Systemar, bloco
+  próprio) só renderizam quando `mostrarPrevisaoPorUnidade !== false` **e** o nº de unidades não é
+  null — sem exceção, mesmo com o checkbox marcado, pra nunca sair um bloco zerado no PDF/Word.
+- `_authenticated.relatorio-final.$id.tsx`: checkbox novo na lista de seções, aninhado em "Previsão
+  orçamentária" (mesmo padrão visual dos outros `mostrarX`), só aparece quando há algum nº de
+  unidades pra mostrar (cadastro ou relatório mensal).
+
+Testado: `domain/mensal.test.ts` (nova função, inclusive escolhendo o mês mais recente entre vários
+com o dado) e `domain/relatorioFinal.test.ts` (prioridade cadastro > relatório mensal > nenhum dos
+dois, com `unidadesOrigem` em cada caso) — 174 testes de domínio. `npx tsc --noEmit` limpo na raiz e
+no frontend; 191 testes de frontend. `npm run docs:check` limpo. Ainda não publicado — falta abrir
+PR e mesclar em `main`.
+
 ## Correção de duplicação na importação de condomínios + Menu administrativo "Limpeza de Dados" — 29/10/2026
 
 Pedido do usuário após notar 344 condomínios duplicados ao importar a Listagem de Condomínios mais de uma vez e solicitar um menu administrativo em vermelho (restrito a administradores) para apagar todos os cadastros ou cada categoria individualmente:

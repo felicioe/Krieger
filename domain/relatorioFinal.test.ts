@@ -113,6 +113,39 @@ describe("relatório final", () => {
     expect(r.previsaoSugerida?.rateioMensalSugerido).toBe(10000); // 120000 / 12
     // unidades = 10 (condo), fundoReservaPct = 10%: cota 1000 + reserva 100 = 1100
     expect(r.previsaoSugeridaPorUnidade).toEqual({ unidades: 10, cotaUnidade: 1000, reservaUnidade: 100, valorUnidade: 1100 });
+    expect(r.unidadesOrigem).toBe("cadastro");
+  });
+
+  it("sem unidades no cadastro, usa o nº de unidades do relatório mensal mais recente; sem nenhum dos dois, oculta", () => {
+    const semCadastro: Condominio = { ...condo, unidades: null };
+    const e: Exercicio = {
+      ...exercicio(4000),
+      prev: { modo: "tradicional", fundoReservaPct: 10 },
+      previsaoSugerida: {
+        rateioMensalAtual: 40000,
+        categorias: [{ nome: "Pessoal", anual: 120000, media: 10000 }],
+        deducoes: [],
+        variacao: { sinal: "+", valor: 0 },
+      },
+    };
+
+    const semNada = montarRelatorioFinal({ exercicio: e, condominio: semCadastro, escritorio: null, mensais: [] });
+    expect(semNada.unidadesOrigem).toBeNull();
+    expect(semNada.previsaoSugeridaPorUnidade?.unidades).toBeNull();
+
+    const comFallback = montarRelatorioFinal({
+      exercicio: e,
+      condominio: semCadastro,
+      escritorio: null,
+      mensais: [mensal(1, 100)], // mensal() grava receber.unidades = 2 quando há valor
+    });
+    expect(comFallback.unidadesOrigem).toBe("relatorioMensal");
+    expect(comFallback.previsaoSugeridaPorUnidade?.unidades).toBe(2);
+
+    // cadastro preenchido tem prioridade sobre o relatório mensal
+    const comCadastro = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [mensal(1, 100)] });
+    expect(comCadastro.unidadesOrigem).toBe("cadastro");
+    expect(comCadastro.previsaoSugeridaPorUnidade?.unidades).toBe(10);
   });
 
   it("conferência: com previsão sugerida, compara o rateio aprovado com o valor por unidade dela (não com a previsão antiga)", () => {

@@ -84,6 +84,18 @@ export function relatorioAnterior(condoId: string, competencia: Competencia, men
   return mensais.find((m) => m.condoId === condoId && ordemCompetencia(competenciaMensal(m)) === alvo) ?? null;
 }
 
+/**
+ * Nº de unidades do relatório mensal mais recente desse condomínio que já traz essa informação
+ * (lida automaticamente do PDF, seção "Contas a receber" — `receber.unidades`). Usada como alternativa
+ * ao campo manual `Condominio.unidades`, que nem sempre é preenchido/atualizado no cadastro.
+ */
+export function unidadesDoUltimoRelatorio(condoId: string, mensais: Mensal[]): number | null {
+  const comDado = mensais.filter((m) => m.condoId === condoId && typeof m.receber?.unidades === "number" && m.receber.unidades > 0);
+  if (!comDado.length) return null;
+  const maisRecente = comDado.reduce((a, b) => (ordemCompetencia(competenciaMensal(b)) > ordemCompetencia(competenciaMensal(a)) ? b : a));
+  return maisRecente.receber.unidades;
+}
+
 /** Completa um relatório mensal vindo da API/backup, preservando campos extras. */
 export function normalizarMensal(raw: Partial<Mensal> & { id?: string }): Mensal {
   return {
