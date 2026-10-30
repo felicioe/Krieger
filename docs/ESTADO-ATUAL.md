@@ -34,6 +34,19 @@ são fictícias). Testado: `domain/pdfParser.apoliceSeguro.test.ts` e
 **Escopo conhecido**: só reconhece o layout da Allianz (é a apólice real disponível pra testar); outra
 seguradora com layout diferente não é reconhecida — cai para digitação manual, sem travar nada.
 
+**Achado do Codex review no PR #109 (P2), corrigido antes de mesclar**: a importação é assíncrona (lê
+o PDF, leva um instante); se o usuário editasse outro campo das Considerações nesse meio-tempo, só o
+botão de importar ficava desabilitado — a conclusão sobrescrevia essa edição em silêncio (o `onChange`
+usava o estado capturado no início da operação, não o mais recente). Corrigido com um `ref` sempre
+atualizado a cada render, aplicando o patch da apólice sobre o estado mais recente. Teste de regressão
+reproduz o cenário — confirmado que falha sem a correção e passa com ela.
+
+**Mesclado (squash) e publicado — 30/10/2026**: PR #109 mesclado em `main` (`d186791`). Publicado via
+worktree `deploy-hostinger` (`aab1998`) — auto-deploy confirmado ao vivo (`index.html` referencia
+`index-CV3OgnTA.js`, hash exato do build desse commit; `auth.php?a=eu` responde 401, API normal).
+Branch de feature apagada localmente; a remota não foi apagada nesta sessão (mesmo bloqueio do
+classificador de segurança em `git push --delete` já registrado — seguro apagar manualmente).
+
 ## Previsão orçamentária por unidade: checkbox + nunca mostrar zerada — 30/10/2026 (PR #108)
 
 Pedido do usuário ao revisar um Relatório Final real: o bloco "Previsão orçamentária por unidade"
