@@ -1,1 +1,0 @@
-import{c as e,u as t}from"./queries-CEFZ5XI_.js";function n(n,r){return e(n,t,r)}export{n as t};
