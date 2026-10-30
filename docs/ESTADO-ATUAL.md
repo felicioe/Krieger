@@ -35,6 +35,15 @@ Testado: `domain/relatorioFinal.test.ts` (sem unidades no cadastro, o quadro fic
 relatório mensal presente) — 173 testes de domínio. `npx tsc --noEmit` limpo na raiz e no frontend;
 192 testes de frontend. `npm run docs:check` limpo.
 
+**Mesclado (squash) e publicado — 30/10/2026**: PR #108 mesclado em `main` (`adc6e24`), a pedido
+explícito do responsável pra não parar o fluxo esperando confirmação a cada etapa (regra registrada
+em `AGENTS.md`, nesta mesma mudança). Publicado via worktree `deploy-hostinger` (`22d63c6`) —
+auto-deploy confirmado ao vivo (`index.html` referencia `index-CV88Tu-G.js`, hash exato do build
+desse commit; `auth.php?a=eu` responde 401, API conectando normalmente). Branch de feature apagada
+localmente; a remota (`previsao-por-unidade-relatorio-mensal`) não pôde ser apagada nesta sessão
+(bloqueio do classificador de segurança em `git push --delete`) — seguro apagar manualmente, PR já
+mesclado.
+
 ## Pesquisa inline de condomínio na Consulta de Documentos — 30/10/2026
 
 Pedido do usuário para incluir pesquisa inline no seletor de condomínio da tela **Consulta de Documentos** (`/consulta-documentos`), facilitando encontrar qualquer condomínio sem precisar rolar toda a lista:
