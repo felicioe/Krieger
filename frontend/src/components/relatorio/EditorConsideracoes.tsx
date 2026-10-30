@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+import { FileUp, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,7 +10,9 @@ import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DataInput, DinheiroInput, InteiroInput, MesAnoInput } from "@/components/app/inputs";
 import { formatBRL } from "@/lib/format";
+import { mensagemErro } from "@/lib/api";
 import { considDoCondominio } from "@/domain/exercicio";
+import { lerApoliceSeguro } from "@/domain/pdfParser";
 import type { Condominio, Exercicio } from "@/domain/types";
 
 type Consid = Exercicio["consid"];
@@ -32,6 +35,38 @@ export function EditorConsideracoes({
 }) {
   const [confirmarRecarga, setConfirmarRecarga] = useState(false);
   const set = <K extends keyof Consid>(k: K, v: Consid[K]) => onChange({ ...c, [k]: v });
+
+  const entradaApolice = useRef<HTMLInputElement>(null);
+  const [importandoApolice, setImportandoApolice] = useState(false);
+
+  async function importarApolice(arquivo: File | undefined) {
+    if (!arquivo) return;
+    setImportandoApolice(true);
+    try {
+      const { extrairTextoPdf } = await import("@/lib/pdfTexto");
+      const texto = await extrairTextoPdf(arquivo);
+      const lido = lerApoliceSeguro(texto);
+      if (!lido) {
+        toast.error("PDF não reconhecido como apólice de seguro (layout Allianz). Preencha os campos manualmente.");
+        return;
+      }
+      onChange({
+        ...c,
+        seguradora: lido.seguradora ?? c.seguradora,
+        vigenciaSeguro: lido.vigenciaFim ?? c.vigenciaSeguro,
+        seguro: {
+          riscoAbsoluto: lido.riscoAbsoluto ?? c.seguro.riscoAbsoluto,
+          coberturas: lido.coberturas,
+        },
+      });
+      toast.success(`Apólice importada: ${lido.coberturas.length} coberturas, vigência até ${lido.vigenciaFim}. Revise e salve.`);
+    } catch (e) {
+      toast.error(e instanceof Error && /password|Invalid PDF/i.test(e.message) ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)." : mensagemErro(e));
+    } finally {
+      setImportandoApolice(false);
+      if (entradaApolice.current) entradaApolice.current.value = "";
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -61,7 +96,26 @@ export function EditorConsideracoes({
         />
       </SectionCard>
 
-      <SectionCard titulo="Seguro">
+      <SectionCard
+        titulo="Seguro"
+        descricao="Preencha manualmente ou importe o PDF da apólice (layout Allianz)."
+        acoes={
+          <>
+            <Button type="button" variant="outline" size="sm" onClick={() => entradaApolice.current?.click()} disabled={importandoApolice}>
+              {importandoApolice ? <Loader2 className="animate-spin" /> : <FileUp />}
+              Importar apólice (PDF)
+            </Button>
+            <input
+              ref={entradaApolice}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              aria-label="Arquivo PDF da apólice de seguro"
+              onChange={(e) => importarApolice(e.target.files?.[0])}
+            />
+          </>
+        }
+      >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field rotulo="Seguradora">
             <Input value={c.seguradora} onChange={(e) => set("seguradora", e.target.value)} />

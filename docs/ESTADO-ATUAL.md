@@ -1,5 +1,39 @@
 # Estado atual e passagem de contexto
 
+## Importar apólice de seguro (PDF) na tela de Considerações finais — 30/10/2026
+
+Pedido do usuário: se a apólice não for anexada, os campos de Seguro (seguradora, vigência, valores)
+continuam digitados à mão — mas quando o PDF existe, a tela deveria importar automaticamente, com os
+campos preenchidos continuando editáveis. Testado contra uma apólice real da Allianz (FIRMO Corretora)
+antes de implementar, pelo mesmo pipeline do app (pdf.js + `domain/layoutTexto.ts`), não pela extração
+do Read tool do Claude — mesma lição já registrada no projeto.
+
+- `domain/pdfParser.ts`: `lerApoliceSeguro(texto)` — layout da Allianz, diferente de
+  `lerConsideracoesFinais` (que só repete o que o Systemar já tinha digitado, com vigência em
+  mm/aaaa só). Lê seguradora, nº da apólice, vigência completa (dd/mm/aaaa), risco absoluto (campo
+  "Limite Máximo de Garantia da Apólice") e a tabela de coberturas inteira (pega o "Limite Máximo de
+  Indenização" de cada linha; ignora Básica Simples — já é o risco absoluto —, Assistência 24h e
+  Prêmio Líquido, que não são cobertura). `null` quando o PDF não bate com esse layout.
+  **Achado na apólice real**: a fonte usada pra imprimir o traço (hífen do CNPJ, "Lock-Outs", "—" de
+  franquia vazia) não tem `ToUnicode` pro hífen comum — vem como `U+E00C` (área de uso privado).
+  Normalizado logo no início da função, senão corta o CNPJ e nomes de cobertura no meio.
+- `frontend/src/components/relatorio/EditorConsideracoes.tsx`: botão "Importar apólice (PDF)" no
+  cabeçalho do cartão "Seguro" (mesmo padrão do botão "Atualizar pela Receita" no cadastro do
+  condomínio — sem diálogo, preenche direto e avisa por toast). Substitui `seguradora`,
+  `vigenciaSeguro` (= vigência até) e `seguro.riscoAbsoluto`/`.coberturas` por completo; campos
+  continuam editáveis depois, nada é gravado até salvar. PDF de outro layout (ou de outra
+  seguradora): toast de erro, nada muda — cai para digitação manual, como já era.
+
+Validado contra o PDF real: 13 coberturas lidas corretamente (incluindo as com o traço problemático —
+"RC Guarda Veículos - Parcial", "Tumultos, Greves, Lock-Outs"), vigência 21/11/2025 a 21/11/2026,
+risco absoluto R$ 8.000.000,00, CNPJ do condomínio batendo. PDF real não commitado (fixtures de teste
+são fictícias). Testado: `domain/pdfParser.apoliceSeguro.test.ts` e
+`frontend/src/test/editorConsideracoes.test.tsx` (novos) — 176 testes de domínio, 194 de frontend.
+`tsc --noEmit` limpo na raiz e no frontend. `docs:check` limpo.
+
+**Escopo conhecido**: só reconhece o layout da Allianz (é a apólice real disponível pra testar); outra
+seguradora com layout diferente não é reconhecida — cai para digitação manual, sem travar nada.
+
 ## Previsão orçamentária por unidade: checkbox + nunca mostrar zerada — 30/10/2026 (PR #108)
 
 Pedido do usuário ao revisar um Relatório Final real: o bloco "Previsão orçamentária por unidade"
