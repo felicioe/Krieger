@@ -492,6 +492,61 @@ export function lerConsideracoesFinais(texto: string): ConsideracoesFinaisLidas 
   };
 }
 
+/**
+ * Apólice de seguro do condomínio — layout Allianz (FIRMO Corretora), da própria seguradora, não do
+ * Systemar. Diferente de `lerConsideracoesFinais` (que só repete o que o Systemar já tinha digitado,
+ * com vigência em mm/aaaa): esta lê o documento original, com data completa e a lista de coberturas
+ * tal como a seguradora emitiu. `null` quando o PDF não é desse layout (cai para digitação manual).
+ *
+ * Particularidade deste PDF: a fonte usada para o traço ("-" em CNPJ/"Lock-Outs", "—" de franquia
+ * vazia) não tem ToUnicode mapeado para o hífen comum — vem como PUA U+E00C. Normalizado logo no
+ * início, antes de qualquer regex.
+ */
+export interface ApoliceSeguroLida {
+  seguradora: string | null;
+  numeroApolice: string | null;
+  /** dd/mm/aaaa */
+  vigenciaIni: string | null;
+  /** dd/mm/aaaa */
+  vigenciaFim: string | null;
+  riscoAbsoluto: number | null;
+  coberturas: CoberturaLida[];
+  condominio: CondominioDoRelatorio;
+}
+
+// Linhas da tabela "COBERTURAS" (2 colunas de valor: Limite Máximo de Indenização, Preço por
+// Cobertura) — só a primeira interessa aqui. Exclui a cobertura básica (já é o risco absoluto) e as
+// linhas que não são cobertura (assistência 24h, prêmio líquido), que têm só 1 "R$" na linha.
+const APOLICE_EXCLUIR_COBERTURA = new Set(['Básica Simples', 'Assistência 24h', 'Prêmio Líquido']);
+
+export function lerApoliceSeguro(texto: string): ApoliceSeguroLida | null {
+  const vig = /Vig[êe]ncia:\s*das\s*24H\s*de\s*(\d{2}\/\d{2}\/\d{4})\s*[àa]s\s*24H\s*de\s*(\d{2}\/\d{2}\/\d{4})/i.exec(texto);
+  if (!vig) return null;
+
+  const t = texto.replace(//g, '-');
+
+  const coberturas: CoberturaLida[] = [];
+  for (const m of t.matchAll(/^\s*(.+?)\s+R\$\s*([\d.,]+)\s+R\$/gm)) {
+    const desc = m[1]!.trim().replace(/\s{2,}/g, ' ');
+    if (APOLICE_EXCLUIR_COBERTURA.has(desc)) continue;
+    coberturas.push({ desc, valor: paraNumero(m[2]!) });
+  }
+
+  return {
+    seguradora: campoTexto(t, /Agradecemos por escolher a (.+?)\./i),
+    numeroApolice: campoTexto(t, /N[ºo°]\.?\s*da\s*Ap[óo]lice:\s*(\S+)/i),
+    vigenciaIni: vig[1]!,
+    vigenciaFim: vig[2]!,
+    riscoAbsoluto: campoValor(t, /Limite\s*M[áa]ximo\s*de\s*Garantia\s*da\s*Ap[óo]lice:\s*R\$\s*(-?[\d.]+,\d{2})/i),
+    coberturas,
+    condominio: {
+      codigo: null,
+      nome: campoTexto(t, /Nome:\s*(.+?)\s{2,}/i),
+      cnpj: campoTexto(t, /CNPJ:\s*([\d.\/-]+)/i),
+    },
+  };
+}
+
 export interface CategoriaPrevisaoSugerida {
   nome: string;
   anual: number;
