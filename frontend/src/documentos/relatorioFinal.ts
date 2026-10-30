@@ -110,6 +110,7 @@ export async function documentoRelatorioFinal(o: {
         linhas: p.ajustes.map((a) => l(`${a.sinal === "-" ? "(−)" : "(+)"} ${a.descricao || "Ajuste"}${a.grupo ? ` · ${a.grupo}` : ""}`, a.valor)),
       });
     }
+    const mostrarPorUnidadeTrad = e.mostrarPrevisaoPorUnidade !== false && p.unidades !== null;
     b.push(
       resumo([
         l("Base (despesas realizadas)", p.base),
@@ -119,9 +120,13 @@ export async function documentoRelatorioFinal(o: {
         l("(−) Ajustes", p.ajustesMenos),
         l("Anual ajustado", p.totalAnual, { estilo: "total" }),
         l("Mensal (÷ 12)", p.mensal),
-        l(`Cota por unidade (÷ ${p.unidades ?? "—"} unidades)`, p.cotaUnidade),
-        l(`(+) Reserva por unidade ${formatNumeroBR(p.fundoReservaPct)}%`, p.reservaUnidade),
-        l("Valor por unidade", p.rateioSugerido, { estilo: "total" }),
+        ...(mostrarPorUnidadeTrad
+          ? [
+              l(`Cota por unidade (÷ ${p.unidades} unidades)`, p.cotaUnidade),
+              l(`(+) Reserva por unidade ${formatNumeroBR(p.fundoReservaPct)}%`, p.reservaUnidade),
+              l("Valor por unidade", p.rateioSugerido, { estilo: "total" }),
+            ]
+          : []),
         l("Rateio atual", p.rateioAtual),
         { celulas: ["Índice de reajuste", pctTexto(p.indice)] },
         ...(e.rateioAprovado != null ? [l("Rateio aprovado", e.rateioAprovado, { estilo: "total" })] : []),
@@ -380,6 +385,7 @@ function blocosPrevisaoSugerida(
   u: ResultadoPrevisaoSugeridaPorUnidade,
 ): Bloco[] {
   const fundo = e.prev?.fundoReservaPct ?? 0;
+  const mostrarPorUnidade = e.mostrarPrevisaoPorUnidade !== false && u.unidades !== null;
   const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
   return [
     {
@@ -405,12 +411,16 @@ function blocosPrevisaoSugerida(
       { celulas: ["Índice sugerido para correção", pctTexto(r.indiceSugerido)] },
       ...(e.rateioAprovado != null ? [l("Rateio aprovado", e.rateioAprovado, { estilo: "total" })] : []),
     ]),
-    { tipo: "titulo", nivel: 3, texto: "Previsão orçamentária por unidade" },
-    resumo([
-      { celulas: ["Unidades", u.unidades != null ? String(u.unidades) : "—"] },
-      l("Cota por unidade", u.cotaUnidade),
-      l(`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`, u.reservaUnidade),
-      l("Valor por unidade", u.valorUnidade, { estilo: "total" }),
-    ]),
+    ...(mostrarPorUnidade
+      ? [
+          { tipo: "titulo", nivel: 3, texto: "Previsão orçamentária por unidade" } as Bloco,
+          resumo([
+            { celulas: ["Unidades", String(u.unidades)] },
+            l("Cota por unidade", u.cotaUnidade),
+            l(`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`, u.reservaUnidade),
+            l("Valor por unidade", u.valorUnidade, { estilo: "total" }),
+          ]),
+        ]
+      : []),
   ];
 }

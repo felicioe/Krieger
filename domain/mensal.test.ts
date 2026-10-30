@@ -1,14 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
 import { recalcularDemonstrativo } from "@/domain/demonstrativo";
-import {
-  competenciaMensal,
-  mensalPadrao,
-  periodoDoMes,
-  prepararMensal,
-  relatorioAnterior,
-  validarMensal,
-} from "@/domain/mensal";
+import { competenciaMensal, mensalPadrao, periodoDoMes, prepararMensal, relatorioAnterior, validarMensal } from "@/domain/mensal";
 import type { Condominio, Mensal } from "@/domain/types";
 
 const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias" };

@@ -1,5 +1,40 @@
 # Estado atual e passagem de contexto
 
+## Previsão orçamentária por unidade: checkbox + nunca mostrar zerada — 30/10/2026 (PR #108)
+
+Pedido do usuário ao revisar um Relatório Final real: o bloco "Previsão orçamentária por unidade"
+(Unidades/Cota/Reserva/Valor por unidade) sempre saía "—" nesse condomínio, porque dependia só do
+campo manual `Condominio.unidades` (cadastro), que nunca tinha sido preenchido. Não faz sentido
+apresentar um relatório com informação zerada.
+
+**Tentativa errada, corrigida antes de mesclar (achado do Codex review no PR #108, P1):** a primeira
+versão desta mudança tentava usar `Mensal.receber.unidades` como alternativa quando o cadastro está
+vazio — mas esse campo é "**unidades inadimplentes**" (contas a receber em atraso, rótulo explícito
+na tela do relatório mensal e no documento gerado, "N de total unidades"), não o total de unidades do
+condomínio. Usar como divisor do rateio geraria cota por unidade muito maior que a real (ex.: 2
+inadimplentes de 50 unidades vira "cota ÷ 2" em vez de "cota ÷ 50"). Não existe hoje, no sistema,
+nenhuma fonte confiável e automática do total de unidades além do cadastro — revertido antes de
+publicar; `domain/mensal.ts` não ganhou a função `unidadesDoUltimoRelatorio` que chegou a existir
+localmente.
+
+O que ficou, então, é só a parte segura do pedido:
+
+- `domain/types.ts`: `Exercicio.mostrarPrevisaoPorUnidade` (novo, default true) — checkbox pra
+  incluir/excluir o bloco do relatório, mesmo padrão de `mostrarContasAnaliticas`/`mostrarEvolucaoMensal`.
+- `frontend/src/documentos/relatorioFinal.ts` e `PreviaRelatorio.tsx`: os dois lugares que mostram
+  esse bloco (previsão tradicional, embutida no resumo, e previsão sugerida do Systemar, bloco
+  próprio) só renderizam quando `mostrarPrevisaoPorUnidade !== false` **e** o nº de unidades (do
+  cadastro) não é null — nunca um bloco zerado no PDF/Word, mesmo com o checkbox marcado.
+- `_authenticated.relatorio-final.$id.tsx`: checkbox novo na lista de seções, aninhado em "Previsão
+  orçamentária", só aparece quando há unidades no cadastro pra mostrar.
+
+Quem quiser esse bloco funcionando precisa preencher "Unidades" no cadastro do condomínio — não tem
+atalho automático.
+
+Testado: `domain/relatorioFinal.test.ts` (sem unidades no cadastro, o quadro fica nulo mesmo com
+relatório mensal presente) — 173 testes de domínio. `npx tsc --noEmit` limpo na raiz e no frontend;
+192 testes de frontend. `npm run docs:check` limpo.
+
 ## Pesquisa inline de condomínio na Consulta de Documentos — 30/10/2026
 
 Pedido do usuário para incluir pesquisa inline no seletor de condomínio da tela **Consulta de Documentos** (`/consulta-documentos`), facilitando encontrar qualquer condomínio sem precisar rolar toda a lista:

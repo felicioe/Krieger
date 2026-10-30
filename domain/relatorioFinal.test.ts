@@ -115,6 +115,29 @@ describe("relatório final", () => {
     expect(r.previsaoSugeridaPorUnidade).toEqual({ unidades: 10, cotaUnidade: 1000, reservaUnidade: 100, valorUnidade: 1100 });
   });
 
+  it("sem unidades no cadastro, o quadro por unidade fica nulo (não usa unidades inadimplentes do relatório mensal como total)", () => {
+    const semCadastro: Condominio = { ...condo, unidades: null };
+    const e: Exercicio = {
+      ...exercicio(4000),
+      prev: { modo: "tradicional", fundoReservaPct: 10 },
+      previsaoSugerida: {
+        rateioMensalAtual: 40000,
+        categorias: [{ nome: "Pessoal", anual: 120000, media: 10000 }],
+        deducoes: [],
+        variacao: { sinal: "+", valor: 0 },
+      },
+    };
+
+    // mensal(1, 100) grava receber.unidades = 2 (unidades inadimplentes, não o total do condomínio)
+    // — mesmo presente, não deve ser usado como divisor do rateio por unidade.
+    const semCadastroComMensal = montarRelatorioFinal({ exercicio: e, condominio: semCadastro, escritorio: null, mensais: [mensal(1, 100)] });
+    expect(semCadastroComMensal.previsaoSugeridaPorUnidade?.unidades).toBeNull();
+    expect(semCadastroComMensal.previsao.unidades).toBeNull();
+
+    const comCadastro = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [mensal(1, 100)] });
+    expect(comCadastro.previsaoSugeridaPorUnidade?.unidades).toBe(10);
+  });
+
   it("conferência: com previsão sugerida, compara o rateio aprovado com o valor por unidade dela (não com a previsão antiga)", () => {
     const e: Exercicio = {
       ...exercicio(4000),

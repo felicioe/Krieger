@@ -194,6 +194,18 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                             </Label>
                           </div>
                         )}
+                        {s.id === "previsao" && rel.secoes.previsao && (rel.previsao.unidades !== null || rel.previsaoSugeridaPorUnidade?.unidades != null) && (
+                          <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
+                            <Checkbox
+                              id="secao-previsao-por-unidade"
+                              checked={e.mostrarPrevisaoPorUnidade !== false}
+                              onCheckedChange={(v) => mudar({ mostrarPrevisaoPorUnidade: v === true })}
+                            />
+                            <Label htmlFor="secao-previsao-por-unidade" className="min-w-0 break-words text-xs font-normal text-muted-foreground">
+                              Previsão orçamentária por unidade
+                            </Label>
+                          </div>
+                        )}
                         {s.id === "analise" && rel.secoes.analise && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox id="secao-pizza" checked={e.mostrarPizza !== false} onCheckedChange={(v) => mudar({ mostrarPizza: v === true })} />

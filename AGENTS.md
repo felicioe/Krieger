@@ -50,6 +50,13 @@ tarefas ou validar entregas.
 - Não versionar `config.php`/`krieger-config.php`/`config.local.php`, tokens, backups ou PDFs reais. Usar fixtures fictícias/anonimizadas.
 - Não apagar branches antigas enquanto a origem dos fontes não estiver esclarecida.
 - Não encerrar issues com critérios pendentes; registrar explicitamente o que falta.
+- **Fluxo autônomo de PR e publicação** (pedido explícito do responsável, repetido por já ter se
+  perdido entre sessões — por isso fica aqui, não só em memória do agente): terminada uma mudança
+  com testes/typecheck/docs:check passando e sem decisão de produto pendente pro responsável, abrir o
+  PR, mesclar e publicar (pacote + push em `deploy-hostinger` + validação ao vivo) sem parar pra
+  pedir confirmação a cada etapa. Registrar tudo no PR e no `docs/ESTADO-ATUAL.md` de qualquer forma.
+  Continua valendo pedir confirmação antes de ações destrutivas (force-push, apagar branch não
+  mesclada, mudar configuração/banco de produção) e quando há decisão de produto real em aberto.
 
 ## Validação
 

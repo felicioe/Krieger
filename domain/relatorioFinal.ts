@@ -178,6 +178,9 @@ export function montarRelatorioFinal(entrada: {
 }): RelatorioFinal {
   const { exercicio: e, condominio, escritorio } = entrada;
   const secoes = secoesIncluidas(e);
+  // `Mensal.receber.unidades` é "unidades inadimplentes" (contas a receber), não o total do
+  // condomínio — não serve de alternativa aqui. A única fonte do total é o cadastro (achado do
+  // Codex no PR #108, que pegou uma leitura errada desse campo antes de publicar).
   const unidades = condominio?.unidades ?? null;
   const previsao = calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, unidades);
   const previsaoSugerida = e.previsaoSugerida ? calcularPrevisaoSugerida(e.previsaoSugerida) : null;
