@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS kr_backups (
 CREATE TABLE IF NOT EXISTS kr_documentos (
   id VARCHAR(64) PRIMARY KEY,
   condo_id VARCHAR(64) NOT NULL,
-  tipo ENUM('convencao', 'regimento', 'ata') NOT NULL,
+  tipo VARCHAR(32) NOT NULL DEFAULT 'outro',
   nome_arquivo VARCHAR(255) NOT NULL,
   caminho_relativo VARCHAR(1024) NOT NULL,
   hash CHAR(64) NOT NULL,

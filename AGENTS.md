@@ -35,6 +35,7 @@ tarefas ou validar entregas.
 ## Regras do projeto
 
 - Comunicação, resumos de ferramentas (`toolSummary`), commits, issues, PRs e documentação **sempre 100% em pt-BR** (nunca usar outro idioma).
+- **Fluxo antes de implementar novas telas**: explicar o entendimento e apresentar protótipo visual de tela quando for uma funcionalidade nova; uma vez autorizado pelo usuário, **executar integralmente tudo o que for recomendado (código, testes, compilação e publicação) sem ficar parando para aguardar autorizações intermediárias**.
 - Desenvolvimento na Claude ou Codex → PR no GitHub → `main` → Hostinger via conector/API.
 - `main` é a branch padrão. Não usar branches antigas `claude/*` como base de novos trabalhos.
 - Registre problema, critérios de aceite, decisões, testes e limitações no GitHub.

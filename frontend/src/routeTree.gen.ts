@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as TrocarSenhaRouteImport } from './routes/trocar-senha'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated.backup'
 import { Route as AuthenticatedConsultaDocumentosRouteImport } from './routes/_authenticated.consulta-documentos'
+import { Route as AuthenticatedDriveDocumentosRouteImport } from './routes/_authenticated.drive-documentos'
 import { Route as AuthenticatedEscritorioRouteImport } from './routes/_authenticated.escritorio'
 import { Route as AuthenticatedImportadorRouteImport } from './routes/_authenticated.importador'
 import { Route as AuthenticatedImportadorCondominiosRouteImport } from './routes/_authenticated.importador-condominios'
@@ -68,6 +69,12 @@ const AuthenticatedConsultaDocumentosRoute =
   AuthenticatedConsultaDocumentosRouteImport.update({
     id: '/consulta-documentos',
     path: '/consulta-documentos',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedDriveDocumentosRoute =
+  AuthenticatedDriveDocumentosRouteImport.update({
+    id: '/drive-documentos',
+    path: '/drive-documentos',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedEscritorioRoute = AuthenticatedEscritorioRouteImport.update({
@@ -212,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/trocar-senha': typeof TrocarSenhaRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
+  '/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/importador': typeof AuthenticatedImportadorRoute
   '/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
@@ -243,6 +251,7 @@ export interface FileRoutesByTo {
   '/trocar-senha': typeof TrocarSenhaRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
+  '/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
   '/escritorio': typeof AuthenticatedEscritorioRoute
   '/importador': typeof AuthenticatedImportadorRoute
   '/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
@@ -276,6 +285,7 @@ export interface FileRoutesById {
   '/trocar-senha': typeof TrocarSenhaRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
+  '/_authenticated/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
   '/_authenticated/escritorio': typeof AuthenticatedEscritorioRoute
   '/_authenticated/importador': typeof AuthenticatedImportadorRoute
   '/_authenticated/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/trocar-senha'
     | '/backup'
     | '/consulta-documentos'
+    | '/drive-documentos'
     | '/escritorio'
     | '/importador'
     | '/importador-condominios'
@@ -340,6 +351,7 @@ export interface FileRouteTypes {
     | '/trocar-senha'
     | '/backup'
     | '/consulta-documentos'
+    | '/drive-documentos'
     | '/escritorio'
     | '/importador'
     | '/importador-condominios'
@@ -372,6 +384,7 @@ export interface FileRouteTypes {
     | '/trocar-senha'
     | '/_authenticated/backup'
     | '/_authenticated/consulta-documentos'
+    | '/_authenticated/drive-documentos'
     | '/_authenticated/escritorio'
     | '/_authenticated/importador'
     | '/_authenticated/importador-condominios'
@@ -447,6 +460,13 @@ declare module '@tanstack/react-router' {
       path: '/consulta-documentos'
       fullPath: '/consulta-documentos'
       preLoaderRoute: typeof AuthenticatedConsultaDocumentosRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/drive-documentos': {
+      id: '/_authenticated/drive-documentos'
+      path: '/drive-documentos'
+      fullPath: '/drive-documentos'
+      preLoaderRoute: typeof AuthenticatedDriveDocumentosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/escritorio': {
@@ -623,6 +643,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteChildren {
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
   AuthenticatedConsultaDocumentosRoute: typeof AuthenticatedConsultaDocumentosRoute
+  AuthenticatedDriveDocumentosRoute: typeof AuthenticatedDriveDocumentosRoute
   AuthenticatedEscritorioRoute: typeof AuthenticatedEscritorioRoute
   AuthenticatedImportadorRoute: typeof AuthenticatedImportadorRoute
   AuthenticatedImportadorCondominiosRoute: typeof AuthenticatedImportadorCondominiosRoute
@@ -652,6 +673,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
   AuthenticatedConsultaDocumentosRoute: AuthenticatedConsultaDocumentosRoute,
+  AuthenticatedDriveDocumentosRoute: AuthenticatedDriveDocumentosRoute,
   AuthenticatedEscritorioRoute: AuthenticatedEscritorioRoute,
   AuthenticatedImportadorRoute: AuthenticatedImportadorRoute,
   AuthenticatedImportadorCondominiosRoute:

@@ -10,6 +10,7 @@ import {
   FileSpreadsheet,
   FileText,
   FileUp,
+  FolderOpen,
   GitCompareArrows,
   History,
   KeyRound,
@@ -60,7 +61,8 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
       { titulo: "Editais", to: "/editais", icone: Megaphone },
       { titulo: "Atas", to: "/atas", icone: ScrollText },
       { titulo: "Modelos de edital", to: "/modelos", icone: FileText },
-      { titulo: "Consulta de Documentos", to: "/consulta-documentos", icone: FileSearch },
+      { titulo: "Drive de Documentos", to: "/drive-documentos", icone: FolderOpen },
+      { titulo: "Consulta Inteligente", to: "/consulta-documentos", icone: FileSearch },
     ],
   },
   {

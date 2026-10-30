@@ -10,6 +10,8 @@ export const chaves = {
   backups: ["backups"] as const,
   limpezaContagens: ["manutencao", "contagens"] as const,
   consultaHistorico: (condoId: string) => ["documentos", "historico", condoId] as const,
+  documentosDrive: (condoId: string) => ["documentos", "drive", condoId] as const,
+  documentosResumo: ["documentos", "resumo"] as const,
 };
 
 export const listaQuery = <T>(store: Store) =>
@@ -47,4 +49,17 @@ export const consultaHistoricoQuery = (condoId: string) =>
     queryKey: chaves.consultaHistorico(condoId),
     queryFn: () => api.documentos.historico(condoId),
     enabled: condoId !== "",
+  });
+
+export const documentosDriveQuery = (condoId: string) =>
+  queryOptions({
+    queryKey: chaves.documentosDrive(condoId),
+    queryFn: () => api.documentos.listar(condoId),
+    enabled: condoId !== "",
+  });
+
+export const documentosResumoQuery = () =>
+  queryOptions({
+    queryKey: chaves.documentosResumo,
+    queryFn: () => api.documentos.resumo(),
   });

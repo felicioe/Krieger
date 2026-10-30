@@ -3,7 +3,7 @@
  * Em produção usa a API PHP (api.php / auth.php). No preview do Lovable e em
  * localhost usa automaticamente o adaptador mock (localStorage).
  */
-import type { Backup, Store, UsuarioSalvar } from "@/domain/types";
+import type { Backup, DocumentoDriveRegistro, Store, TipoDocumentoConsulta, UsuarioSalvar } from "@/domain/types";
 import { novoId } from "./id";
 import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoPedido } from "./apiTypes";
 import { realApi } from "./realApi";
@@ -70,17 +70,23 @@ export const api = {
   },
   auth: {
     eu: () => impl().auth.eu(),
-    /** 401 aqui significa credenciais inválidas: não redireciona. */
     entrar: (login: string, senha: string) => impl().auth.entrar(login, senha),
     sair: () => impl().auth.sair(),
-    /** Senha atual incorreta pode vir como 401/403: mostra a mensagem, sem redirecionar. */
     minhaSenha: (atual: string, nova: string) => impl().auth.minhaSenha(atual, nova),
     usuarios: () => guarda(() => impl().auth.usuarios()),
     usuarioSalvar: (u: UsuarioSalvar) => guarda(() => impl().auth.usuarioSalvar(u)),
     usuarioExcluir: (id: string) => guarda(() => impl().auth.usuarioExcluir(id)),
   },
   documentos: {
-    perguntar: (condoId: string, pergunta: string) => guarda(() => impl().documentos.perguntar(condoId, pergunta)),
+    listar: (condoId: string) => guarda(() => impl().documentos.listar(condoId)),
+    resumo: () => guarda(() => impl().documentos.resumo()),
+    registrar: (doc: DocumentoDriveRegistro) => guarda(() => impl().documentos.registrar(doc)),
+    conteudo: (id: string) => guarda(() => impl().documentos.conteudo(id)),
+    atualizar: (dados: { id: string; nomeArquivo?: string; tipo?: TipoDocumentoConsulta; dataDocumento?: string }) =>
+      guarda(() => impl().documentos.atualizar(dados)),
+    excluir: (id: string) => guarda(() => impl().documentos.excluir(id)),
+    perguntar: (condoId: string, pergunta: string, documentoId?: string) =>
+      guarda(() => impl().documentos.perguntar(condoId, pergunta, documentoId)),
     historico: (condoId: string) => guarda(() => impl().documentos.historico(condoId)),
   },
 };

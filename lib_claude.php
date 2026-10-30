@@ -3,16 +3,14 @@ declare(strict_types=1);
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) { http_response_code(403); exit; }
 
 // Integração com a API da Anthropic (Claude) para a Consulta Inteligente de Documentos.
-// Só é chamada quando a busca local (FULLTEXT) encontrou trechos mas a interpretação deles
-// exige IA; nunca recebe o PDF inteiro, só os trechos já selecionados pela busca local.
+// Só é chamada quando a busca local encontrou trechos pertinentes; nunca recebe o PDF inteiro,
+// enviando apenas os trechos relevantes para garantir gasto mínimo de tokens.
 
 const CLAUDE_MODELO = 'claude-haiku-5-5';
 const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 const CLAUDE_API_VERSAO = '2026-10-21';
 const CLAUDE_MAX_TOKENS_RESPOSTA = 1024;
 
-// Preço do claude-haiku-5-5 (prompts de até 100 mil tokens): USD 0,10 / milhão de tokens de
-// entrada, USD 0,50 / milhão de tokens de saída. Ajustar aqui se o modelo ou o preço mudar.
 const CLAUDE_PRECO_ENTRADA_USD_POR_MTOK = 0.10;
 const CLAUDE_PRECO_SAIDA_USD_POR_MTOK = 0.50;
 
@@ -33,17 +31,18 @@ function custo_estimado_centavos(int $tokensEntrada, int $tokensSaida): int {
 }
 
 /**
- * Monta o prompt só com os trechos relevantes (nunca o PDF inteiro) e pergunta ao Claude.
- * $trechos vem de buscar_trechos(): cada item tem nome_arquivo, tipo, pagina_inicial,
- * pagina_final, texto — tudo já filtrado pelo condomínio certo antes de chegar aqui.
- * Lança RuntimeException se a chamada falhar (quem chama decide como tratar).
+ * Monta o prompt só com os trechos relevantes (nunca o documento inteiro) e pergunta ao Claude.
  */
 function chamar_claude_sobre_trechos(string $apiKey, string $pergunta, array $trechos): array {
   $evidencias = '';
   foreach ($trechos as $i => $t) {
+    $condoPrefixo = isset($t['condo_nome']) && trim((string) $t['condo_nome']) !== ''
+      ? "Condomínio: {$t['condo_nome']} — "
+      : '';
     $evidencias .= sprintf(
-      "[Fonte %d — %s (%s), página %d-%d]\n%s\n\n",
+      "[Fonte %d — %s%s (%s), página %d-%d]\n%s\n\n",
       $i + 1,
+      $condoPrefixo,
       $t['nome_arquivo'],
       $t['tipo'],
       (int) $t['pagina_inicial'],
@@ -53,14 +52,18 @@ function chamar_claude_sobre_trechos(string $apiKey, string $pergunta, array $tr
   }
 
   $sistema =
-    "Você responde perguntas sobre documentos de um condomínio (convenção, regimento interno " .
-    "ou atas de assembleia) com base exclusivamente nos trechos de evidência fornecidos abaixo. " .
-    "Regras obrigatórias: nunca invente informação que não esteja nos trechos; sempre cite a " .
-    "fonte (nome do documento e página) de cada afirmação; se os trechos não contiverem " .
-    "evidência suficiente para responder com segurança, diga isso explicitamente em vez de " .
-    "arriscar uma resposta; responda em português do Brasil, de forma direta.";
+    "Você é o assistente jurídico e condominial do Sistema Krieger. Responda a questionamentos " .
+    "sobre documentos de condomínios (convenção, regimento interno, atas, apólices de seguro, " .
+    "contratos, laudos e outros) com base exclusivamente nos trechos de evidência fornecidos abaixo. " .
+    "Regras obrigatórias: " .
+    "1) Nunca invente informação que não esteja nos trechos; " .
+    "2) Sempre cite a fonte exata (condomínio, nome do documento, artigo/cláusula/capítulo e página); " .
+    "3) Quando a dúvida envolver infração, conduta ou penalidade condominial, destaque claramente os artigos " .
+    "infringidos e a penalidade prevista (advertência, notificação, percentual ou valor da multa); " .
+    "4) Se os trechos não contiverem evidência suficiente, informe isso de modo direto; " .
+    "5) Responda em português do Brasil, de forma clara, objetiva e pronta para uso no atendimento.";
 
-  $mensagem = "Pergunta: {$pergunta}\n\nTrechos de evidência:\n\n{$evidencias}";
+  $mensagem = "Questionamento: {$pergunta}\n\nTrechos de evidência:\n\n{$evidencias}";
 
   $corpo = json_encode([
     'model' => CLAUDE_MODELO,

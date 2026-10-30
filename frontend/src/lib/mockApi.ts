@@ -3,7 +3,7 @@
  * Guarda tudo no localStorage e imita as regras e mensagens da API PHP.
  * Usuário semente: admin / admin123 (perfil admin).
  */
-import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type ConsultaHistoricoItem, type Importacao, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
+import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type ConsultaHistoricoItem, type DocumentoDrive, type DocumentoDriveConteudo, type DocumentoDriveRegistro, type Importacao, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
 import { condominioPadrao, normalizarCondominio } from "@/domain/condominio";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
@@ -25,6 +25,7 @@ const CHAVE_EXEMPLO_ATAS = "krieger-mock-exemplo-atas-v1";
 const CHAVE_EXEMPLO_MODELO_V2 = "krieger-mock-exemplo-modelo-v2";
 const CHAVE_BACKUPS = "krieger-mock-backups-v1";
 const CHAVE_CONSULTA_HISTORICO = "krieger-mock-consulta-historico-v1";
+const CHAVE_DRIVE_DOCUMENTOS = "krieger-mock-drive-documentos-v1";
 const MAX_TENTATIVAS = 5;
 const BLOQUEIO_MIN = 15;
 
@@ -440,6 +441,13 @@ type BackupRegistroMock = BackupRegistro & { dados: Backup };
 const backups = () => ler<BackupRegistroMock[]>(CHAVE_BACKUPS, () => []);
 type ConsultaHistoricoMock = ConsultaHistoricoItem & { condoId: string };
 const consultaHistorico = () => ler<ConsultaHistoricoMock[]>(CHAVE_CONSULTA_HISTORICO, () => []);
+type DocumentoDriveMock = DocumentoDrive & {
+  pdfBase64?: string | null;
+  originalBase64?: string | null;
+  paginasTexto?: string[];
+};
+const driveDocumentos = () => ler<DocumentoDriveMock[]>(CHAVE_DRIVE_DOCUMENTOS, () => []);
+const semConteudoDrive = ({ pdfBase64: _p, originalBase64: _o, paginasTexto: _t, ...doc }: DocumentoDriveMock): DocumentoDrive => doc;
 const semDados = ({ dados: _dados, ...r }: BackupRegistroMock): BackupRegistro => r;
 
 function publico(u: UsuarioMock): UsuarioAdmin {
@@ -687,11 +695,13 @@ export const mockApi: ApiAdapter = {
         const h = consultaHistorico();
         apagados += h.length;
         gravar(CHAVE_CONSULTA_HISTORICO, []);
+        gravar(CHAVE_DRIVE_DOCUMENTOS, []);
         gravar(CHAVE_DADOS, d);
       } else if (alvo === "documentos") {
         const h = consultaHistorico();
         apagados = h.length;
         gravar(CHAVE_CONSULTA_HISTORICO, []);
+        gravar(CHAVE_DRIVE_DOCUMENTOS, []);
       } else if (alvo === "backups") {
         const b = backups();
         apagados = b.length;
@@ -826,8 +836,105 @@ export const mockApi: ApiAdapter = {
     },
   },
   documentos: {
+    async listar(condoId?: string) {
+      await espera();
+      sessao();
+      const todos = driveDocumentos();
+      const filtrados = !condoId || condoId === "*" ? todos : todos.filter((d) => d.condoId === condoId);
+      return clone(filtrados.map(semConteudoDrive));
+    },
+    async resumo() {
+      await espera();
+      sessao();
+      const contagem: Record<string, number> = {};
+      for (const doc of driveDocumentos()) {
+        contagem[doc.condoId] = (contagem[doc.condoId] ?? 0) + 1;
+      }
+      return contagem;
+    },
+    async registrar(condoId: string, novos: DocumentoDriveRegistro[], removerAusentes?: boolean) {
+      await espera(200);
+      sessao();
+      if (!condoId) throw new ApiError("Condomínio obrigatório.", 400);
+      let lista = driveDocumentos();
+      if (removerAusentes) {
+        const hashes = new Set(novos.map((n) => n.hashArquivo));
+        lista = lista.filter((d) => d.condoId !== condoId || hashes.has(d.hashArquivo));
+      }
+      let inseridos = 0;
+      for (const n of novos) {
+        const idx = lista.findIndex((d) => d.condoId === condoId && d.hashArquivo === n.hashArquivo);
+        const paginasTexto = Array.isArray(n.paginas) ? n.paginas : [];
+        const doc: DocumentoDriveMock = {
+          id: idx >= 0 ? lista[idx]!.id : (n.id || novoId()),
+          condoId,
+          arquivo: n.arquivo,
+          caminhoRelativo: n.caminhoRelativo || n.arquivo,
+          tipo: n.tipo || "outro",
+          dataDocumento: n.dataDocumento ?? null,
+          hashArquivo: n.hashArquivo,
+          paginas: paginasTexto.length,
+          indexadoEm: new Date().toISOString(),
+          formatoOriginal: n.formatoOriginal ?? "pdf",
+          temPdf: Boolean(n.pdfBase64) || (idx >= 0 && Boolean(lista[idx]!.pdfBase64)),
+          temOriginal: Boolean(n.originalBase64) || (idx >= 0 && Boolean(lista[idx]!.originalBase64)),
+          mimeOriginal: n.mimeOriginal ?? null,
+          nomeOriginal: n.nomeOriginal ?? n.arquivo,
+          tamanhoBytes: n.tamanhoBytes ?? 0,
+          origemEnvio: n.origemEnvio ?? "upload",
+          pdfBase64: n.pdfBase64 ?? (idx >= 0 ? lista[idx]!.pdfBase64 : null),
+          originalBase64: n.originalBase64 ?? (idx >= 0 ? lista[idx]!.originalBase64 : null),
+          paginasTexto,
+        };
+        if (idx >= 0) lista[idx] = doc;
+        else {
+          lista.unshift(doc);
+          inseridos++;
+        }
+      }
+      gravar(CHAVE_DRIVE_DOCUMENTOS, lista);
+      return { ok: true as const, inseridos, removidos: 0 };
+    },
+    async conteudo(id: string): Promise<DocumentoDriveConteudo> {
+      await espera();
+      sessao();
+      const doc = driveDocumentos().find((d) => d.id === id);
+      if (!doc) throw new ApiError("Documento não encontrado.", 404);
+      return clone({
+        id: doc.id,
+        condoId: doc.condoId,
+        arquivo: doc.arquivo,
+        tipo: doc.tipo,
+        formatoOriginal: doc.formatoOriginal ?? "pdf",
+        mimeOriginal: doc.mimeOriginal ?? null,
+        nomeOriginal: doc.nomeOriginal ?? doc.arquivo,
+        tamanhoBytes: doc.tamanhoBytes ?? 0,
+        pdfBase64: doc.pdfBase64 ?? null,
+        originalBase64: doc.originalBase64 ?? null,
+        temPdf: Boolean(doc.pdfBase64),
+        temOriginal: Boolean(doc.originalBase64),
+      });
+    },
+    async atualizar(id, dadosDoc) {
+      await espera();
+      sessao();
+      const lista = driveDocumentos();
+      const doc = lista.find((d) => d.id === id);
+      if (!doc) throw new ApiError("Documento não encontrado.", 404);
+      if (typeof dadosDoc.arquivo === "string" && dadosDoc.arquivo.trim()) doc.arquivo = dadosDoc.arquivo.trim();
+      if (dadosDoc.tipo) doc.tipo = dadosDoc.tipo;
+      if (dadosDoc.dataDocumento !== undefined) doc.dataDocumento = dadosDoc.dataDocumento;
+      gravar(CHAVE_DRIVE_DOCUMENTOS, lista);
+      return { ok: true as const };
+    },
+    async excluir(id: string) {
+      await espera();
+      sessao();
+      gravar(CHAVE_DRIVE_DOCUMENTOS, driveDocumentos().filter((d) => d.id !== id));
+      return { ok: true as const };
+    },
     // Sem acervo indexado neste ambiente de demonstração — a busca real roda no servidor (FULLTEXT).
-    async perguntar(condoId: string, pergunta: string) {
+    async perguntar(condoId: string, pergunta: string, _documentoId?: string) {
       await espera(300);
       const eu = sessao();
       const p = (pergunta || "").trim();
@@ -857,7 +964,7 @@ export const mockApi: ApiAdapter = {
     async historico(condoId: string) {
       await espera();
       sessao();
-      return clone(consultaHistorico().filter((h) => h.condoId === condoId));
+      return clone(!condoId || condoId === "*" ? consultaHistorico() : consultaHistorico().filter((h) => h.condoId === condoId));
     },
   },
 };

@@ -1,5 +1,6 @@
 # Estado atual e passagem de contexto
 
+
 ## Importar apólice de seguro (PDF) na tela de Considerações finais — 30/10/2026
 
 Pedido do usuário: se a apólice não for anexada, os campos de Seguro (seguradora, vigência, valores)
@@ -90,6 +91,22 @@ desse commit; `auth.php?a=eu` responde 401, API conectando normalmente). Branch 
 localmente; a remota (`previsao-por-unidade-relatorio-mensal`) não pôde ser apagada nesta sessão
 (bloqueio do classificador de segurança em `git push --delete`) — seguro apagar manualmente, PR já
 mesclado.
+
+## Drive de Documentos + Consulta Inteligente (IA) + Geração de Notificação e Multa (.DOCX) — 30/10/2026
+
+Implementação dividida em dois menus complementares no grupo **Assembleias e documentos**, atendendo à diretriz de gasto mínimo de tokens e armazenamento completo de arquivos dos condomínios:
+
+1. **Menu `Drive de Documentos` (`/drive-documentos`)**:
+   - Repositório online por condomínio que aceita qualquer categoria de documento (`convencao`, `regimento`, `ata`, `seguro`, `contrato`, `laudo`, `notificacao`, `outro`) e formatos `.pdf`, `.docx`, `.jpg`, `.jpeg`, `.png` e `.webp`.
+   - Ao subir `.docx` ou imagens (`.jpg`/`.png`/`.webp`), exibe diálogo perguntando se deseja **(1) Converter para PDF e manter também o arquivo original** (recomendado, permitindo baixar tanto o PDF quanto o original) ou **(2) Converter e armazenar apenas em PDF**.
+   - Visualização **sempre em PDF inline** na própria tela, impressão online, download em PDF e download do arquivo original.
+   - Pesquisa rápida por nome, categoria, data e formato, além de menu de contexto com **botão direito do mouse** (Abrir PDF inline, Perguntar à IA sobre o arquivo, Imprimir online, Baixar PDF, Baixar original, Renomear / Categoria, Excluir).
+   - Configuração de `pastaDocumentos` principal + múltiplos `caminhosDocumentos` locais e importação direta de pasta local pelo navegador (`webkitdirectory`).
+2. **Menu `Consulta Inteligente` (`/consulta-documentos`)**:
+   - Seletor de abrangência com pesquisa inline permitindo consultar **`🌐 Todos os condomínios com documentos na base` (`"*"`)** ou **um condomínio específico**, além de filtro opcional por documento.
+   - Campo genérico de **Questionamento / Consulta** (para dúvidas recebidas por WhatsApp, e-mail, telefone ou consulta interna) com busca `FULLTEXT` + fallback de trechos e cache persistente para mínimo consumo de tokens no `claude-haiku-4-5`.
+   - Flag **`[ ] Emitir Notificação / Multa em Word (.DOCX) a partir desta base legal`** que abre os campos de preenchimento (Condomínio, Modalidade: Apenas Notificação, Notificação e Multa ou 2ª Notificação e Multa, Condômino/Proprietário, Unidade, Inquilino opcional, Ocorrência, Base Legal preenchida pela IA, Enquadramento e Valor da Multa com valor por extenso automático `valorPorExtensoBRL`) e gera o `.DOCX` editável fiel ao layout oficial da Krieger.
+
 
 ## Pesquisa inline de condomínio na Consulta de Documentos — 30/10/2026
 

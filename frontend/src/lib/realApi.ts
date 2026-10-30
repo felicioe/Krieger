@@ -1,11 +1,17 @@
-import type { Backup, BackupRegistro, ConsultaHistoricoItem, ConsultaResposta, Store, Usuario, UsuarioAdmin } from "@/domain/types";
+import type {
+  Backup,
+  BackupRegistro,
+  ConsultaHistoricoItem,
+  ConsultaResposta,
+  DocumentoDrive,
+  DocumentoDriveConteudo,
+  DocumentoDriveRegistro,
+  Store,
+  TipoDocumentoConsulta,
+  Usuario,
+  UsuarioAdmin,
+} from "@/domain/types";
 import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza } from "./apiTypes";
-
-/**
- * Adaptador da API PHP existente (api.php / auth.php no mesmo diretório do site).
- * As URLs são relativas ao documento: com rotas em hash, o documento é sempre
- * o index.html, então funciona inclusive em subpastas.
- */
 
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
   let resp: Response;
@@ -37,7 +43,6 @@ async function req<T>(url: string, init?: RequestInit): Promise<T> {
 
 const post = <T>(url: string, body: unknown) => req<T>(url, { method: "POST", body: JSON.stringify(body) });
 
-/** A API pode devolver o dado direto ou embrulhado; aceitamos ambos. */
 function lista<T>(r: unknown): T[] {
   if (Array.isArray(r)) return r as T[];
   const o = r as Record<string, unknown> | null;
@@ -146,8 +151,36 @@ export const realApi: ApiAdapter = {
     },
   },
   documentos: {
-    async perguntar(condoId: string, pergunta: string) {
-      return post<ConsultaResposta>("api_documentos.php?a=consulta_perguntar", { condoId, pergunta });
+    async listar(condoId: string) {
+      return lista<DocumentoDrive>(await req(`api_documentos.php?a=documentos_listar&condoId=${enc(condoId)}`));
+    },
+    async resumo() {
+      return (await req<Record<string, number>>("api_documentos.php?a=documentos_resumo")) ?? {};
+    },
+    async registrar(documento: DocumentoDriveRegistro) {
+      return post<{ id: string; condoId: string; tipo: TipoDocumentoConsulta; indexadoEm: string }>(
+        "api_documentos.php?a=documentos_registrar",
+        { documento },
+      );
+    },
+    async conteudo(id: string) {
+      return req<DocumentoDriveConteudo>(`api_documentos.php?a=documento_conteudo&id=${enc(id)}`);
+    },
+    async atualizar(dados: { id: string; nomeArquivo?: string; tipo?: TipoDocumentoConsulta; dataDocumento?: string }) {
+      return post<{ ok: true; id: string; nomeArquivo: string; tipo: TipoDocumentoConsulta }>(
+        "api_documentos.php?a=documento_atualizar",
+        dados,
+      );
+    },
+    async excluir(id: string) {
+      await post("api_documentos.php?a=documento_excluir", { id });
+    },
+    async perguntar(condoId: string, pergunta: string, documentoId?: string) {
+      return post<ConsultaResposta>("api_documentos.php?a=consulta_perguntar", {
+        condoId,
+        pergunta,
+        ...(documentoId ? { documentoId } : {}),
+      });
     },
     async historico(condoId: string) {
       return lista<ConsultaHistoricoItem>(await req(`api_documentos.php?a=consulta_historico&condoId=${enc(condoId)}`));

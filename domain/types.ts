@@ -120,6 +120,8 @@ export interface Condominio extends ComId {
    * Usada só pelo agente de indexação da Consulta de Documentos (convenção/regimento/atas).
    */
   pastaDocumentos: string;
+  /** Caminhos locais adicionais de documentos deste condomínio (além de `pastaDocumentos`). */
+  caminhosDocumentos?: string[];
   /** Campo novo (opcional): área total do condomínio (m²), lida da Listagem de Condomínios. */
   areaTotalM2?: number | null;
   /**
@@ -447,6 +449,8 @@ export interface BackupRegistro {
   geradoPorNome: string;
   /** ISO 8601 */
   criadoEm: string;
+  condoId?: string;
+  condoNome?: string;
   tamanhoBytes: number;
 }
 
@@ -455,7 +459,60 @@ export type Backup = Partial<Record<Store, unknown[]>> & Record<string, unknown>
 
 // ---------- Consulta Inteligente de Documentos ----------
 
-export type TipoDocumentoConsulta = "convencao" | "regimento" | "ata";
+export type TipoDocumentoConsulta =
+  | "convencao"
+  | "regimento"
+  | "ata"
+  | "seguro"
+  | "contrato"
+  | "laudo"
+  | "notificacao"
+  | "outro";
+
+export type FormatoArquivoDrive = "pdf" | "docx" | "jpg" | "png" | "webp" | "outro";
+
+export interface DocumentoDrive {
+  id: string;
+  condoId: string;
+  tipo: TipoDocumentoConsulta;
+  nomeArquivo: string;
+  caminhoRelativo: string;
+  hash: string;
+  tamanho: number;
+  paginas: number | null;
+  /** Data de referência do documento (aaaa-mm-dd) ou data de envio. */
+  dataDocumento: string;
+  formatoOriginal: FormatoArquivoDrive;
+  temPdf: boolean;
+  temOriginal: boolean;
+  status: "ok" | "erro";
+  erro?: string | null;
+  /** ISO 8601 */
+  indexadoEm: string;
+}
+
+export interface DocumentoDriveConteudo {
+  id: string;
+  nomeArquivo: string;
+  formatoOriginal: FormatoArquivoDrive;
+  pdfDataUrl: string | null;
+  originalDataUrl: string | null;
+}
+
+export interface DocumentoDriveRegistro {
+  condoId: string;
+  tipo: TipoDocumentoConsulta;
+  nomeArquivo: string;
+  caminhoRelativo: string;
+  hash: string;
+  tamanho: number;
+  paginas?: number | null;
+  dataDocumento?: string | null;
+  formatoOriginal?: FormatoArquivoDrive;
+  pdfDataUrl?: string | null;
+  originalDataUrl?: string | null;
+  trechos: { paginaInicial: number; paginaFinal: number; texto: string }[];
+}
 
 /** Trecho de um documento indexado usado como evidência de uma resposta. */
 export interface ConsultaFonte {
@@ -464,6 +521,8 @@ export interface ConsultaFonte {
   tipo: TipoDocumentoConsulta;
   paginaInicial: number;
   paginaFinal: number;
+  condoId?: string;
+  condoNome?: string;
 }
 
 export type ConsultaOrigem = "cache" | "local" | "claude";
@@ -487,6 +546,8 @@ export interface ConsultaHistoricoItem {
   status: "ok" | "sem_evidencia" | "erro";
   /** ISO 8601 */
   criadoEm: string;
+  condoId?: string;
+  condoNome?: string;
 }
 
 // ---------- Usuários ----------

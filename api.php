@@ -65,7 +65,7 @@ $ALVOS_LIMPEZA = [
   'importacoes' => ['kr_importacoes'],
   'anexos_importacao' => ['kr_anexos_importacao'],
   'decisoes_previsao' => ['kr_decisoes_previsao'],
-  'documentos' => ['kr_documento_trechos', 'kr_documentos', 'kr_consulta_cache', 'kr_consulta_historico'],
+  'documentos' => ['kr_documento_trechos', 'kr_drive_arquivos', 'kr_documentos', 'kr_consulta_cache', 'kr_consulta_historico'],
   'backups' => ['kr_backups'],
 ];
 
