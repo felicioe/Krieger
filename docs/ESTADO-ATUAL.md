@@ -1,5 +1,13 @@
 # Estado atual e passagem de contexto
 
+## Tabela `kr_decisoes_previsao` confirmada aplicada em produção — 30/10/2026
+
+Pendência registrada no PR #104 (28/10/2026, "Ação pendente em produção — nova tabela") estava sem
+confirmação de que o `CREATE TABLE IF NOT EXISTS` tinha sido rodado. Usuário rodou agora via
+phpMyAdmin: retorno "Tabela 'kr_decisoes_previsao' já existe" — ou seja, já tinha sido aplicada em
+algum momento anterior (não fica claro quando), só não estava registrado aqui. Log de decisões de
+divergência da Previsão sugerida (PRs #104/#105) funciona contra a API real sem a pendência.
+
 
 ## Importar apólice de seguro (PDF) na tela de Considerações finais — 30/10/2026
 
