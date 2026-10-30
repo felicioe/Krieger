@@ -5,8 +5,13 @@ import { EditorConsideracoes } from "@/components/relatorio/EditorConsideracoes"
 import { considDoCondominio } from "@/domain/exercicio";
 import { condominioPadrao } from "@/domain/condominio";
 
-const leitura = vi.hoisted(() => ({ texto: "" }));
-vi.mock("@/lib/pdfTexto", () => ({ extrairTextoPdf: async () => leitura.texto }));
+const leitura = vi.hoisted(() => ({ texto: "", espera: Promise.resolve() }));
+vi.mock("@/lib/pdfTexto", () => ({
+  extrairTextoPdf: async () => {
+    await leitura.espera;
+    return leitura.texto;
+  },
+}));
 
 // Estrutura real do layout Allianz (ver domain/pdfParser.ts), dados fictícios.
 const APOLICE = [
@@ -27,7 +32,7 @@ const APOLICE = [
 function renderEditor() {
   const consid = considDoCondominio({ ...condominioPadrao(), id: "c1" });
   const onChange = vi.fn();
-  render(
+  const utils = render(
     <EditorConsideracoes
       consid={consid}
       onChange={onChange}
@@ -36,7 +41,17 @@ function renderEditor() {
       agua={{ valor: 0, manual: false, rubricas: [] }}
     />,
   );
-  return { onChange };
+  const rerenderComConsid = (c: Parameters<typeof EditorConsideracoes>[0]["consid"]) =>
+    utils.rerender(
+      <EditorConsideracoes
+        consid={c}
+        onChange={onChange}
+        condominio={null}
+        receberMensais={null}
+        agua={{ valor: 0, manual: false, rubricas: [] }}
+      />,
+    );
+  return { onChange, consid, rerenderComConsid };
 }
 
 describe("EditorConsideracoes — importar apólice (PDF)", () => {
@@ -57,6 +72,30 @@ describe("EditorConsideracoes — importar apólice (PDF)", () => {
       { desc: "Danos Elétricos", valor: 30000 },
       { desc: "Vendaval / Ciclone / Tornado / Granizo", valor: 45000 },
     ]);
+  });
+
+  it("edição em outro campo durante a importação não é perdida (achado do Codex no PR #109)", async () => {
+    leitura.texto = APOLICE;
+    let liberar: () => void = () => {};
+    leitura.espera = new Promise((res) => {
+      liberar = res;
+    });
+    const { onChange, consid, rerenderComConsid } = renderEditor();
+
+    const arquivo = new File(["x"], "apolice.pdf", { type: "application/pdf" });
+    const entrada = screen.getByLabelText("Arquivo PDF da apólice de seguro");
+    await userEvent.upload(entrada, arquivo); // dispara a importação; fica pendente em leitura.espera
+
+    // Enquanto o PDF ainda está sendo lido, o usuário edita outro campo (ex.: vistoria) — o pai
+    // (dono do estado) re-renderiza o editor com o consid já atualizado.
+    const comVistoria = { ...consid, vistoriaLei: "Lei Municipal 123/2026" };
+    rerenderComConsid(comVistoria);
+
+    liberar();
+    await waitFor(() => expect(onChange).toHaveBeenCalled());
+    const novo = onChange.mock.calls.at(-1)![0];
+    expect(novo.vistoriaLei).toBe("Lei Municipal 123/2026"); // não foi perdida
+    expect(novo.seguradora).toBe("Seguradora Exemplar"); // e a apólice foi aplicada mesmo assim
   });
 
   it("PDF de outro layout: não altera os campos", async () => {

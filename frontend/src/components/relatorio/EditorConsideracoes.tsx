@@ -36,6 +36,12 @@ export function EditorConsideracoes({
   const [confirmarRecarga, setConfirmarRecarga] = useState(false);
   const set = <K extends keyof Consid>(k: K, v: Consid[K]) => onChange({ ...c, [k]: v });
 
+  // A importação da apólice é assíncrona (lê o PDF, pode levar um instante); se o usuário editar
+  // outro campo nesse meio-tempo, `c` do fechamento fica desatualizado — o ref sempre aponta pro
+  // estado mais recente, pra aplicar o resultado do PDF por cima dele, não por cima do antigo.
+  const cRef = useRef(c);
+  cRef.current = c;
+
   const entradaApolice = useRef<HTMLInputElement>(null);
   const [importandoApolice, setImportandoApolice] = useState(false);
 
@@ -50,12 +56,13 @@ export function EditorConsideracoes({
         toast.error("PDF não reconhecido como apólice de seguro (layout Allianz). Preencha os campos manualmente.");
         return;
       }
+      const atual = cRef.current;
       onChange({
-        ...c,
-        seguradora: lido.seguradora ?? c.seguradora,
-        vigenciaSeguro: lido.vigenciaFim ?? c.vigenciaSeguro,
+        ...atual,
+        seguradora: lido.seguradora ?? atual.seguradora,
+        vigenciaSeguro: lido.vigenciaFim ?? atual.vigenciaSeguro,
         seguro: {
-          riscoAbsoluto: lido.riscoAbsoluto ?? c.seguro.riscoAbsoluto,
+          riscoAbsoluto: lido.riscoAbsoluto ?? atual.seguro.riscoAbsoluto,
           coberturas: lido.coberturas,
         },
       });
