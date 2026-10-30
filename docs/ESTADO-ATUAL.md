@@ -1,5 +1,13 @@
 # Estado atual e passagem de contexto
 
+## Pesquisa inline de condomínio na Consulta de Documentos — 30/10/2026
+
+Pedido do usuário para incluir pesquisa inline no seletor de condomínio da tela **Consulta de Documentos** (`/consulta-documentos`), facilitando encontrar qualquer condomínio sem precisar rolar toda a lista:
+
+- `frontend/src/components/app/inputs.tsx`: novo componente `SelecaoBusca` (combobox acessível compatível com `Field`) e utilitário `opcoesCondominio`. Ao clicar no campo ou começar a digitar, abre a lista com campo de pesquisa inline focado automaticamente, filtrando em tempo real por qualquer parte do nome (sem diferenciar acentos ou maiúsculas/minúsculas), código ou CNPJ, além de exibir o código do condomínio ao lado do nome.
+- `frontend/src/routes/_authenticated.consulta-documentos.tsx`: substitui `Selecao` por `SelecaoBusca` com `opcoesCondominio(ordenados, true)`.
+- `frontend/src/test/acessibilidade.test.tsx`: teste automatizado cobrindo `SelecaoBusca` dentro de `Field` e filtragem sem acento.
+
 ## Correção de duplicação na importação de condomínios + Menu administrativo "Limpeza de Dados" — 29/10/2026
 
 Pedido do usuário após notar 344 condomínios duplicados ao importar a Listagem de Condomínios mais de uma vez e solicitar um menu administrativo em vermelho (restrito a administradores) para apagar todos os cadastros ou cada categoria individualmente:

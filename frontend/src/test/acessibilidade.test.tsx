@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Input } from "@/components/ui/input";
 import { DataTable } from "@/components/app/DataTable";
 import { Field } from "@/components/app/Field";
-import { Selecao } from "@/components/app/inputs";
+import { Selecao, SelecaoBusca } from "@/components/app/inputs";
 import { MenuMovel } from "@/components/app/MenuMovel";
 import { RepeatableList } from "@/components/app/RepeatableList";
 
@@ -180,6 +180,36 @@ describe("#31 Field: dica, erro e obrigatoriedade ligadas ao campo", () => {
     expect(trigger).toHaveAccessibleDescription("Escolha o perfil.");
     expect(trigger).toHaveAttribute("aria-invalid", "true");
     expect(trigger).toHaveAttribute("aria-required", "true");
+  });
+
+  it("SelecaoBusca filtra inline por nome sem acento, código ou CNPJ e repassa acessibilidade do Field", async () => {
+    const user = userEvent.setup();
+    const aoMudar = vi.fn();
+    render(
+      <Field rotulo="Condomínio" obrigatorio dica="Pesquise pelo nome.">
+        <SelecaoBusca
+          value="c1"
+          onChange={aoMudar}
+          opcoes={[
+            { valor: "c1", rotulo: "COND. ED. PAOLA GABRIELA", detalhe: "006", busca: "006 COND. ED. PAOLA GABRIELA 00.356.681/0001-25" },
+            { valor: "c2", rotulo: "CONDOMÍNIO CALEDÔNIA", detalhe: "042", busca: "042 CONDOMÍNIO CALEDÔNIA 76.706.944/0001-40" },
+          ]}
+        />
+      </Field>,
+    );
+    const trigger = screen.getByRole("combobox", { name: "Condomínio" });
+    expect(trigger).toHaveAccessibleDescription("Pesquise pelo nome.");
+    expect(trigger).toHaveAttribute("aria-required", "true");
+
+    await user.click(trigger);
+    const campoBusca = await screen.findByPlaceholderText(/Pesquisar por nome/i);
+    await user.type(campoBusca, "caledonia");
+    const opcoes = screen.getAllByRole("option");
+    expect(opcoes).toHaveLength(1);
+    expect(opcoes[0]).toHaveTextContent("CONDOMÍNIO CALEDÔNIA");
+
+    await user.click(opcoes[0]!);
+    expect(aoMudar).toHaveBeenCalledWith("c2");
   });
 });
 
