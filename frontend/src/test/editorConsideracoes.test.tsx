@@ -25,7 +25,7 @@ const APOLICE = [
 ].join("\n");
 
 function renderEditor() {
-  const consid = considDoCondominio(condominioPadrao());
+  const consid = considDoCondominio({ ...condominioPadrao(), id: "c1" });
   const onChange = vi.fn();
   render(
     <EditorConsideracoes
