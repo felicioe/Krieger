@@ -5,13 +5,36 @@ import { MenuMovel } from "@/components/app/MenuMovel";
 import { Carregando } from "@/components/app/Carregando";
 import { ID_CONTEUDO } from "@/components/app/foco";
 import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
-import { garantirSessao } from "@/lib/auth";
+import { garantirSessao, temPermissao } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated")({
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const usuario = await garantirSessao();
     if (!usuario) throw redirect({ to: "/login" });
     if (usuario.trocarSenha) throw redirect({ to: "/trocar-senha" });
+
+    const permissoesPorRota: Array<[string, string]> = [
+      ["/painel", "painel.visualizar"],
+      ["/condominios", "condominios.visualizar"],
+      ["/prestacao-contas", "prestacao_contas.visualizar"],
+      ["/previsao-orcamentaria", "previsao_orcamentaria.visualizar"],
+      ["/previsto-realizado", "previsto_realizado.visualizar"],
+      ["/relatorio-mensal", "relatorio_mensal.visualizar"],
+      ["/importador", "importador.visualizar"],
+      ["/editais", "editais.visualizar"],
+      ["/atas", "atas.visualizar"],
+      ["/modelos", "modelos.visualizar"],
+      ["/drive-documentos", "drive_documentos.visualizar"],
+      ["/consulta-documentos", "consulta_documentos.visualizar"],
+      ["/escritorio", "escritorio.visualizar"],
+      ["/backup", "backup.visualizar"],
+      ["/usuarios", "usuarios.visualizar"],
+    ];
+    const regra = permissoesPorRota.find(([prefixo]) => location.pathname === prefixo || location.pathname.startsWith(prefixo + "/"));
+    if (regra && !temPermissao(usuario, regra[1])) {
+      const destino = permissoesPorRota.find(([, chave]) => temPermissao(usuario, chave))?.[0] ?? "/minha-senha";
+      throw redirect({ to: destino as never });
+    }
     return { usuario };
   },
   pendingComponent: () => <Carregando />,
