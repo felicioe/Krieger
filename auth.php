@@ -73,7 +73,7 @@ try {
       $_SESSION['uid'] = $u['id'];
       $_SESSION['ultimo'] = time();
       $pdo->prepare('UPDATE kr_usuarios SET ultimo_acesso = ? WHERE id = ?')->execute([$agora(), $u['id']]);
-      json_ok(['usuario' => ['id' => $u['id'], 'login' => $u['login'], 'nome' => $u['nome'], 'perfil' => $u['perfil'], 'trocarSenha' => (int) $u['trocar_senha'] === 1]]);
+      json_ok(['usuario' => ['id' => $u['id'], 'login' => $u['login'], 'nome' => $u['nome'], 'perfil' => $u['perfil'], 'trocarSenha' => (int) $u['trocar_senha'] === 1, 'permissoes' => permissoes_usuario($pdo, (string) $u['id'], (string) $u['perfil'])]]);
     }
 
     case 'sair': {
