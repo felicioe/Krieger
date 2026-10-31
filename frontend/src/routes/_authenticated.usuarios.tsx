@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Loader2, Pencil, Plus, Shield, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ function Usuarios() {
   const { data } = useSuspenseQuery(usuariosQuery());
   const [editando, setEditando] = useState<UsuarioAdmin | "novo" | null>(null);
   const [excluindo, setExcluindo] = useState<UsuarioAdmin | null>(null);
+  const [permissoesUsuario, setPermissoesUsuario] = useState<UsuarioAdmin | null>(null);
 
   const excluir = useMutation({
     mutationFn: (id: string) => api.auth.usuarioExcluir(id),
@@ -94,6 +95,9 @@ function Usuarios() {
                 <Button variant="ghost" size="icon" aria-label={`Editar ${u.login}`} onClick={() => setEditando(u)}>
                   <Pencil />
                 </Button>
+                <Button variant="ghost" size="icon" aria-label={`Permissões de ${u.login}`} onClick={() => setPermissoesUsuario(u)}>
+                  <Shield />
+                </Button>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -118,6 +122,7 @@ function Usuarios() {
           aoFechar={() => setEditando(null)}
         />
       )}
+      {permissoesUsuario && <DialogPermissoes usuario={permissoesUsuario} aoFechar={() => setPermissoesUsuario(null)} />}
 
       <ConfirmDialog
         aberto={!!excluindo}
@@ -136,6 +141,16 @@ function Usuarios() {
       />
     </>
   );
+}
+
+function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFechar: () => void }) {
+  const [estado, setEstado] = useState<Record<string, "permitir" | "negar" | "remover">>({});
+  const [catalogo, setCatalogo] = useState<Array<{ chave: string; modulo: string; tela: string; acao: string; descricao?: string | null }>>([]);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState<string | null>(null);
+  useEffect(() => { api.auth.permissoes().then((r) => { setCatalogo(r.catalogo); const mapa: Record<string, "permitir" | "negar" | "remover"> = {}; r.excecoes.filter((e) => e.usuarioId === usuario.id).forEach((e) => { mapa[e.permissaoChave] = e.efeito; }); setEstado(mapa); }).catch((e) => toast.error(mensagemErro(e))).finally(() => setCarregando(false)); }, [usuario.id]);
+  async function salvar(chave: string, efeito: "permitir" | "negar" | "remover") { setSalvando(chave); try { await api.auth.permissaoSalvar(usuario.id, chave, efeito); setEstado((s) => ({ ...s, [chave]: efeito })); toast.success("Permissão atualizada."); } catch (e) { toast.error(mensagemErro(e)); } finally { setSalvando(null); } }
+  return <Dialog open onOpenChange={(v) => !v && aoFechar()}><DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl"><DialogHeader><DialogTitle>Permissões de {usuario.nome}</DialogTitle><DialogDescription>Defina exceções individuais. Sem exceção, vale o perfil do usuário.</DialogDescription></DialogHeader>{carregando ? <Loader2 className="animate-spin" /> : catalogo.length === 0 ? <Alert><AlertDescription>O catálogo ainda não está disponível neste ambiente.</AlertDescription></Alert> : <div className="grid gap-2">{catalogo.map((p) => <div key={p.chave} className="flex items-center justify-between gap-3 rounded border p-2"><div><div className="font-medium">{p.tela} · {p.acao}</div><div className="text-xs text-muted-foreground">{p.modulo} · {p.chave}</div></div><div className="flex gap-1"><Button size="sm" variant={estado[p.chave] === "permitir" ? "default" : "outline"} disabled={salvando === p.chave} onClick={() => salvar(p.chave, "permitir")}>Permitir</Button><Button size="sm" variant={estado[p.chave] === "negar" ? "destructive" : "outline"} disabled={salvando === p.chave} onClick={() => salvar(p.chave, "negar")}>Negar</Button><Button size="sm" variant="ghost" disabled={salvando === p.chave || !estado[p.chave]} onClick={() => salvar(p.chave, "remover")}>Padrão</Button></div></div>)}</div>}<DialogFooter><Button variant="outline" onClick={aoFechar}>Fechar</Button></DialogFooter></DialogContent></Dialog>;
 }
 
 function DialogUsuario({ usuario, aoFechar }: { usuario: UsuarioAdmin | null; aoFechar: () => void }) {

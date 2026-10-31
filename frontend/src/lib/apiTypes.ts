@@ -28,6 +28,8 @@ export class ApiError extends Error {
 }
 
 export type Registro = { id: string } & Record<string, unknown>;
+export type PermissaoCatalogo = { chave: string; modulo: string; tela: string; acao: string; descricao?: string | null; ativo?: boolean };
+export type PermissaoExcecao = { usuarioId: string; permissaoChave: string; efeito: "permitir" | "negar" };
 
 export type ConfirmarImportacaoPedido = {
   importacaoId: string;
@@ -89,6 +91,8 @@ export interface ApiAdapter {
     usuarios(): Promise<UsuarioAdmin[]>;
     usuarioSalvar(u: UsuarioSalvar): Promise<unknown>;
     usuarioExcluir(id: string): Promise<void>;
+    permissoes(): Promise<{ catalogo: PermissaoCatalogo[]; excecoes: PermissaoExcecao[] }>;
+    permissaoSalvar(usuarioId: string, chave: string, efeito: "permitir" | "negar" | "remover"): Promise<void>;
   };
   /** Drive de Documentos e Consulta Inteligente de Documentos. */
   documentos: {

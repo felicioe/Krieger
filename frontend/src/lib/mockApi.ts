@@ -861,6 +861,15 @@ export const mockApi: ApiAdapter = {
       }
       gravar(CHAVE_USUARIOS, lista.filter((x) => x.id !== id));
     },
+    async permissoes() {
+      await espera();
+      exigirAdmin();
+      return { catalogo: [], excecoes: [] };
+    },
+    async permissaoSalvar() {
+      await espera();
+      exigirAdmin();
+    },
   },
   documentos: {
     async listar(condoId?: string) {
