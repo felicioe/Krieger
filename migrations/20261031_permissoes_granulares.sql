@@ -58,3 +58,17 @@ INSERT IGNORE INTO kr_permissoes (chave,modulo,tela,acao,descricao,criado_em) VA
 ('usuarios.visualizar','administracao','usuarios','visualizar','Visualizar usuários',NOW());
 INSERT IGNORE INTO kr_perfil_permissoes (perfil_id, permissao_chave)
 SELECT 'user', chave FROM kr_permissoes;
+
+INSERT IGNORE INTO kr_permissoes (chave,modulo,tela,acao,descricao,criado_em) VALUES
+('condominios.editar','cadastros','condominios','editar','Editar condomínios',NOW()),
+('prestacao_contas.editar','financeiro','prestacao_contas','editar','Editar prestação de contas',NOW()),
+('previsao_orcamentaria.editar','financeiro','previsao_orcamentaria','editar','Editar previsão orçamentária',NOW()),
+('relatorio_mensal.editar','financeiro','relatorio_mensal','editar','Editar relatório mensal',NOW()),
+('importador.editar','financeiro','importador','editar','Executar importador',NOW()),
+('editais.editar','assembleias','editais','editar','Editar editais',NOW()),
+('atas.editar','assembleias','atas','editar','Editar atas',NOW()),
+('modelos.editar','assembleias','modelos','editar','Editar modelos',NOW()),
+('drive_documentos.editar','documentos','drive_documentos','editar','Editar Drive de Documentos',NOW()),
+('escritorio.editar','administracao','escritorio','editar','Editar escritório',NOW());
+INSERT IGNORE INTO kr_perfil_permissoes (perfil_id, permissao_chave)
+SELECT 'user', chave FROM kr_permissoes;
