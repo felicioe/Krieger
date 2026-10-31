@@ -1,5 +1,32 @@
 # Estado atual e passagem de contexto
 
+## Corrige overflow horizontal no Drive de Documentos — 31/10/2026 (PR #110)
+
+Usuário reportou com print a tela "Drive de Documentos" (entrega do Codex) rolando inteira na
+horizontal. Diagnóstico levou duas rodadas: a primeira tentativa (`min-w-0` nos itens de grid
+`lg:grid-cols-12`/`xl:grid-cols-12`) não foi confirmada por testes isolados em telas largas
+(≥1024px, onde o Tailwind já evita o problema sozinho via `minmax(0,1fr)` do `grid-cols-N`) — quase
+descartei o fix por falta de prova.
+
+**Causa real, confirmada com o usuário rodando no DevTools dele** (`document.documentElement.scrollWidth`
+vs `window.innerWidth`, janela em 819px): abaixo do breakpoint `lg:` (1024px) do Tailwind,
+`lg:grid-cols-12` não ativa e o grid cai pro `display:grid` padrão sem `grid-template-columns`
+explícito — track implícito `auto`, não `minmax(0,1fr)`. Nessa faixa, um item de grid sem `min-w-0`
+sofre o blowout clássico: cresce pra caber o conteúdo (a tabela larga de arquivos), empurrando a
+coluna — e com ela a página inteira — pra fora do viewport, em vez de rolar dentro do próprio
+wrapper `overflow-x-auto` que já existia.
+
+Validado com teste A/B real no app (login, criação de condomínio, upload de 80 arquivos pelo fluxo
+de verdade, viewport 819×900 — mesma largura do usuário): sem o fix, 188px de overflow de página
+(culpado: o wrapper `overflow-x-auto` da tabela, que cresce junto com o item de grid); com o fix,
+zero. `min-w-0` adicionado nos 4 itens de grid envolvidos (coluna "Pastas e Categorias", coluna
+"Arquivos", coluna da lista quando o visualizador inline de PDF está aberto, e o painel do
+visualizador).
+
+**Mesclado (squash) e publicado — 31/10/2026**: PR #110 mesclado em `main` (`8d9ccb9`). Publicado
+via worktree `deploy-hostinger` (`3ca49de`) — auto-deploy confirmado ao vivo (`index.html` referencia
+`index-B5W0Rjkc.js`, hash exato do build desse commit; `auth.php?a=eu` responde 401, API normal).
+
 ## Tabela `kr_decisoes_previsao` confirmada aplicada em produção — 30/10/2026
 
 Pendência registrada no PR #104 (28/10/2026, "Ação pendente em produção — nova tabela") estava sem
