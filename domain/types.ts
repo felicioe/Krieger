@@ -575,6 +575,8 @@ export interface Usuario {
   nome: string;
   perfil: Perfil;
   trocarSenha: boolean;
+  /** Chaves de tela/ação autorizadas; `*` representa administrador. */
+  permissoes: string[];
 }
 
 export interface UsuarioAdmin extends Usuario {
