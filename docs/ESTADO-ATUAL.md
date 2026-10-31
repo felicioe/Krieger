@@ -1,5 +1,33 @@
 # Estado atual e passagem de contexto
 
+## Consulta Inteligente: parecer em markdown de verdade + histórico recolhível — 31/10/2026
+
+Pedido do usuário: o parecer da IA saía como texto cru (negrito do Claude virava `**asteriscos**`
+literais, "parecia resposta de WhatsApp"), e o card "Histórico Recente de Consultas" sempre ficava
+aberto, ocupando espaço sem necessidade.
+
+- `frontend/src/routes/_authenticated.consulta-documentos.tsx`: o campo `resposta.texto` (markdown
+  que o Claude já devolve naturalmente — títulos, negrito, listas, citações) agora renderiza de
+  verdade via `react-markdown` + `remark-gfm`, com um conjunto de componentes próprio
+  (`COMPONENTES_PARECER`) estilizado no mesmo padrão visual do resto do app (títulos em
+  uppercase/cor primária, marcadores de lista coloridos, citação com borda lateral e fundo suave,
+  tabela com cabeçalho e rolagem própria) — nada de depender de um plugin de tipografia novo.
+- Histórico Recente de Consultas trocou `SectionCard` por `SecaoRecolhivel` (componente já existente
+  no projeto, mesmo padrão usado em outros formulários) — fechado por padrão, mostrando só a
+  contagem ("N perguntas") até o usuário abrir.
+- `react-markdown`/`remark-gfm` adicionados como dependência. Como a rota já é um chunk próprio
+  (code-split por rota, confirmado no build), isso não entra no orçamento de JS inicial — medido com
+  `npm run bundle:check`: 176.658 de 256.000 bytes gzip (chunk da própria rota, ~181 KB cru, só
+  carrega quando o usuário abre essa tela).
+
+Validado visualmente (Playwright, servidor de dev local, texto de exemplo com título, negrito,
+lista, citação e trecho em itálico — depois revertido do `mockApi.ts`, não é dado real): parecer
+renderiza com tipografia de verdade, sem asterisco solto; histórico abre e fecha corretamente,
+preservando a lista por baixo (não perde nada ao recolher).
+
+Testado: 195 testes de frontend, `tsc --noEmit` limpo, `npm run bundle:check` dentro do orçamento,
+`docs:check` limpo.
+
 ## Corrige overflow horizontal no Drive de Documentos — 31/10/2026 (PR #110)
 
 Usuário reportou com print a tela "Drive de Documentos" (entrega do Codex) rolando inteira na
