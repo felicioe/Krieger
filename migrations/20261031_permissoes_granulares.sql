@@ -38,3 +38,23 @@ CREATE TABLE IF NOT EXISTS kr_usuario_permissoes (
 INSERT IGNORE INTO kr_perfis (id,nome,descricao,criado_em) VALUES
 ('admin','Administrador','Acesso total ao sistema',NOW()),
 ('user','Usuário','Acesso definido por permissões',NOW());
+
+-- Catálogo inicial: preserva o acesso atual dos usuários comuns até o administrador ajustar a matriz.
+INSERT IGNORE INTO kr_permissoes (chave,modulo,tela,acao,descricao,criado_em) VALUES
+('painel.visualizar','geral','painel','visualizar','Visualizar painel',NOW()),
+('condominios.visualizar','cadastros','condominios','visualizar','Visualizar condomínios',NOW()),
+('prestacao_contas.visualizar','financeiro','prestacao_contas','visualizar','Visualizar prestação de contas',NOW()),
+('previsao_orcamentaria.visualizar','financeiro','previsao_orcamentaria','visualizar','Visualizar previsão orçamentária',NOW()),
+('previsto_realizado.visualizar','financeiro','previsto_realizado','visualizar','Visualizar previsto e realizado',NOW()),
+('relatorio_mensal.visualizar','financeiro','relatorio_mensal','visualizar','Visualizar relatório mensal',NOW()),
+('importador.visualizar','financeiro','importador','visualizar','Visualizar importador',NOW()),
+('editais.visualizar','assembleias','editais','visualizar','Visualizar editais',NOW()),
+('atas.visualizar','assembleias','atas','visualizar','Visualizar atas',NOW()),
+('modelos.visualizar','assembleias','modelos','visualizar','Visualizar modelos de edital',NOW()),
+('drive_documentos.visualizar','documentos','drive_documentos','visualizar','Visualizar Drive de Documentos',NOW()),
+('consulta_documentos.visualizar','documentos','consulta_documentos','visualizar','Visualizar consulta inteligente',NOW()),
+('escritorio.visualizar','administracao','escritorio','visualizar','Visualizar escritório',NOW()),
+('backup.visualizar','administracao','backup','visualizar','Visualizar backup',NOW()),
+('usuarios.visualizar','administracao','usuarios','visualizar','Visualizar usuários',NOW());
+INSERT IGNORE INTO kr_perfil_permissoes (perfil_id, permissao_chave)
+SELECT 'user', chave FROM kr_permissoes;
