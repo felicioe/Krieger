@@ -66,3 +66,7 @@ export function useUsuario(): Usuario | null {
     () => null,
   );
 }
+
+export function temPermissao(usuario: Usuario | null, chave: string): boolean {
+  return usuario?.permissoes?.includes('*') === true || usuario?.permissoes?.includes(chave) === true;
+}
