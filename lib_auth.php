@@ -2,6 +2,7 @@
 // Funções compartilhadas de conexão e autenticação (usado por api.php e auth.php).
 // Não é acessível pelo navegador (bloqueado no .htaccess).
 declare(strict_types=1);
+require_once __DIR__ . '/lib_permissoes.php';
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) { http_response_code(403); exit; }
 
 date_default_timezone_set('America/Sao_Paulo');
@@ -86,7 +87,7 @@ function usuario_atual(PDO $pdo): ?array {
   $st->execute([$uid]);
   $u = $st->fetch();
   if (!$u || (int) $u['ativo'] !== 1) { $_SESSION = []; return null; }
-  return ['id' => $u['id'], 'login' => $u['login'], 'nome' => $u['nome'], 'perfil' => $u['perfil'], 'trocarSenha' => (int) $u['trocar_senha'] === 1];
+  return ['id' => $u['id'], 'login' => $u['login'], 'nome' => $u['nome'], 'perfil' => $u['perfil'], 'trocarSenha' => (int) $u['trocar_senha'] === 1, 'permissoes' => permissoes_usuario($pdo, (string) $u['id'], (string) $u['perfil'])];
 }
 
 function exigir_login(PDO $pdo, bool $admin = false, bool $aceitaTrocaPendente = false): array {
