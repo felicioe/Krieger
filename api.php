@@ -93,6 +93,23 @@ $param = fn(string $k) => $_GET[$k] ?? $corpo[$k] ?? '';
 $a = is_string($param('a')) ? $param('a') : '';
 $s = is_string($param('s')) ? $param('s') : '';
 
+$permissaoStore = [
+  'condominios' => 'condominios',
+  'exercicios' => 'prestacao_contas',
+  'mensais' => 'relatorio_mensal',
+  'assembleias' => 'editais',
+  'atas' => 'atas',
+  'modelos' => 'modelos',
+  'importacoes' => 'importador',
+  'anexos_importacao' => 'prestacao_contas',
+  'decisoes_previsao' => 'previsao_orcamentaria',
+  'config' => 'escritorio',
+];
+if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permissaoStore[$s])) {
+  $acaoPermissao = $a === 'excluir' ? 'editar' : ($a === 'salvar' ? 'editar' : 'visualizar');
+  exigir_permissao($usuario, $permissaoStore[$s] . '.' . $acaoPermissao);
+}
+
 function validar_backup_dados(array $dados, PDO $pdo, bool $substituir, array $stores): array {
   if (($dados['app'] ?? '') !== 'krieger-condominios') {
     erro('Arquivo de backup inválido: identificador do aplicativo incorreto.');
