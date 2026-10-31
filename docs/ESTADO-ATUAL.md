@@ -1,5 +1,18 @@
 # Estado atual e passagem de contexto
 
+## Consulta Inteligente: PR #113 mesclado e publicado — 31/10/2026
+
+PR #113 (markdown no parecer + histórico recolhível, descrito abaixo) mesclado em `main`
+(`fa6a2d4`). Achado do Codex (P2) corrigido antes do merge: o componente `ol` customizado
+descartava a prop `start` do `react-markdown`, então uma lista que o Claude continua em um
+número diferente de 1 (ex. `5. Advertência` / `6. Multa`) voltava a exibir 1, 2 na tela —
+corrigido encaminhando `start` ao elemento `<ol>`. 195 testes, `tsc --noEmit` e `docs:check`
+seguiram limpos depois do ajuste.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`64ee386`) — auto-deploy
+confirmado ao vivo (`index.html` referencia `index-DYPOIelq.js`, hash exato do build desse
+commit; `auth.php?a=eu` responde 401, API normal). Branch de feature apagada após o merge.
+
 ## Consulta Inteligente: parecer em markdown de verdade + histórico recolhível — 31/10/2026
 
 Pedido do usuário: o parecer da IA saía como texto cru (negrito do Claude virava `**asteriscos**`
