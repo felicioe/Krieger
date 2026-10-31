@@ -31,7 +31,7 @@ import { Marca } from "./Marca";
 import { sair, useUsuario } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-type Item = { titulo: string; to: string; icone: LucideIcon; apenasAdmin?: boolean; perigoso?: boolean };
+type Item = { titulo: string; to: string; icone: LucideIcon; permissao?: string; apenasAdmin?: boolean; perigoso?: boolean };
 
 /**
  * Menu agrupado por rotina do escritório. Painel e Condomínios ficam soltos no topo (uso diário);
@@ -41,35 +41,35 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
   {
     titulo: null,
     itens: [
-      { titulo: "Painel", to: "/painel", icone: LayoutDashboard },
-      { titulo: "Condomínios", to: "/condominios", icone: Building2 },
+      { titulo: "Painel", to: "/painel", icone: LayoutDashboard, permissao: "painel.visualizar" },
+      { titulo: "Condomínios", to: "/condominios", icone: Building2, permissao: "condominios.visualizar" },
     ],
   },
   {
     titulo: "Financeiro",
     itens: [
-      { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet },
-      { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator },
-      { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows },
-      { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange },
-      { titulo: "Importador", to: "/importador", icone: FileUp },
+      { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet, permissao: "prestacao_contas.visualizar" },
+      { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator, permissao: "previsao_orcamentaria.visualizar" },
+      { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows, permissao: "previsto_realizado.visualizar" },
+      { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange, permissao: "relatorio_mensal.visualizar" },
+      { titulo: "Importador", to: "/importador", icone: FileUp, permissao: "importador.visualizar" },
     ],
   },
   {
     titulo: "Assembleias e documentos",
     itens: [
-      { titulo: "Editais", to: "/editais", icone: Megaphone },
-      { titulo: "Atas", to: "/atas", icone: ScrollText },
-      { titulo: "Modelos de edital", to: "/modelos", icone: FileText },
-      { titulo: "Drive de Documentos", to: "/drive-documentos", icone: FolderOpen },
-      { titulo: "Consulta Inteligente", to: "/consulta-documentos", icone: FileSearch },
+      { titulo: "Editais", to: "/editais", icone: Megaphone, permissao: "editais.visualizar" },
+      { titulo: "Atas", to: "/atas", icone: ScrollText, permissao: "atas.visualizar" },
+      { titulo: "Modelos de edital", to: "/modelos", icone: FileText, permissao: "modelos.visualizar" },
+      { titulo: "Drive de Documentos", to: "/drive-documentos", icone: FolderOpen, permissao: "drive_documentos.visualizar" },
+      { titulo: "Consulta Inteligente", to: "/consulta-documentos", icone: FileSearch, permissao: "consulta_documentos.visualizar" },
     ],
   },
   {
     titulo: "Administração",
     itens: [
-      { titulo: "Escritório", to: "/escritorio", icone: Briefcase },
-      { titulo: "Backup", to: "/backup", icone: DatabaseBackup },
+      { titulo: "Escritório", to: "/escritorio", icone: Briefcase, permissao: "escritorio.visualizar" },
+      { titulo: "Backup", to: "/backup", icone: DatabaseBackup, permissao: "backup.visualizar" },
       { titulo: "Limpeza de Dados", to: "/limpeza-dados", icone: Trash2, apenasAdmin: true, perigoso: true },
     ],
   },
@@ -158,7 +158,7 @@ export function ConteudoMenu({
               )}
               <ul aria-labelledby={g.titulo ? idTitulo : undefined}>
                 {g.itens
-                  .filter((item) => !item.apenasAdmin || usuario?.perfil === "admin")
+                  .filter((item) => (!item.apenasAdmin || usuario?.perfil === "admin") && (!item.permissao || usuario?.permissoes?.includes("*") || usuario?.permissoes?.includes(item.permissao)))
                   .map((item) => (
                     <li key={item.to}>
                       <ItemMenu item={item} aoNavegar={aoNavegar} />
