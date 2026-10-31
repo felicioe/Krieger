@@ -76,7 +76,11 @@ const COMPONENTES_PARECER: Components = {
   strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
   ul: ({ children }) => <ul className="mb-3 list-disc space-y-1 pl-5 text-sm marker:text-primary last:mb-0">{children}</ul>,
-  ol: ({ children }) => <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm marker:text-primary last:mb-0">{children}</ol>,
+  ol: ({ children, start }) => (
+    <ol start={start} className="mb-3 list-decimal space-y-1 pl-5 text-sm marker:text-primary last:mb-0">
+      {children}
+    </ol>
+  ),
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   blockquote: ({ children }) => (
     <blockquote className="my-3 border-l-2 border-primary/40 bg-primary/5 py-1.5 pl-3 text-sm italic text-muted-foreground">
