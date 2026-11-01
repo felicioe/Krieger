@@ -277,6 +277,7 @@ describe("Pré-cadastro de condomínio a partir do comparativo", () => {
   it("cadastra o condomínio com nome/CNPJ do PDF e endereço da Receita Federal, e já o seleciona", async () => {
     receita.dados = {
       razaoSocial: "CONDOMINIO TESTE NOVO",
+      situacaoCadastral: "ATIVA",
       logradouro: "RUA DAS FLORES",
       numero: "123",
       complemento: "",

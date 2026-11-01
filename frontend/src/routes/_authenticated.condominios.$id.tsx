@@ -15,6 +15,7 @@ import { SecaoRecolhivel } from "@/components/app/SecaoRecolhivel";
 import { contagem } from "@/components/app/textos";
 import { AjudaDePara, AjudaExpressoes } from "@/components/condominios/AjudaCadastro";
 import { Field } from "@/components/app/Field";
+import { CampoRubrica } from "@/components/app/CampoRubrica";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import {
@@ -28,10 +29,11 @@ import {
 } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves, itemQuery } from "@/lib/queries";
-import { mascaraCNPJ } from "@/lib/format";
+import { mascaraCNPJ, formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
+import { useUsuario } from "@/lib/auth";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
-import { consultarCnpjReceita, enderecoDaReceita } from "@/lib/receitaCnpj";
+import { consultarCnpjReceita, divergenciasCnpj, enderecoDaReceita } from "@/lib/receitaCnpj";
 import type { Arredondamento, Condominio, ModoRegra, VariacaoMetodo } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/condominios/$id")({
@@ -83,6 +85,17 @@ const MODO_REGRA: { valor: ModoRegra; rotulo: string }[] = [
 const SECOES = ["administracao", "seguro", "manutencoes", "documentos", "indices", "automacoes", "regras", "depara"] as const;
 type Secao = (typeof SECOES)[number];
 const todas = (v: boolean) => Object.fromEntries(SECOES.map((k) => [k, v])) as Record<Secao, boolean>;
+const TITULOS: Record<Secao, string> = {
+  administracao: "Administração",
+  seguro: "Seguro",
+  manutencoes: "Manutenções e vistorias",
+  documentos: "Documentos obrigatórios",
+  indices: "Índices de correção aplicados",
+  automacoes: "Histórico mensal e automações",
+  regras: "Regras do relatório",
+  depara: "De-para de rótulos",
+};
+const idSecao = (k: Secao) => `secao-${k}`;
 
 /** Resumo de uma linha para cada seção recolhível (só contagem do que está preenchido). */
 function resumos(c: Condominio): Record<Secao, string> {
@@ -120,6 +133,7 @@ function resumos(c: Condominio): Record<Secao, string> {
 function FormCondominio({ inicial }: { inicial: Condominio }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const usuario = useUsuario();
   const novo = !inicial.id;
   const [c, setC] = useState<Condominio>(inicial);
   const [erroNome, setErroNome] = useState<string | null>(null);
@@ -129,6 +143,10 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
   const abrir = (k: Secao) => (v: boolean) => setAbertas((a) => ({ ...a, [k]: v }));
   const todasAbertas = SECOES.every((k) => abertas[k]);
   const res = resumos(c);
+  const irPara = (k: Secao) => {
+    setAbertas((a) => ({ ...a, [k]: true }));
+    requestAnimationFrame(() => document.getElementById(idSecao(k))?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   const set = <K extends keyof Condominio>(campo: K, valor: Condominio[K]) =>
     setC((atual) => ({ ...atual, [campo]: valor }));
@@ -148,7 +166,12 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
         return;
       }
       set("enderecoEdital", enderecoDaReceita(dados));
-      toast.success("Endereço atualizado a partir da Receita Federal. Revise e salve.");
+      const avisos = divergenciasCnpj(dados, c.nome);
+      if (avisos.length) {
+        toast.warning(`Endereço atualizado. Atenção: ${avisos.join("; ")}. Revise antes de salvar.`);
+      } else {
+        toast.success("Endereço atualizado a partir da Receita Federal. Revise e salve.");
+      }
     } finally {
       setBuscandoReceita(false);
     }
@@ -185,7 +208,10 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
     }
     setErroNome(null);
     setC(r.valor);
-    salvar.mutate(r.valor);
+    // Só grava atualizadoEm/atualizadoPor no que é enviado pro servidor — não no estado local
+    // imediato: se o salvamento falhar, "Atualizado em" não deve passar a impressão de que
+    // salvou (o `onSuccess` abaixo é quem reflete o registro confirmado de volta na tela).
+    salvar.mutate({ ...r.valor, atualizadoEm: new Date().toISOString(), atualizadoPor: usuario?.nome || usuario?.login || "" });
   }
 
   const botaoSalvar = (
@@ -206,7 +232,20 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           </Button>
         }
         titulo={novo ? "Novo condomínio" : c.nome || "Condomínio"}
-        descricao={!novo && c.codigo ? `Código ${c.codigo}` : undefined}
+        descricao={
+          !novo && (c.codigo || c.atualizadoEm) ? (
+            <>
+              {c.codigo && `Código ${c.codigo}`}
+              {c.codigo && c.atualizadoEm && " · "}
+              {c.atualizadoEm && (
+                <>
+                  Atualizado em {formatDataHora(c.atualizadoEm)}
+                  {c.atualizadoPor && ` por ${c.atualizadoPor}`}
+                </>
+              )}
+            </>
+          ) : undefined
+        }
         acoes={
           <>
             {!novo && (
@@ -336,7 +375,16 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           </Button>
         </div>
 
+        <nav aria-label="Ir direto para uma seção" className="flex flex-wrap gap-1.5">
+          {SECOES.map((k) => (
+            <Button key={k} type="button" variant="ghost" size="sm" className="h-7 rounded-full px-3 text-xs" onClick={() => irPara(k)}>
+              {TITULOS[k]}
+            </Button>
+          ))}
+        </nav>
+
         <SecaoRecolhivel
+          id={idSecao("administracao")}
           titulo="Administração"
           descricao="Síndico, subsíndico, conselheiros e respectivos mandatos."
           resumo={res.administracao}
@@ -368,7 +416,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           />
         </SecaoRecolhivel>
 
-        <SecaoRecolhivel titulo="Seguro" resumo={res.seguro} aberta={abertas.seguro} aoMudar={abrir("seguro")}>
+        <SecaoRecolhivel id={idSecao("seguro")} titulo="Seguro" resumo={res.seguro} aberta={abertas.seguro} aoMudar={abrir("seguro")}>
           <div className="mb-5 grid gap-4 sm:grid-cols-3">
             <Field rotulo="Seguradora">
               <Input value={c.seguradora} onChange={(e) => set("seguradora", e.target.value)} />
@@ -401,7 +449,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           />
         </SecaoRecolhivel>
 
-        <SecaoRecolhivel titulo="Manutenções e vistorias" resumo={res.manutencoes} aberta={abertas.manutencoes} aoMudar={abrir("manutencoes")}>
+        <SecaoRecolhivel id={idSecao("manutencoes")} titulo="Manutenções e vistorias" resumo={res.manutencoes} aberta={abertas.manutencoes} aoMudar={abrir("manutencoes")}>
           <div className="grid gap-4 sm:grid-cols-4">
             <Field rotulo="Recarga de extintores (vence em)">
               <DataInput value={c.vigenciaExtintores} onChange={(v) => set("vigenciaExtintores", v)} />
@@ -428,6 +476,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
         </SecaoRecolhivel>
 
         <SecaoRecolhivel
+          id={idSecao("documentos")}
           titulo="Documentos obrigatórios"
           descricao="Lista independente das datas acima — status marcado manualmente (sem vencimento calculado), para itens como alvarás."
           resumo={res.documentos}
@@ -438,7 +487,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             itens={c.documentosObrigatorios}
             onChange={(v) => set("documentosObrigatorios", v)}
             novo={() => ({ nome: "", status: "pendente" as const, informacao: "", observacao: "", noRelatorio: true })}
-            colunas="grid-cols-1 @xs:grid-cols-2 @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
+            colunas="grid-cols-[minmax(0,1fr)_7rem] @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
             cabecalhos={["Item", "Status", "Vencimento / informação", "No relatório", "Observação"]}
             rotuloAdicionar="Adicionar item"
             vazio="Nenhum item cadastrado."
@@ -461,16 +510,18 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
                 <Input
                   aria-label="Vencimento ou informação"
                   placeholder="dd/mm/aaaa ou texto livre"
+                  className="col-span-2 @2xl:col-span-1"
                   value={d.informacao}
                   onChange={(e) => up({ informacao: e.target.value })}
                 />
-                <label className="flex items-center justify-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground @2xl:col-span-1 @2xl:justify-self-center">
                   <Switch checked={d.noRelatorio} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
                   <span className="@2xl:hidden">Incluir nas Considerações finais</span>
                 </label>
                 <Input
                   aria-label="Observação"
                   placeholder="opcional"
+                  className="col-span-2 @2xl:col-span-1"
                   value={d.observacao}
                   onChange={(e) => up({ observacao: e.target.value })}
                 />
@@ -479,7 +530,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           />
         </SecaoRecolhivel>
 
-        <SecaoRecolhivel titulo="Índices de correção aplicados" resumo={res.indices} aberta={abertas.indices} aoMudar={abrir("indices")}>
+        <SecaoRecolhivel id={idSecao("indices")} titulo="Índices de correção aplicados" resumo={res.indices} aberta={abertas.indices} aoMudar={abrir("indices")}>
           <RepeatableList
             itens={c.indices}
             onChange={(v) => set("indices", v)}
@@ -498,6 +549,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
         </SecaoRecolhivel>
 
         <SecaoRecolhivel
+          id={idSecao("automacoes")}
           titulo="Histórico mensal e automações"
           resumo={res.automacoes}
           aberta={abertas.automacoes}
@@ -545,6 +597,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
         </SecaoRecolhivel>
 
         <SecaoRecolhivel
+          id={idSecao("regras")}
           titulo="Regras do relatório"
           descricao="Quais despesas saem da base da previsão, quais contam como consumo de água e como arredondar o rateio."
           resumo={res.regras}
@@ -552,21 +605,33 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           aoMudar={abrir("regras")}
         >
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field
-              rotulo="Rubrica de dedução"
-              dica='Despesas (ou grupos) cujo nome contém este texto saem da base da previsão. Padrão: "fundo de caixa p/ obras".'
-            >
-              <Input className="font-mono text-xs" value={c.deducaoRegex} onChange={(e) => set("deducaoRegex", e.target.value)} />
-            </Field>
-            <Field rotulo="Rubrica de água" dica='Despesas somadas como consumo de água no relatório final. Padrão: "^[áa]gua".'>
-              <Input className="font-mono text-xs" value={c.aguaRubrica} onChange={(e) => set("aguaRubrica", e.target.value)} />
-            </Field>
-            <Field rotulo="Rubrica de energia elétrica" dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final.">
-              <Input className="font-mono text-xs" value={c.energiaRubrica} onChange={(e) => set("energiaRubrica", e.target.value)} />
-            </Field>
-            <Field rotulo="Rubrica de elevadores" dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final.">
-              <Input className="font-mono text-xs" value={c.elevadorRubrica} onChange={(e) => set("elevadorRubrica", e.target.value)} />
-            </Field>
+            <CampoRubrica
+              rotulo="Palavras-chave de dedução"
+              dica="Despesas (ou grupos) com uma dessas palavras no nome saem da base da previsão."
+              placeholder="ex.: fundo de caixa p/ obras"
+              value={c.deducaoRegex}
+              onChange={(v) => set("deducaoRegex", v)}
+            />
+            <CampoRubrica
+              rotulo="Palavras-chave de água"
+              dica="Despesas somadas como consumo de água no relatório final."
+              value={c.aguaRubrica}
+              onChange={(v) => set("aguaRubrica", v)}
+            />
+            <CampoRubrica
+              rotulo="Palavras-chave de energia elétrica"
+              dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final."
+              placeholder="ex.: energia, luz"
+              value={c.energiaRubrica}
+              onChange={(v) => set("energiaRubrica", v)}
+            />
+            <CampoRubrica
+              rotulo="Palavras-chave de elevadores"
+              dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final."
+              placeholder="ex.: elevador, ascensor"
+              value={c.elevadorRubrica}
+              onChange={(v) => set("elevadorRubrica", v)}
+            />
             <Field rotulo="Fornecedor dos elevadores" dica="Texto livre, impresso junto da linha Elevadores no relatório final.">
               <Input value={c.elevadorFornecedor} onChange={(e) => set("elevadorFornecedor", e.target.value)} />
             </Field>
@@ -580,6 +645,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
         </SecaoRecolhivel>
 
         <SecaoRecolhivel
+          id={idSecao("depara")}
           titulo="De-para de rótulos"
           descricao="Substitui rótulos do balancete pelos nomes usados no relatório."
           resumo={res.depara}

@@ -5,6 +5,8 @@
  */
 export interface DadosCnpjReceita {
   razaoSocial: string | null;
+  /** Campo novo (opcional): "descricao_situacao_cadastral" da Receita (ex.: "ATIVA", "BAIXADA"). */
+  situacaoCadastral: string | null;
   logradouro: string;
   numero: string;
   complemento: string;
@@ -18,6 +20,7 @@ function resposta(d: Record<string, unknown>): DadosCnpjReceita {
   const texto = (k: string) => (typeof d[k] === "string" ? (d[k] as string) : "");
   return {
     razaoSocial: typeof d["razao_social"] === "string" ? (d["razao_social"] as string) : null,
+    situacaoCadastral: typeof d["descricao_situacao_cadastral"] === "string" ? (d["descricao_situacao_cadastral"] as string) : null,
     logradouro: texto("logradouro"),
     numero: texto("numero"),
     complemento: texto("complemento"),
@@ -26,6 +29,33 @@ function resposta(d: Record<string, unknown>): DadosCnpjReceita {
     uf: texto("uf"),
     cep: texto("cep"),
   };
+}
+
+/** Sem acento, maiúsculo, espaços únicos — pra comparar nome do cadastro com razão social sem falso positivo por acentuação/caixa. */
+function normalizarNome(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Compara o cadastro atual com o que a Receita devolveu; cada item é um aviso pra mostrar ao
+ * usuário (nunca sobrescreve nome/situação sozinho — só o endereço é atualizado automaticamente).
+ */
+export function divergenciasCnpj(dados: DadosCnpjReceita, nomeAtual: string): string[] {
+  const avisos: string[] = [];
+  const nomeReceita = normalizarNome(dados.razaoSocial ?? "");
+  const nomeCadastro = normalizarNome(nomeAtual);
+  if (nomeReceita && nomeCadastro && !nomeReceita.includes(nomeCadastro) && !nomeCadastro.includes(nomeReceita)) {
+    avisos.push(`razão social na Receita é "${dados.razaoSocial}", diferente do nome cadastrado`);
+  }
+  if (dados.situacaoCadastral && !/^ativa$/i.test(dados.situacaoCadastral.trim())) {
+    avisos.push(`situação cadastral na Receita: ${dados.situacaoCadastral}`);
+  }
+  return avisos;
 }
 
 /** null quando o CNPJ não existe na base ou a consulta falha (rede, serviço fora do ar etc.). */

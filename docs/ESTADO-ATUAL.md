@@ -1,5 +1,53 @@
 # Estado atual e passagem de contexto
 
+## Auditoria UX da tela de cadastro do condomínio — correções aplicadas — 01/11/2026
+
+Pedido do responsável: auditoria de UX/acessibilidade/performance focada na tela de "atualizar
+informações dos condomínios" (`_authenticated.condominios.$id.tsx`), adaptando os pilares de
+SEO/CRO pro contexto de app interno (Krieger é `noindex`, atrás de login). A auditoria gerou uma
+tabela de prioridades; implementadas todas, da mais alta pra mais baixa, num único PR:
+
+- **Alto — regex exposta como campo de negócio**: os 4 campos de rubrica (água, energia,
+  elevador, dedução) deixaram de pedir regex do síndico/controller. Novo campo "digite uma
+  palavra e clique em adicionar" (`domain/rubricaAmigavel.ts` — `chipParaRegex`/
+  `adicionarPalavraChave`) soma a palavra como nova alternativa (`|`) à expressão já existente,
+  no mesmo estilo acento-insensível que os padrões do sistema já usam (`[áa]gua` etc.) — nunca
+  reinterpreta nem apaga o que já estava lá, mesmo em expressões técnicas complexas (com `.*`
+  etc.). A expressão em si continua editável, só que recolhida num `<details>` "Expressão técnica
+  (normalmente não precisa mexer aqui)". Componente `CampoRubrica`, usado no cadastro do
+  condomínio e no editor de Considerações finais do relatório.
+- **Alto — sem indicação de dado desatualizado**: `Condominio.atualizadoEm`/`atualizadoPor`,
+  gravados automaticamente a cada "Salvar", mostrados no cabeçalho da tela ("Atualizado em
+  dd/mm/aaaa hh:mm por Fulano").
+- **Médio — inconsistência Switch/Checkbox**: o toggle "Incluir no relatório" do checklist de
+  Documentos obrigatórios usava `Checkbox` no editor por relatório e `Switch` no cadastro do
+  condomínio — padronizado em `Switch` nos dois lugares.
+- **Médio — sem navegação interna no formulário longo**: índice de âncoras (`nav`) acima das 8
+  seções recolhíveis do cadastro — clicar abre a seção e rola até ela. `SecaoRecolhivel` ganhou
+  uma prop `id` opcional pra isso.
+- **Médio — "Atualizar pela Receita" só trazia endereço**: agora também compara razão social e
+  situação cadastral com o que está no cadastro (`lib/receitaCnpj.ts` — `divergenciasCnpj`) e
+  avisa em vez de só sobrescrever o endereço silenciosamente — nunca sobrescreve nome/situação
+  sozinho, só sinaliza.
+- **Baixo — "Alvará Estrutural" perdeu contexto ao virar nome genérico**: observação padrão
+  pré-preenchida explicando a origem (exigência municipal de Balneário Camboriú).
+- **Baixo — linha de Documentos obrigatórios pesada no mobile**: nome e status agora ficam lado a
+  lado mesmo em telas estreitas (grid 2 colunas desde o início, não só a partir de ~320px),
+  reduzindo a rolagem por item.
+- **Investigado, sem bug confirmado**: a auditoria de 21/10 registrava uma falha de teclado numa
+  ação de tabela nunca confirmada como corrigida. Testei com Playwright (Enter e Espaço) o botão
+  de status do checklist — a ativação por teclado funciona corretamente; o primeiro teste que
+  pareceu falhar foi um defeito do próprio script de teste (locator instável que mudava de alvo a
+  cada toggle), não um bug do sistema.
+
+Testado: `domain/rubricaAmigavel.test.ts` (novo), `domain/condominio.test.ts` (novo),
+`receitaCnpj.test.ts` ampliado, 201 testes de frontend e 192 de domínio, `tsc --noEmit` e
+`docs:check` limpos nos dois lados, `bundle:check` em 177.027 de 256.000 bytes. Validado
+visualmente com Playwright no servidor de dev local: timestamp aparecendo após salvar, índice de
+navegação abrindo a seção certa, palavra-chave "esgoto" virando `[eéèê]sg[oóòôõ]t[oóòôõ]` somada à
+rubrica de água existente, observação padrão do Alvará Estrutural, grid compacto em 360px sem
+estourar a largura, e o teste de teclado descrito acima.
+
 ## Permissões individuais — PR #112 — 01/11/2026
 
 Implementação na branch `feat/permissoes-granulares`, com matriz de 25 permissões,
