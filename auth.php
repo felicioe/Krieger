@@ -169,7 +169,12 @@ try {
       exigir_login($pdo, true);
       $chaves = $pdo->query('SELECT chave, modulo, tela, acao, descricao, ativo FROM kr_permissoes WHERE ativo = 1 ORDER BY modulo, tela, acao')->fetchAll();
       $st = $pdo->query('SELECT usuario_id, permissao_chave, efeito FROM kr_usuario_permissoes')->fetchAll();
-      json_ok(['catalogo' => $chaves, 'usuarios' => $st]);
+      $excecoes = array_map(static fn(array $r): array => [
+        'usuarioId' => $r['usuario_id'],
+        'permissaoChave' => $r['permissao_chave'],
+        'efeito' => $r['efeito'],
+      ], $st);
+      json_ok(['catalogo' => $chaves, 'excecoes' => $excecoes]);
     }
 
     case 'permissao_salvar': {

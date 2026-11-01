@@ -38,3 +38,10 @@ Botões que levam a uma tela devem verificar a permissão da tela de destino. Se
 ## Migração
 
 Aplicar `migrations/20261031_permissoes_granulares.sql` após backup. O script não remove colunas nem altera usuários atuais. A implementação do middleware e da administração de permissões será feita em PRs posteriores.
+# Verificação da migração em produção
+
+Em 01/11/2026, o responsável informou ter executado a migração pelo phpMyAdmin
+e confirmou 25 registros em `kr_permissoes`. Os avisos de chave duplicada no
+segundo `INSERT IGNORE` do perfil são esperados e não duplicam registros.
+Essa contagem confirma o catálogo; ainda exige validação funcional das permissões.
+
