@@ -2,6 +2,11 @@ import type { Condominio, DocumentoObrigatorio } from "./types";
 
 /** Itens padrão do checklist "Documentos obrigatórios" de um condomínio novo. */
 export function documentosObrigatoriosPadrao(): DocumentoObrigatorio[] {
+  const observacoes: Record<string, string> = {
+    // Nome genérico pra caber em qualquer condomínio; a observação guarda a origem (exigência
+    // municipal de Balneário Camboriú), que não cabe mais no nome.
+    "Alvará Estrutural": "Exigência municipal (Balneário Camboriú) — ajuste o nome/observação se o condomínio for de outra cidade.",
+  };
   return [
     "Extintor",
     "Seguro",
@@ -10,7 +15,7 @@ export function documentosObrigatoriosPadrao(): DocumentoObrigatorio[] {
     "Alvará de Bombeiros",
     "Alvará Estrutural",
     "Elevador",
-  ].map((nome) => ({ nome, status: "pendente", informacao: "", observacao: "", noRelatorio: true }));
+  ].map((nome) => ({ nome, status: "pendente", informacao: "", observacao: observacoes[nome] ?? "", noRelatorio: true }));
 }
 
 /** Valores padrão de um condomínio novo. */

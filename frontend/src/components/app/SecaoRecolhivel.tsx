@@ -17,6 +17,7 @@ export function SecaoRecolhivel({
   aoMudar,
   children,
   className,
+  id,
 }: {
   titulo: string;
   descricao?: ReactNode;
@@ -26,10 +27,12 @@ export function SecaoRecolhivel({
   aoMudar: (aberta: boolean) => void;
   children: ReactNode;
   className?: string;
+  /** Âncora pra rolar/linkar direto até a seção (ex.: índice de navegação). */
+  id?: string;
 }) {
   return (
     <Collapsible open={aberta} onOpenChange={aoMudar} asChild>
-      <section className={cn("min-w-0 rounded-md border bg-card text-card-foreground shadow-sm", className)}>
+      <section id={id} className={cn("min-w-0 scroll-mt-20 rounded-md border bg-card text-card-foreground shadow-sm", className)}>
         <h2 className="m-0">
           <CollapsibleTrigger
             className={cn(

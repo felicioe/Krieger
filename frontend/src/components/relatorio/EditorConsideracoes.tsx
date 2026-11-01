@@ -4,11 +4,12 @@ import { Check, FileUp, Loader2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
+import { CampoRubrica } from "@/components/app/CampoRubrica";
 import { cn } from "@/lib/utils";
 import { DataInput, DinheiroInput, InteiroInput, MesAnoInput } from "@/components/app/inputs";
 import { formatBRL } from "@/lib/format";
@@ -195,7 +196,7 @@ export function EditorConsideracoes({
           itens={c.documentosObrigatorios}
           onChange={(v) => set("documentosObrigatorios", v)}
           novo={() => ({ nome: "", status: "pendente" as const, informacao: "", observacao: "", noRelatorio: true })}
-          colunas="grid-cols-1 @xs:grid-cols-2 @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
+          colunas="grid-cols-[minmax(0,1fr)_7rem] @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
           cabecalhos={["Item", "Status", "Vencimento / informação", "No relatório", "Observação"]}
           rotuloAdicionar="Adicionar item"
           vazio="Nenhum item cadastrado."
@@ -220,17 +221,19 @@ export function EditorConsideracoes({
               <Input
                 aria-label="Vencimento ou informação"
                 placeholder="dd/mm/aaaa ou texto livre"
+                className="col-span-2 @2xl:col-span-1"
                 value={d.informacao}
                 onChange={(e) => up({ informacao: e.target.value })}
               />
-              <label className="flex items-center justify-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                <Checkbox checked={d.noRelatorio} onCheckedChange={(v) => up({ noRelatorio: v === true })} aria-label="Incluir no relatório" />
+              <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground @2xl:col-span-1 @2xl:justify-self-center">
+                <Switch checked={d.noRelatorio} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
                 <span className="@2xl:hidden">Incluir nas Considerações finais</span>
               </label>
               <Textarea
                 aria-label="Observação"
                 placeholder="opcional"
                 rows={1}
+                className="col-span-2 @2xl:col-span-1"
                 value={d.observacao}
                 onChange={(e) => up({ observacao: e.target.value })}
               />
@@ -263,9 +266,12 @@ export function EditorConsideracoes({
             <DinheiroInput value={num(c.contasPagar)} onChange={(v) => set("contasPagar", v)} />
           </Field>
           <div />
-          <Field rotulo="Rubrica de água" dica="Expressão que identifica a despesa de água no demonstrativo.">
-            <Input value={c.aguaRubrica} onChange={(e) => set("aguaRubrica", e.target.value)} className="font-mono text-xs" />
-          </Field>
+          <CampoRubrica
+            rotulo="Palavras-chave de água"
+            dica="Despesas do demonstrativo com uma dessas palavras no nome."
+            value={c.aguaRubrica}
+            onChange={(v) => set("aguaRubrica", v)}
+          />
           <Field
             rotulo="Consumo de água (manual)"
             dica={
@@ -279,9 +285,13 @@ export function EditorConsideracoes({
             <DinheiroInput value={c.consumoAguaManual ?? null} onChange={(v) => set("consumoAguaManual", v)} />
           </Field>
           <div />
-          <Field rotulo="Rubrica de energia elétrica" dica="Mesmo mecanismo da água, para a seção Consumo de serviços.">
-            <Input value={c.energiaRubrica} onChange={(e) => set("energiaRubrica", e.target.value)} className="font-mono text-xs" />
-          </Field>
+          <CampoRubrica
+            rotulo="Palavras-chave de energia elétrica"
+            dica="Mesmo mecanismo da água, para a seção Consumo de serviços."
+            placeholder="ex.: energia, luz"
+            value={c.energiaRubrica}
+            onChange={(v) => set("energiaRubrica", v)}
+          />
           <Field
             rotulo="Consumo de energia (manual)"
             dica={
@@ -295,9 +305,13 @@ export function EditorConsideracoes({
             <DinheiroInput value={c.consumoEnergiaManual ?? null} onChange={(v) => set("consumoEnergiaManual", v)} />
           </Field>
           <div />
-          <Field rotulo="Rubrica de elevadores" dica="Mesmo mecanismo da água, para a seção Consumo de serviços.">
-            <Input value={c.elevadorRubrica} onChange={(e) => set("elevadorRubrica", e.target.value)} className="font-mono text-xs" />
-          </Field>
+          <CampoRubrica
+            rotulo="Palavras-chave de elevadores"
+            dica="Mesmo mecanismo da água, para a seção Consumo de serviços."
+            placeholder="ex.: elevador, ascensor"
+            value={c.elevadorRubrica}
+            onChange={(v) => set("elevadorRubrica", v)}
+          />
           <Field
             rotulo="Consumo de elevadores (manual)"
             dica={

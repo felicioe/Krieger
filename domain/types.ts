@@ -155,6 +155,10 @@ export interface Condominio extends ComId {
    * visível (lista de condomínios e cadastro) até alguém revisar e dispensar manualmente.
    */
   alertaCadastro?: string | null;
+  /** Campo novo (opcional): ISO 8601 do último salvamento do cadastro — mostrado na tela pra indicar se os dados estão em dia. */
+  atualizadoEm?: string | null;
+  /** Campo novo (opcional): nome de quem fez o último salvamento. */
+  atualizadoPor?: string;
 }
 
 // ---------- Demonstrativo ----------
