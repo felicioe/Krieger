@@ -213,6 +213,13 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
 }
 
 try {
+  // Backups integrais não podem contornar restrições individuais de leitura.
+  if (in_array($a, ['exportar', 'backup_criar', 'backup_listar', 'backup_baixar'], true)) {
+    exigir_permissao($usuario, 'backup.visualizar');
+    foreach (array_unique(array_values($permissaoStore)) as $modulo) {
+      exigir_permissao($usuario, $modulo . '.visualizar');
+    }
+  }
   if ($a === 'confirmar_importacao') {
     exigir_permissao($usuario, 'importador.editar');
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST para confirmar a importação.', 405);
