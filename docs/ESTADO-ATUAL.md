@@ -1,5 +1,26 @@
 # Estado atual e passagem de contexto
 
+## Auditoria UX do cadastro de condomínio: PR #116 mesclado e publicado — 01/11/2026
+
+PR #116 (descrito abaixo) mesclado em `main` (`c8691e1`). Dois achados reais do Codex (P2)
+corrigidos antes do merge: (1) `adicionarPalavraChave` não escapava a expressão existente quando
+ela não era regex válida sozinha (fallback literal de `expressaoDeducao`) — somar uma palavra-chave
+a uma rubrica assim quebrava o match do texto original e da palavra nova; corrigido aplicando o
+mesmo escape antes de concatenar, com teste de regressão. (2) o timestamp "Atualizado em" entrava
+no estado exibido antes de confirmar o salvamento — se a gravação falhasse, a tela mentia que tinha
+salvo; corrigido: o timestamp só vai no payload da mutação, e só aparece na tela via `onSuccess`.
+
+Essa branch também precisou importar `main` no meio do caminho: o PR #112 (permissões
+granulares, de outra sessão) mesclou enquanto este PR estava aberto, mudando
+`condominios.$id.tsx` e `domain/types.ts` — único conflito real foi em `docs/ESTADO-ATUAL.md`
+(as duas entradas no topo), resolvido mantendo as duas. Revalidado por completo depois do merge
+(raiz + frontend + sintaxe PHP de todos os arquivos, incluindo os novos de permissões).
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`f0a948d`) — auto-deploy
+confirmado ao vivo (`index.html` referencia `index-CU3a0cMd.js`, hash exato do build desse
+commit; `auth.php?a=eu` responde 401, API normal; `lib_permissoes.php` e os demais arquivos PHP
+novos do PR #112 confirmados presentes no pacote). Branch de feature apagada após o merge.
+
 ## Auditoria UX da tela de cadastro do condomínio — correções aplicadas — 01/11/2026
 
 Pedido do responsável: auditoria de UX/acessibilidade/performance focada na tela de "atualizar
