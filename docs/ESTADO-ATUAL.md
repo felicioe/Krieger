@@ -1,5 +1,17 @@
 # Estado atual e passagem de contexto
 
+## Permissões individuais — PR #112 — 01/11/2026
+
+Implementação na branch `feat/permissoes-granulares`, com matriz de 25 permissões,
+exceções individuais (permitir/negar/padrão), validação no PHP e na navegação,
+links internos ocultos e ações de edição condicionadas às permissões. Admin mantém
+acesso total; funções administrativas continuam exclusivas de admin.
+Migração aplicada pelo responsável no phpMyAdmin, com contagem de 25 confirmada.
+Leituras compartilhadas entre telas são documentadas em PERMISSOES-GRANULARES.md.
+CI inclui teste MySQL para migração repetida, negação, concessão e revogação.
+Release proposto 1.01. Publicação ainda depende do CI final e integração em main;
+não confundir os commits de desenvolvimento com evidência de produção.
+
 ## Documentos obrigatórios + Consumo de serviços nas Considerações finais — 01/11/2026
 
 Dois mockups do responsável (Artifact, nunca implementados antes) viraram código nesta sessão,

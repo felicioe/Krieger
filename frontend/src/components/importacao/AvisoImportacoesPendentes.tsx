@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
 import { useQuery } from "@tanstack/react-query";
 import { FileClock } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";

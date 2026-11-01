@@ -11,7 +11,7 @@ import type {
   Usuario,
   UsuarioAdmin,
 } from "@/domain/types";
-import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza } from "./apiTypes";
+import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type PermissaoCatalogo, type PermissaoExcecao } from "./apiTypes";
 
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
   let resp: Response;
@@ -148,6 +148,13 @@ export const realApi: ApiAdapter = {
     },
     async usuarioExcluir(id: string) {
       await post("auth.php", { a: "usuario_excluir", id });
+    },
+    async permissoes() {
+      const r = await req<{ catalogo?: PermissaoCatalogo[]; excecoes?: PermissaoExcecao[] }>("auth.php?a=permissoes");
+      return { catalogo: r.catalogo ?? [], excecoes: r.excecoes ?? [] };
+    },
+    async permissaoSalvar(usuarioId, chave, efeito) {
+      await post("auth.php", { a: "permissao_salvar", usuarioId, chave, efeito });
     },
   },
   documentos: {

@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useState, type FormEvent } from "react";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { Loader2, Pencil, Plus, Shield, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
@@ -38,6 +45,7 @@ function Usuarios() {
   const { data } = useSuspenseQuery(usuariosQuery());
   const [editando, setEditando] = useState<UsuarioAdmin | "novo" | null>(null);
   const [excluindo, setExcluindo] = useState<UsuarioAdmin | null>(null);
+  const [permissoesUsuario, setPermissoesUsuario] = useState<UsuarioAdmin | null>(null);
 
   const excluir = useMutation({
     mutationFn: (id: string) => api.auth.usuarioExcluir(id),
@@ -68,7 +76,9 @@ function Usuarios() {
             render: (u: UsuarioAdmin) => (
               <span className="font-mono text-sm">
                 {u.login}
-                {u.id === eu?.id && <span className="ml-2 font-sans text-xs text-muted-foreground">(você)</span>}
+                {u.id === eu?.id && (
+                  <span className="ml-2 font-sans text-xs text-muted-foreground">(você)</span>
+                )}
               </span>
             ),
           },
@@ -83,7 +93,12 @@ function Usuarios() {
               </Badge>
             ),
           },
-          { chave: "ultimoAcesso", titulo: "Último acesso", className: "num whitespace-nowrap", render: (u) => formatDataHora(u.ultimoAcesso) },
+          {
+            chave: "ultimoAcesso",
+            titulo: "Último acesso",
+            className: "num whitespace-nowrap",
+            render: (u) => formatDataHora(u.ultimoAcesso),
+          },
           {
             chave: "acoes",
             titulo: "",
@@ -91,8 +106,21 @@ function Usuarios() {
             className: "w-24",
             render: (u) => (
               <div className="flex justify-end gap-1">
-                <Button variant="ghost" size="icon" aria-label={`Editar ${u.login}`} onClick={() => setEditando(u)}>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Editar ${u.login}`}
+                  onClick={() => setEditando(u)}
+                >
                   <Pencil />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Permissões de ${u.login}`}
+                  onClick={() => setPermissoesUsuario(u)}
+                >
+                  <Shield />
                 </Button>
                 <Button
                   variant="ghost"
@@ -118,6 +146,9 @@ function Usuarios() {
           aoFechar={() => setEditando(null)}
         />
       )}
+      {permissoesUsuario && (
+        <DialogPermissoes usuario={permissoesUsuario} aoFechar={() => setPermissoesUsuario(null)} />
+      )}
 
       <ConfirmDialog
         aberto={!!excluindo}
@@ -126,7 +157,8 @@ function Usuarios() {
         descricao={
           excluindo && (
             <>
-              O usuário <strong>{excluindo.login}</strong> ({excluindo.nome}) perderá o acesso ao sistema.
+              O usuário <strong>{excluindo.login}</strong> ({excluindo.nome}) perderá o acesso ao
+              sistema.
             </>
           )
         }
@@ -138,7 +170,120 @@ function Usuarios() {
   );
 }
 
-function DialogUsuario({ usuario, aoFechar }: { usuario: UsuarioAdmin | null; aoFechar: () => void }) {
+function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFechar: () => void }) {
+  const [estado, setEstado] = useState<Record<string, "permitir" | "negar" | "remover">>({});
+  const [catalogo, setCatalogo] = useState<
+    Array<{ chave: string; modulo: string; tela: string; acao: string; descricao?: string | null }>
+  >([]);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState<string | null>(null);
+  useEffect(() => {
+    api.auth
+      .permissoes()
+      .then((r) => {
+        setCatalogo(r.catalogo);
+        const mapa: Record<string, "permitir" | "negar" | "remover"> = {};
+        r.excecoes
+          .filter((e) => e.usuarioId === usuario.id)
+          .forEach((e) => {
+            mapa[e.permissaoChave] = e.efeito;
+          });
+        setEstado(mapa);
+      })
+      .catch((e) => toast.error(mensagemErro(e)))
+      .finally(() => setCarregando(false));
+  }, [usuario.id]);
+  async function salvar(chave: string, efeito: "permitir" | "negar" | "remover") {
+    setSalvando(chave);
+    try {
+      await api.auth.permissaoSalvar(usuario.id, chave, efeito);
+      setEstado((s) => ({ ...s, [chave]: efeito }));
+      toast.success("Permissão atualizada.");
+    } catch (e) {
+      toast.error(mensagemErro(e));
+    } finally {
+      setSalvando(null);
+    }
+  }
+  return (
+    <Dialog open onOpenChange={(v) => !v && aoFechar()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Permissões de {usuario.nome}</DialogTitle>
+          <DialogDescription>
+            {usuario.perfil === 'admin' ? 'Administradores possuem acesso total. Altere o perfil para Usuário para restringir acessos.' : 'Defina exceções individuais. Sem exceção, vale o perfil do usuário.'}
+          </DialogDescription>
+        </DialogHeader>
+        {carregando ? (
+          <Loader2 className="animate-spin" />
+        ) : catalogo.length === 0 ? (
+          <Alert>
+            <AlertDescription>
+              O catálogo ainda não está disponível neste ambiente.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="grid gap-2">
+            {catalogo.map((p) => (
+              <div
+                key={p.chave}
+                className="flex flex-col items-start justify-between gap-3 rounded border p-2 sm:flex-row sm:items-center"
+              >
+                <div>
+                  <div className="font-medium">
+                    {p.tela} · {p.acao}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {p.modulo} · {p.chave}
+                  </div>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={estado[p.chave] === "permitir" ? "default" : "outline"}
+                    disabled={!!salvando || usuario.perfil === 'admin'}
+                    onClick={() => salvar(p.chave, "permitir")}
+                  >
+                    Permitir
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={estado[p.chave] === "negar" ? "destructive" : "outline"}
+                    disabled={!!salvando || usuario.perfil === 'admin'}
+                    onClick={() => salvar(p.chave, "negar")}
+                  >
+                    Negar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={!!salvando || usuario.perfil === 'admin' || !estado[p.chave] || estado[p.chave] === 'remover'}
+                    onClick={() => salvar(p.chave, "remover")}
+                  >
+                    Padrão
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={aoFechar}>
+            Fechar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DialogUsuario({
+  usuario,
+  aoFechar,
+}: {
+  usuario: UsuarioAdmin | null;
+  aoFechar: () => void;
+}) {
   const queryClient = useQueryClient();
   const novo = !usuario;
   const [login, setLogin] = useState(usuario?.login ?? "");
@@ -202,7 +347,11 @@ function DialogUsuario({ usuario, aoFechar }: { usuario: UsuarioAdmin | null; ao
           <Field
             rotulo="Login"
             obrigatorio={novo}
-            dica={novo ? "3 a 40 caracteres: letras minúsculas, números, ponto, hífen ou sublinhado. Não pode ser alterado depois." : "O login não pode ser alterado."}
+            dica={
+              novo
+                ? "3 a 40 caracteres: letras minúsculas, números, ponto, hífen ou sublinhado. Não pode ser alterado depois."
+                : "O login não pode ser alterado."
+            }
           >
             <Input
               value={login}
@@ -238,7 +387,12 @@ function DialogUsuario({ usuario, aoFechar }: { usuario: UsuarioAdmin | null; ao
             obrigatorio={novo}
             dica={`Mínimo de ${SENHA_MINIMA} caracteres.`}
           >
-            <Input type="password" autoComplete="new-password" value={senha} onChange={(e) => setSenha(e.target.value)} />
+            <Input
+              type="password"
+              autoComplete="new-password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+            />
           </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={aoFechar} disabled={ocupado}>

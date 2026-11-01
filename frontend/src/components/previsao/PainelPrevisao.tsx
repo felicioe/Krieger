@@ -1,5 +1,5 @@
 import { Fragment, useId, useRef, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
 import { SinalToggle } from "./SinalToggle";
 import { AcaoAviso, QuadroAvisos, SemValor, SituacaoResultado, irPara, tipoAviso, type ItemAviso } from "./AvisosPrevisao";
 import { Input } from "@/components/ui/input";

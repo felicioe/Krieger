@@ -12,6 +12,15 @@ import { novaAtaDeAssembleia } from "@/domain/ata";
 import { normalizarAssembleia } from "@/domain/edital";
 import { dataParaBR, dataParaISO } from "./format";
 import { novoId } from "./id";
+import { rotasPermissoes } from './permissoes';
+import type { PermissaoExcecao, PermissaoCatalogo } from './apiTypes';
+
+const CHAVE_PERMISSOES = 'krieger-mock-permissoes-v1';
+const MODULOS_EDITAVEIS = ['condominios', 'prestacao_contas', 'previsao_orcamentaria', 'relatorio_mensal', 'importador', 'editais', 'atas', 'modelos', 'drive_documentos', 'escritorio'];
+function catalogoPermissoes(): PermissaoCatalogo[] {
+  const modulos = [...new Set(rotasPermissoes.map(([, m]) => m))];
+  return modulos.flatMap((m) => ['visualizar', ...(MODULOS_EDITAVEIS.includes(m) ? ['editar'] : [])].map((acao) => ({ chave: m + '.' + acao, modulo: m, tela: m, acao })));
+}
 import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type Registro } from "./apiTypes";
 
 const CHAVE_DADOS = "krieger-mock-dados-v1";
@@ -351,6 +360,7 @@ function usuariosSemente(): UsuarioMock[] {
       login: "admin",
       nome: "Administrador",
       perfil: "admin",
+      permissoes: ['*'],
       ativo: true,
       trocarSenha: false,
       criadoEm: new Date().toISOString(),
@@ -487,7 +497,9 @@ function sessao(): Usuario {
   const u = id ? usuarios().find((x) => x.id === id && x.ativo) : undefined;
   if (!u) throw new ApiError("Sessão expirada. Entre novamente.", 401);
   const { id: uid, login, nome, perfil, trocarSenha } = u;
-  return { id: uid, login, nome, perfil, trocarSenha };
+  const excecoes = ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []).filter((p) => p.usuarioId === uid);
+  const permissoes = catalogoPermissoes().map((p) => p.chave).filter((chave) => !excecoes.some((p) => p.permissaoChave === chave && p.efeito === 'negar'));
+  return { id: uid, login, nome, perfil, trocarSenha, permissoes: perfil === 'admin' ? ['*'] : permissoes };
 }
 function exigirAdmin() {
   const u = sessao();
@@ -821,6 +833,7 @@ export const mockApi: ApiAdapter = {
           login,
           nome,
           perfil: dadosU.perfil,
+          permissoes: ['*'],
           ativo: dadosU.ativo,
           trocarSenha: true,
           criadoEm: new Date().toISOString(),
@@ -860,6 +873,20 @@ export const mockApi: ApiAdapter = {
         throw new ApiError("Não é possível excluir o último administrador.", 400);
       }
       gravar(CHAVE_USUARIOS, lista.filter((x) => x.id !== id));
+    },
+    async permissoes() {
+      await espera();
+      exigirAdmin();
+      return { catalogo: catalogoPermissoes(), excecoes: ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []) };
+    },
+    async permissaoSalvar(usuarioId, chave, efeito) {
+      await espera();
+      exigirAdmin();
+      if (!usuarios().some((u) => u.id === usuarioId)) throw new ApiError('Usuário não encontrado.', 404);
+      if (!catalogoPermissoes().some((p) => p.chave === chave)) throw new ApiError('Permissão não encontrada.', 404);
+      const itens = ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []).filter((p) => p.usuarioId !== usuarioId || p.permissaoChave !== chave);
+      if (efeito !== 'remover') itens.push({ usuarioId, permissaoChave: chave, efeito });
+      gravar(CHAVE_PERMISSOES, itens);
     },
   },
   documentos: {

@@ -73,7 +73,7 @@ try {
       $_SESSION['uid'] = $u['id'];
       $_SESSION['ultimo'] = time();
       $pdo->prepare('UPDATE kr_usuarios SET ultimo_acesso = ? WHERE id = ?')->execute([$agora(), $u['id']]);
-      json_ok(['usuario' => ['id' => $u['id'], 'login' => $u['login'], 'nome' => $u['nome'], 'perfil' => $u['perfil'], 'trocarSenha' => (int) $u['trocar_senha'] === 1]]);
+      json_ok(['usuario' => ['id' => $u['id'], 'login' => $u['login'], 'nome' => $u['nome'], 'perfil' => $u['perfil'], 'trocarSenha' => (int) $u['trocar_senha'] === 1, 'permissoes' => permissoes_usuario($pdo, (string) $u['id'], (string) $u['perfil'])]]);
     }
 
     case 'sair': {
@@ -163,6 +163,39 @@ try {
         json_erro('É necessário manter ao menos um administrador ativo.', 409);
       $pdo->prepare('DELETE FROM kr_usuarios WHERE id = ?')->execute([$id]);
       json_ok(['ok' => true]);
+    }
+
+    case 'permissoes': {
+      exigir_login($pdo, true);
+      $chaves = $pdo->query('SELECT chave, modulo, tela, acao, descricao, ativo FROM kr_permissoes WHERE ativo = 1 ORDER BY modulo, tela, acao')->fetchAll();
+      $st = $pdo->query('SELECT usuario_id, permissao_chave, efeito FROM kr_usuario_permissoes')->fetchAll();
+      $excecoes = array_map(static fn(array $r): array => [
+        'usuarioId' => $r['usuario_id'],
+        'permissaoChave' => $r['permissao_chave'],
+        'efeito' => $r['efeito'],
+      ], $st);
+      json_ok(['catalogo' => $chaves, 'excecoes' => $excecoes]);
+    }
+
+    case 'permissao_salvar': {
+      exigir_login($pdo, true);
+      $usuarioId = $txt('usuarioId', 32);
+      $chave = $txt('chave', 120);
+      $efeito = $txt('efeito', 10);
+      if ($usuarioId === '' || $chave === '') json_erro('Usuário e permissão são obrigatórios.');
+      if (!in_array($efeito, ['permitir', 'negar', 'remover'], true)) json_erro('Efeito inválido.');
+      $st = $pdo->prepare('SELECT id FROM kr_usuarios WHERE id = ?');
+      $st->execute([$usuarioId]);
+      if (!$st->fetchColumn()) json_erro('Usuário não encontrado.', 404);
+      $st = $pdo->prepare('SELECT chave FROM kr_permissoes WHERE chave = ? AND ativo = 1');
+      $st->execute([$chave]);
+      if (!$st->fetchColumn()) json_erro('Permissão não encontrada.', 404);
+      if ($efeito === 'remover') {
+        $pdo->prepare('DELETE FROM kr_usuario_permissoes WHERE usuario_id = ? AND permissao_chave = ?')->execute([$usuarioId, $chave]);
+      } else {
+        $pdo->prepare('REPLACE INTO kr_usuario_permissoes (usuario_id, permissao_chave, efeito) VALUES (?, ?, ?)')->execute([$usuarioId, $chave, $efeito]);
+      }
+      json_ok(['ok' => true, 'usuarioId' => $usuarioId, 'chave' => $chave, 'efeito' => $efeito]);
     }
 
     default:

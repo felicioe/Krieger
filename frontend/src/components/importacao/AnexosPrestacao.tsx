@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Download, FileUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";

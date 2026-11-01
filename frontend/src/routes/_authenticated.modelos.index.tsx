@@ -44,7 +44,7 @@ function ListaModelos() {
         titulo="Modelos de edital"
         descricao="Blocos de texto do edital e pauta padrão da assembleia ordinária."
         acoes={
-          <Button onClick={() => setNovo(true)}>
+          <Button permissao="modelos.editar" onClick={() => setNovo(true)}>
             <Plus /> Novo modelo
           </Button>
         }

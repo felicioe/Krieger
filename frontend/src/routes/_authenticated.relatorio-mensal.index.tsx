@@ -1,4 +1,5 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { FileUp, Plus } from "lucide-react";
@@ -89,7 +90,7 @@ function ListaMensais() {
                 <FileUp /> Importar PDF
               </Link>
             </Button>
-            <Button onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
+            <Button permissao="relatorio_mensal.editar" onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
               <Plus /> Novo relatório mensal
             </Button>
           </>

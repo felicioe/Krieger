@@ -1,4 +1,5 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState, type FormEvent } from "react";
 import { FileUp, Loader2, Plus, Search } from "lucide-react";
@@ -84,7 +85,7 @@ function ListaExercicios() {
                 <FileUp /> Importar PDF
               </Link>
             </Button>
-            <Button onClick={() => setNovoAberto(true)} disabled={condominios.length === 0}>
+            <Button permissao="prestacao_contas.editar" onClick={() => setNovoAberto(true)} disabled={condominios.length === 0}>
               <Plus /> Nova prestação de contas
             </Button>
           </>
@@ -227,7 +228,7 @@ function DialogoNovo({
           <Button variant="outline" type="button" onClick={() => aoMudar(false)} disabled={criar.isPending}>
             Cancelar
           </Button>
-          <Button type="submit" form="form-novo-exercicio" disabled={criar.isPending}>
+          <Button permissao="prestacao_contas.editar" type="submit" form="form-novo-exercicio" disabled={criar.isPending}>
             {criar.isPending && <Loader2 className="animate-spin" />}
             Criar
           </Button>
