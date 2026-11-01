@@ -1,0 +1,1 @@
+var e={versaoAtual:`1.01`,versoes:[{versao:`1.01`,titulo:`Permissões de acesso por usuário`,alteracoes:[`Administradores podem definir quais telas e ações cada usuário acessa.`,`Menus e links internos respeitam as permissões individuais.`]},{versao:`1.0`,titulo:`Implantação do sistema`,alteracoes:[`Implantação inicial do Sistema Krieger.`]}]};export{e as t};

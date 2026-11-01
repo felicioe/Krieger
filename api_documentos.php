@@ -26,6 +26,16 @@ $corpo = is_array($corpo) ? $corpo : [];
 $param = fn(string $k) => $_GET[$k] ?? $corpo[$k] ?? '';
 $a = is_string($param('a')) ? $param('a') : '';
 
+if (in_array($a, ['documentos_registrar', 'documento_atualizar', 'documento_excluir'], true)) {
+  exigir_permissao($usuario, 'drive_documentos.editar');
+} elseif (str_starts_with($a, 'consulta_')) {
+  exigir_permissao($usuario, 'consulta_documentos.visualizar');
+} elseif (in_array($a, ['documentos_listar', 'documentos_resumo', 'documento_conteudo'], true)) {
+  if (!tem_permissao($usuario, 'drive_documentos.visualizar') && !tem_permissao($usuario, 'consulta_documentos.visualizar')) {
+    json_erro('Você não tem permissão para consultar documentos.', 403);
+  }
+}
+
 try {
   // Manifesto para o agente local de indexação
   if ($a === 'documentos_manifesto') {

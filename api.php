@@ -93,6 +93,42 @@ $param = fn(string $k) => $_GET[$k] ?? $corpo[$k] ?? '';
 $a = is_string($param('a')) ? $param('a') : '';
 $s = is_string($param('s')) ? $param('s') : '';
 
+$permissaoStore = [
+  'condominios' => 'condominios',
+  'exercicios' => 'prestacao_contas',
+  'mensais' => 'relatorio_mensal',
+  'assembleias' => 'editais',
+  'atas' => 'atas',
+  'modelos' => 'modelos',
+  'importacoes' => 'importador',
+  'anexos_importacao' => 'prestacao_contas',
+  'decisoes_previsao' => 'previsao_orcamentaria',
+  'config' => 'escritorio',
+];
+if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permissaoStore[$s])) {
+  $acaoPermissao = $a === 'excluir' ? 'editar' : ($a === 'salvar' ? 'editar' : 'visualizar');
+  // As permissões delimitam telas. Leituras compartilhadas sustentam as telas
+  // autorizadas sem conceder navegação para os cadastros de origem.
+  $consumidores = [
+    'condominios' => ['painel', 'prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'relatorio_mensal', 'editais', 'atas', 'importador', 'drive_documentos', 'consulta_documentos'],
+    'exercicios' => ['painel', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
+    'mensais' => ['prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
+    'assembleias' => ['painel', 'atas'],
+    'modelos' => ['editais'],
+    'config' => ['painel', 'prestacao_contas', 'relatorio_mensal', 'editais', 'atas', 'drive_documentos', 'consulta_documentos'],
+    'decisoes_previsao' => ['prestacao_contas'],
+  ];
+  $chaves = [$permissaoStore[$s] . '.' . $acaoPermissao];
+  if ($a === 'salvar' && $s === 'exercicios') $chaves[] = 'previsao_orcamentaria.editar';
+  if ($a === 'salvar' && in_array($s, ['condominios', 'mensais', 'exercicios', 'anexos_importacao'], true)) $chaves[] = 'importador.editar';
+  if ($acaoPermissao === 'visualizar') {
+    foreach ($consumidores[$s] ?? [] as $modulo) $chaves[] = $modulo . '.visualizar';
+  }
+  $permitido = false;
+  foreach ($chaves as $chave) if (tem_permissao($usuario, $chave)) { $permitido = true; break; }
+  if (!$permitido) exigir_permissao($usuario, $chaves[0]);
+}
+
 function validar_backup_dados(array $dados, PDO $pdo, bool $substituir, array $stores): array {
   if (($dados['app'] ?? '') !== 'krieger-condominios') {
     erro('Arquivo de backup inválido: identificador do aplicativo incorreto.');
@@ -196,7 +232,15 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
 }
 
 try {
+  // Backups integrais não podem contornar restrições individuais de leitura.
+  if (in_array($a, ['exportar', 'backup_criar', 'backup_listar', 'backup_baixar'], true)) {
+    exigir_permissao($usuario, 'backup.visualizar');
+    foreach (array_unique(array_values($permissaoStore)) as $modulo) {
+      exigir_permissao($usuario, $modulo . '.visualizar');
+    }
+  }
   if ($a === 'confirmar_importacao') {
+    exigir_permissao($usuario, 'importador.editar');
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST para confirmar a importação.', 405);
     try { $resultado = confirmar_importacao($pdo, $corpo); }
     catch (InvalidArgumentException $e) { erro($e->getMessage()); }

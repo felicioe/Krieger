@@ -1,1 +1,0 @@
-var e={versaoAtual:`1.0`,versoes:[{versao:`1.0`,titulo:`Implantação do sistema`,alteracoes:[`Implantação inicial do Sistema Krieger.`]}]};export{e as t};
