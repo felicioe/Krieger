@@ -15,6 +15,7 @@ $verificar(count(permissoes_usuario($pdo, 'teste-permissoes', 'user')) === 25, '
 $pdo->exec("INSERT INTO kr_usuario_permissoes VALUES ('teste-permissoes','painel.visualizar','negar')");
 $permissoes = permissoes_usuario($pdo, 'teste-permissoes', 'user');
 $verificar(!tem_permissao(['permissoes' => $permissoes], 'painel.visualizar'), 'Negação não aplicada.');
+$verificar(!tem_permissao(['permissoes' => ['condominios.editar']], 'condominios.editar'), 'Edição não deve contornar ausência de visualização.');
 $verificar(tem_permissao(['permissoes' => $permissoes], 'condominios.visualizar'), 'Negação afetou outro módulo.');
 $verificar(permissoes_usuario($pdo, 'teste-permissoes', 'admin') === ['*'], 'Administrador perdeu acesso.');
 $pdo->exec("DELETE FROM kr_perfil_permissoes WHERE perfil_id = 'user'");

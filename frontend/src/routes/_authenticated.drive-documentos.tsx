@@ -668,11 +668,11 @@ function PaginaDriveDocumentos() {
         descricao="Pastas e subpastas criadas automaticamente na importação, classificação inteligente e pasta padrão Outros Documentos."
         acoes={
           <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" onClick={abrirModalCategorias}>
+            <Button permissao="drive_documentos.editar" variant="outline" onClick={abrirModalCategorias}>
               <Settings2 className="size-4" />
               Categorias e Pastas ({categoriasAtivas.length})
             </Button>
-            <Button variant="outline" onClick={abrirModalCaminhos}>
+            <Button permissao="drive_documentos.editar" variant="outline" onClick={abrirModalCaminhos}>
               <FolderInput className="size-4" />
               Caminhos Locais ({totalCaminhosConfigurados})
             </Button>
@@ -684,11 +684,11 @@ function PaginaDriveDocumentos() {
               <Sparkles className="size-4 text-amber-500" />
               Consulta Inteligente (IA)
             </Button>
-            <Button variant="secondary" onClick={() => inputPastaRef.current?.click()} disabled={Boolean(progressoEnvio)}>
+            <Button permissao="drive_documentos.editar" variant="secondary" onClick={() => inputPastaRef.current?.click()} disabled={Boolean(progressoEnvio)}>
               <FolderOpen className="size-4" />
               Subir Pasta c/ Subpastas
             </Button>
-            <Button onClick={() => inputArquivosRef.current?.click()} disabled={Boolean(progressoEnvio)}>
+            <Button permissao="drive_documentos.editar" onClick={() => inputArquivosRef.current?.click()} disabled={Boolean(progressoEnvio)}>
               {progressoEnvio ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
               Subir Arquivos
             </Button>
@@ -774,10 +774,10 @@ function PaginaDriveDocumentos() {
               pasta não identificados vão automaticamente para <strong>{pastaOutros.rotulo}</strong>.
             </p>
             <div className="mt-3 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-              <Button size="sm" variant="secondary" onClick={() => inputArquivosRef.current?.click()}>
+              <Button permissao="drive_documentos.editar" size="sm" variant="secondary" onClick={() => inputArquivosRef.current?.click()}>
                 Selecionar arquivos avulsos
               </Button>
-              <Button size="sm" variant="outline" onClick={() => inputPastaRef.current?.click()}>
+              <Button permissao="drive_documentos.editar" size="sm" variant="outline" onClick={() => inputPastaRef.current?.click()}>
                 <FolderOpen className="size-3.5" />
                 Subir pasta com subpastas
               </Button>
@@ -793,7 +793,7 @@ function PaginaDriveDocumentos() {
           <SectionCard
             titulo="Pastas e Categorias"
             acoes={
-              <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={abrirModalCategorias}>
+              <Button permissao="drive_documentos.editar" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={abrirModalCategorias}>
                 <FolderPlus className="size-3.5" />
                 Gerenciar
               </Button>
@@ -1277,7 +1277,7 @@ function PaginaDriveDocumentos() {
             </button>
           )}
           <div className="my-1 border-t" />
-          <button
+          {podeEditar && (<button
             type="button"
             className="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-sm hover:bg-accent"
             onClick={() => {
@@ -1288,8 +1288,8 @@ function PaginaDriveDocumentos() {
           >
             <Edit3 className="size-4" />
             Renomear / Mover de Pasta
-          </button>
-          <button
+          </button>)}
+          {podeEditar && (<button
             type="button"
             className="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-sm text-destructive hover:bg-destructive/10"
             onClick={() => {
@@ -1300,7 +1300,7 @@ function PaginaDriveDocumentos() {
           >
             <Trash2 className="size-4" />
             Excluir do Drive
-          </button>
+          </button>)}
         </div>
       )}
 
@@ -1425,7 +1425,7 @@ function PaginaDriveDocumentos() {
             <Button variant="outline" onClick={() => setModalConversaoAberto(false)} disabled={Boolean(progressoEnvio)}>
               Cancelar
             </Button>
-            <Button onClick={() => void executarEnvioArquivos()} disabled={Boolean(progressoEnvio)}>
+            <Button permissao="drive_documentos.editar" onClick={() => void executarEnvioArquivos()} disabled={Boolean(progressoEnvio)}>
               {progressoEnvio ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
               {progressoEnvio ?? "Confirmar e Cadastrar no Drive"}
             </Button>
@@ -1575,7 +1575,7 @@ function PaginaDriveDocumentos() {
             <Button variant="outline" onClick={() => setModalCategoriasAberto(false)}>
               Fechar
             </Button>
-            <Button onClick={() => salvarCadastroCategorias.mutate()} disabled={salvarCadastroCategorias.isPending}>
+            <Button permissao="drive_documentos.editar" onClick={() => salvarCadastroCategorias.mutate()} disabled={salvarCadastroCategorias.isPending}>
               Salvar Cadastro de Categorias
             </Button>
           </DialogFooter>
@@ -1633,7 +1633,7 @@ function PaginaDriveDocumentos() {
             <Button variant="outline" onClick={() => setDocEditando(null)}>
               Cancelar
             </Button>
-            <Button onClick={() => salvarEdicaoDoc.mutate()} disabled={salvarEdicaoDoc.isPending}>
+            <Button permissao="drive_documentos.editar" onClick={() => salvarEdicaoDoc.mutate()} disabled={salvarEdicaoDoc.isPending}>
               <Tag className="size-4" />
               Salvar alterações
             </Button>
@@ -1712,7 +1712,7 @@ function PaginaDriveDocumentos() {
                 automaticamente no Drive e os arquivos soltos não identificados vão para{" "}
                 <strong>{pastaOutros.rotulo}</strong>:
               </p>
-              <Button
+              <Button permissao="drive_documentos.editar"
                 type="button"
                 size="sm"
                 variant="outline"
@@ -1732,7 +1732,7 @@ function PaginaDriveDocumentos() {
             <Button variant="outline" onClick={() => setModalCaminhosAberto(false)}>
               Fechar
             </Button>
-            <Button onClick={() => salvarCaminhosCondominio.mutate()} disabled={salvarCaminhosCondominio.isPending}>
+            <Button permissao="drive_documentos.editar" onClick={() => salvarCaminhosCondominio.mutate()} disabled={salvarCaminhosCondominio.isPending}>
               Salvar Caminhos
             </Button>
           </DialogFooter>

@@ -33,6 +33,7 @@ function permissoes_usuario(PDO $pdo, string $usuarioId, string $perfil): array 
 }
 
 function tem_permissao(array $usuario, string $chave): bool {
+  if (str_ends_with($chave, '.editar') && !tem_permissao($usuario, substr($chave, 0, -7) . '.visualizar')) return false;
   return in_array('*', $usuario['permissoes'] ?? [], true)
       || in_array($chave, $usuario['permissoes'] ?? [], true);
 }

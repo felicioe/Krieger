@@ -68,5 +68,6 @@ export function useUsuario(): Usuario | null {
 }
 
 export function temPermissao(usuario: Usuario | null, chave: string): boolean {
+  if (chave.endsWith('.editar') && !temPermissao(usuario, chave.slice(0, -7) + '.visualizar')) return false;
   return usuario?.perfil === 'admin' || usuario?.permissoes?.includes('*') === true || usuario?.permissoes?.includes(chave) === true;
 }
