@@ -207,9 +207,11 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
       return;
     }
     setErroNome(null);
-    const valor = { ...r.valor, atualizadoEm: new Date().toISOString(), atualizadoPor: usuario?.nome || usuario?.login || "" };
-    setC(valor);
-    salvar.mutate(valor);
+    setC(r.valor);
+    // Só grava atualizadoEm/atualizadoPor no que é enviado pro servidor — não no estado local
+    // imediato: se o salvamento falhar, "Atualizado em" não deve passar a impressão de que
+    // salvou (o `onSuccess` abaixo é quem reflete o registro confirmado de volta na tela).
+    salvar.mutate({ ...r.valor, atualizadoEm: new Date().toISOString(), atualizadoPor: usuario?.nome || usuario?.login || "" });
   }
 
   const botaoSalvar = (

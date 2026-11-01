@@ -32,10 +32,26 @@ export function chipParaRegex(palavra: string): string {
   return out;
 }
 
+/**
+ * Se `texto` não é uma regex válida sozinho, `expressaoDeducao` (domain/previsao.ts) cai pro
+ * mesmo fallback: trata o texto inteiro como busca literal, escapando os caracteres especiais.
+ * Aplica o mesmo escape aqui antes de somar `|novaAlternativa` — senão a expressão combinada
+ * continua inválida, e o fallback passa a escapar tudo junto (`texto|nova` literal), deixando de
+ * casar tanto o texto original quanto a palavra nova.
+ */
+function paraRegexValida(texto: string): string {
+  try {
+    new RegExp(texto);
+    return texto;
+  } catch {
+    return texto.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+}
+
 /** Acrescenta uma palavra-chave como nova alternativa (`|`) à expressão existente; nunca remove ou reescreve o que já havia. */
 export function adicionarPalavraChave(regexAtual: string, palavra: string): string {
   const nova = chipParaRegex(palavra);
   if (!nova) return regexAtual;
   const atual = regexAtual.trim();
-  return atual ? `${atual}|${nova}` : nova;
+  return atual ? `${paraRegexValida(atual)}|${nova}` : nova;
 }

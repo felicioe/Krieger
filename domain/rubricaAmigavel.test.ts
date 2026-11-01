@@ -41,4 +41,15 @@ describe("adicionarPalavraChave", () => {
   it("palavra vazia não altera a expressão", () => {
     expect(adicionarPalavraChave("^[áa]gua", "   ")).toBe("^[áa]gua");
   });
+
+  it("quando a expressão existente não é regex válida sozinha, continua casando o texto original depois de somar a palavra nova (achado do Codex no PR #116)", () => {
+    // "Fundo (obras" tem parêntese sem fechar: expressaoDeducao cai no fallback literal pra ela.
+    const base = "Fundo (obras";
+    expect(expressaoDeducao(base)!.test("Fundo (obras")).toBe(true);
+
+    const combinada = adicionarPalavraChave(base, "esgoto");
+    const re = expressaoDeducao(combinada)!;
+    expect(re.test("Fundo (obras")).toBe(true); // o texto original continua casando
+    expect(re.test("Esgoto")).toBe(true); // e a palavra nova também
+  });
 });
