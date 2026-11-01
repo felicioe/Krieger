@@ -1,4 +1,17 @@
-import type { Condominio } from "./types";
+import type { Condominio, DocumentoObrigatorio } from "./types";
+
+/** Itens padrão do checklist "Documentos obrigatórios" de um condomínio novo. */
+export function documentosObrigatoriosPadrao(): DocumentoObrigatorio[] {
+  return [
+    "Extintor",
+    "Seguro",
+    "Limpeza de Caixa D'Água",
+    "Dedetização",
+    "Alvará de Bombeiros",
+    "Alvará Estrutural",
+    "Elevador",
+  ].map((nome) => ({ nome, status: "pendente", informacao: "", observacao: "", noRelatorio: true }));
+}
 
 /** Valores padrão de um condomínio novo. */
 export function condominioPadrao(): Omit<Condominio, "id"> {
@@ -28,6 +41,10 @@ export function condominioPadrao(): Omit<Condominio, "id"> {
     mapeamento: [],
     deducaoRegex: "fundo de caixa p/ obras",
     aguaRubrica: "^[áa]gua",
+    energiaRubrica: "energia el[ée]trica",
+    elevadorRubrica: "manuten[çc][ãa]o.*elevador",
+    elevadorFornecedor: "",
+    documentosObrigatorios: documentosObrigatoriosPadrao(),
     arredondamento: "truncar",
     variacaoPadrao: null,
     conhecidas: [],
@@ -60,6 +77,7 @@ export function normalizarCondominio(raw: Partial<Condominio> & { id?: string })
     mapeamento: raw.mapeamento ?? [],
     conhecidas: raw.conhecidas ?? [],
     regras: raw.regras ?? [],
+    documentosObrigatorios: raw.documentosObrigatorios ?? p.documentosObrigatorios,
     vistoriaIntervalo: raw.vistoriaIntervalo ?? p.vistoriaIntervalo,
     somenteAnual: raw.somenteAnual ?? p.somenteAnual,
   } as Condominio;

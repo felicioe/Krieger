@@ -273,6 +273,8 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
               condominio={condo}
               receberMensais={rel.inadimplencia.final}
               agua={rel.agua}
+              energia={rel.energia}
+              elevador={rel.elevador}
             />
           </TabsContent>
         </Tabs>

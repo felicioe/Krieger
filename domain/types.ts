@@ -63,6 +63,21 @@ export interface DePara {
   para: string;
 }
 
+/**
+ * Item do checklist "Documentos obrigatórios" (Extintor, Seguro, Alvarás etc.) — lista livre e
+ * independente dos campos específicos de "Manutenções e vistorias" (vigenciaExtintores etc.):
+ * status marcado manualmente (sem data calculada), pensada para itens sem vencimento fixo.
+ */
+export interface DocumentoObrigatorio {
+  nome: string;
+  status: "ok" | "pendente";
+  /** Vencimento ou outra informação em texto livre (ex.: "21/11/2026", "Lei municipal nº …"). */
+  informacao: string;
+  observacao: string;
+  /** Aparece no resumo das Considerações finais do relatório. */
+  noRelatorio: boolean;
+}
+
 export type ModoRegra = "ultimo" | "ultimo+12";
 
 export interface RegraPreenchimento {
@@ -107,6 +122,14 @@ export interface Condominio extends ComId {
   mapeamento: DePara[];
   deducaoRegex: string;
   aguaRubrica: string;
+  /** Campo novo (opcional): mesmo mecanismo da água, para a linha "Energia elétrica" do consumo de serviços. */
+  energiaRubrica: string;
+  /** Campo novo (opcional): mesmo mecanismo da água, para a linha "Elevadores" do consumo de serviços. */
+  elevadorRubrica: string;
+  /** Campo novo (opcional): texto livre, impresso como 3ª linha da célula "Elevadores". */
+  elevadorFornecedor: string;
+  /** Campo novo (opcional): checklist "Documentos obrigatórios" — ver `DocumentoObrigatorio`. */
+  documentosObrigatorios: DocumentoObrigatorio[];
   arredondamento: Arredondamento;
   variacaoPadrao: number | null;
   conhecidas: string[];
@@ -268,6 +291,18 @@ export interface Exercicio extends ComId {
     vistoriaIntervalo: number;
     aguaRubrica: string;
     consumoAguaManual?: number | null;
+    /** Campo novo (opcional). */
+    energiaRubrica: string;
+    /** Campo novo (opcional). */
+    consumoEnergiaManual?: number | null;
+    /** Campo novo (opcional). */
+    elevadorRubrica: string;
+    /** Campo novo (opcional). */
+    consumoElevadorManual?: number | null;
+    /** Campo novo (opcional). */
+    elevadorFornecedor: string;
+    /** Campo novo (opcional): snapshot do checklist do condomínio no momento do relatório. */
+    documentosObrigatorios: DocumentoObrigatorio[];
     indices: IndiceCorrecao[];
     extras: { rotulo: string; valor: string | number }[];
   };

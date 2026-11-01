@@ -59,7 +59,7 @@ export type Bloco =
       /** linhas verticais entre colunas (formulário para preencher à mão) */
       grade?: boolean;
     }
-  | { tipo: "pares"; itens: { rotulo: string; valor: Texto }[] }
+  | { tipo: "pares"; itens: { rotulo: string; valor: Texto }[]; alinhamento?: "esquerda" | "direita" }
   | { tipo: "imagem"; dataUrl: string; largura: number; altura: number; alinhamento?: Alinhamento }
   | { tipo: "espaco"; altura: number }
   | { tipo: "quebraPagina" }

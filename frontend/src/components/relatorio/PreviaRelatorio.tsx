@@ -363,14 +363,14 @@ function Bloco({ titulo, linhas, total }: { titulo: string; linhas: LinhaValor[]
   );
 }
 
-function Item({ rotulo, children }: { rotulo: string; children: ReactNode }) {
+function Item({ rotulo, children, alinhar }: { rotulo: string; children: ReactNode; alinhar?: "esquerda" | "direita" }) {
   return (
     // minmax(min-content,…) no valor: em 320 px o rótulo (até 14rem) é que quebra, e o valor
     // (R$ 8.500.000,00, datas) fica inteiro sem passar da página. Com texto ampliado (prévia
     // estreita), rótulo e valor ficam um embaixo do outro.
     <div className="grid grid-cols-1 gap-x-3 py-0.5 @min-[12rem]:grid-cols-[minmax(0,14rem)_minmax(min-content,1fr)]">
       <dt className="break-words text-muted-foreground">{rotulo}</dt>
-      <dd>{children}</dd>
+      <dd className={cn(alinhar === "direita" && "text-right")}>{children}</dd>
     </div>
   );
 }
@@ -381,6 +381,12 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
   const receber = typeof c.contasReceber === "number" ? c.contasReceber : null;
   const pagar = typeof c.contasPagar === "number" ? c.contasPagar : null;
   const extras = c.extras.filter((x) => String(x.rotulo).trim() || String(x.valor).trim());
+  const documentos = c.documentosObrigatorios.filter((d) => d.noRelatorio && d.nome.trim());
+  const servicos = [
+    { nome: "Água", rubrica: c.aguaRubrica, consumo: rel.agua },
+    { nome: "Energia elétrica", rubrica: c.energiaRubrica, consumo: rel.energia },
+    { nome: "Elevadores", rubrica: c.elevadorRubrica, consumo: rel.elevador, fornecedor: c.elevadorFornecedor },
+  ].filter((s) => s.consumo.valor > 0);
   return (
     <div className="space-y-5">
       {c.administracao.length > 0 && (
@@ -400,11 +406,11 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
         <div>
           <h4 className="mb-1 font-semibold">Seguro</h4>
           <dl>
-            {c.seguradora && <Item rotulo="Seguradora">{c.seguradora}</Item>}
-            {c.vigenciaSeguro && <Item rotulo="Vigência até"><span className="num">{formatData(c.vigenciaSeguro)}</span></Item>}
-            {c.seguro.riscoAbsoluto !== null && <Item rotulo="Risco absoluto"><span className="num">{formatBRL(c.seguro.riscoAbsoluto)}</span></Item>}
+            {c.seguradora && <Item rotulo="Seguradora" alinhar="direita">{c.seguradora}</Item>}
+            {c.vigenciaSeguro && <Item rotulo="Vigência até" alinhar="direita"><span className="num">{formatData(c.vigenciaSeguro)}</span></Item>}
+            {c.seguro.riscoAbsoluto !== null && <Item rotulo="Risco absoluto" alinhar="direita"><span className="num">{formatBRL(c.seguro.riscoAbsoluto)}</span></Item>}
             {c.seguro.coberturas.map((cb, i) => (
-              <Item key={i} rotulo={cb.desc || "Cobertura"}>
+              <Item key={i} rotulo={cb.desc || "Cobertura"} alinhar="direita">
                 <span className="num">{formatBRL(cb.valor)}</span>
               </Item>
             ))}
@@ -429,13 +435,53 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
           </dl>
         </div>
       )}
-      {(receber !== null || pagar !== null || rel.agua.valor > 0) && (
+      {documentos.length > 0 && (
+        <div>
+          <h4 className="mb-1 font-semibold">Documentos obrigatórios</h4>
+          <dl>
+            {documentos.map((d, i) => (
+              <Item key={i} rotulo={d.nome}>
+                {d.status === "ok" ? "Em dia" : "Pendente"}
+                {d.informacao && <span className="text-muted-foreground"> · {d.informacao}</span>}
+                {d.observacao && <span className="text-muted-foreground"> · {d.observacao}</span>}
+              </Item>
+            ))}
+          </dl>
+        </div>
+      )}
+      {servicos.length > 0 && (
+        <div>
+          <h4 className="mb-1 font-semibold">Consumo de serviços</h4>
+          <RolagemTabela className=""><table className="w-full">
+            <thead>
+              <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+                <th className="py-1 text-left font-semibold">Serviço</th>
+                <th className="py-1 text-right font-semibold">Consumido no período</th>
+                <th className="py-1 text-right font-semibold">Valor médio (÷ 12)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {servicos.map((s, i) => (
+                <tr key={i} className="border-b border-dashed last:border-0">
+                  <td className="py-1">
+                    {s.nome}
+                    <span className="block text-xs text-muted-foreground">{s.rubrica}</span>
+                    {s.fornecedor && <span className="block text-xs text-muted-foreground">{s.fornecedor}</span>}
+                  </td>
+                  <td className="num py-1 text-right">{formatBRL(s.consumo.valor)}</td>
+                  <td className="num py-1 text-right text-muted-foreground">{formatBRL(s.consumo.valor / 12)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table></RolagemTabela>
+        </div>
+      )}
+      {(receber !== null || pagar !== null) && (
         <div>
           <h4 className="mb-1 font-semibold">Valores</h4>
           <dl>
             {receber !== null && <Item rotulo="Contas a receber"><span className="num">{formatBRL(receber)}</span></Item>}
             {pagar !== null && <Item rotulo="Contas a pagar"><span className="num">{formatBRL(pagar)}</span></Item>}
-            {rel.agua.valor > 0 && <Item rotulo="Consumo de água no exercício"><span className="num">{formatBRL(rel.agua.valor)}</span></Item>}
           </dl>
         </div>
       )}
