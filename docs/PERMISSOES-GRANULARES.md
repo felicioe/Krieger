@@ -45,3 +45,19 @@ e confirmou 25 registros em `kr_permissoes`. Os avisos de chave duplicada no
 segundo `INSERT IGNORE` do perfil são esperados e não duplicam registros.
 Essa contagem confirma o catálogo; ainda exige validação funcional das permissões.
 
+## Contrato de telas e dados compartilhados
+
+Permissões delimitam telas e ações, não condomínios individuais. As consultas
+compartilhadas de condomínios, exercícios, relatórios, modelos e configuração
+podem ser usadas pelos módulos consumidores autorizados, sem liberar navegação
+para a tela de origem. A API mantém a matriz de consumidores em `api.php`.
+Previsão e importação podem gravar os registros compartilhados necessários ao seu
+fluxo; excluir continua dependente do módulo proprietário. Backup integral exige
+acesso de leitura a todos os módulos de dados para não contornar restrições.
+
+A navegação usa `podeAcessarRota` e `LinkPermitido`, inclusive nos botões `asChild`.
+O menu aplica o mesmo controle; rotas administrativas continuam exclusivas de
+administradores. A sessão é relida ao navegar, enquanto o PHP revalida cada chamada.
+Sem telas concedidas, o destino é Minha senha. Administradores conservam acesso total.
+O catálogo mock contém as mesmas 25 chaves e persiste exceções por usuário.
+

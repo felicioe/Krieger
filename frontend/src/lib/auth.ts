@@ -68,5 +68,5 @@ export function useUsuario(): Usuario | null {
 }
 
 export function temPermissao(usuario: Usuario | null, chave: string): boolean {
-  return usuario?.permissoes?.includes('*') === true || usuario?.permissoes?.includes(chave) === true;
+  return usuario?.perfil === 'admin' || usuario?.permissoes?.includes('*') === true || usuario?.permissoes?.includes(chave) === true;
 }

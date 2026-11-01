@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, Loader2, Save, Trash2 } from "lucide-react";
@@ -118,10 +119,10 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <Button variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button permissao="modelos.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
               <Trash2 /> Excluir
             </Button>
-            <Button type="submit" form="form-modelo" disabled={salvar.isPending}>
+            <Button permissao="modelos.editar" type="submit" form="form-modelo" disabled={salvar.isPending}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>

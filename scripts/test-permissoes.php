@@ -1,0 +1,25 @@
+<?php
+declare(strict_types=1);
+require dirname(__DIR__) . '/lib_permissoes.php';
+$dsn = getenv('KRIEGER_TEST_DSN') ?: '';
+if ($dsn !== 'mysql:host=127.0.0.1;port=3306;dbname=krieger_test;charset=utf8mb4') throw new RuntimeException('Use apenas o banco efêmero do CI.');
+$pdo = new PDO($dsn, 'root', getenv('KRIEGER_TEST_PASSWORD') ?: '', [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]);
+$pdo->exec('CREATE TABLE kr_usuarios (id VARCHAR(32) PRIMARY KEY) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
+$pdo->exec("INSERT INTO kr_usuarios VALUES ('teste-permissoes')");
+$sql = file_get_contents(dirname(__DIR__) . '/migrations/20261031_permissoes_granulares.sql');
+$pdo->exec($sql);
+$pdo->exec($sql);
+$verificar = static function (bool $ok, string $msg): void { if (!$ok) throw new RuntimeException($msg); };
+$verificar((int) $pdo->query('SELECT COUNT(*) FROM kr_permissoes')->fetchColumn() === 25, 'Catálogo incorreto.');
+$verificar(count(permissoes_usuario($pdo, 'teste-permissoes', 'user')) === 25, 'Compatibilidade inicial incorreta.');
+$pdo->exec("INSERT INTO kr_usuario_permissoes VALUES ('teste-permissoes','painel.visualizar','negar')");
+$permissoes = permissoes_usuario($pdo, 'teste-permissoes', 'user');
+$verificar(!tem_permissao(['permissoes' => $permissoes], 'painel.visualizar'), 'Negação não aplicada.');
+$verificar(tem_permissao(['permissoes' => $permissoes], 'condominios.visualizar'), 'Negação afetou outro módulo.');
+$verificar(permissoes_usuario($pdo, 'teste-permissoes', 'admin') === ['*'], 'Administrador perdeu acesso.');
+$pdo->exec("DELETE FROM kr_perfil_permissoes WHERE perfil_id = 'user'");
+$pdo->exec("REPLACE INTO kr_usuario_permissoes VALUES ('teste-permissoes','previsao_orcamentaria.visualizar','permitir')");
+$verificar(permissoes_usuario($pdo, 'teste-permissoes', 'user') === ['previsao_orcamentaria.visualizar'], 'Concessão individual incorreta.');
+$pdo->exec("DELETE FROM kr_usuario_permissoes WHERE usuario_id = 'teste-permissoes'");
+$verificar(permissoes_usuario($pdo, 'teste-permissoes', 'user') === [], 'Revogação não aplicada.');
+echo "Permissões: catálogo, repetição, concessão, negação, revogação e admin validados.\n";

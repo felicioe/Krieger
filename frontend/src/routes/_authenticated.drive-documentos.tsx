@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { temPermissao, useUsuario } from '@/lib/auth';
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -151,6 +152,9 @@ function badgeRegraAlocacao(regra: AlocacaoPastaDrive["regra"]) {
 }
 
 function PaginaDriveDocumentos() {
+  const usuario = useUsuario();
+  const podeEditar = temPermissao(usuario, 'drive_documentos.editar');
+  const podeConsultar = temPermissao(usuario, 'consulta_documentos.visualizar');
   const busca = Route.useSearch();
   const navigate = useNavigate({ from: "/drive-documentos" });
   const qc = useQueryClient();
@@ -674,6 +678,7 @@ function PaginaDriveDocumentos() {
             </Button>
             <Button
               variant="outline"
+              permissao="consulta_documentos.visualizar"
               onClick={() => navigate({ to: "/consulta-documentos", search: { condoId } })}
             >
               <Sparkles className="size-4 text-amber-500" />
@@ -1035,7 +1040,7 @@ function PaginaDriveDocumentos() {
                                         <Eye className="mr-2 size-4" />
                                         Abrir / Visualizar PDF inline
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem
+                                      {podeConsultar && <DropdownMenuItem
                                         onClick={() =>
                                           navigate({
                                             to: "/consulta-documentos",
@@ -1045,7 +1050,7 @@ function PaginaDriveDocumentos() {
                                       >
                                         <Sparkles className="mr-2 size-4 text-amber-500" />
                                         Perguntar à IA sobre este arquivo
-                                      </DropdownMenuItem>
+                                      </DropdownMenuItem>}
                                       <DropdownMenuSeparator />
                                       <DropdownMenuItem onClick={() => void acaoImprimirOnline(doc)}>
                                         <Printer className="mr-2 size-4" />
@@ -1062,17 +1067,17 @@ function PaginaDriveDocumentos() {
                                         </DropdownMenuItem>
                                       )}
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => abrirModalEditar(doc)}>
+                                      {podeEditar && <DropdownMenuItem onClick={() => abrirModalEditar(doc)}>
                                         <Edit3 className="mr-2 size-4" />
                                         Renomear / Mover de Pasta
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
+                                      </DropdownMenuItem>}
+                                      {podeEditar && <DropdownMenuItem
                                         className="text-destructive focus:text-destructive"
                                         onClick={() => excluirDoc.mutate(doc.id)}
                                       >
                                         <Trash2 className="mr-2 size-4" />
                                         Excluir do Drive
-                                      </DropdownMenuItem>
+                                      </DropdownMenuItem>}
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </div>
@@ -1220,7 +1225,7 @@ function PaginaDriveDocumentos() {
             <Eye className="size-4" />
             Abrir / Visualizar PDF inline
           </button>
-          <button
+          {podeConsultar && <button
             type="button"
             className="flex w-full items-center gap-2 rounded-sm px-2.5 py-1.5 text-left text-sm hover:bg-accent"
             onClick={() => {
@@ -1231,7 +1236,7 @@ function PaginaDriveDocumentos() {
           >
             <Sparkles className="size-4 text-amber-500" />
             Perguntar à IA sobre este arquivo
-          </button>
+          </button>}
           <div className="my-1 border-t" />
           <button
             type="button"

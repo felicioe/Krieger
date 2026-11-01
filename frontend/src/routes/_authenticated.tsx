@@ -5,11 +5,12 @@ import { MenuMovel } from "@/components/app/MenuMovel";
 import { Carregando } from "@/components/app/Carregando";
 import { ID_CONTEUDO } from "@/components/app/foco";
 import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
-import { garantirSessao, temPermissao } from "@/lib/auth";
+import { recarregarSessao } from "@/lib/auth";
+import { podeAcessarRota } from '@/lib/permissoes';
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
-    const usuario = await garantirSessao();
+    const usuario = await recarregarSessao();
     if (!usuario) throw redirect({ to: "/login" });
     if (usuario.trocarSenha) throw redirect({ to: "/trocar-senha" });
 
@@ -33,9 +34,8 @@ export const Route = createFileRoute("/_authenticated")({
       ["/backup", "backup.visualizar"],
       ["/usuarios", "usuarios.visualizar"],
     ];
-    const regra = permissoesPorRota.find(([prefixo]) => location.pathname === prefixo || location.pathname.startsWith(prefixo + "/"));
-    if (regra && !temPermissao(usuario, regra[1])) {
-      const destino = permissoesPorRota.find(([, chave]) => temPermissao(usuario, chave))?.[0] ?? "/minha-senha";
+    if (!podeAcessarRota(usuario, location.pathname)) {
+      const destino = permissoesPorRota.find(([rota]) => podeAcessarRota(usuario, rota))?.[0] ?? "/minha-senha";
       throw redirect({ to: destino as never });
     }
     return { usuario };

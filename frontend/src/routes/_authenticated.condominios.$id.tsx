@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, CalendarPlus, ChevronsDownUp, ChevronsUpDown, Loader2, Megaphone, RefreshCw, Save, TriangleAlert, Trash2 } from "lucide-react";
@@ -185,7 +186,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
   }
 
   const botaoSalvar = (
-    <Button type="submit" form="form-condominio" disabled={salvar.isPending}>
+    <Button permissao="condominios.editar" type="submit" form="form-condominio" disabled={salvar.isPending}>
       {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
       Salvar
     </Button>
@@ -220,7 +221,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
               </Button>
             )}
             {!novo && (
-              <Button variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+              <Button permissao="condominios.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
                 <Trash2 /> Excluir
               </Button>
             )}

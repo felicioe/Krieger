@@ -74,7 +74,7 @@ function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
         titulo="Escritório"
         descricao="Estes dados aparecem no cabeçalho, rodapé e assinatura dos documentos."
         acoes={
-          <Button type="submit" form="form-escritorio" disabled={salvar.isPending}>
+          <Button permissao="escritorio.editar" type="submit" form="form-escritorio" disabled={salvar.isPending}>
             {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />} Salvar
           </Button>
         }

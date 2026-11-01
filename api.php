@@ -107,7 +107,26 @@ $permissaoStore = [
 ];
 if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permissaoStore[$s])) {
   $acaoPermissao = $a === 'excluir' ? 'editar' : ($a === 'salvar' ? 'editar' : 'visualizar');
-  exigir_permissao($usuario, $permissaoStore[$s] . '.' . $acaoPermissao);
+  // As permissões delimitam telas. Leituras compartilhadas sustentam as telas
+  // autorizadas sem conceder navegação para os cadastros de origem.
+  $consumidores = [
+    'condominios' => ['painel', 'prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'relatorio_mensal', 'editais', 'atas', 'importador', 'drive_documentos', 'consulta_documentos'],
+    'exercicios' => ['painel', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
+    'mensais' => ['prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
+    'assembleias' => ['painel', 'atas'],
+    'modelos' => ['editais'],
+    'config' => ['painel', 'prestacao_contas', 'relatorio_mensal', 'editais', 'atas', 'drive_documentos', 'consulta_documentos'],
+    'decisoes_previsao' => ['prestacao_contas'],
+  ];
+  $chaves = [$permissaoStore[$s] . '.' . $acaoPermissao];
+  if ($a === 'salvar' && $s === 'exercicios') $chaves[] = 'previsao_orcamentaria.editar';
+  if ($a === 'salvar' && in_array($s, ['condominios', 'mensais', 'exercicios', 'anexos_importacao'], true)) $chaves[] = 'importador.editar';
+  if ($acaoPermissao === 'visualizar') {
+    foreach ($consumidores[$s] ?? [] as $modulo) $chaves[] = $modulo . '.visualizar';
+  }
+  $permitido = false;
+  foreach ($chaves as $chave) if (tem_permissao($usuario, $chave)) { $permitido = true; break; }
+  if (!$permitido) exigir_permissao($usuario, $chaves[0]);
 }
 
 function validar_backup_dados(array $dados, PDO $pdo, bool $substituir, array $stores): array {

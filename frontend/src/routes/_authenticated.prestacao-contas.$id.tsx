@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, Calculator, FileText, Loader2, Save, Trash2 } from "lucide-react";
@@ -169,10 +170,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                 <FileText /> Relatório final
               </Link>
             </Button>
-            <Button variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button permissao="prestacao_contas.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
               <Trash2 /> Excluir
             </Button>
-            <Button type="submit" form="form-exercicio" disabled={salvar.isPending}>
+            <Button permissao="prestacao_contas.editar" type="submit" form="form-exercicio" disabled={salvar.isPending}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>

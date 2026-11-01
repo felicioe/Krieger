@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -33,6 +34,8 @@ import {
 } from "@/domain/painel";
 import type { Assembleia, Condominio, ConfigBackup, Exercicio } from "@/domain/types";
 import { haDias, prazoDias } from "@/components/app/textos";
+import { useUsuario } from '@/lib/auth';
+import { podeAcessarRota } from '@/lib/permissoes';
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => cabecalho("Painel", "Visão geral dos condomínios, vencimentos e próximas assembleias."),
@@ -80,6 +83,7 @@ function Indicador({ titulo, valor, icone: Icone, to }: { titulo: string; valor:
 }
 
 function Painel() {
+  const usuario = useUsuario();
   const navigate = useNavigate();
   const { data: condos } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
@@ -218,9 +222,11 @@ function Painel() {
             ]}
             dados={proximas}
             chaveLinha={(a) => a.id}
-            aoClicar={(a) => navigate({ to: "/editais/$id", params: { id: a.id } })}
-            colunaAcao="condo"
-            rotuloAcao={(a) => `Abrir edital de ${nomeCondo(a.condoId)}, ${formatData(a.data)}`}
+            {...(podeAcessarRota(usuario, '/editais') ? {
+              aoClicar: (a: Assembleia) => { void navigate({ to: '/editais/$id', params: { id: a.id } }); },
+              colunaAcao: 'condo',
+              rotuloAcao: (a: Assembleia) => `Abrir edital de ${nomeCondo(a.condoId)}, ${formatData(a.data)}`,
+            } : {})}
             vazio="Nenhuma assembleia agendada."
           />
         </SectionCard>

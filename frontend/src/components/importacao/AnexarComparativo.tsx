@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileUp, Loader2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";

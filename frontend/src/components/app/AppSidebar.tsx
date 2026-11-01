@@ -1,4 +1,5 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Briefcase,
   Building2,
@@ -28,7 +29,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAbrirRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
 import { Marca } from "./Marca";
-import { sair, useUsuario } from "@/lib/auth";
+import { sair, temPermissao, useUsuario } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 type Item = { titulo: string; to: string; icone: LucideIcon; permissao?: string; apenasAdmin?: boolean; perigoso?: boolean };
@@ -158,7 +159,7 @@ export function ConteudoMenu({
               )}
               <ul aria-labelledby={g.titulo ? idTitulo : undefined}>
                 {g.itens
-                  .filter((item) => (!item.apenasAdmin || usuario?.perfil === "admin") && (!item.permissao || usuario?.permissoes?.includes("*") || usuario?.permissoes?.includes(item.permissao)))
+                  .filter((item) => (!item.apenasAdmin || usuario?.perfil === "admin") && (!item.permissao || temPermissao(usuario, item.permissao)))
                   .map((item) => (
                     <li key={item.to}>
                       <ItemMenu item={item} aoNavegar={aoNavegar} />

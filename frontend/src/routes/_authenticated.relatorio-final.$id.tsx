@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, useBlocker } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, notFound, useBlocker } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, FileCheck2, Loader2, Save } from "lucide-react";
@@ -147,11 +148,11 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <Button variant="outline" type="submit" form="form-relatorio" disabled={salvar.isPending}>
+            <Button permissao="prestacao_contas.editar" variant="outline" type="submit" form="form-relatorio" disabled={salvar.isPending}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
-            <Button type="button" onClick={() => setConferir(true)} disabled={salvar.isPending}>
+            <Button permissao="prestacao_contas.editar" type="button" onClick={() => setConferir(true)} disabled={salvar.isPending}>
               <FileCheck2 /> Conferir e emitir
             </Button>
           </>
