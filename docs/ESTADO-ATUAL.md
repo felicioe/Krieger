@@ -1,5 +1,36 @@
 # Estado atual e passagem de contexto
 
+## Reorganiza "Valores" do editor de Considerações finais — 01/11/2026
+
+Pedido do responsável, com captura de tela: depois do PR #116 (campos de palavra-chave de
+água/energia/elevador), a seção "Valores" do editor ficou com layout bagunçado — um grid de 4
+colunas misturava Contas a receber/pagar com os 3 serviços, cada um com 2 campos de alturas
+diferentes (`CampoRubrica` mais alto, `Field` do valor manual mais baixo) mais um `<div/>`
+espaçador, resultando numa grade ziguezague sem alinhamento lógico. O responsável também pediu
+que o relatório seja "o mais automatizado possível, puxando tudo do sistema".
+
+Mostrei a tela real (screenshot do servidor de dev, não mockup) antes de abrir PR — aprovado
+("perfeito").
+
+- "Contas a receber e a pagar" virou seção própria, separada de "Consumo de serviços".
+- "Consumo de serviços" (`BlocoConsumoServico`, novo componente local a `EditorConsideracoes.tsx`):
+  cada serviço (Água, Energia elétrica, Elevadores) é um cartão único e completo — palavra-chave →
+  **valor calculado automaticamente em destaque** (com a(s) rubrica(s) que bateu(ram)) → valor
+  manual escondido atrás de um link discreto "Informar valor manual em vez do calculado" (só abre
+  quem clica; não altera o dado até alguém digitar — não zera nada sozinho). Atende o pedido de
+  automação: o cálculo é o que aparece, o manual é a exceção.
+- Fornecedor dos elevadores entrou dentro do próprio cartão de Elevadores.
+
+Testado: 204 testes de frontend, 193 de domínio, `tsc --noEmit` e `docs:check` limpos. Validado
+visualmente com Playwright no servidor de dev local (dados reais do condomínio de exemplo: R$
+54.300,00 água, R$ 31.200,00 energia, R$ 14.400,00 elevadores, batendo com o demonstrativo) —
+cartões, valores calculados e o toggle do valor manual abrindo/fechando sem side effect.
+
+**Em aberto, pedido pelo responsável no mesmo fio**: (1) escolher quais campos entram no relatório
+final — precisa de mais detalhe de escopo antes de implementar (qual nível: por seção, por campo
+dentro de cada seção?). (2) usuário notou duplicidade de informação sobre elevador no relatório —
+vou levantar e apresentar antes de mexer, conforme pedido.
+
 ## Auditoria UX do cadastro de condomínio: PR #116 mesclado e publicado — 01/11/2026
 
 PR #116 (descrito abaixo) mesclado em `main` (`c8691e1`). Dois achados reais do Codex (P2)

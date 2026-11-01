@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Check, FileUp, Loader2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -247,86 +247,63 @@ export function EditorConsideracoes({
         )}
       </SectionCard>
 
-      <SectionCard titulo="Valores">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <SectionCard titulo="Contas a receber e a pagar">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field
             rotulo="Contas a receber"
             {...(receberMensais?.valor != null ? { dica: `Relatório de ${receberMensais.mes}: ${formatBRL(receberMensais.valor)}.` } : {})}
           >
-            <DinheiroInput value={num(c.contasReceber)} onChange={(v) => set("contasReceber", v)} />
+            <div className="flex gap-2">
+              <DinheiroInput value={num(c.contasReceber)} onChange={(v) => set("contasReceber", v)} />
+              {receberMensais?.valor != null && num(c.contasReceber) !== receberMensais.valor && (
+                <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => set("contasReceber", receberMensais.valor)}>
+                  Usar do mensal
+                </Button>
+              )}
+            </div>
           </Field>
-          <div className="flex items-end pb-0.5">
-            {receberMensais?.valor != null && num(c.contasReceber) !== receberMensais.valor && (
-              <Button type="button" variant="outline" size="sm" onClick={() => set("contasReceber", receberMensais.valor)}>
-                Usar valor do relatório mensal
-              </Button>
-            )}
-          </div>
           <Field rotulo="Contas a pagar">
             <DinheiroInput value={num(c.contasPagar)} onChange={(v) => set("contasPagar", v)} />
           </Field>
-          <div />
-          <CampoRubrica
-            rotulo="Palavras-chave de água"
-            dica="Despesas do demonstrativo com uma dessas palavras no nome."
-            value={c.aguaRubrica}
-            onChange={(v) => set("aguaRubrica", v)}
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        titulo="Consumo de serviços"
+        descricao="Calculado automaticamente a partir do demonstrativo, pelas palavras-chave de cada serviço. Ajuste manual é só para exceção."
+      >
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <BlocoConsumoServico
+            rotulo="Água"
+            placeholder="ex.: água, esgoto"
+            rubrica={c.aguaRubrica}
+            onRubricaChange={(v) => set("aguaRubrica", v)}
+            calculado={agua}
+            manual={c.consumoAguaManual ?? null}
+            onManualChange={(v) => set("consumoAguaManual", v)}
           />
-          <Field
-            rotulo="Consumo de água (manual)"
-            dica={
-              agua.manual
-                ? "Valor manual em uso. Apague para calcular pelo demonstrativo."
-                : agua.rubricas.length
-                  ? `Calculado: ${formatBRL(agua.valor)} (${agua.rubricas.join(", ")}).`
-                  : "Nenhuma despesa do demonstrativo casa com a rubrica de água."
-            }
-          >
-            <DinheiroInput value={c.consumoAguaManual ?? null} onChange={(v) => set("consumoAguaManual", v)} />
-          </Field>
-          <div />
-          <CampoRubrica
-            rotulo="Palavras-chave de energia elétrica"
-            dica="Mesmo mecanismo da água, para a seção Consumo de serviços."
+          <BlocoConsumoServico
+            rotulo="Energia elétrica"
             placeholder="ex.: energia, luz"
-            value={c.energiaRubrica}
-            onChange={(v) => set("energiaRubrica", v)}
+            rubrica={c.energiaRubrica}
+            onRubricaChange={(v) => set("energiaRubrica", v)}
+            calculado={energia}
+            manual={c.consumoEnergiaManual ?? null}
+            onManualChange={(v) => set("consumoEnergiaManual", v)}
           />
-          <Field
-            rotulo="Consumo de energia (manual)"
-            dica={
-              energia.manual
-                ? "Valor manual em uso. Apague para calcular pelo demonstrativo."
-                : energia.rubricas.length
-                  ? `Calculado: ${formatBRL(energia.valor)} (${energia.rubricas.join(", ")}).`
-                  : "Nenhuma despesa do demonstrativo casa com a rubrica de energia."
-            }
-          >
-            <DinheiroInput value={c.consumoEnergiaManual ?? null} onChange={(v) => set("consumoEnergiaManual", v)} />
-          </Field>
-          <div />
-          <CampoRubrica
-            rotulo="Palavras-chave de elevadores"
-            dica="Mesmo mecanismo da água, para a seção Consumo de serviços."
+          <BlocoConsumoServico
+            rotulo="Elevadores"
             placeholder="ex.: elevador, ascensor"
-            value={c.elevadorRubrica}
-            onChange={(v) => set("elevadorRubrica", v)}
-          />
-          <Field
-            rotulo="Consumo de elevadores (manual)"
-            dica={
-              elevador.manual
-                ? "Valor manual em uso. Apague para calcular pelo demonstrativo."
-                : elevador.rubricas.length
-                  ? `Calculado: ${formatBRL(elevador.valor)} (${elevador.rubricas.join(", ")}).`
-                  : "Nenhuma despesa do demonstrativo casa com a rubrica de elevadores."
-            }
+            rubrica={c.elevadorRubrica}
+            onRubricaChange={(v) => set("elevadorRubrica", v)}
+            calculado={elevador}
+            manual={c.consumoElevadorManual ?? null}
+            onManualChange={(v) => set("consumoElevadorManual", v)}
           >
-            <DinheiroInput value={c.consumoElevadorManual ?? null} onChange={(v) => set("consumoElevadorManual", v)} />
-          </Field>
-          <Field rotulo="Fornecedor dos elevadores" dica="Texto livre, impresso junto da linha Elevadores.">
-            <Input value={c.elevadorFornecedor} onChange={(e) => set("elevadorFornecedor", e.target.value)} />
-          </Field>
+            <Field rotulo="Fornecedor" dica="Texto livre, impresso junto da linha Elevadores.">
+              <Input value={c.elevadorFornecedor} onChange={(e) => set("elevadorFornecedor", e.target.value)} />
+            </Field>
+          </BlocoConsumoServico>
         </div>
       </SectionCard>
 
@@ -368,6 +345,78 @@ export function EditorConsideracoes({
           });
         }}
       />
+    </div>
+  );
+}
+
+/**
+ * Um serviço de "Consumo de serviços" (água/energia/elevadores): palavra-chave, valor calculado
+ * automaticamente em destaque, e o manual como exceção — fechado por padrão, só abre quem já usa.
+ */
+function BlocoConsumoServico({
+  rotulo,
+  placeholder,
+  rubrica,
+  onRubricaChange,
+  calculado,
+  manual,
+  onManualChange,
+  children,
+}: {
+  rotulo: string;
+  placeholder: string;
+  rubrica: string;
+  onRubricaChange: (v: string) => void;
+  calculado: ConsumoServico;
+  manual: number | null;
+  onManualChange: (v: number | null) => void;
+  children?: ReactNode;
+}) {
+  const [manualAberto, setManualAberto] = useState(manual !== null);
+
+  return (
+    <div className="min-w-0 rounded-md border p-4">
+      <h4 className="mb-3 text-sm font-semibold text-foreground">{rotulo}</h4>
+      <CampoRubrica rotulo="Palavras-chave" placeholder={placeholder} value={rubrica} onChange={onRubricaChange} />
+      <div className="mt-3 rounded-sm bg-muted/40 px-3 py-2">
+        <p className="text-xs text-muted-foreground">Calculado automaticamente</p>
+        <p className="num text-base font-semibold text-foreground">{formatBRL(calculado.valor)}</p>
+        {calculado.rubricas.length > 0 ? (
+          <p className="mt-0.5 break-words text-xs text-muted-foreground">{calculado.rubricas.join(", ")}</p>
+        ) : (
+          <p className="mt-0.5 text-xs text-muted-foreground">Nenhuma despesa do demonstrativo casa com essas palavras.</p>
+        )}
+      </div>
+      {manualAberto ? (
+        <div className="mt-3">
+          <Field rotulo="Valor manual (substitui o cálculo acima)">
+            <div className="flex gap-2">
+              <DinheiroInput value={manual} onChange={onManualChange} />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  onManualChange(null);
+                  setManualAberto(false);
+                }}
+              >
+                Voltar a calcular
+              </Button>
+            </div>
+          </Field>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="mt-2 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          onClick={() => setManualAberto(true)}
+        >
+          Informar valor manual em vez do calculado
+        </button>
+      )}
+      {children && <div className="mt-3">{children}</div>}
     </div>
   );
 }
