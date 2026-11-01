@@ -134,7 +134,7 @@ async function bloco(b: Bloco): Promise<Content[]> {
             widths: [150, "*"],
             body: b.itens.map((p) => [
               { text: p.rotulo, color: c(COR.suave) },
-              { text: texto(p.valor) },
+              { text: texto(p.valor), ...(b.alinhamento === "direita" ? { alignment: "right" } : {}) },
             ]),
           },
           layout: { defaultBorder: false, paddingLeft: () => 0, paddingRight: () => 8, paddingTop: () => 1.5, paddingBottom: () => 1.5 },

@@ -3,7 +3,17 @@ import { condominioPadrao } from "@/domain/condominio";
 import { recalcularDemonstrativo } from "@/domain/demonstrativo";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { mensalPadrao } from "@/domain/mensal";
-import { alternarSecao, consumoAgua, evolucaoMensal, inadimplencia, montarRelatorioFinal, notasConsolidadas, secoesIncluidas } from "@/domain/relatorioFinal";
+import {
+  alternarSecao,
+  consumoAgua,
+  consumoElevador,
+  consumoEnergia,
+  evolucaoMensal,
+  inadimplencia,
+  montarRelatorioFinal,
+  notasConsolidadas,
+  secoesIncluidas,
+} from "@/domain/relatorioFinal";
 import type { Condominio, Exercicio, Mensal } from "@/domain/types";
 
 const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias", unidades: 10 };
@@ -90,6 +100,16 @@ describe("relatório final", () => {
     const e = exercicio(4000);
     expect(consumoAgua(e)).toEqual({ valor: 1200, manual: false, rubricas: ["Água e esgoto"] });
     expect(consumoAgua({ ...e, consid: { ...e.consid, consumoAguaManual: 999 } }).valor).toBe(999);
+  });
+
+  it("consumo de energia e de elevadores usam a mesma mecânica da água, com rubrica própria", () => {
+    const e = exercicio(4000);
+    // Rubrica padrão do cadastro ("energia el[ée]trica") não casa com "Energia" do demonstrativo de teste.
+    expect(consumoEnergia(e).valor).toBe(0);
+    expect(consumoElevador(e).valor).toBe(0);
+    const comRubrica = { ...e, consid: { ...e.consid, energiaRubrica: "^energia" } };
+    expect(consumoEnergia(comRubrica)).toEqual({ valor: 800, manual: false, rubricas: ["Energia"] });
+    expect(consumoEnergia({ ...comRubrica, consid: { ...comRubrica.consid, consumoEnergiaManual: 50 } }).valor).toBe(50);
   });
 
   it("sem previsão sugerida (PDF sem essa folha, ou exercício digitado à mão), os campos ficam null", () => {

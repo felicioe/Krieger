@@ -228,7 +228,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
                   cantSplit: true,
                   children: [
                     celula(p.rotulo, { largura: ws[0]!, cor: COR.suave }),
-                    celula(p.valor, { largura: ws[1]! }),
+                    celula(p.valor, { largura: ws[1]!, alinhamento: b.alinhamento === "direita" ? "direita" : "esquerda" }),
                   ],
                 }),
             ),
