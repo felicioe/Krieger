@@ -227,6 +227,18 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                             </Label>
                           </div>
                         )}
+                        {s.id === "analise" && rel.secoes.analise && rel.receitasPorCategoria.length > 0 && (
+                          <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
+                            <Checkbox
+                              id="secao-receitas-categoria"
+                              checked={e.mostrarReceitasPorCategoria !== false}
+                              onCheckedChange={(v) => mudar({ mostrarReceitasPorCategoria: v === true })}
+                            />
+                            <Label htmlFor="secao-receitas-categoria" className="min-w-0 break-words text-xs font-normal text-muted-foreground">
+                              Receitas por categoria
+                            </Label>
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>

@@ -180,6 +180,16 @@ export async function documentoRelatorioFinal(o: {
         b.push(await blocoGrafico(pizzaSvg(rel.despesasGrupo)));
       } else b.push(vazio("Sem despesas no demonstrativo."));
     }
+    if (e.mostrarReceitasPorCategoria !== false && rel.receitasPorCategoria.length > 0) {
+      b.push({ tipo: "titulo", nivel: 3, texto: "Receitas por categoria" });
+      for (const serie of rel.receitasPorCategoria) {
+        const grafico = linhaSvg(
+          serie.pontos.map((p) => p.mes),
+          [{ nome: serie.nome, cor: "#0b3a5e", valores: serie.pontos.map((p) => p.valor) }],
+        );
+        b.push(await blocoGrafico(grafico));
+      }
+    }
     if (e.mostrarEvolucaoMensal !== false) {
       b.push({ tipo: "titulo", nivel: 3, texto: "Evolução mensal" });
       if (rel.evolucaoMensal.length) {

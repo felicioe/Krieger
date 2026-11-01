@@ -11,6 +11,7 @@ import {
   inadimplencia,
   montarRelatorioFinal,
   notasConsolidadas,
+  receitasPorCategoria,
   secoesIncluidas,
 } from "@/domain/relatorioFinal";
 import type { Condominio, Exercicio, Mensal } from "@/domain/types";
@@ -90,5 +91,36 @@ describe("relatório final", () => {
     const comRubrica = { ...e, consid: { ...e.consid, energiaRubrica: "^energia" } };
     expect(consumoEnergia(comRubrica)).toEqual({ valor: 800, manual: false, rubricas: ["Energia"] });
     expect(consumoEnergia({ ...comRubrica, consid: { ...comRubrica.consid, consumoEnergiaManual: 50 } }).valor).toBe(50);
+  });
+
+  it("receitas por categoria: uma série por nome de item; mês sem aquela receita entra como zero", () => {
+    function mensalComReceitas(mes: number, itens: { nome: string; valor: number }[]): Mensal {
+      const base = mensal(mes, null);
+      return {
+        ...base,
+        demonstrativo: recalcularDemonstrativo({
+          ...base.demonstrativo!,
+          periodo: { ini: `01/${String(mes).padStart(2, "0")}/2026`, fim: `28/${String(mes).padStart(2, "0")}/2026` },
+          receitas: { itens, subtotal: 0, totalComSaldo: 0 },
+        }),
+      };
+    }
+    const m1 = mensalComReceitas(1, [{ nome: "Taxa condominial", valor: 31200 }, { nome: "Multas e juros", valor: 800 }]);
+    const m2 = mensalComReceitas(2, [{ nome: "Taxa condominial", valor: 31200 }]);
+    const r = receitasPorCategoria([m1, m2]);
+    expect(r.map((s) => s.nome)).toEqual(["Taxa condominial", "Multas e juros"]);
+    expect(r.find((s) => s.nome === "Multas e juros")!.pontos).toEqual([
+      { mes: "01/2026", valor: 800 },
+      { mes: "02/2026", valor: 0 },
+    ]);
+  });
+
+  it("receitas por categoria: categoria sem nenhum valor no período fica de fora", () => {
+    const vazio = { ...mensal(1, null) };
+    vazio.demonstrativo = recalcularDemonstrativo({
+      ...vazio.demonstrativo!,
+      receitas: { itens: [{ nome: "Rendimentos de aplicação", valor: 0 }], subtotal: 0, totalComSaldo: 0 },
+    });
+    expect(receitasPorCategoria([vazio])).toEqual([]);
   });
 });
