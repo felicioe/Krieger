@@ -1,5 +1,73 @@
 # Estado atual e passagem de contexto
 
+## Consulta Inteligente: PR #113 mesclado e publicado — 31/10/2026
+
+PR #113 (markdown no parecer + histórico recolhível, descrito abaixo) mesclado em `main`
+(`fa6a2d4`). Achado do Codex (P2) corrigido antes do merge: o componente `ol` customizado
+descartava a prop `start` do `react-markdown`, então uma lista que o Claude continua em um
+número diferente de 1 (ex. `5. Advertência` / `6. Multa`) voltava a exibir 1, 2 na tela —
+corrigido encaminhando `start` ao elemento `<ol>`. 195 testes, `tsc --noEmit` e `docs:check`
+seguiram limpos depois do ajuste.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`64ee386`) — auto-deploy
+confirmado ao vivo (`index.html` referencia `index-DYPOIelq.js`, hash exato do build desse
+commit; `auth.php?a=eu` responde 401, API normal). Branch de feature apagada após o merge.
+
+## Consulta Inteligente: parecer em markdown de verdade + histórico recolhível — 31/10/2026
+
+Pedido do usuário: o parecer da IA saía como texto cru (negrito do Claude virava `**asteriscos**`
+literais, "parecia resposta de WhatsApp"), e o card "Histórico Recente de Consultas" sempre ficava
+aberto, ocupando espaço sem necessidade.
+
+- `frontend/src/routes/_authenticated.consulta-documentos.tsx`: o campo `resposta.texto` (markdown
+  que o Claude já devolve naturalmente — títulos, negrito, listas, citações) agora renderiza de
+  verdade via `react-markdown` + `remark-gfm`, com um conjunto de componentes próprio
+  (`COMPONENTES_PARECER`) estilizado no mesmo padrão visual do resto do app (títulos em
+  uppercase/cor primária, marcadores de lista coloridos, citação com borda lateral e fundo suave,
+  tabela com cabeçalho e rolagem própria) — nada de depender de um plugin de tipografia novo.
+- Histórico Recente de Consultas trocou `SectionCard` por `SecaoRecolhivel` (componente já existente
+  no projeto, mesmo padrão usado em outros formulários) — fechado por padrão, mostrando só a
+  contagem ("N perguntas") até o usuário abrir.
+- `react-markdown`/`remark-gfm` adicionados como dependência. Como a rota já é um chunk próprio
+  (code-split por rota, confirmado no build), isso não entra no orçamento de JS inicial — medido com
+  `npm run bundle:check`: 176.658 de 256.000 bytes gzip (chunk da própria rota, ~181 KB cru, só
+  carrega quando o usuário abre essa tela).
+
+Validado visualmente (Playwright, servidor de dev local, texto de exemplo com título, negrito,
+lista, citação e trecho em itálico — depois revertido do `mockApi.ts`, não é dado real): parecer
+renderiza com tipografia de verdade, sem asterisco solto; histórico abre e fecha corretamente,
+preservando a lista por baixo (não perde nada ao recolher).
+
+Testado: 195 testes de frontend, `tsc --noEmit` limpo, `npm run bundle:check` dentro do orçamento,
+`docs:check` limpo.
+
+## Corrige overflow horizontal no Drive de Documentos — 31/10/2026 (PR #110)
+
+Usuário reportou com print a tela "Drive de Documentos" (entrega do Codex) rolando inteira na
+horizontal. Diagnóstico levou duas rodadas: a primeira tentativa (`min-w-0` nos itens de grid
+`lg:grid-cols-12`/`xl:grid-cols-12`) não foi confirmada por testes isolados em telas largas
+(≥1024px, onde o Tailwind já evita o problema sozinho via `minmax(0,1fr)` do `grid-cols-N`) — quase
+descartei o fix por falta de prova.
+
+**Causa real, confirmada com o usuário rodando no DevTools dele** (`document.documentElement.scrollWidth`
+vs `window.innerWidth`, janela em 819px): abaixo do breakpoint `lg:` (1024px) do Tailwind,
+`lg:grid-cols-12` não ativa e o grid cai pro `display:grid` padrão sem `grid-template-columns`
+explícito — track implícito `auto`, não `minmax(0,1fr)`. Nessa faixa, um item de grid sem `min-w-0`
+sofre o blowout clássico: cresce pra caber o conteúdo (a tabela larga de arquivos), empurrando a
+coluna — e com ela a página inteira — pra fora do viewport, em vez de rolar dentro do próprio
+wrapper `overflow-x-auto` que já existia.
+
+Validado com teste A/B real no app (login, criação de condomínio, upload de 80 arquivos pelo fluxo
+de verdade, viewport 819×900 — mesma largura do usuário): sem o fix, 188px de overflow de página
+(culpado: o wrapper `overflow-x-auto` da tabela, que cresce junto com o item de grid); com o fix,
+zero. `min-w-0` adicionado nos 4 itens de grid envolvidos (coluna "Pastas e Categorias", coluna
+"Arquivos", coluna da lista quando o visualizador inline de PDF está aberto, e o painel do
+visualizador).
+
+**Mesclado (squash) e publicado — 31/10/2026**: PR #110 mesclado em `main` (`8d9ccb9`). Publicado
+via worktree `deploy-hostinger` (`3ca49de`) — auto-deploy confirmado ao vivo (`index.html` referencia
+`index-B5W0Rjkc.js`, hash exato do build desse commit; `auth.php?a=eu` responde 401, API normal).
+
 ## Tabela `kr_decisoes_previsao` confirmada aplicada em produção — 30/10/2026
 
 Pendência registrada no PR #104 (28/10/2026, "Ação pendente em produção — nova tabela") estava sem

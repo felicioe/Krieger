@@ -784,7 +784,7 @@ function PaginaDriveDocumentos() {
       {/* Painel Principal: Árvore de Pastas/Subpastas à esquerda + Lista de Arquivos e PDF Inline à direita */}
       <div className="grid gap-4 lg:grid-cols-12">
         {/* Coluna Esquerda: Estrutura de Pastas e Subpastas */}
-        <div className="lg:col-span-3">
+        <div className="min-w-0 lg:col-span-3">
           <SectionCard
             titulo="Pastas e Categorias"
             acoes={
@@ -852,7 +852,7 @@ function PaginaDriveDocumentos() {
         </div>
 
         {/* Coluna Direita: Navegação Breadcrumb, Busca, Tabela e Visualizador PDF Inline */}
-        <div className="lg:col-span-9">
+        <div className="min-w-0 lg:col-span-9">
           <SectionCard
             titulo={`Arquivos (${documentosFiltrados.length})`}
             descricao="Clique duas vezes na linha para abrir o PDF inline ou use o botão direito do mouse para todas as ações."
@@ -926,7 +926,7 @@ function PaginaDriveDocumentos() {
 
             {/* Lista de Arquivos e Visualizador PDF Inline */}
             <div className={`grid gap-4 ${docVisualizando ? "xl:grid-cols-12" : ""}`}>
-              <div className={docVisualizando ? "xl:col-span-6" : ""}>
+              <div className={`min-w-0 ${docVisualizando ? "xl:col-span-6" : ""}`}>
                 {docsQuery.isLoading ? (
                   <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
                     <Loader2 className="mr-2 size-4 animate-spin" />
@@ -1088,7 +1088,7 @@ function PaginaDriveDocumentos() {
 
               {/* Painel de Visualização Inline em PDF */}
               {docVisualizando && (
-                <div className="flex flex-col rounded-lg border bg-card xl:col-span-6">
+                <div className="flex min-w-0 flex-col rounded-lg border bg-card xl:col-span-6">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">{docVisualizando.nomeArquivo}</p>
