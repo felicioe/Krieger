@@ -270,8 +270,12 @@ export function pizzaSvg(fatias: { nome: string; valor: number }[], largura = 48
 /**
  * Linhas de evolução ao longo de categorias ordenadas (ex.: receitas/despesas/saldo mês a mês).
  * Eixo Y compartilhado entre as séries; eixo X com uma categoria por ponto.
+ * `semLegenda`: quando o nome da série já aparece como título fora da imagem (ex.: um
+ * mini-gráfico por categoria), a legenda interna do SVG é dispensável — e arriscada, porque não
+ * quebra linha dentro da largura fixa do gráfico e cortaria um nome de categoria longo sem deixar
+ * como recuperar o texto depois de rasterizado.
  */
-export function linhaSvg(categorias: string[], series: Serie[], largura = 480): Grafico {
+export function linhaSvg(categorias: string[], series: Serie[], largura = 480, semLegenda = false): Grafico {
   const FONTE_EIXO = 8;
   const todos = series.flatMap((s) => s.valores);
   const n = categorias.length;
@@ -317,7 +321,7 @@ export function linhaSvg(categorias: string[], series: Serie[], largura = 480): 
       partes.push(`<circle cx="${escalaX(i)}" cy="${escalaY(v)}" r="2.4" fill="${s.cor}"/>`),
     );
   });
-  legendaSeries(series, m.esq, partes);
+  if (!semLegenda) legendaSeries(series, m.esq, partes);
   return envolver(largura, altura, partes);
 }
 

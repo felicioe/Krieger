@@ -32,10 +32,10 @@ function MiniGrafico({ serie, cor }: { serie: SerieReceita; cor: string }) {
 
   return (
     <div className="min-w-0 rounded-md border p-3">
-      <div className="mb-1 flex items-baseline justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5 text-xs font-semibold text-foreground">
-          <span className="size-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: cor }} aria-hidden="true" />
-          <span className="truncate">{serie.nome}</span>
+      <div className="mb-1 flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start gap-1.5 text-xs font-semibold text-foreground">
+          <span className="mt-0.5 size-2.5 shrink-0 rounded-[2px]" style={{ backgroundColor: cor }} aria-hidden="true" />
+          <span className="break-words">{serie.nome}</span>
         </div>
         {ultimo && (
           <div className="shrink-0 text-right">

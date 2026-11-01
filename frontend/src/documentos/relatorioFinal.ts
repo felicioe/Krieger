@@ -183,9 +183,15 @@ export async function documentoRelatorioFinal(o: {
     if (e.mostrarReceitasPorCategoria !== false && rel.receitasPorCategoria.length > 0) {
       b.push({ tipo: "titulo", nivel: 3, texto: "Receitas por categoria" });
       for (const serie of rel.receitasPorCategoria) {
+        // Nome da categoria como parágrafo em negrito (quebra linha normalmente), não como
+        // legenda dentro do SVG — essa não quebra linha numa largura fixa e cortaria um nome
+        // longo sem deixar como recuperar o texto depois de rasterizado (achado do Codex no PR #117).
+        b.push({ tipo: "paragrafo", texto: serie.nome, negrito: true });
         const grafico = linhaSvg(
           serie.pontos.map((p) => p.mes),
           [{ nome: serie.nome, cor: "#0b3a5e", valores: serie.pontos.map((p) => p.valor) }],
+          480,
+          true,
         );
         b.push(await blocoGrafico(grafico));
       }
