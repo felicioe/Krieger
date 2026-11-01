@@ -30,6 +30,11 @@ Painel com data calculada) — sem migração, sem tocar nesses campos nem no Pa
   zero (igual a água já fazia); a linha de água saiu do grupo "Valores" (ficou redundante com a
   tabela nova).
 
+PR #114 mesclado em `main` (`4b016ec`) — CI verde e Codex sem achados. Build +
+`npm run package:hostinger` + push no `deploy-hostinger` (`1b69cf7`) — auto-deploy confirmado ao
+vivo (`index.html` referencia `index-mGHoGIbx.js`, hash exato do build desse commit; `auth.php?a=eu`
+responde 401, API normal). Branch de feature apagada após o merge.
+
 Testado: domínio (`consumoEnergia`/`consumoElevador`, mesma mecânica/teste que já existia pra
 água), 196 testes de frontend, `tsc --noEmit` e `docs:check` limpos nos dois lados. Validado
 visualmente com Playwright no servidor de dev local, condomínio de exemplo (`condo-acacias`):
