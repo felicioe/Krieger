@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, Loader2, Save, Trash2 } from "lucide-react";
@@ -168,10 +169,10 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
                 setAba("demonstrativo");
               }}
             />
-            <Button variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button permissao="relatorio_mensal.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
               <Trash2 /> Excluir
             </Button>
-            <Button type="submit" form="form-mensal" disabled={salvar.isPending}>
+            <Button permissao="relatorio_mensal.editar" type="submit" form="form-mensal" disabled={salvar.isPending}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>

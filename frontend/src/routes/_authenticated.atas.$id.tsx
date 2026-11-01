@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, CheckCircle2, FileText, Loader2, LockOpen, Save, Trash2, Users } from "lucide-react";
@@ -182,7 +183,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
               rotulo={travada ? "Gerar ata" : "Gerar rascunho"}
             />
             {travada ? (
-              <Button variant="outline" type="button" onClick={() => setAcao("reabrir")} disabled={salvar.isPending}>
+              <Button permissao="atas.editar" variant="outline" type="button" onClick={() => setAcao("reabrir")} disabled={salvar.isPending}>
                 <LockOpen /> Reabrir
               </Button>
             ) : (
@@ -190,11 +191,11 @@ function FormAta({ inicial }: { inicial: Ata }) {
                 <Button variant="outline" type="button" onClick={() => setAcao("excluir")} className="text-destructive hover:text-destructive">
                   <Trash2 /> Excluir
                 </Button>
-                <Button variant="outline" type="submit" form="form-ata" disabled={salvar.isPending}>
+                <Button permissao="atas.editar" variant="outline" type="submit" form="form-ata" disabled={salvar.isPending}>
                   {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
                   Salvar
                 </Button>
-                <Button type="button" onClick={() => pronta() && setAcao("finalizar")} disabled={salvar.isPending}>
+                <Button permissao="atas.editar" type="button" onClick={() => pronta() && setAcao("finalizar")} disabled={salvar.isPending}>
                   <CheckCircle2 /> Finalizar
                 </Button>
               </>

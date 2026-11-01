@@ -1,4 +1,5 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { Building2, CalendarRange, FileClock, FileSpreadsheet, FileUp, GitCompareArrows } from "lucide-react";
 import type { LucideIcon } from "lucide-react";

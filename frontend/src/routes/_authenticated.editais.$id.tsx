@@ -1,4 +1,5 @@
-import { createFileRoute, Link, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { ArrowLeft, ClipboardList, ClipboardPlus, ListRestart, Loader2, Save, Trash2 } from "lucide-react";
@@ -222,6 +223,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
               <Button
                 variant="outline"
                 type="button"
+                permissao="atas.editar"
                 onClick={novaAta}
                 disabled={sujo || !condo || criarAta.isPending}
                 title={sujo ? "Salve o edital antes de criar a ata." : undefined}
@@ -230,10 +232,10 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
                 Criar ata
               </Button>
             )}
-            <Button variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button permissao="editais.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
               <Trash2 /> Excluir
             </Button>
-            <Button type="submit" form="form-edital" disabled={salvar.isPending}>
+            <Button permissao="editais.editar" type="submit" form="form-edital" disabled={salvar.isPending}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>

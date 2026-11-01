@@ -85,7 +85,7 @@ function ListaEditais() {
         titulo="Editais"
         descricao="Editais de convocação das assembleias ordinárias e extraordinárias."
         acoes={
-          <Button onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
+          <Button permissao="editais.editar" onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
             <Plus /> Novo edital
           </Button>
         }

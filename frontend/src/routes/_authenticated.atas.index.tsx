@@ -82,7 +82,7 @@ function ListaAtas() {
         titulo="Atas"
         descricao="Atas das assembleias, digitadas durante a reunião."
         acoes={
-          <Button onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
+          <Button permissao="atas.editar" onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
             <Plus /> Nova ata
           </Button>
         }

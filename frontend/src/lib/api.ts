@@ -76,6 +76,8 @@ export const api = {
     usuarios: () => guarda(() => impl().auth.usuarios()),
     usuarioSalvar: (u: UsuarioSalvar) => guarda(() => impl().auth.usuarioSalvar(u)),
     usuarioExcluir: (id: string) => guarda(() => impl().auth.usuarioExcluir(id)),
+    permissoes: () => guarda(() => impl().auth.permissoes()),
+    permissaoSalvar: (usuarioId: string, chave: string, efeito: "permitir" | "negar" | "remover") => guarda(() => impl().auth.permissaoSalvar(usuarioId, chave, efeito)),
   },
   documentos: {
     listar: (condoId: string) => guarda(() => impl().documentos.listar(condoId)),

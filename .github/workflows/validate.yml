@@ -39,6 +39,11 @@ jobs:
           KRIEGER_TEST_DSN: mysql:host=127.0.0.1;port=3306;dbname=krieger_test;charset=utf8mb4
           KRIEGER_TEST_PASSWORD: krieger-ci-only
         run: php scripts/test-confirmacao.php
+      - name: Testar permissões e migração no MySQL efêmero
+        env:
+          KRIEGER_TEST_DSN: mysql:host=127.0.0.1;port=3306;dbname=krieger_test;charset=utf8mb4
+          KRIEGER_TEST_PASSWORD: krieger-ci-only
+        run: php scripts/test-permissoes.php
       - name: Instalar e compilar frontend
         working-directory: frontend
         run: |

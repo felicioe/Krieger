@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useBlocker, useNavigate } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
+import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { FileSpreadsheet, Loader2, Save } from "lucide-react";
@@ -209,7 +210,7 @@ function EditorPrevisao({
                 <FileSpreadsheet /> Prestação de contas
               </Link>
             </Button>
-            <Button type="submit" form="form-previsao" disabled={salvar.isPending}>
+            <Button permissao="previsao_orcamentaria.editar" type="submit" form="form-previsao" disabled={salvar.isPending}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
