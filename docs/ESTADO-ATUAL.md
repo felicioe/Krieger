@@ -9,8 +9,15 @@ acesso total; funções administrativas continuam exclusivas de admin.
 Migração aplicada pelo responsável no phpMyAdmin, com contagem de 25 confirmada.
 Leituras compartilhadas entre telas são documentadas em PERMISSOES-GRANULARES.md.
 CI inclui teste MySQL para migração repetida, negação, concessão e revogação.
-Release proposto 1.01. Publicação ainda depende do CI final e integração em main;
-não confundir os commits de desenvolvimento com evidência de produção.
+Release 1.01 publicado: PR #112 integrado em `aad25bc`, pacote de main publicado
+em `deploy-hostinger` no commit `ba5b1da`. Ambos os checks finais do PR passaram,
+incluindo MySQL temporário. Local: 182 testes de domínio e 202 de frontend,
+typechecks, sintaxe PHP, documentação, build e pacote aprovados.
+Produção confirmada pelo asset `index-CqZmvNh9.js` e versão 1.01; raiz/asset HTTP
+200, APIs sem sessão HTTP 401 e biblioteca interna HTTP 403. Não houve validação
+manual com contas reais autenticadas nesta sessão. Evidências completas no PR.
+Nenhum SQL adicional. Rollback de aplicação pelo pacote anterior `1b69cf7`;
+tabelas aditivas podem permanecer sem uso com a versão antiga, sem apagar dados.
 
 ## Documentos obrigatórios + Consumo de serviços nas Considerações finais — 01/11/2026
 
