@@ -214,6 +214,7 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
 
 try {
   if ($a === 'confirmar_importacao') {
+    exigir_permissao($usuario, 'importador.editar');
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST para confirmar a importação.', 405);
     try { $resultado = confirmar_importacao($pdo, $corpo); }
     catch (InvalidArgumentException $e) { erro($e->getMessage()); }

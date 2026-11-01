@@ -351,6 +351,7 @@ function usuariosSemente(): UsuarioMock[] {
       login: "admin",
       nome: "Administrador",
       perfil: "admin",
+      permissoes: ['*'],
       ativo: true,
       trocarSenha: false,
       criadoEm: new Date().toISOString(),
@@ -487,7 +488,7 @@ function sessao(): Usuario {
   const u = id ? usuarios().find((x) => x.id === id && x.ativo) : undefined;
   if (!u) throw new ApiError("Sessão expirada. Entre novamente.", 401);
   const { id: uid, login, nome, perfil, trocarSenha } = u;
-  return { id: uid, login, nome, perfil, trocarSenha };
+  return { id: uid, login, nome, perfil, trocarSenha, permissoes: ['*'] };
 }
 function exigirAdmin() {
   const u = sessao();
@@ -821,6 +822,7 @@ export const mockApi: ApiAdapter = {
           login,
           nome,
           perfil: dadosU.perfil,
+          permissoes: ['*'],
           ativo: dadosU.ativo,
           trocarSenha: true,
           criadoEm: new Date().toISOString(),
