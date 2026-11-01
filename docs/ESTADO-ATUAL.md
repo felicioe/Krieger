@@ -1,5 +1,46 @@
 # Estado atual e passagem de contexto
 
+## Documentos obrigatórios + Consumo de serviços nas Considerações finais — 01/11/2026
+
+Dois mockups do responsável (Artifact, nunca implementados antes) viraram código nesta sessão,
+num único PR. Decisão de arquitetura confirmada com o responsável antes de começar: a nova lista
+"Documentos obrigatórios" é **independente** dos campos já existentes em "Manutenções e vistorias"
+(vigência de extintores, caixa d'água etc., que seguem alimentando o alerta de vencimentos do
+Painel com data calculada) — sem migração, sem tocar nesses campos nem no Painel.
+
+- **Documentos obrigatórios** (`domain/types.ts` — `DocumentoObrigatorio`; `Condominio.documentosObrigatorios`
+  e `Exercicio.consid.documentosObrigatorios`): lista livre por condomínio — nome, status (✓ em
+  dia / ✗ pendente, marcado manualmente, sem data calculada), vencimento/informação em texto livre,
+  observação, e um toggle "no relatório" que controla se aparece nas Considerações finais. 7 itens
+  padrão (`domain/condominio.ts` — `documentosObrigatoriosPadrao()`): Extintor, Seguro, Limpeza de
+  Caixa D'Água, Dedetização, Alvará de Bombeiros, Alvará Estrutural, Elevador — pré-cadastrados em
+  todo condomínio novo ou existente (via `normalizarCondominio`), editável/removível. Tela própria
+  no cadastro do condomínio (`_authenticated.condominios.$id.tsx`, seção recolhível, usa
+  `RepeatableList` com reordenação por arrasto) e editor por relatório (`EditorConsideracoes.tsx`,
+  copiado do cadastro via `considDoCondominio` e recarregável).
+- **Consumo de serviços** (Considerações finais, PDF/Word/tela): Seguro passou a imprimir valores
+  alinhados à direita (campo novo `alinhamento?: "direita"` no bloco `"pares"` de
+  `lib/documento/tipos.ts`, honrado em `pdf.ts`/`word.ts`/`PreviaRelatorio.tsx`). Nova seção com
+  Água, Energia Elétrica e Elevadores lado a lado — mesmo mecanismo que a Água já usava (soma as
+  despesas do demonstrativo cuja rubrica casa com uma expressão configurável no cadastro;
+  "valor médio" é só período ÷ 12), generalizado em `domain/relatorioFinal.ts`
+  (`consumoPorRubrica` + `consumoAgua`/`consumoEnergia`/`consumoElevador`). Fornecedor dos
+  elevadores (texto livre) vira uma 3ª linha só na célula "Elevadores" — sem coluna "Empresa"
+  separada, que o mockup descartou por ficar espremida. Cada linha some quando o valor calculado é
+  zero (igual a água já fazia); a linha de água saiu do grupo "Valores" (ficou redundante com a
+  tabela nova).
+
+Testado: domínio (`consumoEnergia`/`consumoElevador`, mesma mecânica/teste que já existia pra
+água), 196 testes de frontend, `tsc --noEmit` e `docs:check` limpos nos dois lados. Validado
+visualmente com Playwright no servidor de dev local, condomínio de exemplo (`condo-acacias`):
+checklist com 7 itens e toggle de status funcionando no cadastro e no editor; na prévia do
+relatório, Seguro com valores alinhados à direita, tabela de Consumo de serviços com os três
+valores batendo com o demonstrativo de exemplo (Água R$ 54.300,00, Energia R$ 31.200,00,
+Elevadores R$ 14.400,00, cada um ÷ 12), Documentos obrigatórios listados, e o grupo "Valores"
+some quando não sobra nada nele (contas a receber/pagar vazias, água mudou de lugar). O teste
+`documentosLargura.test.ts` (confere que toda tabela de todo documento cabe na página) já cobre a
+tabela nova, usando o mesmo condomínio de exemplo.
+
 ## Consulta Inteligente: PR #113 mesclado e publicado — 31/10/2026
 
 PR #113 (markdown no parecer + histórico recolhível, descrito abaixo) mesclado em `main`

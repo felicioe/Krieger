@@ -124,12 +124,33 @@ export function notasConsolidadas(mensais: Mensal[]): NotaConsolidada[] {
   );
 }
 
-/** Despesas do demonstrativo cuja rubrica casa com `aguaRubrica`; o valor manual, se informado, prevalece. */
-export function consumoAgua(e: Pick<Exercicio, "demonstrativo" | "consid">): { valor: number; manual: boolean; rubricas: string[] } {
-  if (typeof e.consid.consumoAguaManual === "number") return { valor: e.consid.consumoAguaManual, manual: true, rubricas: [] };
-  const re = expressaoDeducao(e.consid.aguaRubrica);
-  const itens = re ? (e.demonstrativo?.despesas.grupos ?? []).flatMap((g) => g.itens).filter((i) => re.test(i.nome)) : [];
+export interface ConsumoServico {
+  valor: number;
+  manual: boolean;
+  rubricas: string[];
+}
+
+/** Despesas do demonstrativo cuja rubrica casa com `rubrica`; o valor manual, se informado, prevalece. */
+function consumoPorRubrica(demonstrativo: Demonstrativo | null, rubrica: string, manual: number | null | undefined): ConsumoServico {
+  if (typeof manual === "number") return { valor: manual, manual: true, rubricas: [] };
+  const re = expressaoDeducao(rubrica);
+  const itens = re ? (demonstrativo?.despesas.grupos ?? []).flatMap((g) => g.itens).filter((i) => re.test(i.nome)) : [];
   return { valor: centavos(itens.reduce((s, i) => s + (Number(i.valor) || 0), 0)), manual: false, rubricas: itens.map((i) => i.nome) };
+}
+
+/** Despesas do demonstrativo cuja rubrica casa com `aguaRubrica`; o valor manual, se informado, prevalece. */
+export function consumoAgua(e: Pick<Exercicio, "demonstrativo" | "consid">): ConsumoServico {
+  return consumoPorRubrica(e.demonstrativo, e.consid.aguaRubrica, e.consid.consumoAguaManual);
+}
+
+/** Mesmo mecanismo da água, para a linha "Energia elétrica" do consumo de serviços. */
+export function consumoEnergia(e: Pick<Exercicio, "demonstrativo" | "consid">): ConsumoServico {
+  return consumoPorRubrica(e.demonstrativo, e.consid.energiaRubrica, e.consid.consumoEnergiaManual);
+}
+
+/** Mesmo mecanismo da água, para a linha "Elevadores" do consumo de serviços. */
+export function consumoElevador(e: Pick<Exercicio, "demonstrativo" | "consid">): ConsumoServico {
+  return consumoPorRubrica(e.demonstrativo, e.consid.elevadorRubrica, e.consid.consumoElevadorManual);
 }
 
 /** Total de despesas por grupo (gráfico de pizza). */
@@ -163,7 +184,9 @@ export interface RelatorioFinal {
   inadimplencia: ReturnType<typeof inadimplencia>;
   evolucaoMensal: PontoEvolucaoMensal[];
   notas: NotaConsolidada[];
-  agua: ReturnType<typeof consumoAgua>;
+  agua: ConsumoServico;
+  energia: ConsumoServico;
+  elevador: ConsumoServico;
   despesasGrupo: { nome: string; valor: number }[];
   conferencia: ItemConferencia[];
 }
@@ -305,6 +328,8 @@ export function montarRelatorioFinal(entrada: {
     evolucaoMensal: evolucao,
     notas,
     agua: consumoAgua(e),
+    energia: consumoEnergia(e),
+    elevador: consumoElevador(e),
     despesasGrupo: despesasPorGrupo(d),
     conferencia: c,
   };

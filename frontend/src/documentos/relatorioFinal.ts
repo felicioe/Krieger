@@ -6,7 +6,7 @@ import type { Bloco, Coluna, Documento, LinhaTabela, Texto } from "@/lib/documen
 import { legendaSituacao, marcaSituacao, pctTexto } from "@/components/previsto-realizado/TabelaComparativo";
 import { semRealizado, textoSemRealizado } from "@/components/previsto-realizado/semRealizado";
 import { nomeParaRelatorio } from "@/domain/condominio";
-import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
+import { SECOES, type ConsumoServico, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type { ResultadoComparativo, Totais } from "@/domain/previstoRealizado";
 import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio, PrevisaoSugeridaExercicio } from "@/domain/types";
@@ -310,12 +310,28 @@ export function tabelaComparativo(c: ResultadoComparativo, mostrarAnaliticas = t
   ];
 }
 
+/** Linha da tabela "Consumo de serviços": serviço (com a rubrica como legenda), consumido e valor médio (período ÷ 12). */
+function linhaServico(nome: string, rubricaRotulo: string, consumo: ConsumoServico, fornecedor?: string): LinhaTabela | null {
+  if (consumo.valor <= 0) return null;
+  return {
+    celulas: [
+      [
+        { texto: nome },
+        { texto: `\n${rubricaRotulo}`, suave: true },
+        ...(fornecedor ? [{ texto: `\n${fornecedor}`, suave: true }] : []),
+      ],
+      formatBRL(consumo.valor),
+      [{ texto: formatBRL(consumo.valor / 12), suave: true }],
+    ],
+  };
+}
+
 /** Considerações finais — mesmos itens da prévia na tela. */
 function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
   const c = e.consid;
   const out: Bloco[] = [];
-  const grupo = (titulo: string, itens: { rotulo: string; valor: Texto }[]) => {
-    if (itens.length) out.push({ tipo: "titulo", nivel: 3, texto: titulo }, { tipo: "pares", itens });
+  const grupo = (titulo: string, itens: { rotulo: string; valor: Texto }[], o: { alinhamento?: "esquerda" | "direita" } = {}) => {
+    if (itens.length) out.push({ tipo: "titulo", nivel: 3, texto: titulo }, { tipo: "pares", itens, ...o });
   };
 
   grupo(
@@ -326,12 +342,16 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
     })),
   );
   if (c.seguradora || c.vigenciaSeguro || c.seguro.coberturas.length > 0) {
-    grupo("Seguro", [
-      ...(c.seguradora ? [{ rotulo: "Seguradora", valor: c.seguradora }] : []),
-      ...(c.vigenciaSeguro ? [{ rotulo: "Vigência até", valor: formatData(c.vigenciaSeguro) }] : []),
-      ...(c.seguro.riscoAbsoluto !== null ? [{ rotulo: "Risco absoluto", valor: formatBRL(c.seguro.riscoAbsoluto) }] : []),
-      ...c.seguro.coberturas.map((cb) => ({ rotulo: cb.desc || "Cobertura", valor: formatBRL(cb.valor) })),
-    ]);
+    grupo(
+      "Seguro",
+      [
+        ...(c.seguradora ? [{ rotulo: "Seguradora", valor: c.seguradora }] : []),
+        ...(c.vigenciaSeguro ? [{ rotulo: "Vigência até", valor: formatData(c.vigenciaSeguro) }] : []),
+        ...(c.seguro.riscoAbsoluto !== null ? [{ rotulo: "Risco absoluto", valor: formatBRL(c.seguro.riscoAbsoluto) }] : []),
+        ...c.seguro.coberturas.map((cb) => ({ rotulo: cb.desc || "Cobertura", valor: formatBRL(cb.valor) })),
+      ],
+      { alinhamento: "direita" },
+    );
   }
   const proxima = dataVistoria(c);
   grupo("Manutenções e vistorias", [
@@ -352,12 +372,43 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
         ]
       : []),
   ]);
+  const documentos = c.documentosObrigatorios.filter((d) => d.noRelatorio && d.nome.trim());
+  grupo(
+    "Documentos obrigatórios",
+    documentos.map((d) => ({
+      rotulo: d.nome,
+      valor: [
+        { texto: d.status === "ok" ? "Em dia" : "Pendente" },
+        ...(d.informacao ? [{ texto: ` · ${d.informacao}`, suave: true }] : []),
+        ...(d.observacao ? [{ texto: ` · ${d.observacao}`, suave: true }] : []),
+      ],
+    })),
+  );
+  const servicos = [
+    linhaServico("Água", c.aguaRubrica, rel.agua),
+    linhaServico("Energia elétrica", c.energiaRubrica, rel.energia),
+    linhaServico("Elevadores", c.elevadorRubrica, rel.elevador, c.elevadorFornecedor),
+  ].filter((l): l is LinhaTabela => l !== null);
+  if (servicos.length) {
+    out.push(
+      { tipo: "titulo", nivel: 3, texto: "Consumo de serviços" },
+      {
+        tipo: "tabela",
+        pequena: true,
+        colunas: [
+          { titulo: "Serviço", largura: "*" },
+          { titulo: "Consumido no período", largura: 110, alinhamento: "direita" },
+          { titulo: "Valor médio (÷ 12)", largura: 110, alinhamento: "direita" },
+        ],
+        linhas: servicos,
+      },
+    );
+  }
   const receber = typeof c.contasReceber === "number" ? c.contasReceber : null;
   const pagar = typeof c.contasPagar === "number" ? c.contasPagar : null;
   grupo("Valores", [
     ...(receber !== null ? [{ rotulo: "Contas a receber", valor: formatBRL(receber) }] : []),
     ...(pagar !== null ? [{ rotulo: "Contas a pagar", valor: formatBRL(pagar) }] : []),
-    ...(rel.agua.valor > 0 ? [{ rotulo: "Consumo de água no exercício", valor: formatBRL(rel.agua.valor) }] : []),
   ]);
   grupo(
     "Índices de correção aplicados",

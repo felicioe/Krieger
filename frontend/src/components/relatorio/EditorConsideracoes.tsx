@@ -1,18 +1,22 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { FileUp, Loader2, RefreshCw } from "lucide-react";
+import { Check, FileUp, Loader2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
+import { cn } from "@/lib/utils";
 import { DataInput, DinheiroInput, InteiroInput, MesAnoInput } from "@/components/app/inputs";
 import { formatBRL } from "@/lib/format";
 import { mensagemErro } from "@/lib/api";
 import { considDoCondominio } from "@/domain/exercicio";
+import { documentosObrigatoriosPadrao } from "@/domain/condominio";
 import { lerApoliceSeguro } from "@/domain/pdfParser";
+import type { ConsumoServico } from "@/domain/relatorioFinal";
 import type { Condominio, Exercicio } from "@/domain/types";
 
 type Consid = Exercicio["consid"];
@@ -25,13 +29,17 @@ export function EditorConsideracoes({
   condominio,
   receberMensais,
   agua,
+  energia,
+  elevador,
 }: {
   consid: Consid;
   onChange: (c: Consid) => void;
   condominio: Condominio | null;
   /** Posição de contas a receber do último relatório mensal do período, se houver. */
   receberMensais: { mes: string; valor: number | null } | null;
-  agua: { valor: number; manual: boolean; rubricas: string[] };
+  agua: ConsumoServico;
+  energia: ConsumoServico;
+  elevador: ConsumoServico;
 }) {
   const [confirmarRecarga, setConfirmarRecarga] = useState(false);
   const set = <K extends keyof Consid>(k: K, v: Consid[K]) => onChange({ ...c, [k]: v });
@@ -179,6 +187,63 @@ export function EditorConsideracoes({
         </div>
       </SectionCard>
 
+      <SectionCard
+        titulo="Documentos obrigatórios"
+        descricao="Lista independente dos campos de Manutenções e vistorias — status marcado manualmente, sem data calculada."
+      >
+        <RepeatableList
+          itens={c.documentosObrigatorios}
+          onChange={(v) => set("documentosObrigatorios", v)}
+          novo={() => ({ nome: "", status: "pendente" as const, informacao: "", observacao: "", noRelatorio: true })}
+          colunas="grid-cols-1 @xs:grid-cols-2 @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
+          cabecalhos={["Item", "Status", "Vencimento / informação", "No relatório", "Observação"]}
+          rotuloAdicionar="Adicionar item"
+          vazio="Nenhum item cadastrado."
+          render={(d, up) => (
+            <>
+              <Input aria-label="Item" placeholder="Nome do item" value={d.nome} onChange={(e) => up({ nome: e.target.value })} />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "justify-center gap-1.5",
+                  d.status === "ok"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
+                    : "border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10",
+                )}
+                onClick={() => up({ status: d.status === "ok" ? "pendente" : "ok" })}
+              >
+                {d.status === "ok" ? <Check className="size-3.5" /> : <X className="size-3.5" />}
+                {d.status === "ok" ? "Em dia" : "Pendente"}
+              </Button>
+              <Input
+                aria-label="Vencimento ou informação"
+                placeholder="dd/mm/aaaa ou texto livre"
+                value={d.informacao}
+                onChange={(e) => up({ informacao: e.target.value })}
+              />
+              <label className="flex items-center justify-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                <Checkbox checked={d.noRelatorio} onCheckedChange={(v) => up({ noRelatorio: v === true })} aria-label="Incluir no relatório" />
+                <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+              </label>
+              <Textarea
+                aria-label="Observação"
+                placeholder="opcional"
+                rows={1}
+                value={d.observacao}
+                onChange={(e) => up({ observacao: e.target.value })}
+              />
+            </>
+          )}
+        />
+        {c.documentosObrigatorios.length === 0 && (
+          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => set("documentosObrigatorios", documentosObrigatoriosPadrao())}>
+            Usar checklist padrão
+          </Button>
+        )}
+      </SectionCard>
+
       <SectionCard titulo="Valores">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field
@@ -213,6 +278,41 @@ export function EditorConsideracoes({
           >
             <DinheiroInput value={c.consumoAguaManual ?? null} onChange={(v) => set("consumoAguaManual", v)} />
           </Field>
+          <div />
+          <Field rotulo="Rubrica de energia elétrica" dica="Mesmo mecanismo da água, para a seção Consumo de serviços.">
+            <Input value={c.energiaRubrica} onChange={(e) => set("energiaRubrica", e.target.value)} className="font-mono text-xs" />
+          </Field>
+          <Field
+            rotulo="Consumo de energia (manual)"
+            dica={
+              energia.manual
+                ? "Valor manual em uso. Apague para calcular pelo demonstrativo."
+                : energia.rubricas.length
+                  ? `Calculado: ${formatBRL(energia.valor)} (${energia.rubricas.join(", ")}).`
+                  : "Nenhuma despesa do demonstrativo casa com a rubrica de energia."
+            }
+          >
+            <DinheiroInput value={c.consumoEnergiaManual ?? null} onChange={(v) => set("consumoEnergiaManual", v)} />
+          </Field>
+          <div />
+          <Field rotulo="Rubrica de elevadores" dica="Mesmo mecanismo da água, para a seção Consumo de serviços.">
+            <Input value={c.elevadorRubrica} onChange={(e) => set("elevadorRubrica", e.target.value)} className="font-mono text-xs" />
+          </Field>
+          <Field
+            rotulo="Consumo de elevadores (manual)"
+            dica={
+              elevador.manual
+                ? "Valor manual em uso. Apague para calcular pelo demonstrativo."
+                : elevador.rubricas.length
+                  ? `Calculado: ${formatBRL(elevador.valor)} (${elevador.rubricas.join(", ")}).`
+                  : "Nenhuma despesa do demonstrativo casa com a rubrica de elevadores."
+            }
+          >
+            <DinheiroInput value={c.consumoElevadorManual ?? null} onChange={(v) => set("consumoElevadorManual", v)} />
+          </Field>
+          <Field rotulo="Fornecedor dos elevadores" dica="Texto livre, impresso junto da linha Elevadores.">
+            <Input value={c.elevadorFornecedor} onChange={(e) => set("elevadorFornecedor", e.target.value)} />
+          </Field>
         </div>
       </SectionCard>
 
@@ -238,7 +338,7 @@ export function EditorConsideracoes({
         aberto={confirmarRecarga}
         aoMudar={setConfirmarRecarga}
         titulo="Recarregar do cadastro do condomínio?"
-        descricao="Administração, seguro, manutenções, vistoria, rubrica de água e índices voltam a ser os do cadastro. Contas a receber/pagar, consumo manual e as outras considerações são mantidos."
+        descricao="Administração, seguro, manutenções, vistoria, documentos obrigatórios, rubricas de água/energia/elevadores e índices voltam a ser os do cadastro. Contas a receber/pagar, consumos manuais e as outras considerações são mantidos."
         rotuloConfirmar="Recarregar"
         aoConfirmar={() => {
           if (!condominio) return;
@@ -248,6 +348,8 @@ export function EditorConsideracoes({
             contasReceber: c.contasReceber,
             contasPagar: c.contasPagar,
             consumoAguaManual: c.consumoAguaManual ?? null,
+            consumoEnergiaManual: c.consumoEnergiaManual ?? null,
+            consumoElevadorManual: c.consumoElevadorManual ?? null,
             extras: c.extras,
           });
         }}

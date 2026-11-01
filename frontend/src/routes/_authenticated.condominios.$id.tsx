@@ -79,7 +79,7 @@ const MODO_REGRA: { valor: ModoRegra; rotulo: string }[] = [
   { valor: "ultimo+12", rotulo: "Último valor × 12" },
 ];
 
-const SECOES = ["administracao", "seguro", "manutencoes", "indices", "automacoes", "regras", "depara"] as const;
+const SECOES = ["administracao", "seguro", "manutencoes", "documentos", "indices", "automacoes", "regras", "depara"] as const;
 type Secao = (typeof SECOES)[number];
 const todas = (v: boolean) => Object.fromEntries(SECOES.map((k) => [k, v])) as Record<Secao, boolean>;
 
@@ -98,6 +98,9 @@ function resumos(c: Condominio): Record<Secao, string> {
       c.seguro.coberturas.length ? contagem(c.seguro.coberturas.length, "cobertura", "coberturas") : "nenhuma cobertura",
     ].join(" · "),
     manutencoes: `${datas} de 5 datas informadas`,
+    documentos: c.documentosObrigatorios.length
+      ? `${c.documentosObrigatorios.filter((d) => d.status === "ok").length} de ${c.documentosObrigatorios.length} em dia`
+      : "Nenhum item cadastrado",
     indices: anos.length
       ? `${contagem(c.indices.length, "índice", "índices")} (${anos[0] === anos[anos.length - 1] ? anos[0] : `${anos[0]} a ${anos[anos.length - 1]}`})`
       : c.indices.length
@@ -423,6 +426,58 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           </div>
         </SecaoRecolhivel>
 
+        <SecaoRecolhivel
+          titulo="Documentos obrigatórios"
+          descricao="Lista independente das datas acima — status marcado manualmente (sem vencimento calculado), para itens como alvarás."
+          resumo={res.documentos}
+          aberta={abertas.documentos}
+          aoMudar={abrir("documentos")}
+        >
+          <RepeatableList
+            itens={c.documentosObrigatorios}
+            onChange={(v) => set("documentosObrigatorios", v)}
+            novo={() => ({ nome: "", status: "pendente" as const, informacao: "", observacao: "", noRelatorio: true })}
+            colunas="grid-cols-1 @xs:grid-cols-2 @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
+            cabecalhos={["Item", "Status", "Vencimento / informação", "No relatório", "Observação"]}
+            rotuloAdicionar="Adicionar item"
+            vazio="Nenhum item cadastrado."
+            render={(d, up) => (
+              <>
+                <Input aria-label="Item" placeholder="Nome do item" value={d.nome} onChange={(e) => up({ nome: e.target.value })} />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={
+                    d.status === "ok"
+                      ? "justify-center gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
+                      : "justify-center gap-1.5 border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                  }
+                  onClick={() => up({ status: d.status === "ok" ? "pendente" : "ok" })}
+                >
+                  {d.status === "ok" ? "✓ Em dia" : "✗ Pendente"}
+                </Button>
+                <Input
+                  aria-label="Vencimento ou informação"
+                  placeholder="dd/mm/aaaa ou texto livre"
+                  value={d.informacao}
+                  onChange={(e) => up({ informacao: e.target.value })}
+                />
+                <label className="flex items-center justify-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                  <Switch checked={d.noRelatorio} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                </label>
+                <Input
+                  aria-label="Observação"
+                  placeholder="opcional"
+                  value={d.observacao}
+                  onChange={(e) => up({ observacao: e.target.value })}
+                />
+              </>
+            )}
+          />
+        </SecaoRecolhivel>
+
         <SecaoRecolhivel titulo="Índices de correção aplicados" resumo={res.indices} aberta={abertas.indices} aoMudar={abrir("indices")}>
           <RepeatableList
             itens={c.indices}
@@ -504,6 +559,15 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             </Field>
             <Field rotulo="Rubrica de água" dica='Despesas somadas como consumo de água no relatório final. Padrão: "^[áa]gua".'>
               <Input className="font-mono text-xs" value={c.aguaRubrica} onChange={(e) => set("aguaRubrica", e.target.value)} />
+            </Field>
+            <Field rotulo="Rubrica de energia elétrica" dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final.">
+              <Input className="font-mono text-xs" value={c.energiaRubrica} onChange={(e) => set("energiaRubrica", e.target.value)} />
+            </Field>
+            <Field rotulo="Rubrica de elevadores" dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final.">
+              <Input className="font-mono text-xs" value={c.elevadorRubrica} onChange={(e) => set("elevadorRubrica", e.target.value)} />
+            </Field>
+            <Field rotulo="Fornecedor dos elevadores" dica="Texto livre, impresso junto da linha Elevadores no relatório final.">
+              <Input value={c.elevadorFornecedor} onChange={(e) => set("elevadorFornecedor", e.target.value)} />
             </Field>
             <Field rotulo="Arredondamento do rateio">
               <Selecao value={c.arredondamento} onChange={(v) => set("arredondamento", v)} opcoes={ARREDONDAMENTO} />

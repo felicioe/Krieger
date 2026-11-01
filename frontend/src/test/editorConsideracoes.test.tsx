@@ -39,6 +39,8 @@ function renderEditor() {
       condominio={null}
       receberMensais={null}
       agua={{ valor: 0, manual: false, rubricas: [] }}
+      energia={{ valor: 0, manual: false, rubricas: [] }}
+      elevador={{ valor: 0, manual: false, rubricas: [] }}
     />,
   );
   const rerenderComConsid = (c: Parameters<typeof EditorConsideracoes>[0]["consid"]) =>
@@ -49,6 +51,8 @@ function renderEditor() {
         condominio={null}
         receberMensais={null}
         agua={{ valor: 0, manual: false, rubricas: [] }}
+        energia={{ valor: 0, manual: false, rubricas: [] }}
+        elevador={{ valor: 0, manual: false, rubricas: [] }}
       />,
     );
   return { onChange, consid, rerenderComConsid };
