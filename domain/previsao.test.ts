@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arredondarValor, calcularPrevisao, resolverVariacao, type ParametrosPrevisao } from "@/domain/previsao";
+import { arredondarValor, calcularDesvioAnoAnterior, calcularPrevisao, resolverVariacao, type ParametrosPrevisao } from "@/domain/previsao";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
 import { validarNovoExercicio } from "@/domain/exercicio";
 import type { AjustePrevisao, Demonstrativo } from "@/domain/types";
@@ -134,6 +134,74 @@ describe("previsão — variação e arredondamento", () => {
     expect(arredondarValor(728.99, "truncar")).toBe(728);
     expect(arredondarValor(728.5, "arredondar")).toBe(729);
     expect(arredondarValor(728.555, "centavos")).toBe(728.56);
+  });
+});
+
+describe("calcularDesvioAnoAnterior", () => {
+  const atual = (despesas: number) => demo([{ nome: "Despesas", itens: [{ nome: "Total", valor: despesas }] }]);
+  const atualComPeriodo = (despesas: number, ini: string, fim: string): Demonstrativo => ({
+    ...atual(despesas),
+    periodo: { ini, fim },
+  });
+
+  it("compara o previsto do exercício anterior (já com a variação dele) com o realizado do atual", () => {
+    // Previsto do anterior (D + params()) = 121.800, confirmado nos testes de calcularPrevisao acima.
+    const r = calcularDesvioAnoAnterior(D, params(), atual(130000));
+    expect(r).not.toBeNull();
+    expect(r!.previsto).toBe(121800);
+    expect(r!.realizado).toBe(130000);
+    expect(r!.desvioPct).toBe(6.73);
+  });
+
+  it("desvio negativo quando o realizado ficou abaixo do previsto", () => {
+    const r = calcularDesvioAnoAnterior(D, params(), atual(100000));
+    expect(r!.desvioPct).toBe(-17.9);
+  });
+
+  it("sem despesas lançadas no exercício atual, não há o que sugerir", () => {
+    expect(calcularDesvioAnoAnterior(D, params(), demonstrativoVazio())).toBeNull();
+    expect(calcularDesvioAnoAnterior(D, params(), null)).toBeNull();
+  });
+
+  it("exclui do realizado as despesas deduzidas da previsão, como no previsto (#126)", () => {
+    const semVariacao = params({ variacaoMetodo: "manual", variacao: 0, prev: { modo: "tradicional", ajustes: [], fundoReservaPct: 10 } });
+    // D e o "atual" têm a mesma estrutura (108.000 líquido + 12.000 de "Fundo de caixa p/ obras"
+    // deduzido). Sem variação nem ajustes, nada mudou de verdade — o desvio deve ser 0%, não os
+    // +11,11% que apareceriam comparando o previsto líquido (108.000) com o realizado bruto (120.000).
+    const r = calcularDesvioAnoAnterior(D, semVariacao, D);
+    expect(r).not.toBeNull();
+    expect(r!.previsto).toBe(108000);
+    expect(r!.realizado).toBe(108000);
+    expect(r!.desvioPct).toBe(0);
+  });
+
+  it("com receitas ou saldos lançados mas nenhuma despesa, ainda não há o que sugerir (#126)", () => {
+    const soReceita = recalcularDemonstrativo({
+      ...demonstrativoVazio("Teste"),
+      receitas: { itens: [{ nome: "Taxa condominial", valor: 20000 }], subtotal: 0, totalComSaldo: 0 },
+    });
+    expect(calcularDesvioAnoAnterior(D, params(), soReceita)).toBeNull();
+  });
+
+  it("exercício atual com período menor que 12 meses prorrateia o previsto antes de comparar (#126)", () => {
+    // Previsto anual do anterior (D + params()) = 121.800 → prorrateado a 6 meses = 60.900.
+    // Realizado de 6 meses no mesmo ritmo do previsto (60.900) não deve acusar desvio.
+    const seisMeses = atualComPeriodo(60900, "01/01/2026", "30/06/2026");
+    const r = calcularDesvioAnoAnterior(D, params(), seisMeses);
+    expect(r).not.toBeNull();
+    expect(r!.previsto).toBe(60900);
+    expect(r!.desvioPct).toBe(0);
+  });
+
+  it("sem período informado no atual, assume os 12 meses cheios (comportamento anterior)", () => {
+    const semPeriodo = atual(130000); // periodo "" / "" (demonstrativoVazio)
+    const r = calcularDesvioAnoAnterior(D, params(), semPeriodo);
+    expect(r!.previsto).toBe(121800);
+  });
+
+  it("sem previsto válido no exercício anterior (base e ajustes zerados), não há o que sugerir", () => {
+    const semPrevisto = params({ variacaoMetodo: "manual", variacao: 0, prev: { modo: "tradicional", ajustes: [], fundoReservaPct: 10 } });
+    expect(calcularDesvioAnoAnterior(demonstrativoVazio(), semPrevisto, atual(50000))).toBeNull();
   });
 });
 
