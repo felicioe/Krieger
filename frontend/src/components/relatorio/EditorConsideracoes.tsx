@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { cloneElement, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Check, FileUp, Loader2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { SectionCard } from "@/components/app/SectionCard";
-import { Field } from "@/components/app/Field";
+import { Field, type PropsControle } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { CampoRubrica } from "@/components/app/CampoRubrica";
@@ -22,6 +22,27 @@ import type { Condominio, Exercicio } from "@/domain/types";
 
 type Consid = Exercicio["consid"];
 const num = (v: unknown) => (typeof v === "number" ? v : null);
+
+/**
+ * Controle + botão auxiliar lado a lado, como filho direto de `Field`: repassa os atributos de
+ * acessibilidade que o `Field` injeta (id, aria-describedby etc.) ao controle, não ao wrapper —
+ * senão o rótulo e a dica perdem a associação com o campo real.
+ */
+function ComBotaoLateral({
+  id,
+  "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
+  "aria-required": ariaRequired,
+  controle,
+  botao,
+}: PropsControle & { controle: ReactElement<PropsControle>; botao: ReactNode }) {
+  return (
+    <div className="flex gap-2">
+      {cloneElement(controle, { id, "aria-describedby": ariaDescribedBy, "aria-invalid": ariaInvalid, "aria-required": ariaRequired })}
+      {botao}
+    </div>
+  );
+}
 
 /** Editor dos dados de `exercicio.consid` usados na seção "Considerações finais". */
 export function EditorConsideracoes({
@@ -98,15 +119,19 @@ export function EditorConsideracoes({
         <RepeatableList
           itens={c.administracao}
           onChange={(v) => set("administracao", v)}
-          novo={() => ({ cargo: "", nome: "", mandatoFim: "" })}
-          colunas="grid-cols-1 @min-[14rem]:grid-cols-2 @2xl:grid-cols-[10rem_minmax(0,1fr)_8rem]"
-          cabecalhos={["Cargo", "Nome", "Mandato até"]}
+          novo={() => ({ cargo: "", nome: "", mandatoFim: "", noRelatorio: true })}
+          colunas="grid-cols-1 @min-[14rem]:grid-cols-2 @2xl:grid-cols-[10rem_minmax(0,1fr)_8rem_8rem]"
+          cabecalhos={["Cargo", "Nome", "Mandato até", "No relatório"]}
           rotuloAdicionar="Adicionar membro"
           render={(m, up) => (
             <>
               <Input aria-label="Cargo" value={m.cargo} onChange={(e) => up({ cargo: e.target.value })} />
               <Input aria-label="Nome" value={m.nome} onChange={(e) => up({ nome: e.target.value })} />
               <MesAnoInput aria-label="Fim do mandato" value={m.mandatoFim ?? ""} onChange={(v) => up({ mandatoFim: v })} />
+              <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                <Switch checked={m.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+              </label>
             </>
           )}
         />
@@ -147,15 +172,19 @@ export function EditorConsideracoes({
           <RepeatableList
             itens={c.seguro.coberturas}
             onChange={(v) => set("seguro", { ...c.seguro, coberturas: v })}
-            novo={() => ({ desc: "", valor: null })}
-            colunas="grid-cols-1 @xs:grid-cols-[minmax(0,1fr)_9rem] @2xl:grid-cols-[minmax(0,1fr)_11rem]"
-            cabecalhos={["Cobertura", "Valor"]}
+            novo={() => ({ desc: "", valor: null, noRelatorio: true })}
+            colunas="grid-cols-1 @xs:grid-cols-[minmax(0,1fr)_9rem] @2xl:grid-cols-[minmax(0,1fr)_11rem_9rem]"
+            cabecalhos={["Cobertura", "Valor", "No relatório"]}
             rotuloAdicionar="Adicionar cobertura"
             vazio="Nenhuma cobertura."
             render={(cb, up) => (
               <>
                 <Input aria-label="Cobertura" value={cb.desc} onChange={(e) => up({ desc: e.target.value })} />
                 <DinheiroInput aria-label="Valor da cobertura" value={cb.valor} onChange={(v) => up({ valor: v })} />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                  <Switch checked={cb.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                </label>
               </>
             )}
           />
@@ -253,14 +282,17 @@ export function EditorConsideracoes({
             rotulo="Contas a receber"
             {...(receberMensais?.valor != null ? { dica: `Relatório de ${receberMensais.mes}: ${formatBRL(receberMensais.valor)}.` } : {})}
           >
-            <div className="flex gap-2">
-              <DinheiroInput value={num(c.contasReceber)} onChange={(v) => set("contasReceber", v)} />
-              {receberMensais?.valor != null && num(c.contasReceber) !== receberMensais.valor && (
-                <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => set("contasReceber", receberMensais.valor)}>
-                  Usar do mensal
-                </Button>
-              )}
-            </div>
+            <ComBotaoLateral
+              controle={<DinheiroInput value={num(c.contasReceber)} onChange={(v) => set("contasReceber", v)} />}
+              botao={
+                receberMensais?.valor != null &&
+                num(c.contasReceber) !== receberMensais.valor && (
+                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => set("contasReceber", receberMensais.valor)}>
+                    Usar do mensal
+                  </Button>
+                )
+              }
+            />
           </Field>
           <Field rotulo="Contas a pagar">
             <DinheiroInput value={num(c.contasPagar)} onChange={(v) => set("contasPagar", v)} />
@@ -379,10 +411,12 @@ function BlocoConsumoServico({
       <h4 className="mb-3 text-sm font-semibold text-foreground">{rotulo}</h4>
       <CampoRubrica rotulo="Palavras-chave" placeholder={placeholder} value={rubrica} onChange={onRubricaChange} />
       <div className="mt-3 rounded-sm bg-muted/40 px-3 py-2">
-        <p className="text-xs text-muted-foreground">Calculado automaticamente</p>
-        <p className="num text-base font-semibold text-foreground">{formatBRL(calculado.valor)}</p>
-        {calculado.rubricas.length > 0 ? (
-          <p className="mt-0.5 break-words text-xs text-muted-foreground">{calculado.rubricas.join(", ")}</p>
+        <p className="text-xs text-muted-foreground">
+          Calculado automaticamente{calculado.manual && " (o relatório usa o valor manual abaixo)"}
+        </p>
+        <p className="num text-base font-semibold text-foreground">{formatBRL(calculado.automatico.valor)}</p>
+        {calculado.automatico.rubricas.length > 0 ? (
+          <p className="mt-0.5 break-words text-xs text-muted-foreground">{calculado.automatico.rubricas.join(", ")}</p>
         ) : (
           <p className="mt-0.5 text-xs text-muted-foreground">Nenhuma despesa do demonstrativo casa com essas palavras.</p>
         )}
@@ -390,21 +424,23 @@ function BlocoConsumoServico({
       {manualAberto ? (
         <div className="mt-3">
           <Field rotulo="Valor manual (substitui o cálculo acima)">
-            <div className="flex gap-2">
-              <DinheiroInput value={manual} onChange={onManualChange} />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                onClick={() => {
-                  onManualChange(null);
-                  setManualAberto(false);
-                }}
-              >
-                Voltar a calcular
-              </Button>
-            </div>
+            <ComBotaoLateral
+              controle={<DinheiroInput value={manual} onChange={onManualChange} />}
+              botao={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  onClick={() => {
+                    onManualChange(null);
+                    setManualAberto(false);
+                  }}
+                >
+                  Voltar a calcular
+                </Button>
+              }
+            />
           </Field>
         </div>
       ) : (

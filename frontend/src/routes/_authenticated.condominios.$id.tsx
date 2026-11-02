@@ -394,9 +394,9 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           <RepeatableList
             itens={c.administracao}
             onChange={(v) => set("administracao", v)}
-            novo={() => ({ cargo: "", nome: "", mandatoFim: "", identificacao: "", telefone: "" })}
-            colunas="grid-cols-1 @2xl:grid-cols-[8rem_7rem_minmax(0,1fr)_10rem_8rem]"
-            cabecalhos={["Cargo", "Identificação", "Nome", "Telefone", "Fim do mandato"]}
+            novo={() => ({ cargo: "", nome: "", mandatoFim: "", identificacao: "", telefone: "", noRelatorio: true })}
+            colunas="grid-cols-1 @2xl:grid-cols-[8rem_7rem_minmax(0,1fr)_10rem_8rem_7rem]"
+            cabecalhos={["Cargo", "Identificação", "Nome", "Telefone", "Fim do mandato", "No relatório"]}
             rotuloAdicionar="Adicionar membro"
             vazio="Nenhum membro da administração informado."
             render={(m, up) => (
@@ -411,6 +411,10 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
                 <Input aria-label="Nome" placeholder="Nome" value={m.nome} onChange={(e) => up({ nome: e.target.value })} />
                 <Input aria-label="Telefone" placeholder="Telefone" value={m.telefone ?? ""} onChange={(e) => up({ telefone: e.target.value })} />
                 <MesAnoInput aria-label="Fim do mandato" value={m.mandatoFim} onChange={(v) => up({ mandatoFim: v })} />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                  <Switch checked={m.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                </label>
               </>
             )}
           />
@@ -435,15 +439,19 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           <RepeatableList
             itens={c.seguro.coberturas}
             onChange={(v) => set("seguro", { ...c.seguro, coberturas: v })}
-            novo={() => ({ desc: "", valor: null })}
-            colunas="@2xl:grid-cols-[1fr_12rem]"
-            cabecalhos={["Descrição", "Valor"]}
+            novo={() => ({ desc: "", valor: null, noRelatorio: true })}
+            colunas="@2xl:grid-cols-[1fr_12rem_8rem]"
+            cabecalhos={["Descrição", "Valor", "No relatório"]}
             rotuloAdicionar="Adicionar cobertura"
             vazio="Nenhuma cobertura informada."
             render={(cob, up) => (
               <>
                 <Input aria-label="Descrição" placeholder="Descrição da cobertura" value={cob.desc} onChange={(e) => up({ desc: e.target.value })} />
                 <DinheiroInput aria-label="Valor" value={cob.valor} onChange={(v) => up({ valor: v })} />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                  <Switch checked={cob.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                </label>
               </>
             )}
           />
@@ -534,15 +542,19 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
           <RepeatableList
             itens={c.indices}
             onChange={(v) => set("indices", v)}
-            novo={() => ({ ano: new Date().getFullYear(), pct: null })}
-            colunas="grid-cols-1 @min-[12rem]:grid-cols-2 @2xl:grid-cols-[8rem_10rem]"
-            cabecalhos={["Ano", "Percentual"]}
+            novo={() => ({ ano: new Date().getFullYear(), pct: null, noRelatorio: true })}
+            colunas="grid-cols-1 @min-[12rem]:grid-cols-2 @2xl:grid-cols-[8rem_10rem_9rem]"
+            cabecalhos={["Ano", "Percentual", "No relatório"]}
             rotuloAdicionar="Adicionar índice"
             vazio="Nenhum índice informado."
             render={(ind, up) => (
               <>
                 <InteiroInput aria-label="Ano" maxLength={4} value={ind.ano} onChange={(v) => up({ ano: v })} />
                 <PercentualInput aria-label="Percentual" value={ind.pct} onChange={(v) => up({ pct: v })} />
+                <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                  <Switch checked={ind.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                </label>
               </>
             )}
           />

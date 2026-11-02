@@ -12,7 +12,7 @@ describe("documentosObrigatoriosPadrao", () => {
       "Dedetização",
       "Alvará de Bombeiros",
       "Alvará Estrutural",
-      "Elevador",
+      "Elevador — contrato de manutenção em dia",
     ]);
     expect(itens.every((i) => i.status === "pendente" && i.noRelatorio === true)).toBe(true);
   });

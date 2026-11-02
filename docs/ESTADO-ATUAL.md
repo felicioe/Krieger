@@ -1,5 +1,51 @@
 # Estado atual e passagem de contexto
 
+## Toggle "No relatório" por item + 2 achados do Codex corrigidos (PR #118) — 02/11/2026
+
+Resolve os dois pontos que ficaram "em aberto" na entrada abaixo, decididos pelo responsável no
+mesmo fio:
+
+- **Duplicidade de "Elevador"**: existem de fato dois itens diferentes — o checklist de
+  Documentos obrigatórios ("Elevador", conformidade: contrato de manutenção em dia ou não) e a
+  linha financeira de Consumo de serviços ("Elevadores", quanto foi gasto no período). Decisão do
+  responsável: manter os dois, só deixar mais claro — o item do checklist foi renomeado para
+  "Elevador — contrato de manutenção em dia" (`domain/condominio.ts`,
+  `documentosObrigatoriosPadrao()`).
+- **Escopo de "campos opcionais no relatório"**: o responsável confirmou que é por item, nas 3
+  listas que ainda não tinham o toggle — Administração (cada membro), Coberturas do seguro (cada
+  linha) e Índices de correção (cada ano). Segue o mesmo padrão já usado em Documentos
+  obrigatórios: campo `noRelatorio?: boolean` em `MembroAdministracao`/`Cobertura`/
+  `IndiceCorrecao` (`domain/types.ts`), opt-out (`noRelatorio !== false`, não `=== true`) pra dado
+  antigo sem o campo continuar aparecendo como sempre apareceu. Toggle `Switch` adicionado nas 3
+  listas, nos dois lugares onde elas são editadas: cadastro do condomínio
+  (`_authenticated.condominios.$id.tsx`) e editor de Considerações finais do relatório
+  (`EditorConsideracoes.tsx`; Índices de correção só aparece lá quando o método de variação é
+  "média de índices" — `PainelPrevisao.tsx`). Filtro aplicado nos dois lugares que leem essas
+  listas pra montar o relatório: prévia na tela (`PreviaRelatorio.tsx`) e gerador de PDF/Word
+  (`documentos/relatorioFinal.ts`, função `consideracoes()`).
+
+Dois achados do Codex (P2) no PR, corrigidos antes de qualquer merge:
+
+- **Valor manual exibido como "calculado automaticamente"**: `consumoPorRubrica()` (domínio)
+  parava de calcular o automático assim que havia um valor manual, devolvendo `rubricas: []` —
+  então o cartão "Calculado automaticamente" de `BlocoConsumoServico` mostrava o próprio valor
+  manual com esse rótulo, e dizia "nenhuma despesa corresponde" mesmo quando havia. Corrigido:
+  `ConsumoServico` ganhou o campo `automatico: { valor, rubricas }`, sempre calculado a partir do
+  demonstrativo, independente de manual; `valor`/`manual`/`rubricas` (o que vale no relatório)
+  continuam como antes. O cartão agora sempre mostra `calculado.automatico`, com uma nota quando o
+  manual está ativo ("o relatório usa o valor manual abaixo").
+- **`Field` perdia a associação de acessibilidade (`id`/`aria-describedby`) com o campo real**:
+  "Contas a receber" e os 3 campos de valor manual envolviam o `DinheiroInput` num `<div>` junto
+  do botão ("Usar do mensal" / "Voltar a calcular") — `Field` clona só o filho único, então os
+  atributos caíam no `<div>`, não no input. Corrigido com `ComBotaoLateral` (novo componente local
+  em `EditorConsideracoes.tsx`): recebe os atributos do `Field` e os repassa ao controle real via
+  `cloneElement`, deixando o botão como irmão, sem romper a associação. `PropsControle` do `Field`
+  passou a ser exportado para isso.
+
+Testado: 207 testes de frontend (+3 — automático nunca zera com manual ativo, toggle filtra no
+PDF/Word, item antigo sem `noRelatorio` continua incluído), 194 de domínio (+1), `tsc --noEmit`
+(raiz e frontend) e `docs:check` limpos.
+
 ## Reorganiza "Valores" do editor de Considerações finais — 01/11/2026
 
 Pedido do responsável, com captura de tela: depois do PR #116 (campos de palavra-chave de
@@ -26,10 +72,8 @@ visualmente com Playwright no servidor de dev local (dados reais do condomínio 
 54.300,00 água, R$ 31.200,00 energia, R$ 14.400,00 elevadores, batendo com o demonstrativo) —
 cartões, valores calculados e o toggle do valor manual abrindo/fechando sem side effect.
 
-**Em aberto, pedido pelo responsável no mesmo fio**: (1) escolher quais campos entram no relatório
-final — precisa de mais detalhe de escopo antes de implementar (qual nível: por seção, por campo
-dentro de cada seção?). (2) usuário notou duplicidade de informação sobre elevador no relatório —
-vou levantar e apresentar antes de mexer, conforme pedido.
+Os dois pontos que o responsável levantou no mesmo fio (campos opcionais no relatório e
+duplicidade de "Elevador") foram decididos e implementados na entrada acima.
 
 ## Auditoria UX do cadastro de condomínio: PR #116 mesclado e publicado — 01/11/2026
 

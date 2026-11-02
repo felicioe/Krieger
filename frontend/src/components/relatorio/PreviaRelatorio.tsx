@@ -381,6 +381,9 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
   const receber = typeof c.contasReceber === "number" ? c.contasReceber : null;
   const pagar = typeof c.contasPagar === "number" ? c.contasPagar : null;
   const extras = c.extras.filter((x) => String(x.rotulo).trim() || String(x.valor).trim());
+  const administracao = c.administracao.filter((m) => m.noRelatorio !== false);
+  const coberturas = c.seguro.coberturas.filter((cb) => cb.noRelatorio !== false);
+  const indices = c.indices.filter((i) => i.pct !== null && i.noRelatorio !== false);
   const documentos = c.documentosObrigatorios.filter((d) => d.noRelatorio && d.nome.trim());
   const servicos = [
     { nome: "Água", rubrica: c.aguaRubrica, consumo: rel.agua },
@@ -389,11 +392,11 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
   ].filter((s) => s.consumo.valor > 0);
   return (
     <div className="space-y-5">
-      {c.administracao.length > 0 && (
+      {administracao.length > 0 && (
         <div>
           <h4 className="mb-1 font-semibold">Administração</h4>
           <dl>
-            {c.administracao.map((m, i) => (
+            {administracao.map((m, i) => (
               <Item key={i} rotulo={m.cargo || "—"}>
                 {m.nome}
                 {m.mandatoFim && <span className="text-muted-foreground"> · mandato até {m.mandatoFim}</span>}
@@ -402,14 +405,14 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
           </dl>
         </div>
       )}
-      {(c.seguradora || c.vigenciaSeguro || c.seguro.coberturas.length > 0) && (
+      {(c.seguradora || c.vigenciaSeguro || coberturas.length > 0) && (
         <div>
           <h4 className="mb-1 font-semibold">Seguro</h4>
           <dl>
             {c.seguradora && <Item rotulo="Seguradora" alinhar="direita">{c.seguradora}</Item>}
             {c.vigenciaSeguro && <Item rotulo="Vigência até" alinhar="direita"><span className="num">{formatData(c.vigenciaSeguro)}</span></Item>}
             {c.seguro.riscoAbsoluto !== null && <Item rotulo="Risco absoluto" alinhar="direita"><span className="num">{formatBRL(c.seguro.riscoAbsoluto)}</span></Item>}
-            {c.seguro.coberturas.map((cb, i) => (
+            {coberturas.map((cb, i) => (
               <Item key={i} rotulo={cb.desc || "Cobertura"} alinhar="direita">
                 <span className="num">{formatBRL(cb.valor)}</span>
               </Item>
@@ -485,17 +488,15 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
           </dl>
         </div>
       )}
-      {c.indices.some((i) => i.pct !== null) && (
+      {indices.length > 0 && (
         <div>
           <h4 className="mb-1 font-semibold">Índices de correção aplicados</h4>
           <dl>
-            {c.indices
-              .filter((i) => i.pct !== null)
-              .map((i, k) => (
-                <Item key={k} rotulo={String(i.ano ?? "—")}>
-                  <span className="num">{formatNumeroBR(i.pct)}%</span>
-                </Item>
-              ))}
+            {indices.map((i, k) => (
+              <Item key={k} rotulo={String(i.ano ?? "—")}>
+                <span className="num">{formatNumeroBR(i.pct)}%</span>
+              </Item>
+            ))}
           </dl>
         </div>
       )}

@@ -125,17 +125,21 @@ export function notasConsolidadas(mensais: Mensal[]): NotaConsolidada[] {
 }
 
 export interface ConsumoServico {
+  /** Valor que vale no relatório: o manual, se houver, senão o automático. */
   valor: number;
   manual: boolean;
   rubricas: string[];
+  /** Cálculo a partir do demonstrativo, sempre, mesmo quando um valor manual está substituindo-o no relatório. */
+  automatico: { valor: number; rubricas: string[] };
 }
 
-/** Despesas do demonstrativo cuja rubrica casa com `rubrica`; o valor manual, se informado, prevalece. */
+/** Despesas do demonstrativo cuja rubrica casa com `rubrica`; o valor manual, se informado, prevalece no relatório. */
 function consumoPorRubrica(demonstrativo: Demonstrativo | null, rubrica: string, manual: number | null | undefined): ConsumoServico {
-  if (typeof manual === "number") return { valor: manual, manual: true, rubricas: [] };
   const re = expressaoDeducao(rubrica);
   const itens = re ? (demonstrativo?.despesas.grupos ?? []).flatMap((g) => g.itens).filter((i) => re.test(i.nome)) : [];
-  return { valor: centavos(itens.reduce((s, i) => s + (Number(i.valor) || 0), 0)), manual: false, rubricas: itens.map((i) => i.nome) };
+  const automatico = { valor: centavos(itens.reduce((s, i) => s + (Number(i.valor) || 0), 0)), rubricas: itens.map((i) => i.nome) };
+  if (typeof manual === "number") return { valor: manual, manual: true, rubricas: [], automatico };
+  return { valor: automatico.valor, manual: false, rubricas: automatico.rubricas, automatico };
 }
 
 /** Despesas do demonstrativo cuja rubrica casa com `aguaRubrica`; o valor manual, se informado, prevalece. */
