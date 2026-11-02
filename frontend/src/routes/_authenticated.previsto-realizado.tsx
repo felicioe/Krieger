@@ -159,6 +159,16 @@ function PaginaComparativo() {
         {semDados ? <Indicador rotulo="Diferença" valor="—" detalhe="sem realizado para comparar" /> : <IndicadorDiferenca t={r.total} />}
       </div>
 
+      {!semDados && r.mesAte.posicao === 12 && (
+        <Alert className="mt-6">
+          <AlertDescription>
+            <span className="font-semibold">Índice de reajuste sugerido para a taxa condominial: {pctTexto(r.total.pct)}.</span>{" "}
+            Desvio entre o previsto e o realizado do ano fechado — referência pra decidir o reajuste do próximo exercício em
+            assembleia.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {r.avisos.length > 0 && (
         <Alert variant="warning" className="mt-6">
           <TriangleAlert />

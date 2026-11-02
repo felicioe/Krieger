@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { arredondarValor, calcularPrevisao, resolverVariacao, type ParametrosPrevisao } from "@/domain/previsao";
+import { arredondarValor, calcularDesvioAnoAnterior, calcularPrevisao, resolverVariacao, type ParametrosPrevisao } from "@/domain/previsao";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
 import { validarNovoExercicio } from "@/domain/exercicio";
 import type { AjustePrevisao, Demonstrativo } from "@/domain/types";
@@ -134,6 +134,34 @@ describe("previsão — variação e arredondamento", () => {
     expect(arredondarValor(728.99, "truncar")).toBe(728);
     expect(arredondarValor(728.5, "arredondar")).toBe(729);
     expect(arredondarValor(728.555, "centavos")).toBe(728.56);
+  });
+});
+
+describe("calcularDesvioAnoAnterior", () => {
+  const atual = (despesas: number) => demo([{ nome: "Despesas", itens: [{ nome: "Total", valor: despesas }] }]);
+
+  it("compara o previsto do exercício anterior (já com a variação dele) com o realizado do atual", () => {
+    // Previsto do anterior (D + params()) = 121.800, confirmado nos testes de calcularPrevisao acima.
+    const r = calcularDesvioAnoAnterior(D, params(), atual(130000));
+    expect(r).not.toBeNull();
+    expect(r!.previsto).toBe(121800);
+    expect(r!.realizado).toBe(130000);
+    expect(r!.desvioPct).toBe(6.73);
+  });
+
+  it("desvio negativo quando o realizado ficou abaixo do previsto", () => {
+    const r = calcularDesvioAnoAnterior(D, params(), atual(100000));
+    expect(r!.desvioPct).toBe(-17.9);
+  });
+
+  it("sem despesas lançadas no exercício atual, não há o que sugerir", () => {
+    expect(calcularDesvioAnoAnterior(D, params(), demonstrativoVazio())).toBeNull();
+    expect(calcularDesvioAnoAnterior(D, params(), null)).toBeNull();
+  });
+
+  it("sem previsto válido no exercício anterior (base e ajustes zerados), não há o que sugerir", () => {
+    const semPrevisto = params({ variacaoMetodo: "manual", variacao: 0, prev: { modo: "tradicional", ajustes: [], fundoReservaPct: 10 } });
+    expect(calcularDesvioAnoAnterior(demonstrativoVazio(), semPrevisto, atual(50000))).toBeNull();
   });
 });
 

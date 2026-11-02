@@ -19,7 +19,7 @@ import { cabecalho } from "@/lib/head";
 import { novoId } from "@/lib/id";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
-import { calcularPrevisao } from "@/domain/previsao";
+import { calcularDesvioAnoAnterior, calcularPrevisao } from "@/domain/previsao";
 import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
 import type { Condominio, DecisaoDivergenciaPrevisao, Exercicio } from "@/domain/types";
 
@@ -81,11 +81,17 @@ function PaginaPrevisao() {
     </Field>
   );
 
+  // Exercício anterior do mesmo condomínio — a base da sugestão de variação (desvio entre o que
+  // ele projetou pra este ano e o que este ano realmente realizou). Sem esse exercício, ou sem
+  // despesas lançadas em nenhum dos dois, não há sugestão (calcularDesvioAnoAnterior devolve null).
+  const exercicioAnterior = exercicios.find((x) => x.condoId === exercicio.condoId && Number(x.ano) === Number(exercicio.ano) - 1);
+
   return (
     <EditorPrevisao
       key={exercicio.id}
       inicial={exercicio}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
+      exercicioAnterior={exercicioAnterior}
       seletor={seletor}
     />
   );
@@ -94,10 +100,12 @@ function PaginaPrevisao() {
 function EditorPrevisao({
   inicial,
   condominio,
+  exercicioAnterior,
   seletor,
 }: {
   inicial: Exercicio;
   condominio: Condominio | undefined;
+  exercicioAnterior: Exercicio | undefined;
   seletor: ReactNode;
 }) {
   const queryClient = useQueryClient();
@@ -112,6 +120,20 @@ function EditorPrevisao({
   const resultado = useMemo(
     () => calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, unidades),
     [e, unidades],
+  );
+
+  // Sugestão (nunca aplicada sozinha) de variação pro exercício seguinte: desvio entre o previsto
+  // que o exercício anterior calculou pra este ano e o que este ano realmente gastou.
+  const desvio = useMemo(
+    () =>
+      exercicioAnterior
+        ? calcularDesvioAnoAnterior(
+            exercicioAnterior.demonstrativo,
+            { ...exercicioAnterior, indices: exercicioAnterior.consid.indices },
+            e.demonstrativo,
+          )
+        : null,
+    [exercicioAnterior, e.demonstrativo],
   );
 
   // Só para avisar no topo que o resultado da aba aberta está incompleto (não muda o Salvar).
@@ -257,6 +279,8 @@ function EditorPrevisao({
               condoId={e.condoId}
               grupos={demonstrativo.despesas.grupos.map((g) => g.nome)}
               onChange={mudar}
+              desvio={desvio}
+              anoAnterior={exercicioAnterior?.ano}
             />
           </TabsContent>
         </Tabs>

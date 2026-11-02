@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -14,7 +15,7 @@ import { DinheiroInput, InteiroInput, PercentualInput, Selecao } from "@/compone
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
 import { cn } from "@/lib/utils";
-import type { ResultadoPrevisao } from "@/domain/previsao";
+import type { DesvioAnoAnterior, ResultadoPrevisao } from "@/domain/previsao";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
 const SEM_GRUPO = "__geral";
@@ -47,6 +48,8 @@ export function PainelPrevisao({
   condoId,
   grupos,
   onChange,
+  desvio,
+  anoAnterior,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
@@ -54,6 +57,10 @@ export function PainelPrevisao({
   condoId: string;
   grupos: string[];
   onChange: (parcial: Partial<Exercicio>) => void;
+  /** Sugestão de variação (nunca aplicada sozinha) — desvio entre o previsto do exercício anterior
+   * e o realizado deste. `null` sem exercício anterior ou sem dados suficientes nos dois lados. */
+  desvio?: DesvioAnoAnterior | null;
+  anoAnterior?: number | string | undefined;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
@@ -89,6 +96,27 @@ export function PainelPrevisao({
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)]">
       <div className="min-w-0 space-y-6">
         <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
+        {desvio && (
+          <Alert>
+            <AlertDescription>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p>
+                  <span className="font-semibold">Sugestão de variação: {pct(desvio.desvioPct, true)}.</span> Desvio entre o
+                  previsto que o exercício {anoAnterior} calculou pra este ano ({formatBRL(desvio.previsto)}) e o que foi
+                  realmente realizado ({formatBRL(desvio.realizado)}).
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onChange({ variacaoMetodo: "percentual", variacaoParam: desvio.desvioPct })}
+                >
+                  Usar sugestão
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
         <SectionCard titulo="Parâmetros da previsão">
           <div className="grid gap-4 sm:grid-cols-6">
             <Field rotulo="Modo" className="sm:col-span-3">

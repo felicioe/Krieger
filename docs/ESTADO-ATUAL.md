@@ -1,5 +1,38 @@
 # Estado atual e passagem de contexto
 
+## Sugestão de variação (desvio previsto × realizado) — 02/11/2026
+
+Pedido do responsável, usando o Urban Classic como exemplo: exercício 2025 fecha com R$ 776.531,36
+de realizado, reajuste de 8,93% definido vira o previsto de 2026 (R$ 845.875,61). O exercício 2026,
+por sua vez, realizou R$ 907.418,66 — acima do previsto. O responsável apontou que essa diferença
+(+7,28%) deveria (1) alimentar a sugestão de variação do exercício seguinte (2026→2027), de forma
+revisável, e (2) orientar automaticamente o reajuste da taxa condominial, em telas separadas.
+
+Decisão tomada em conjunto: a variação sugerida NÃO é aplicada sozinha (evita compor um ano
+excepcional como se fosse tendência permanente) — fica como sugestão com botão "Usar sugestão", que
+o escritório confirma ou ignora. Já o índice de reajuste da taxa é automático/informativo, sem botão.
+
+**Implementado**:
+- `domain/previsao.ts` — `calcularDesvioAnoAnterior(demonstrativoAnterior, parametrosAnterior,
+  demonstrativoAtual)`: compara o `totalAnual` que o exercício anterior projetou pra este ano
+  (`calcularPrevisao`) com o `despesas` realmente realizado neste exercício. `null` sem exercício
+  anterior válido ou sem despesas lançadas no atual — nada a sugerir ainda.
+- `frontend/src/routes/_authenticated.previsao-orcamentaria.tsx` + `PainelPrevisao.tsx` — na aba
+  "Calculada pelo demonstrativo", um banner "Sugestão de variação: +X%" (com os valores previsto e
+  realizado por extenso) aparece quando há exercício anterior comparável; botão "Usar sugestão" seta
+  `variacaoMetodo: "percentual"` e `variacaoParam` com o desvio — sem gravar nada até o Salvar normal
+  da tela.
+- `frontend/src/routes/_authenticated.previsto-realizado.tsx` — quando o comparativo cobre os 12
+  meses do exercício seguinte (ano fechado), um callout mostra "Índice de reajuste sugerido para a
+  taxa condominial: +X%", reaproveitando o `pct` já calculado ali (nenhuma lógica de domínio nova).
+
+Testado: 4 casos novos de domínio (`calcularDesvioAnoAnterior` — desvio positivo/negativo, sem
+despesas no atual, sem previsto válido no anterior), suíte completa (222 domínio, 221 frontend),
+`tsc --noEmit` limpo. Validado visualmente recriando o caso real do Urban Classic (PDF de 2025 com
+8,93%, exercício 2026 com realizado próprio maior): o banner de sugestão mostrou +7,28% com os
+valores corretos (R$ 845.875,61 → R$ 907.418,66), "Usar sugestão" aplicou e recalculou a previsão em
+tempo real, e o índice de reajuste da taxa apareceu certo no Previsto × Realizado com o ano fechado.
+
 ## PR #125 mesclado e publicado — 02/11/2026
 
 Pedido do responsável: mover a seção "Pendências de ajuste" do Painel (CNPJ ausente/duplicado,

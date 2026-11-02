@@ -1,4 +1,4 @@
-import { centavos } from "./demonstrativo";
+import { centavos, temLancamentos } from "./demonstrativo";
 import type { AjustePrevisao, Arredondamento, Demonstrativo, Exercicio, IndiceCorrecao } from "./types";
 
 /**
@@ -230,4 +230,32 @@ export function calcularPrevisao(
     indice,
     avisos,
   };
+}
+
+export interface DesvioAnoAnterior {
+  /** O que o exercício anterior projetou pra este ano (`totalAnual` dele, já com a variação). */
+  previsto: number;
+  /** O que este exercício realmente gastou (`despesas` do demonstrativo). */
+  realizado: number;
+  /** (realizado ÷ previsto − 1), em %. Base sugerida — nunca aplicada sozinha — pra variação do
+   * próximo exercício, e referência pro reajuste da taxa condominial. */
+  desvioPct: number;
+}
+
+/**
+ * Compara o previsto que o exercício anterior calculou pra este ano com o que este exercício
+ * realmente realizou. `null` quando falta um dos dois lados (exercício atual ainda sem despesas
+ * lançadas, ou anterior sem previsto válido) — nada a sugerir ainda.
+ */
+export function calcularDesvioAnoAnterior(
+  demonstrativoAnterior: Demonstrativo | null,
+  parametrosAnterior: ParametrosPrevisao,
+  demonstrativoAtual: Demonstrativo | null,
+): DesvioAnoAnterior | null {
+  if (!temLancamentos(demonstrativoAtual)) return null;
+  const previsto = calcularPrevisao(demonstrativoAnterior, parametrosAnterior, null).totalAnual;
+  if (previsto <= 0) return null;
+  const realizado = demonstrativoAtual!.totais.despesas;
+  const desvioPct = Math.round((realizado / previsto - 1) * 10000) / 100;
+  return { previsto, realizado, desvioPct };
 }
