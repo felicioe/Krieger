@@ -1,5 +1,17 @@
 # Estado atual e passagem de contexto
 
+## PR #117 mesclado e publicado — 02/11/2026
+
+PR #117 (gráfico "Receitas por categoria", descrito abaixo) mesclado em `main` por squash
+(`8e3e0f5`). Único achado do Codex (P1) já corrigido antes do merge (nome de categoria cortado no
+PDF/Word — ver histórico do PR); nenhum achado novo na revisão final, threads resolvidas.
+
+Build (`frontend/.output/public`) + `npm run package:hostinger` + push no `deploy-hostinger`
+(`7ed9ce1`) — auto-deploy confirmado ao vivo: `index.html` referencia `index-2B2AuD2l.js`, hash
+exato do build desse commit; `auth.php?a=eu` responde 401 (API normal, sem sessão). Diff do pacote
+só trocou hashes de assets (rebuild) — nenhum arquivo PHP mudou nesse PR. Branch de feature mantida
+(sem exclusão automática nesta sessão).
+
 ## Gráfico "Receitas por categoria" (small multiples) no Relatório Final — 01/11/2026
 
 Pedido do responsável: na seção "Análise gráfica", o gráfico de Evolução mensal já mostra receitas
