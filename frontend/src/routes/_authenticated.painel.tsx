@@ -118,46 +118,6 @@ function Painel() {
         </Alert>
       )}
 
-      {pendencias.length > 0 && (
-        <SectionCard
-          className="mb-6 border-destructive/30"
-          titulo="Pendências de ajuste"
-          descricao="Precisam de atenção para os relatórios ficarem corretos — clique para abrir e resolver."
-        >
-          <ul className="divide-y">
-            {pendencias.map((p, i) => {
-              const Icone = ICONE_PENDENCIA[p.tipo];
-              const miolo = (
-                <>
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-                    <Icone className="size-4" aria-hidden />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block break-words text-sm font-medium text-foreground">{p.condoNome}</span>
-                    <span className="block break-words text-xs text-muted-foreground">{p.descricao}</span>
-                  </span>
-                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                </>
-              );
-              const classe = "alvo-toque flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 hover:text-primary";
-              return (
-                <li key={`${p.tipo}-${p.condoId}-${p.exercicioId ?? i}`}>
-                  {p.tipo === "divergencia_previsao" ? (
-                    <Link to="/previsao-orcamentaria" search={{ exercicio: p.exercicioId! }} className={classe}>
-                      {miolo}
-                    </Link>
-                  ) : (
-                    <Link to="/condominios/$id" params={{ id: p.condoId }} className={classe}>
-                      {miolo}
-                    </Link>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </SectionCard>
-      )}
-
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Indicador titulo="Condomínios" valor={condos.length} icone={Building2} to="/condominios" />
         <Indicador titulo="Prestações de contas" valor={exercicios.length} icone={FileSpreadsheet} to="/prestacao-contas" />
@@ -231,6 +191,46 @@ function Painel() {
           />
         </SectionCard>
       </div>
+
+      {pendencias.length > 0 && (
+        <SectionCard
+          className="mt-6 border-destructive/30"
+          titulo="Pendências de ajuste"
+          descricao="Precisam de atenção para os relatórios ficarem corretos — clique para abrir e resolver."
+        >
+          <ul className="divide-y">
+            {pendencias.map((p, i) => {
+              const Icone = ICONE_PENDENCIA[p.tipo];
+              const miolo = (
+                <>
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+                    <Icone className="size-4" aria-hidden />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-medium text-foreground">{p.condoNome}</span>
+                    <span className="block break-words text-xs text-muted-foreground">{p.descricao}</span>
+                  </span>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                </>
+              );
+              const classe = "alvo-toque flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 hover:text-primary";
+              return (
+                <li key={`${p.tipo}-${p.condoId}-${p.exercicioId ?? i}`}>
+                  {p.tipo === "divergencia_previsao" ? (
+                    <Link to="/previsao-orcamentaria" search={{ exercicio: p.exercicioId! }} className={classe}>
+                      {miolo}
+                    </Link>
+                  ) : (
+                    <Link to="/condominios/$id" params={{ id: p.condoId }} className={classe}>
+                      {miolo}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </SectionCard>
+      )}
     </>
   );
 }
