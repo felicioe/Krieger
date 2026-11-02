@@ -159,6 +159,14 @@ describe("calcularDesvioAnoAnterior", () => {
     expect(calcularDesvioAnoAnterior(D, params(), null)).toBeNull();
   });
 
+  it("com receitas ou saldos lançados mas nenhuma despesa, ainda não há o que sugerir (#126)", () => {
+    const soReceita = recalcularDemonstrativo({
+      ...demonstrativoVazio("Teste"),
+      receitas: { itens: [{ nome: "Taxa condominial", valor: 20000 }], subtotal: 0, totalComSaldo: 0 },
+    });
+    expect(calcularDesvioAnoAnterior(D, params(), soReceita)).toBeNull();
+  });
+
   it("sem previsto válido no exercício anterior (base e ajustes zerados), não há o que sugerir", () => {
     const semPrevisto = params({ variacaoMetodo: "manual", variacao: 0, prev: { modo: "tradicional", ajustes: [], fundoReservaPct: 10 } });
     expect(calcularDesvioAnoAnterior(demonstrativoVazio(), semPrevisto, atual(50000))).toBeNull();

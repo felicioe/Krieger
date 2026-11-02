@@ -1,4 +1,4 @@
-import { centavos, temLancamentos } from "./demonstrativo";
+import { centavos } from "./demonstrativo";
 import type { AjustePrevisao, Arredondamento, Demonstrativo, Exercicio, IndiceCorrecao } from "./types";
 
 /**
@@ -245,14 +245,16 @@ export interface DesvioAnoAnterior {
 /**
  * Compara o previsto que o exercício anterior calculou pra este ano com o que este exercício
  * realmente realizou. `null` quando falta um dos dois lados (exercício atual ainda sem despesas
- * lançadas, ou anterior sem previsto válido) — nada a sugerir ainda.
+ * lançadas — especificamente despesas, não qualquer lançamento: um demonstrativo só com receitas
+ * ou saldos não é "realizado" pra fins de desvio — ou anterior sem previsto válido) — nada a
+ * sugerir ainda.
  */
 export function calcularDesvioAnoAnterior(
   demonstrativoAnterior: Demonstrativo | null,
   parametrosAnterior: ParametrosPrevisao,
   demonstrativoAtual: Demonstrativo | null,
 ): DesvioAnoAnterior | null {
-  if (!temLancamentos(demonstrativoAtual)) return null;
+  if (!demonstrativoAtual?.despesas.grupos.some((g) => g.itens.length > 0)) return null;
   const previsto = calcularPrevisao(demonstrativoAnterior, parametrosAnterior, null).totalAnual;
   if (previsto <= 0) return null;
   const realizado = demonstrativoAtual!.totais.despesas;
