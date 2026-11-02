@@ -404,10 +404,10 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             render={(u, up) => (
               <>
                 <Input aria-label="Unidade" value={u.unidade} onChange={(e) => up({ unidade: e.target.value })} />
-                <NumeroInput aria-label="Fração da unidade" value={u.fracaoUnidade} onChange={(v) => up({ fracaoUnidade: v ?? 0 })} />
-                <NumeroInput aria-label="Fração do box" value={u.fracaoBox} onChange={(v) => up({ fracaoBox: v ?? 0 })} />
-                <NumeroInput aria-label="Fração total" value={u.fracaoTotal} onChange={(v) => up({ fracaoTotal: v ?? 0 })} />
-                <NumeroInput aria-label="Fração prevista" value={u.fracaoPrevista} onChange={(v) => up({ fracaoPrevista: v ?? 0 })} />
+                <NumeroInput aria-label="Fração da unidade" value={u.fracaoUnidade} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoUnidade: v ?? 0 })} />
+                <NumeroInput aria-label="Fração do box" value={u.fracaoBox} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoBox: v ?? 0 })} />
+                <NumeroInput aria-label="Fração total" value={u.fracaoTotal} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoTotal: v ?? 0 })} />
+                <NumeroInput aria-label="Fração prevista" value={u.fracaoPrevista} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoPrevista: v ?? 0 })} />
                 <Selecao aria-label="Tipo" value={u.tipo ?? "unidade"} opcoes={[{ valor: "unidade", rotulo: "Unidade" }, { valor: "deposito", rotulo: "Depósito" }, { valor: "garagem", rotulo: "Garagem" }]} onChange={(v) => up({ tipo: v as UnidadeCondominio["tipo"] })} />
               </>
             )}

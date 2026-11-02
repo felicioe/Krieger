@@ -1,6 +1,11 @@
 {
-  "versaoAtual": "1.03",
+  "versaoAtual": "1.04",
   "versoes": [
+    {
+      "versao": "1.04",
+      "titulo": "Precisão das frações importadas",
+      "alteracoes": ["Campos de fração no cadastro exibem e editam as seis casas decimais do relatório do Systemar."]
+    },
     {
       "versao": "1.03",
       "titulo": "Pesquisa de condomínios nas seleções",
