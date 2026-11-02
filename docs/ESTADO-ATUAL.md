@@ -1,5 +1,18 @@
 # Estado atual e passagem de contexto
 
+## PR #125 mesclado e publicado — 02/11/2026
+
+Pedido do responsável: mover a seção "Pendências de ajuste" do Painel (CNPJ ausente/duplicado,
+divergência de previsão não confirmada) para depois dos outros quadros da página — antes ficava logo
+no topo, antes dos indicadores e dos quadros de Vencimentos/Próximas assembleias; agora é o último
+bloco da página. Mesma condição de exibição e conteúdo, só mudou a posição.
+
+PR #125 mesclado em `main` por squash (`0f55722`). Codex revisou sem achados, CI verde.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`f38a41f`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index-sSUEfnoK.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal). Nenhum arquivo PHP mudou.
+
 ## PR #124 mesclado e publicado — 02/11/2026
 
 PR #124 (reconciliação conta a conta na reimportação de PDF, descrito abaixo) mesclado em `main`
