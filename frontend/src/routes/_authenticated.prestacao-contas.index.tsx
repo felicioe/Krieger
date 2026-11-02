@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { Field } from "@/components/app/Field";
-import { InteiroInput, Selecao } from "@/components/app/inputs";
+import { InteiroInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
@@ -212,9 +212,7 @@ function DialogoNovo({
     criar.mutate(exercicioPadrao(normalizarCondominio(condo), ano, escritorio?.cidade ?? ""));
   }
 
-  const opcoes = [...condominios]
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-    .map((c) => ({ valor: c.id, rotulo: c.codigo ? `${c.codigo} · ${c.nome}` : c.nome }));
+  const opcoes = opcoesCondominio(condominios);
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !criar.isPending && aoMudar(v)}>
@@ -232,7 +230,7 @@ function DialogoNovo({
             </Alert>
           )}
           <Field rotulo="Condomínio" obrigatorio>
-            <Selecao value={condoId} onChange={setCondoId} opcoes={opcoes} placeholder="Escolha o condomínio" />
+            <SelecaoBusca value={condoId} onChange={setCondoId} opcoes={opcoes} placeholder="Escolha o condomínio" />
           </Field>
           <Field rotulo="Ano do exercício" obrigatorio className="max-w-[10rem]">
             <InteiroInput value={ano} onChange={setAno} maxLength={4} />

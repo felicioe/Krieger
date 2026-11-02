@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
-import { Selecao } from "@/components/app/inputs";
+import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves } from "@/lib/queries";
 import { formatData } from "@/lib/format";
@@ -84,9 +84,7 @@ export function DialogoNovaAta({
     criar.mutate(edital ? novaAtaDeAssembleia(normalizarAssembleia(edital), c) : ataEmBranco(c));
   }
 
-  const opcoesCondo = [...condominios]
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-    .map((c) => ({ valor: c.id, rotulo: c.codigo ? `${c.codigo} · ${c.nome}` : c.nome }));
+  const opcoesCondo = opcoesCondominio(condominios);
   const opcoesEdital = [
     ...livres.map((a) => ({ valor: a.id, rotulo: `${formatData(a.data)} · ${rotuloTipo(a.tipo)}` })),
     { valor: SEM_EDITAL, rotulo: "Sem edital" },
@@ -106,7 +104,7 @@ export function DialogoNovaAta({
             </Alert>
           )}
           <Field rotulo="Condomínio" obrigatorio>
-            <Selecao value={condoId} onChange={escolherCondo} opcoes={opcoesCondo} placeholder="Escolha o condomínio" />
+            <SelecaoBusca value={condoId} onChange={escolherCondo} opcoes={opcoesCondo} placeholder="Escolha o condomínio" />
           </Field>
           {condoId && (
             <Field

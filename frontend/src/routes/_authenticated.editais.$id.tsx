@@ -15,7 +15,7 @@ import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { MenuDocumentos } from "@/components/documentos/MenuDocumentos";
-import { DataInput, HoraInput, InteiroInput, Selecao } from "@/components/app/inputs";
+import { DataInput, HoraInput, InteiroInput, Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { dataParaBR, dataParaISO, formatData, parseData } from "@/lib/format";
@@ -170,9 +170,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
     else mudar({ modeloId: novo });
   }
 
-  const opcoesCondo = [...condominios]
-    .sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"))
-    .map((c) => ({ valor: c.id, rotulo: c.codigo ? `${c.codigo} · ${c.nome}` : c.nome }));
+  const opcoesCondo = opcoesCondominio(condominios);
   const opcoesModelo = [
     { valor: SEM_MODELO, rotulo: "Sem modelo" },
     ...modelos.map((m) => ({ valor: m.id, rotulo: m.nome })),
@@ -247,7 +245,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
         <SectionCard titulo="Assembleia">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field rotulo="Condomínio" obrigatorio erro={erros.condoId ?? null} className="sm:col-span-2">
-              <Selecao value={a.condoId} onChange={(v) => mudar({ condoId: v })} opcoes={opcoesCondo} placeholder="Escolha o condomínio" />
+              <SelecaoBusca value={a.condoId} onChange={(v) => mudar({ condoId: v })} opcoes={opcoesCondo} placeholder="Escolha o condomínio" />
             </Field>
             <Field rotulo="Tipo">
               <Selecao value={a.tipo} onChange={(v) => mudar({ tipo: v })} opcoes={TIPOS_ASSEMBLEIA} />

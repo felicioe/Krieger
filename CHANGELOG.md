@@ -2,7 +2,11 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.02**.
+Versão atual: **1.03**.
+
+## 1.03 — Pesquisa de condomínios nas seleções
+
+- Seleções de condomínio agora permitem pesquisar por nome, código ou CNPJ, facilitando a escolha em listas extensas.
 
 ## 1.02 — Cadastro de unidades e frações
 
