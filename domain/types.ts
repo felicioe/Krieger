@@ -369,6 +369,8 @@ export interface Exercicio extends ComId {
   mostrarReceitasPorCategoria?: boolean;
   /** Linhas por rubrica (contas analíticas) na seção Previsto × Realizado; false = só os totais por grupo. */
   mostrarContasAnaliticas?: boolean;
+  /** Linhas por rubrica no Demonstrativo; false = só os totais por grupo. */
+  mostrarContasAnaliticasDemonstrativo?: boolean;
   /**
    * Bloco "Previsão orçamentária por unidade" (Unidades/Cota/Reserva/Valor por unidade), nos dois
    * modos de previsão; false = oculto. Mesmo marcado, fica oculto quando não há nº de unidades (nem

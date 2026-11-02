@@ -183,6 +183,18 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                             {s.titulo}
                           </Label>
                         </div>
+                        {s.id === "demonstrativo" && rel.secoes.demonstrativo && (
+                          <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
+                            <Checkbox
+                              id="secao-contas-analiticas-demonstrativo"
+                              checked={e.mostrarContasAnaliticasDemonstrativo !== false}
+                              onCheckedChange={(v) => mudar({ mostrarContasAnaliticasDemonstrativo: v === true })}
+                            />
+                            <Label htmlFor="secao-contas-analiticas-demonstrativo" className="min-w-0 break-words text-xs font-normal text-muted-foreground">
+                              Mostrar contas analíticas (desmarcado: só os totais por grupo)
+                            </Label>
+                          </div>
+                        )}
                         {s.id === "previstoRealizado" && rel.secoes.previstoRealizado && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
@@ -191,7 +203,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                               onCheckedChange={(v) => mudar({ mostrarContasAnaliticas: v === true })}
                             />
                             <Label htmlFor="secao-contas-analiticas" className="min-w-0 break-words text-xs font-normal text-muted-foreground">
-                              Mostrar contas analíticas no demonstrativo e no Previsto × Realizado (desmarcado: só os totais por grupo)
+                              Mostrar contas analíticas (desmarcado: só os totais por grupo)
                             </Label>
                           </div>
                         )}
