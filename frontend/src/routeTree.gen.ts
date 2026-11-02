@@ -40,6 +40,7 @@ import { Route as AuthenticatedPrestacaoContasIdRouteImport } from './routes/_au
 import { Route as AuthenticatedRelatorioFinalIdRouteImport } from './routes/_authenticated.relatorio-final.$id'
 import { Route as AuthenticatedRelatorioMensalIndexRouteImport } from './routes/_authenticated.relatorio-mensal.index'
 import { Route as AuthenticatedRelatorioMensalIdRouteImport } from './routes/_authenticated.relatorio-mensal.$id'
+import { Route as AuthenticatedRelatoriosOrcadoRealizadoMensalRouteImport } from './routes/_authenticated.relatorios.orcado-realizado-mensal'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -212,6 +213,12 @@ const AuthenticatedRelatorioMensalIdRoute =
     path: '/relatorio-mensal/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedRelatoriosOrcadoRealizadoMensalRoute =
+  AuthenticatedRelatoriosOrcadoRealizadoMensalRouteImport.update({
+    id: '/relatorios/orcado-realizado-mensal',
+    path: '/relatorios/orcado-realizado-mensal',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/prestacao-contas/$id': typeof AuthenticatedPrestacaoContasIdRoute
   '/relatorio-final/$id': typeof AuthenticatedRelatorioFinalIdRoute
   '/relatorio-mensal/$id': typeof AuthenticatedRelatorioMensalIdRoute
+  '/relatorios/orcado-realizado-mensal': typeof AuthenticatedRelatoriosOrcadoRealizadoMensalRoute
   '/atas/': typeof AuthenticatedAtasIndexRoute
   '/condominios/': typeof AuthenticatedCondominiosIndexRoute
   '/editais/': typeof AuthenticatedEditaisIndexRoute
@@ -269,6 +277,7 @@ export interface FileRoutesByTo {
   '/prestacao-contas/$id': typeof AuthenticatedPrestacaoContasIdRoute
   '/relatorio-final/$id': typeof AuthenticatedRelatorioFinalIdRoute
   '/relatorio-mensal/$id': typeof AuthenticatedRelatorioMensalIdRoute
+  '/relatorios/orcado-realizado-mensal': typeof AuthenticatedRelatoriosOrcadoRealizadoMensalRoute
   '/atas': typeof AuthenticatedAtasIndexRoute
   '/condominios': typeof AuthenticatedCondominiosIndexRoute
   '/editais': typeof AuthenticatedEditaisIndexRoute
@@ -303,6 +312,7 @@ export interface FileRoutesById {
   '/_authenticated/prestacao-contas/$id': typeof AuthenticatedPrestacaoContasIdRoute
   '/_authenticated/relatorio-final/$id': typeof AuthenticatedRelatorioFinalIdRoute
   '/_authenticated/relatorio-mensal/$id': typeof AuthenticatedRelatorioMensalIdRoute
+  '/_authenticated/relatorios/orcado-realizado-mensal': typeof AuthenticatedRelatoriosOrcadoRealizadoMensalRoute
   '/_authenticated/atas/': typeof AuthenticatedAtasIndexRoute
   '/_authenticated/condominios/': typeof AuthenticatedCondominiosIndexRoute
   '/_authenticated/editais/': typeof AuthenticatedEditaisIndexRoute
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/prestacao-contas/$id'
     | '/relatorio-final/$id'
     | '/relatorio-mensal/$id'
+    | '/relatorios/orcado-realizado-mensal'
     | '/atas/'
     | '/condominios/'
     | '/editais/'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/prestacao-contas/$id'
     | '/relatorio-final/$id'
     | '/relatorio-mensal/$id'
+    | '/relatorios/orcado-realizado-mensal'
     | '/atas'
     | '/condominios'
     | '/editais'
@@ -402,6 +414,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prestacao-contas/$id'
     | '/_authenticated/relatorio-final/$id'
     | '/_authenticated/relatorio-mensal/$id'
+    | '/_authenticated/relatorios/orcado-realizado-mensal'
     | '/_authenticated/atas/'
     | '/_authenticated/condominios/'
     | '/_authenticated/editais/'
@@ -637,6 +650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRelatorioMensalIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/relatorios/orcado-realizado-mensal': {
+      id: '/_authenticated/relatorios/orcado-realizado-mensal'
+      path: '/relatorios/orcado-realizado-mensal'
+      fullPath: '/relatorios/orcado-realizado-mensal'
+      preLoaderRoute: typeof AuthenticatedRelatoriosOrcadoRealizadoMensalRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
 
@@ -661,6 +681,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPrestacaoContasIdRoute: typeof AuthenticatedPrestacaoContasIdRoute
   AuthenticatedRelatorioFinalIdRoute: typeof AuthenticatedRelatorioFinalIdRoute
   AuthenticatedRelatorioMensalIdRoute: typeof AuthenticatedRelatorioMensalIdRoute
+  AuthenticatedRelatoriosOrcadoRealizadoMensalRoute: typeof AuthenticatedRelatoriosOrcadoRealizadoMensalRoute
   AuthenticatedAtasIndexRoute: typeof AuthenticatedAtasIndexRoute
   AuthenticatedCondominiosIndexRoute: typeof AuthenticatedCondominiosIndexRoute
   AuthenticatedEditaisIndexRoute: typeof AuthenticatedEditaisIndexRoute
@@ -693,6 +714,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPrestacaoContasIdRoute: AuthenticatedPrestacaoContasIdRoute,
   AuthenticatedRelatorioFinalIdRoute: AuthenticatedRelatorioFinalIdRoute,
   AuthenticatedRelatorioMensalIdRoute: AuthenticatedRelatorioMensalIdRoute,
+  AuthenticatedRelatoriosOrcadoRealizadoMensalRoute:
+    AuthenticatedRelatoriosOrcadoRealizadoMensalRoute,
   AuthenticatedAtasIndexRoute: AuthenticatedAtasIndexRoute,
   AuthenticatedCondominiosIndexRoute: AuthenticatedCondominiosIndexRoute,
   AuthenticatedEditaisIndexRoute: AuthenticatedEditaisIndexRoute,

@@ -1,6 +1,11 @@
 {
-  "versaoAtual": "1.04",
+  "versaoAtual": "1.05",
   "versoes": [
+    {
+      "versao": "1.05",
+      "titulo": "Relatório mensal Orçado × Realizado",
+      "alteracoes": ["Novo relatório no menu Relatórios com período de análise, rolagem, totais por linha e coluna e análises horizontal e vertical opcionais."]
+    },
     {
       "versao": "1.04",
       "titulo": "Precisão das frações importadas",
