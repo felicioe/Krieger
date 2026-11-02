@@ -1,5 +1,29 @@
 # Estado atual e passagem de contexto
 
+## "Consumo de serviços" mostrava a expressão técnica da rubrica, não o que bateu — 02/11/2026
+
+Responsável mandou print do site em produção (mobile): embaixo de "Elevadores", em "Consumo de
+serviços", aparecia `manuten[çc]` numa linha e `[ãa]o.*elevador` na outra — a regex técnica da
+palavra-chave (`elevadorRubrica`) quebrando de forma ilegível no meio de uma classe de caractere.
+Achado: `PreviaRelatorio.tsx` (prévia na tela) e `linhaServico()` em `documentos/relatorioFinal.ts`
+(gerador do PDF/Word) sempre mostraram a expressão regex crua como legenda embaixo do nome do
+serviço — não é cosmético só da tela, o PDF/Word de verdade, o que vai pros condôminos, saía com a
+mesma regex ilegível. O editor já tinha sido corrigido nesse sentido faz tempo (PR anterior,
+`domain/rubricaAmigavel.ts` — campo de palavra-chave em vez de regex), mas esses dois lugares de
+exibição ficaram de fora daquela correção.
+
+Corrigido: as duas legendas agora mostram `consumo.rubricas` — os nomes reais das despesas do
+demonstrativo que bateram com a palavra-chave (ex.: "Manutenção de elevadores"), o mesmo campo que
+`BlocoConsumoServico` já usa no editor pro cartão "Calculado automaticamente". Nunca mais expõe a
+expressão técnica. Quando há valor manual (sem despesa batendo), a legenda simplesmente não
+aparece, em vez de mostrar algo enganoso.
+
+Testado: novo teste (`consumoServicoLegenda.test.ts`) monta um relatório com rubrica regex real e
+confirma que o documento gerado contém o nome da despesa e não contém nenhum fragmento de regex.
+Suíte completa (197 domínio, 217 frontend), `tsc --noEmit` e `docs:check` limpos. Validado
+visualmente pela tela real em viewport mobile (414px, mesma largura do print do responsável) —
+"Água e esgoto" / "Energia elétrica" / "Manutenção de elevadores", sem quebra estranha.
+
 ## PR #120 mesclado e publicado — 02/11/2026
 
 PR #120 (botão "Pendente" com caixa padrão + receita sem nome agrupando em "Outras receitas",

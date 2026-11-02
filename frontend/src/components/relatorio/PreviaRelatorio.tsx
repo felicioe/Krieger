@@ -393,9 +393,9 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
   const indices = c.indices.filter((i) => i.pct !== null && i.noRelatorio !== false);
   const documentos = c.documentosObrigatorios.filter((d) => d.noRelatorio && d.nome.trim());
   const servicos = [
-    { nome: "Água", rubrica: c.aguaRubrica, consumo: rel.agua },
-    { nome: "Energia elétrica", rubrica: c.energiaRubrica, consumo: rel.energia },
-    { nome: "Elevadores", rubrica: c.elevadorRubrica, consumo: rel.elevador, fornecedor: c.elevadorFornecedor },
+    { nome: "Água", consumo: rel.agua },
+    { nome: "Energia elétrica", consumo: rel.energia },
+    { nome: "Elevadores", consumo: rel.elevador, fornecedor: c.elevadorFornecedor },
   ].filter((s) => s.consumo.valor > 0);
   return (
     <div className="space-y-5">
@@ -475,7 +475,9 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
                 <tr key={i} className="border-b border-dashed last:border-0">
                   <td className="py-1">
                     {s.nome}
-                    <span className="block text-xs text-muted-foreground">{s.rubrica}</span>
+                    {s.consumo.rubricas.length > 0 && (
+                      <span className="block text-xs text-muted-foreground">{s.consumo.rubricas.join(", ")}</span>
+                    )}
                     {s.fornecedor && <span className="block text-xs text-muted-foreground">{s.fornecedor}</span>}
                   </td>
                   <td className="num py-1 text-right">{formatBRL(s.consumo.valor)}</td>

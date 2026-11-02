@@ -329,14 +329,19 @@ export function tabelaComparativo(c: ResultadoComparativo, mostrarAnaliticas = t
   ];
 }
 
-/** Linha da tabela "Consumo de serviços": serviço (com a rubrica como legenda), consumido e valor médio (período ÷ 12). */
-function linhaServico(nome: string, rubricaRotulo: string, consumo: ConsumoServico, fornecedor?: string): LinhaTabela | null {
+/**
+ * Linha da tabela "Consumo de serviços": serviço (com as despesas do demonstrativo que bateram
+ * como legenda — nunca a expressão técnica da rubrica, que é regex e não serve pra leitura),
+ * consumido e valor médio (período ÷ 12).
+ */
+function linhaServico(nome: string, consumo: ConsumoServico, fornecedor?: string): LinhaTabela | null {
   if (consumo.valor <= 0) return null;
+  const legenda = consumo.rubricas.join(", ");
   return {
     celulas: [
       [
         { texto: nome },
-        { texto: `\n${rubricaRotulo}`, suave: true },
+        ...(legenda ? [{ texto: `\n${legenda}`, suave: true }] : []),
         ...(fornecedor ? [{ texto: `\n${fornecedor}`, suave: true }] : []),
       ],
       formatBRL(consumo.valor),
@@ -406,9 +411,9 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
     })),
   );
   const servicos = [
-    linhaServico("Água", c.aguaRubrica, rel.agua),
-    linhaServico("Energia elétrica", c.energiaRubrica, rel.energia),
-    linhaServico("Elevadores", c.elevadorRubrica, rel.elevador, c.elevadorFornecedor),
+    linhaServico("Água", rel.agua),
+    linhaServico("Energia elétrica", rel.energia),
+    linhaServico("Elevadores", rel.elevador, c.elevadorFornecedor),
   ].filter((l): l is LinhaTabela => l !== null);
   if (servicos.length) {
     out.push(
