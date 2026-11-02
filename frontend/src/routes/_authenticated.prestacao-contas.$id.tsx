@@ -2,11 +2,12 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Calculator, FileText, Loader2, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Calculator, FileText, Loader2, Save, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -21,7 +22,7 @@ import { excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
-import { demonstrativoVazio } from "@/domain/demonstrativo";
+import { demonstrativoVazio, mesesNoPeriodo } from "@/domain/demonstrativo";
 import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
 import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
@@ -71,6 +72,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const condo = condominios.find((c) => c.id === e.condoId);
   const demonstrativo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
   const sujo = JSON.stringify(e) !== salvoJson;
+  const mesesPeriodo = mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim);
 
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 
@@ -213,6 +215,17 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           valor={demonstrativo}
           onChange={(d) => mudar({ demonstrativo: d })}
           descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão calculada pelo demonstrativo."
+          avisoPeriodo={
+            mesesPeriodo !== null && mesesPeriodo > 12 ? (
+              <Alert variant="warning" className="mt-3">
+                <TriangleAlert />
+                <AlertDescription>
+                  Esse período tem {mesesPeriodo} meses — a prestação de contas normalmente cobre até 12. Confira as datas de início e
+                  fim antes de salvar.
+                </AlertDescription>
+              </Alert>
+            ) : null
+          }
         />
       </form>
 

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Plus, Trash2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,10 +62,13 @@ export function EditorDemonstrativo({
   valor,
   onChange,
   descricaoDespesas = "Organize as despesas por grupo (Pessoal, Consumo, Manutenção…).",
+  avisoPeriodo,
 }: {
   valor: Demonstrativo;
   onChange: (d: Demonstrativo) => void;
   descricaoDespesas?: string;
+  /** Aviso extra abaixo dos campos de período (ex.: período maior que 12 meses) — só a prestação de contas anual usa. */
+  avisoPeriodo?: ReactNode;
 }) {
   const d = valor;
   const mudar = (parcial: Partial<Demonstrativo>) => onChange(recalcularDemonstrativo({ ...d, ...parcial }));
@@ -82,6 +86,7 @@ export function EditorDemonstrativo({
             <DataInput value={d.periodo.fim} onChange={(v) => mudar({ periodo: { ...d.periodo, fim: v } })} />
           </Field>
         </div>
+        {avisoPeriodo}
       </SectionCard>
 
       <div className="grid gap-6 2xl:grid-cols-2">
