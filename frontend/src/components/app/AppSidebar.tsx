@@ -51,9 +51,14 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     itens: [
       { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet, permissao: "prestacao_contas.visualizar" },
       { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator, permissao: "previsao_orcamentaria.visualizar" },
+      { titulo: "Importador", to: "/importador", icone: FileUp, permissao: "importador.visualizar" },
+    ],
+  },
+  {
+    titulo: "Relatórios",
+    itens: [
       { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows, permissao: "previsto_realizado.visualizar" },
       { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange, permissao: "relatorio_mensal.visualizar" },
-      { titulo: "Importador", to: "/importador", icone: FileUp, permissao: "importador.visualizar" },
     ],
   },
   {
