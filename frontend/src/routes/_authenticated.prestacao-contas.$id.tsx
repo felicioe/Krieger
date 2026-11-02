@@ -16,12 +16,15 @@ import { DataInput, DinheiroInput, InteiroInput } from "@/components/app/inputs"
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
+import { HistoricoConflitosImportacao } from "@/components/importacao/HistoricoConflitosImportacao";
+import { persistirDecisaoConflito, type DecisaoConflitoPendente } from "@/components/importacao/ConflitoImportacao";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { AnexosPrestacao, anexosQuery } from "@/components/importacao/AnexosPrestacao";
 import { excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
+import { useUsuario } from "@/lib/auth";
 import { demonstrativoVazio, mesesNoPeriodo } from "@/domain/demonstrativo";
 import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
 import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
@@ -60,12 +63,16 @@ function PaginaExercicio() {
 function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [erroAno, setErroAno] = useState<string | null>(null);
+  // Decisão de conflito de importação (ver ConflitoImportacao.tsx) ainda pendente de gravar — só
+  // registrada quando o Salvar abaixo for bem-sucedido, pra não logar uma importação descartada.
+  const [decisaoPendente, setDecisaoPendente] = useState<DecisaoConflitoPendente | null>(null);
   // Totais do PDF importado (ou do registro recém-criado por PDF), conferidos no primeiro Salvar.
   const trava = useTravaImportacao("exercicios", inicial.id, inicial.demonstrativo ?? null);
 
@@ -96,6 +103,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
       setE(n);
       setSalvoJson(JSON.stringify(n));
+      if (decisaoPendente) {
+        persistirDecisaoConflito(usuario, queryClient, decisaoPendente);
+        setDecisaoPendente(null);
+      }
       toast.success("Prestação de contas salva.");
     },
   });
@@ -147,6 +158,9 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               destino="exercicios"
               condominio={condo}
               nomeCondominio={e.condoNome || condo?.nome || ""}
+              demonstrativoAtual={e.demonstrativo ?? null}
+              registroId={e.id}
+              competencia={String(e.ano)}
               aoAplicar={(r) => {
                 mudar({
                   demonstrativo: r.demonstrativo,
@@ -155,6 +169,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                   ...(r.previsaoSugerida ? { previsaoSugerida: previsaoSugeridaDoPdf(r.previsaoSugerida) } : {}),
                 });
                 trava.marcarImportado(r.demonstrativo);
+                setDecisaoPendente(r.decisaoConflito ?? null);
               }}
             />
             <Button variant="outline" asChild>
@@ -233,6 +248,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       <div className="mt-6">
         <AnexosPrestacao exercicioId={e.id} />
       </div>
+
+      <HistoricoConflitosImportacao registroId={e.id} />
 
       <DialogoDivergencia
         aberto={trava.dialogo.aberto}

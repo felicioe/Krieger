@@ -18,11 +18,14 @@ import { DinheiroInput, InteiroInput } from "@/components/app/inputs";
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
+import { HistoricoConflitosImportacao } from "@/components/importacao/HistoricoConflitosImportacao";
+import { persistirDecisaoConflito, type DecisaoConflitoPendente } from "@/components/importacao/ConflitoImportacao";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
+import { useUsuario } from "@/lib/auth";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { origemComArquivo } from "@/domain/importacao";
 import { competenciaMensal, normalizarMensal, prepararMensal, rotuloCompetencia, validarMensal } from "@/domain/mensal";
@@ -64,6 +67,7 @@ type Nota = Mensal["notas"][number];
 function FormMensal({ inicial }: { inicial: Mensal }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
@@ -71,6 +75,9 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [aba, setAba] = useState("demonstrativo");
+  // Decisão de conflito de importação (ver ConflitoImportacao.tsx) ainda pendente de gravar — só
+  // registrada quando o Salvar abaixo for bem-sucedido, pra não logar uma importação descartada.
+  const [decisaoPendente, setDecisaoPendente] = useState<DecisaoConflitoPendente | null>(null);
   // Totais do PDF importado (ou do registro recém-criado por PDF), conferidos no primeiro Salvar.
   const trava = useTravaImportacao("mensais", inicial.id, inicial.demonstrativo ?? null);
 
@@ -107,6 +114,10 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
       queryClient.setQueryData(chaves.item("mensais", salvo.id), salvo);
       setM(n);
       setSalvoJson(JSON.stringify(n));
+      if (decisaoPendente) {
+        persistirDecisaoConflito(usuario, queryClient, decisaoPendente);
+        setDecisaoPendente(null);
+      }
       toast.success("Relatório mensal salvo.");
     },
   });
@@ -159,6 +170,9 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
               destino="mensais"
               condominio={condo}
               nomeCondominio={nomeCondo}
+              demonstrativoAtual={m.demonstrativo ?? null}
+              registroId={m.id}
+              competencia={rotuloCompetencia(competencia)}
               aoAplicar={(r) => {
                 mudar({
                   demonstrativo: r.demonstrativo,
@@ -166,6 +180,7 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
                   origem: origemComArquivo(m.origem, r.arquivo),
                 });
                 trava.marcarImportado(r.demonstrativo);
+                setDecisaoPendente(r.decisaoConflito ?? null);
                 setAba("demonstrativo");
               }}
             />
@@ -255,6 +270,8 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
           </TabsContent>
         </Tabs>
       </form>
+
+      <HistoricoConflitosImportacao registroId={m.id} />
 
       <DialogoDivergencia
         aberto={trava.dialogo.aberto}

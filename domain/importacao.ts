@@ -15,7 +15,7 @@
  */
 import { condominioPadrao, nomeParaRelatorio } from "./condominio";
 import { exercicioPadrao } from "./exercicio";
-import { centavos, demonstrativoVazio, recalcularDemonstrativo } from "./demonstrativo";
+import { centavos, demonstrativoVazio, recalcularDemonstrativo, temLancamentos } from "./demonstrativo";
 import { formatBRL } from "../lib/format";
 import { competenciaMensal, mensalPadrao, ordemCompetencia, periodoDoMes, type Competencia } from "./mensal";
 import {
@@ -33,6 +33,7 @@ import type {
   DestinoImportacao,
   Exercicio,
   Importacao,
+  ItemDivergenteImportacao,
   LinhaValor,
   Mensal,
   TipoAnexoImportacao,
@@ -416,6 +417,129 @@ export function mensaisDoComparativo(
         (m) => m.condoId === condo.id && ordemCompetencia(competenciaMensal(m)) === ordemCompetencia(competencia),
       );
     return { mes, competencia, registro, existente: existente || null };
+  });
+}
+
+/** Agrupa linhas por nome, preservando a ordem — usado para casar contas repetidas pela ocorrência
+ * (1ª com 1ª, 2ª com 2ª...) em vez de todas caírem na mesma chave. */
+function porNome(lista: LinhaValor[]): Map<string, LinhaValor[]> {
+  const m = new Map<string, LinhaValor[]>();
+  for (const l of lista) {
+    const grupo = m.get(l.nome);
+    if (grupo) grupo.push(l);
+    else m.set(l.nome, [l]);
+  }
+  return m;
+}
+
+function comparaItens(
+  secao: ItemDivergenteImportacao["secao"],
+  atual: LinhaValor[],
+  novo: LinhaValor[],
+  grupo?: string,
+): ItemDivergenteImportacao[] {
+  const mAtual = porNome(atual);
+  const mNovo = porNome(novo);
+  const nomes = new Set([...mAtual.keys(), ...mNovo.keys()]);
+  const out: ItemDivergenteImportacao[] = [];
+  for (const nome of nomes) {
+    const as = mAtual.get(nome) ?? [];
+    const ns = mNovo.get(nome) ?? [];
+    for (let ocorrencia = 0; ocorrencia < Math.max(as.length, ns.length); ocorrencia++) {
+      const a = as[ocorrencia];
+      const n = ns[ocorrencia];
+      const valorAtual = a ? centavos(Number(a.valor) || 0) : null;
+      const valorNovo = n ? centavos(Number(n.valor) || 0) : null;
+      if (valorAtual !== valorNovo) out.push({ secao, ...(grupo !== undefined ? { grupo } : {}), nome, ocorrencia, valorAtual, valorNovo });
+    }
+  }
+  return out;
+}
+
+/**
+ * Compara, conta a conta, o demonstrativo já gravado (`atual`, `null` se o registro ainda não tem
+ * um) com o recém-importado (`novo`) — casando por nome dentro de cada seção (despesas, também por
+ * grupo). Só retorna os itens cujo valor realmente mudou (ou que só existem num dos dois lados);
+ * item igual nos dois não é devolvido, porque não há nada a decidir. A decisão de cada item
+ * (manter o gravado ou usar o novo) é de quem usa esta função, nunca pré-marcada aqui.
+ *
+ * `atual` em branco (registro novo, nunca importado antes) não é conflito — devolve lista vazia:
+ * não há nada gravado para divergir do que está vindo agora.
+ */
+export function compararDemonstrativos(atual: Demonstrativo | null, novo: Demonstrativo): ItemDivergenteImportacao[] {
+  if (!temLancamentos(atual)) return [];
+  const gruposAtual = atual?.despesas.grupos ?? [];
+  const gruposNovo = novo.despesas.grupos;
+  const nomesGrupo = new Set([...gruposAtual.map((g) => g.nome), ...gruposNovo.map((g) => g.nome)]);
+  const despesas = [...nomesGrupo].flatMap((grupo) =>
+    comparaItens(
+      "despesas",
+      gruposAtual.find((g) => g.nome === grupo)?.itens ?? [],
+      gruposNovo.find((g) => g.nome === grupo)?.itens ?? [],
+      grupo,
+    ),
+  );
+  return [
+    ...comparaItens("saldoAnterior", atual?.saldoAnterior.contas ?? [], novo.saldoAnterior.contas),
+    ...comparaItens("receitas", atual?.receitas.itens ?? [], novo.receitas.itens),
+    ...despesas,
+    ...comparaItens("saldoAtual", atual?.saldoAtual.contas ?? [], novo.saldoAtual.contas),
+  ];
+}
+
+/**
+ * Aplica as decisões (manter/atualizar) por cima do demonstrativo recém-importado: item "manter"
+ * volta a ter o valor gravado antes (ou some, se não existia antes); item "atualizar" (ou sem
+ * divergência) fica como veio do PDF novo. Recalcula os totais no final.
+ */
+export function aplicarDecisoesImportacao(
+  atual: Demonstrativo | null,
+  novo: Demonstrativo,
+  decisoes: (ItemDivergenteImportacao & { escolha: "manter" | "atualizar" })[],
+): Demonstrativo {
+  const porManter = decisoes.filter((d) => d.escolha === "manter");
+  if (porManter.length === 0) return novo;
+
+  const aplicaLista = (secao: ItemDivergenteImportacao["secao"], lista: LinhaValor[], grupo?: string): LinhaValor[] => {
+    const relevantes = porManter.filter((d) => d.secao === secao && d.grupo === grupo);
+    if (relevantes.length === 0) return lista;
+    // Casa cada decisão com a ocorrência certa (nome + índice dentro do mesmo nome), não só o nome —
+    // senão duas contas com o mesmo nome ("Juros", "Juros") se confundem e uma decisão vale pras duas.
+    const decisaoPara = new Map(relevantes.map((d) => [`${d.nome}\u0000${d.ocorrencia}`, d]));
+    const contagem = new Map<string, number>();
+    const out: LinhaValor[] = [];
+    for (const item of lista) {
+      const ocorrencia = contagem.get(item.nome) ?? 0;
+      contagem.set(item.nome, ocorrencia + 1);
+      const d = decisaoPara.get(`${item.nome}\u0000${ocorrencia}`);
+      if (d && d.valorAtual === null) continue; // item só existia na nova importação: "manter" = não incluir
+      out.push(d ? { ...item, valor: d.valorAtual! } : item);
+    }
+    // Itens mantidos que sumiram do novo (não têm occorrência nenhuma em `lista`) voltam ao final.
+    for (const d of relevantes) {
+      if (d.valorNovo !== null || d.valorAtual === null) continue;
+      out.push({ nome: d.nome, valor: d.valorAtual });
+    }
+    return out;
+  };
+
+  return recalcularDemonstrativo({
+    ...novo,
+    saldoAnterior: { ...novo.saldoAnterior, contas: aplicaLista("saldoAnterior", novo.saldoAnterior.contas) },
+    receitas: { ...novo.receitas, itens: aplicaLista("receitas", novo.receitas.itens) },
+    despesas: {
+      ...novo.despesas,
+      grupos: novo.despesas.grupos
+        .map((g) => ({ ...g, itens: aplicaLista("despesas", g.itens, g.nome) }))
+        .concat(
+          // Grupo que só existia no demonstrativo gravado (sumiu do PDF novo) e tem item mantido.
+          (atual?.despesas.grupos ?? [])
+            .filter((g) => !novo.despesas.grupos.some((ng) => ng.nome === g.nome))
+            .map((g) => ({ ...g, itens: aplicaLista("despesas", [], g.nome) }))
+            .filter((g) => g.itens.length > 0),
+        ),
+    },
+    saldoAtual: { ...novo.saldoAtual, contas: aplicaLista("saldoAtual", novo.saldoAtual.contas) },
   });
 }
 

@@ -10,6 +10,7 @@ import { Field } from "@/components/app/Field";
 import { InteiroInput } from "@/components/app/inputs";
 import { ResumoImportacao } from "./ResumoImportacao";
 import { SugestaoParecidos } from "./SugestaoParecidos";
+import { ConflitoImportacaoDialog, useConflitoImportacao, type DecisaoConflitoPendente } from "./ConflitoImportacao";
 import { marcarCriadoPorPdf } from "./criadoPorPdf";
 import { focarConteudoApos } from "@/components/app/foco";
 import { api, mensagemErro } from "@/lib/api";
@@ -47,6 +48,9 @@ export type ImportacaoAplicada = {
   /** Páginas extras do PDF (null quando não existem). */
   consideracoes: ConsideracoesFinaisLidas | null;
   previsaoSugerida: PrevisaoSugeridaLida | null;
+  /** Decisão de conflito já tomada (ver ConflitoImportacao.tsx), ainda não gravada — só deve ser
+   * persistida quando o registro for efetivamente salvo, para não logar uma mudança descartada. */
+  decisaoConflito?: DecisaoConflitoPendente | null;
 };
 
 type Props = (
@@ -56,6 +60,12 @@ type Props = (
       destino: DestinoImportacao;
       condominio: Condominio | undefined;
       nomeCondominio: string;
+      /** Demonstrativo atualmente no editor (antes desta importação) — comparado conta a conta com o do PDF. */
+      demonstrativoAtual: Demonstrativo | null;
+      /** Id do relatório mensal ou do exercício sendo editado — usado no log de conflito, se houver. */
+      registroId: string;
+      /** "mm/aaaa" (mensal) ou o ano, como texto (exercício) — usado no log de conflito, se houver. */
+      competencia: string;
       aoAplicar: (r: ImportacaoAplicada) => void;
     }
   | {
@@ -190,6 +200,9 @@ function PassoEditor({
   destino,
   condominio,
   nomeCondominio,
+  demonstrativoAtual,
+  registroId,
+  competencia,
   aoAplicar,
   lido,
   coluna,
@@ -206,6 +219,39 @@ function PassoEditor({
     !!(rc.codigo || rc.cnpj) &&
     !!(condominio.codigo || condominio.cnpj) &&
     !encontrarCondominio([condominio], rc);
+  const [aplicando, setAplicando] = useState(false);
+  const conflito = useConflitoImportacao();
+
+  function preencher() {
+    setAplicando(true);
+    conflito
+      .resolver({
+        condoId: condominio?.id ?? "",
+        condoNome: nomeCondominio,
+        destino,
+        registroId,
+        competencia,
+        arquivo: lido.arquivo,
+        atual: demonstrativoAtual,
+        novo: demonstrativo,
+      })
+      .then(({ demonstrativo: demonstrativoFinal, decisao }) => {
+        aoAplicar({
+          demonstrativo: demonstrativoFinal,
+          receber: destino === "mensais" ? receberDoRelatorio(lido.relatorio, coluna) : null,
+          arquivo: lido.arquivo,
+          consideracoes: lido.consideracoes,
+          previsaoSugerida: lido.previsaoSugerida,
+          decisaoConflito: decisao,
+        });
+        fechar();
+        toast.success("Demonstrativo preenchido a partir do PDF. Revise e salve.");
+      })
+      .catch(() => {
+        /* usuário cancelou a resolução do conflito: nada é aplicado */
+      })
+      .finally(() => setAplicando(false));
+  }
 
   return (
     <>
@@ -237,25 +283,15 @@ function PassoEditor({
         . Nada é gravado até você clicar em Salvar.
       </p>
       <DialogFooter>
-        <Button variant="outline" onClick={fechar}>
+        <Button variant="outline" onClick={fechar} disabled={aplicando}>
           Cancelar
         </Button>
-        <Button
-          onClick={() => {
-            aoAplicar({
-              demonstrativo,
-              receber: destino === "mensais" ? receberDoRelatorio(lido.relatorio, coluna) : null,
-              arquivo: lido.arquivo,
-              consideracoes: lido.consideracoes,
-              previsaoSugerida: lido.previsaoSugerida,
-            });
-            fechar();
-            toast.success("Demonstrativo preenchido a partir do PDF. Revise e salve.");
-          }}
-        >
+        <Button onClick={preencher} disabled={aplicando}>
+          {aplicando && <Loader2 className="animate-spin" />}
           Preencher demonstrativo
         </Button>
       </DialogFooter>
+      <ConflitoImportacaoDialog {...conflito.dialogo} />
     </>
   );
 }

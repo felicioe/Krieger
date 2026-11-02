@@ -58,6 +58,7 @@ export type AlvoLimpeza =
   | "importacoes"
   | "anexos_importacao"
   | "decisoes_previsao"
+  | "decisoes_importacao"
   | "documentos"
   | "backups";
 

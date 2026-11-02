@@ -1,5 +1,49 @@
 # Estado atual e passagem de contexto
 
+## Reimportação de PDF: conflito conta a conta antes de sobrescrever — 02/11/2026
+
+Pedido do responsável (2ª parte do pedido sobre período — a 1ª, PR #123, já mesclada): "caso tente
+importar algum mês que já tenha sido importado, deverá analisar conta a conta e apontar que existe
+valores divergentes e perguntar se o sistema deve manter o que tinha registrado, ou atualizar com o
+novo valor". Decisões do responsável, já confirmadas antes de implementar: (1) nunca marcar uma
+escolha por padrão — ele decide cada item, sempre, e toda decisão fica registrada para conferência
+futura; (2) vale para toda reimportação (relatório mensal individual, prestação de contas e o
+"Anexar comparativo financeiro", que importa vários meses de uma vez).
+
+**Implementado**:
+- `domain/types.ts` — novo store `decisoes_importacao`; tipos `ItemDivergenteImportacao` (uma conta
+  com valor diferente entre o gravado e o novo) e `DecisaoConflitoImportacao` (o log, com a escolha
+  manter/atualizar de cada item).
+- `domain/importacao.ts` — `compararDemonstrativos(atual, novo)`: compara conta a conta (saldo
+  anterior, receitas, despesas por grupo, saldo atual), devolve só o que realmente mudou. Atual em
+  branco (registro nunca importado antes) não é conflito. `aplicarDecisoesImportacao(atual, novo,
+  decisoes)`: aplica as escolhas por cima do novo e recalcula os totais.
+- `frontend/src/components/importacao/ConflitoImportacao.tsx` — diálogo compartilhado: lista os
+  itens divergentes, radio "Manter o que está gravado" / "Usar o valor do PDF novo" por item
+  (nenhum pré-marcado; "Confirmar e aplicar" só habilita com todos decididos), e o hook
+  `useConflitoImportacao` que resolve a comparação, grava o log em `decisoes_importacao` e devolve
+  o demonstrativo final.
+- Plugado em `ImportarPdf.tsx` (reimportação individual, usada tanto no relatório mensal quanto na
+  prestação de contas) e em `AnexarComparativo.tsx` (um diálogo por mês, sequencial — cancelar
+  qualquer um aborta tudo, nada é gravado até todos os meses selecionados estarem decididos).
+- `frontend/src/components/importacao/HistoricoConflitosImportacao.tsx` — seção recolhível (some se
+  vazia) no relatório mensal e na prestação de contas, com o histórico de reimportações que tiveram
+  conflito: arquivo, quem decidiu, quando, e a escolha de cada item.
+- Backend: `decisoes_importacao` registrada em `api.php` (permissão `importador`, consumida também
+  por `prestacao_contas` e `relatorio_mensal`) e `schema.sql` (`kr_decisoes_importacao`).
+
+**Ação pendente em produção**: como nas vezes anteriores que uma tabela nova foi adicionada,
+`schema.sql` só roda `CREATE TABLE IF NOT EXISTS` na primeira instalação — o banco já existente no
+Hostinger não ganha `kr_decisoes_importacao` sozinho. É preciso rodar esse `CREATE TABLE` uma vez,
+manualmente, no phpMyAdmin.
+
+Testado: 12 casos de domínio (`compararDemonstrativos`/`aplicarDecisoesImportacao` — item só no
+atual, só no novo, grupos de despesa, etc.) e 2 de interface (abre o diálogo e só aplica depois de
+decidir todos os itens; cancelar não aplica nada), suíte completa (214 domínio, 219 frontend), `tsc
+--noEmit` (raiz e frontend), `php -l api.php` e `docs:check` limpos. Validado visualmente: o
+histórico aparece fechado por padrão, expande mostrando arquivo/autor/data e a lista de itens com a
+escolha de cada um.
+
 ## PR #123 mesclado e publicado — 02/11/2026
 
 PR #123 (período da prestação de contas na lista + aviso de 12 meses, descrito abaixo) mesclado em

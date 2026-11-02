@@ -152,6 +152,7 @@ function semente(): Dados {
     anexos_importacao: [],
     atas: [ataExemplo(assembleias[0] as Registro, condominios[0] as Registro)],
     decisoes_previsao: [],
+    decisoes_importacao: [],
   };
 }
 
@@ -706,6 +707,7 @@ export const mockApi: ApiAdapter = {
         importacoes: d.importacoes.length,
         anexos_importacao: d.anexos_importacao.length,
         decisoes_previsao: d.decisoes_previsao.length,
+        decisoes_importacao: d.decisoes_importacao.length,
         documentos: consultaHistorico().length,
         backups: backups().length,
       };
@@ -724,6 +726,7 @@ export const mockApi: ApiAdapter = {
         "importacoes",
         "anexos_importacao",
         "decisoes_previsao",
+        "decisoes_importacao",
       ];
       let apagados = 0;
       if (alvo === "tudo") {

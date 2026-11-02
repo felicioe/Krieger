@@ -35,6 +35,17 @@ export function mesesNoPeriodo(ini: string, fim: string): number | null {
   return (df.getFullYear() - di.getFullYear()) * 12 + (df.getMonth() - di.getMonth()) + 1;
 }
 
+/** Se tem algum lançamento (qualquer seção) — demonstrativo em branco não conta. */
+export function temLancamentos(d: Demonstrativo | null | undefined): boolean {
+  if (!d) return false;
+  return (
+    d.saldoAnterior.contas.length > 0 ||
+    d.receitas.itens.length > 0 ||
+    d.despesas.grupos.some((g) => g.itens.length > 0) ||
+    d.saldoAtual.contas.length > 0
+  );
+}
+
 /** Completa um demonstrativo vindo da API/backup com a estrutura mínima. */
 export function normalizarDemonstrativo(raw: Partial<Demonstrativo> | null | undefined, condominio = ""): Demonstrativo {
   const v = demonstrativoVazio(condominio);
