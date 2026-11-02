@@ -95,12 +95,12 @@ export function lerListagemFracao(texto: string): { condominio: string | null; u
   const cab = linhas.find((l) => /CONDOM[IÍ]NIO\s*:/i.test(l));
   const condominio = cab?.replace(/^.*CONDOM[IÍ]NIO\s*:\s*/i, '').trim() || null;
   const unidades: UnidadeFracaoLida[] = [];
-  const num = /\d+,\d{6}/g;
   for (const linha of linhas) {
-    const m = linha.trim().match(/^(\d{5})\s+(.+?)\s+(\d+,\d{6})\s+(\d+,\d{6})\s+(\d+,\d{6})\s+(\d+,\d{6})\s*$/);
-    if (!m) continue;
+    const codigo = linha.match(/^\s*(\d{5})\b/);
+    const valores = [...linha.matchAll(/\d{1,3}(?:\.\d{3})?,\d{6}/g)].map((m) => m[0]!);
+    if (!codigo || valores.length < 4) continue;
     const p = (s: string) => Number(s.replace('.', '').replace(',', '.'));
-    unidades.push({ unidade: m[1]!, fracaoUnidade: p(m[3]!), fracaoBox: p(m[4]!), fracaoTotal: p(m[5]!), fracaoPrevista: p(m[6]!) });
+    unidades.push({ unidade: codigo[1]!, fracaoUnidade: p(valores[0]!), fracaoBox: p(valores[1]!), fracaoTotal: p(valores[2]!), fracaoPrevista: p(valores[3]!) });
   }
   for (const linha of linhas) {
     const m = linha.match(/TOTAL\s+UNIDADES\s+(\d+).*?([\d.]+,\d{6})\s*$/i);
