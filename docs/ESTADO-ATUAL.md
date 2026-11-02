@@ -1,5 +1,17 @@
 # Estado atual e passagem de contexto
 
+## PR #123 mesclado e publicado — 02/11/2026
+
+PR #123 (período da prestação de contas na lista + aviso de 12 meses, descrito abaixo) mesclado em
+`main` por squash (`4fa5a10`). Codex revisou sem achados, CI verde, sem threads de review.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`a6040dc`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index-Iip2XEv_.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal). Nenhum arquivo PHP mudou.
+
+A 2ª parte do pedido (reconciliação de importação conta a conta) segue em desenvolvimento na
+branch `reconciliacao-conflito-importacao`.
+
 ## Período da prestação de contas: mostrado na lista + aviso de mais de 12 meses — 02/11/2026
 
 Pedido do responsável (1ª parte de dois pedidos no mesmo fio — a 2ª, reconciliação de importação
