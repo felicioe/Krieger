@@ -1,5 +1,16 @@
 # Estado atual e passagem de contexto
 
+## PR #119 mesclado e publicado — 02/11/2026
+
+PR #119 (assinatura final não dividida entre páginas, descrito abaixo) mesclado em `main` por
+squash (`67455d2`). Codex revisou sem achados (`has_any_findings: false`), CI verde, sem threads
+de review — mesclado assim que o CI fechou.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`9680528`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index--HftxEY6.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal). Nenhum arquivo PHP mudou (só frontend — `pdf.ts`,
+`word.ts`, `tipos.ts` e os dois geradores de documento).
+
 ## Assinatura final separada de "Local, data" entre páginas do PDF/Word — 02/11/2026
 
 Pedido do responsável: "a assinatura final não pode ser dividida" entre páginas do relatório
