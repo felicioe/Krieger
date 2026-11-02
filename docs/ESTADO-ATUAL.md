@@ -1,5 +1,34 @@
 # Estado atual e passagem de contexto
 
+## PR #124 mesclado e publicado — 02/11/2026
+
+PR #124 (reconciliação conta a conta na reimportação de PDF, descrito abaixo) mesclado em `main`
+por squash (`9e87952`). O Codex apontou 3 problemas reais na 1ª rodada de revisão — todos corrigidos
+num 2º commit antes do merge: (1) contas com o mesmo nome na mesma seção/grupo eram comparadas só
+pela 1ª ocorrência (`Set`+`find`), podendo deixar passar uma divergência de verdade quando há nome
+repetido; corrigido comparando por ocorrência (1ª com 1ª, 2ª com 2ª). (2) despesa num grupo sem nome
+(string vazia) perdia o campo `grupo` na divergência, então "manter" nunca encontrava a decisão de
+volta; corrigido preservando `grupo: ""`. (3) o histórico de decisão era gravado assim que o usuário
+confirmava o diálogo, antes do registro ser salvo de verdade — cancelar um mês seguinte (no
+comparativo com vários meses) ou descartar o editor sem salvar deixava o histórico dizendo que algo
+mudou quando nada foi gravado; corrigido adiando a gravação do log pra depois do Salvar/anexar ter
+sucesso de verdade. CI verde, 3 threads de review respondidas e resolvidas.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`daa323f`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index-ChprE0Ny.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal).
+
+**Pedido do responsável, à parte**: não usar mais a revisão automática do Codex nos PRs futuros
+(desliga tokens da conta dele) — a partir de agora a segunda revisão antes de entregar um PR é
+responsabilidade do Claude mesmo (ex.: rodar a skill `/code-review` sobre o diff antes de abrir ou
+mesclar). A desativação do app do Codex no repositório (via
+https://chatgpt.com/codex/cloud/settings/general ou removendo o GitHub App) é algo que só o
+responsável consegue fazer — não está sob controle deste repositório.
+
+**Ação pendente em produção**: `kr_decisoes_importacao` precisa ser criada manualmente no phpMyAdmin
+do Hostinger (mesma situação já registrada abaixo, na entrada original do pedido) — `schema.sql` só
+roda `CREATE TABLE IF NOT EXISTS` na primeira instalação.
+
 ## Reimportação de PDF: conflito conta a conta antes de sobrescrever — 02/11/2026
 
 Pedido do responsável (2ª parte do pedido sobre período — a 1ª, PR #123, já mesclada): "caso tente
