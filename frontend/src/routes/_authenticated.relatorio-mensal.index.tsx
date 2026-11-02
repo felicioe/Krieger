@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
-import { Selecao } from "@/components/app/inputs";
+import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { DialogoNovoMensal } from "@/components/mensal/DialogoNovoMensal";
 import { listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
@@ -70,10 +70,7 @@ function ListaMensais() {
       .sort((a, b) => b.ordem - a.ordem || a.condoNome.localeCompare(b.condoNome, "pt-BR"));
   }, [mensais, condominios, condo]);
 
-  const opcoesCondo = [
-    { valor: TODOS, rotulo: "Todos os condomínios" },
-    ...[...condominios].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((c) => ({ valor: c.id, rotulo: c.nome })),
-  ];
+  const opcoesCondo = [{ valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" }, ...opcoesCondominio(condominios)];
 
   const abrirNovo = (v: boolean) =>
     navigate({ search: (s) => (v ? { ...s, novo: condo === TODOS ? "" : condo } : { ...(s.condo ? { condo: s.condo } : {}) }), replace: true });
@@ -98,7 +95,7 @@ function ListaMensais() {
       />
       <AvisoImportacoesPendentes />
       <div className="mb-4 max-w-sm">
-        <Selecao
+        <SelecaoBusca
           aria-label="Filtrar por condomínio"
           value={condo}
           onChange={(v) => {
@@ -106,6 +103,7 @@ function ListaMensais() {
             navigate({ search: v === TODOS ? {} : { condo: v }, replace: true });
           }}
           opcoes={opcoesCondo}
+          placeholderBusca="Pesquisar condomínio por nome, código ou CNPJ..."
           className="bg-card"
         />
       </div>

@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
-import { Selecao } from "@/components/app/inputs";
+import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { focarConteudoApos } from "@/components/app/foco";
 import { ERRO_PDF_GRANDE, LIMITE_PDF_ANEXO, textoCondominioLido, textoPeriodo } from "./anexos";
 import { ConflitoImportacaoDialog, persistirDecisaoConflito, useConflitoImportacao, type DecisaoConflitoPendente } from "./ConflitoImportacao";
@@ -213,9 +213,7 @@ function PassoAnexar({
     !!(condo.codigo || condo.cnpj) &&
     !encontrarCondominio([condo], rel.condominio);
 
-  const opcoesCondo = [...condominios]
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-    .map((c) => ({ valor: c.id, rotulo: c.codigo ? `${c.codigo} · ${c.nome}` : c.nome }));
+  const opcoesCondo = opcoesCondominio(condominios);
   const opcoesExercicio = doCondo.map((x) => ({ valor: x.id, rotulo: `Exercício ${x.ano}` }));
 
   // Meses do comparativo viram relatórios mensais de verdade (não só o PDF anexado como referência):
@@ -337,7 +335,7 @@ function PassoAnexar({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Field rotulo="Condomínio" obrigatorio>
-          <Selecao
+          <SelecaoBusca
             value={condoId}
             onChange={(v) => {
               setCondoId(v);

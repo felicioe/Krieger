@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
-import { DataInput, Selecao } from "@/components/app/inputs";
+import { DataInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves } from "@/lib/queries";
 import { dataParaISO, parseData } from "@/lib/format";
@@ -90,9 +90,7 @@ export function DialogoNovoEdital({
     );
   }
 
-  const opcoesCondo = [...condominios]
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-    .map((c) => ({ valor: c.id, rotulo: c.codigo ? `${c.codigo} · ${c.nome}` : c.nome }));
+  const opcoesCondo = opcoesCondominio(condominios);
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !criar.isPending && aoMudar(v)}>
@@ -103,7 +101,7 @@ export function DialogoNovoEdital({
         </DialogHeader>
         <form id="form-novo-edital" onSubmit={enviar} className="grid gap-4" noValidate>
           <Field rotulo="Condomínio" obrigatorio erro={erros.condoId ?? null}>
-            <Selecao
+            <SelecaoBusca
               value={condoId}
               onChange={(v) => {
                 setCondoId(v);

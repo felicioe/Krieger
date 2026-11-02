@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
-import { Selecao } from "@/components/app/inputs";
+import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { DialogoNovaAta } from "@/components/atas/DialogoNovaAta";
 import { listaQuery } from "@/lib/queries";
 import { formatData } from "@/lib/format";
@@ -88,14 +88,12 @@ function ListaAtas() {
         }
       />
       <div className="mb-4 grid max-w-2xl gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
-        <Selecao
+        <SelecaoBusca
           aria-label="Filtrar por condomínio"
           value={condo}
           onChange={(v) => filtrar({ condo: v })}
-          opcoes={[
-            { valor: TODOS, rotulo: "Todos os condomínios" },
-            ...[...condominios].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((c) => ({ valor: c.id, rotulo: c.nome })),
-          ]}
+          opcoes={[{ valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" }, ...opcoesCondominio(condominios)]}
+          placeholderBusca="Pesquisar condomínio por nome, código ou CNPJ..."
           className="bg-card"
         />
         <Selecao

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
-import { Selecao } from "@/components/app/inputs";
+import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { DialogoNovoEdital } from "@/components/editais/DialogoNovoEdital";
 import { itemQuery, listaQuery } from "@/lib/queries";
 import { dataParaISO, formatData } from "@/lib/format";
@@ -71,10 +71,7 @@ function ListaEditais() {
       .sort((a, b) => b.data.localeCompare(a.data) || a.condoNome.localeCompare(b.condoNome, "pt-BR"));
   }, [assembleias, condominios, modelos, condo]);
 
-  const opcoesCondo = [
-    { valor: TODOS, rotulo: "Todos os condomínios" },
-    ...[...condominios].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((c) => ({ valor: c.id, rotulo: c.nome })),
-  ];
+  const opcoesCondo = [{ valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" }, ...opcoesCondominio(condominios)];
 
   const abrirNovo = (v: boolean) =>
     navigate({ search: (s) => (v ? { ...s, novo: condo === TODOS ? "" : condo } : { ...(s.condo ? { condo: s.condo } : {}) }), replace: true });
@@ -91,7 +88,7 @@ function ListaEditais() {
         }
       />
       <div className="mb-4 max-w-sm">
-        <Selecao
+        <SelecaoBusca
           aria-label="Filtrar por condomínio"
           value={condo}
           onChange={(v) => {
@@ -99,6 +96,7 @@ function ListaEditais() {
             navigate({ search: v === TODOS ? {} : { condo: v }, replace: true });
           }}
           opcoes={opcoesCondo}
+          placeholderBusca="Pesquisar condomínio por nome, código ou CNPJ..."
           className="bg-card"
         />
       </div>

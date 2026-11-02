@@ -1,6 +1,11 @@
 {
-  "versaoAtual": "1.02",
+  "versaoAtual": "1.03",
   "versoes": [
+    {
+      "versao": "1.03",
+      "titulo": "Pesquisa de condomínios nas seleções",
+      "alteracoes": ["Seleções de condomínio agora permitem pesquisar por nome, código ou CNPJ, facilitando a escolha em listas extensas."]
+    },
     {
       "versao": "1.02",
       "titulo": "Cadastro de unidades e frações",

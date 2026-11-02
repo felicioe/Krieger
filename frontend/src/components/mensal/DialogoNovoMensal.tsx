@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
-import { MesAnoInput, Selecao } from "@/components/app/inputs";
+import { MesAnoInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves } from "@/lib/queries";
 import { normalizarCondominio } from "@/domain/condominio";
@@ -95,9 +95,7 @@ export function DialogoNovoMensal({
     criar.mutate(mensalPadrao(normalizarCondominio(condo), competencia, copiar ? anterior : null));
   }
 
-  const opcoes = [...condominios]
-    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
-    .map((c) => ({ valor: c.id, rotulo: c.codigo ? `${c.codigo} · ${c.nome}` : c.nome }));
+  const opcoes = opcoesCondominio(condominios);
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !criar.isPending && aoMudar(v)}>
@@ -113,7 +111,7 @@ export function DialogoNovoMensal({
             </Alert>
           )}
           <Field rotulo="Condomínio" obrigatorio>
-            <Selecao value={condoId} onChange={escolherCondo} opcoes={opcoes} placeholder="Escolha o condomínio" />
+            <SelecaoBusca value={condoId} onChange={escolherCondo} opcoes={opcoes} placeholder="Escolha o condomínio" />
           </Field>
           <Field rotulo="Mês do relatório" obrigatorio className="max-w-[10rem]">
             <MesAnoInput
