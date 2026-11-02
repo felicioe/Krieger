@@ -34,7 +34,7 @@ import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
 import { consultarCnpjReceita, divergenciasCnpj, enderecoDaReceita } from "@/lib/receitaCnpj";
-import type { Arredondamento, Condominio, ModoRegra, VariacaoMetodo } from "@/domain/types";
+import type { Arredondamento, Condominio, ModoRegra, UnidadeCondominio, VariacaoMetodo } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/condominios/$id")({
   head: () => cabecalho("Condomínio", "Cadastro completo do condomínio."),
@@ -82,10 +82,11 @@ const MODO_REGRA: { valor: ModoRegra; rotulo: string }[] = [
   { valor: "ultimo+12", rotulo: "Último valor × 12" },
 ];
 
-const SECOES = ["administracao", "seguro", "manutencoes", "documentos", "indices", "automacoes", "regras", "depara"] as const;
+const SECOES = ["unidades", "administracao", "seguro", "manutencoes", "documentos", "indices", "automacoes", "regras", "depara"] as const;
 type Secao = (typeof SECOES)[number];
 const todas = (v: boolean) => Object.fromEntries(SECOES.map((k) => [k, v])) as Record<Secao, boolean>;
 const TITULOS: Record<Secao, string> = {
+  unidades: "Unidades e frações",
   administracao: "Administração",
   seguro: "Seguro",
   manutencoes: "Manutenções e vistorias",
@@ -105,6 +106,7 @@ function resumos(c: Condominio): Record<Secao, string> {
   const metodo = VARIACAO.find((v) => v.valor === c.variacaoMetodo)?.rotulo ?? c.variacaoMetodo;
   const arred = ARREDONDAMENTO.find((v) => v.valor === c.arredondamento)?.rotulo ?? c.arredondamento;
   return {
+    unidades: c.fracaoUnidades?.length ? `${c.fracaoUnidades.length} unidades · fração prevista ${c.fracaoUnidades.reduce((s, u) => s + u.fracaoPrevista, 0).toFixed(6)}` : "Nenhuma fração cadastrada",
     administracao: c.administracao.length ? contagem(c.administracao.length, "membro informado", "membros informados") : "Ninguém informado",
     seguro: [
       c.seguradora || "Seguradora não informada",
@@ -382,6 +384,36 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
             </Button>
           ))}
         </nav>
+
+        <SecaoRecolhivel
+          id={idSecao("unidades")}
+          titulo="Unidades e frações"
+          descricao="Relação importada do relatório de frações. Nomes de moradores não são armazenados."
+          resumo={res.unidades}
+          aberta={abertas.unidades}
+          aoMudar={abrir("unidades")}
+        >
+          <RepeatableList
+            itens={c.fracaoUnidades ?? []}
+            onChange={(v) => set("fracaoUnidades", v as UnidadeCondominio[])}
+            novo={() => ({ unidade: "", fracaoUnidade: 0, fracaoBox: 0, fracaoTotal: 0, fracaoPrevista: 0, tipo: "unidade" })}
+            colunas="grid-cols-[6rem_8rem_8rem_8rem_8rem_7rem]"
+            cabecalhos={["Unidade", "Fração unidade", "Fração box", "Fração total", "Fração prevista", "Tipo"]}
+            rotuloAdicionar="Adicionar unidade"
+            vazio="Nenhuma unidade ou fração cadastrada."
+            render={(u, up) => (
+              <>
+                <Input aria-label="Unidade" value={u.unidade} onChange={(e) => up({ unidade: e.target.value })} />
+                <NumeroInput aria-label="Fração da unidade" value={u.fracaoUnidade} onChange={(v) => up({ fracaoUnidade: v ?? 0 })} />
+                <NumeroInput aria-label="Fração do box" value={u.fracaoBox} onChange={(v) => up({ fracaoBox: v ?? 0 })} />
+                <NumeroInput aria-label="Fração total" value={u.fracaoTotal} onChange={(v) => up({ fracaoTotal: v ?? 0 })} />
+                <NumeroInput aria-label="Fração prevista" value={u.fracaoPrevista} onChange={(v) => up({ fracaoPrevista: v ?? 0 })} />
+                <Selecao aria-label="Tipo" value={u.tipo ?? "unidade"} opcoes={[{ valor: "unidade", rotulo: "Unidade" }, { valor: "deposito", rotulo: "Depósito" }, { valor: "garagem", rotulo: "Garagem" }]} onChange={(v) => up({ tipo: v as UnidadeCondominio["tipo"] })} />
+              </>
+            )}
+          />
+          <p className="mt-3 text-xs text-muted-foreground">Fração prevista cadastrada: {(c.fracaoUnidades ?? []).reduce((s, u) => s + (Number(u.fracaoPrevista) || 0), 0).toFixed(6)}. O uso dessa fração no rateio será tratado em etapa própria.</p>
+        </SecaoRecolhivel>
 
         <SecaoRecolhivel
           id={idSecao("administracao")}

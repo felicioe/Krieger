@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { AnexarComparativo } from "@/components/importacao/AnexarComparativo";
+import { ImportarFracao } from "@/components/importacao/ImportarFracao";
 import { listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import type { Condominio } from "@/domain/types";
@@ -67,6 +68,14 @@ function Importador() {
         >
           <p>Demonstrativo do mês e contas a receber. Cria um relatório mensal novo no condomínio do PDF.</p>
           <p>Para preencher um relatório mensal que já existe, use “Importar PDF” dentro dele.</p>
+        </CartaoImportacao>
+        <CartaoImportacao
+          icone={FileSpreadsheet}
+          titulo="Unidades e frações"
+          acao={<ImportarFracao condominios={condominios} />}
+        >
+          <p>Importa a relação de unidades e frações ideais para o cadastro do condomínio.</p>
+          <p>Os nomes de proprietários ou inquilinos não são armazenados.</p>
         </CartaoImportacao>
         <CartaoImportacao
           icone={FileSpreadsheet}

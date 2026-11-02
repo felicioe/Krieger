@@ -1,6 +1,11 @@
 {
-  "versaoAtual": "1.01",
+  "versaoAtual": "1.02",
   "versoes": [
+    {
+      "versao": "1.02",
+      "titulo": "Cadastro de unidades e frações",
+      "alteracoes": ["O cadastro guarda a relação de unidades e frações ideais sem nomes de moradores.", "O Importador reconhece o relatório de fração do Systemar e permite aplicar os dados ao condomínio."]
+    },
     {
       "versao": "1.01",
       "titulo": "Permissões de acesso por usuário",
