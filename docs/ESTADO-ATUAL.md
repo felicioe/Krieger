@@ -1,5 +1,14 @@
 # Estado atual e passagem de contexto
 
+## PR #122 mesclado e publicado — 02/11/2026
+
+PR #122 (selinho verde ao confirmar divergência, descrito abaixo) mesclado em `main` por squash
+(`cb56fa5`). Codex revisou sem achados, CI verde, sem threads de review.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`36b06e4`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index-n6wdHgvm.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal). Nenhum arquivo PHP mudou.
+
 ## Divergência de Previsão sugerida: banner amarelo eterno vira selinho verde ao confirmar — 02/11/2026
 
 Pedido do responsável, com captura de tela: ao confirmar a divergência entre os totais do PDF do
