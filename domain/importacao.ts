@@ -420,20 +420,38 @@ export function mensaisDoComparativo(
   });
 }
 
+/** Agrupa linhas por nome, preservando a ordem — usado para casar contas repetidas pela ocorrência
+ * (1ª com 1ª, 2ª com 2ª...) em vez de todas caírem na mesma chave. */
+function porNome(lista: LinhaValor[]): Map<string, LinhaValor[]> {
+  const m = new Map<string, LinhaValor[]>();
+  for (const l of lista) {
+    const grupo = m.get(l.nome);
+    if (grupo) grupo.push(l);
+    else m.set(l.nome, [l]);
+  }
+  return m;
+}
+
 function comparaItens(
   secao: ItemDivergenteImportacao["secao"],
   atual: LinhaValor[],
   novo: LinhaValor[],
   grupo?: string,
 ): ItemDivergenteImportacao[] {
-  const nomes = new Set([...atual.map((i) => i.nome), ...novo.map((i) => i.nome)]);
+  const mAtual = porNome(atual);
+  const mNovo = porNome(novo);
+  const nomes = new Set([...mAtual.keys(), ...mNovo.keys()]);
   const out: ItemDivergenteImportacao[] = [];
   for (const nome of nomes) {
-    const a = atual.find((i) => i.nome === nome);
-    const n = novo.find((i) => i.nome === nome);
-    const valorAtual = a ? centavos(Number(a.valor) || 0) : null;
-    const valorNovo = n ? centavos(Number(n.valor) || 0) : null;
-    if (valorAtual !== valorNovo) out.push({ secao, ...(grupo ? { grupo } : {}), nome, valorAtual, valorNovo });
+    const as = mAtual.get(nome) ?? [];
+    const ns = mNovo.get(nome) ?? [];
+    for (let ocorrencia = 0; ocorrencia < Math.max(as.length, ns.length); ocorrencia++) {
+      const a = as[ocorrencia];
+      const n = ns[ocorrencia];
+      const valorAtual = a ? centavos(Number(a.valor) || 0) : null;
+      const valorNovo = n ? centavos(Number(n.valor) || 0) : null;
+      if (valorAtual !== valorNovo) out.push({ secao, ...(grupo !== undefined ? { grupo } : {}), nome, ocorrencia, valorAtual, valorNovo });
+    }
   }
   return out;
 }
@@ -485,12 +503,22 @@ export function aplicarDecisoesImportacao(
   const aplicaLista = (secao: ItemDivergenteImportacao["secao"], lista: LinhaValor[], grupo?: string): LinhaValor[] => {
     const relevantes = porManter.filter((d) => d.secao === secao && d.grupo === grupo);
     if (relevantes.length === 0) return lista;
-    let out = lista.filter((i) => !relevantes.some((d) => d.nome === i.nome && d.valorAtual === null));
+    // Casa cada decisão com a ocorrência certa (nome + índice dentro do mesmo nome), não só o nome —
+    // senão duas contas com o mesmo nome ("Juros", "Juros") se confundem e uma decisão vale pras duas.
+    const decisaoPara = new Map(relevantes.map((d) => [`${d.nome}\u0000${d.ocorrencia}`, d]));
+    const contagem = new Map<string, number>();
+    const out: LinhaValor[] = [];
+    for (const item of lista) {
+      const ocorrencia = contagem.get(item.nome) ?? 0;
+      contagem.set(item.nome, ocorrencia + 1);
+      const d = decisaoPara.get(`${item.nome}\u0000${ocorrencia}`);
+      if (d && d.valorAtual === null) continue; // item só existia na nova importação: "manter" = não incluir
+      out.push(d ? { ...item, valor: d.valorAtual! } : item);
+    }
+    // Itens mantidos que sumiram do novo (não têm occorrência nenhuma em `lista`) voltam ao final.
     for (const d of relevantes) {
-      if (d.valorAtual === null) continue; // item não existia antes: "manter" = não incluir
-      const i = out.findIndex((x) => x.nome === d.nome);
-      if (i >= 0) out = out.map((x, j) => (j === i ? { ...x, valor: d.valorAtual! } : x));
-      else out = [...out, { nome: d.nome, valor: d.valorAtual }];
+      if (d.valorNovo !== null || d.valorAtual === null) continue;
+      out.push({ nome: d.nome, valor: d.valorAtual });
     }
     return out;
   };

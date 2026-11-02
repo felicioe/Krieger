@@ -10,7 +10,7 @@ import { Field } from "@/components/app/Field";
 import { InteiroInput } from "@/components/app/inputs";
 import { ResumoImportacao } from "./ResumoImportacao";
 import { SugestaoParecidos } from "./SugestaoParecidos";
-import { ConflitoImportacaoDialog, useConflitoImportacao } from "./ConflitoImportacao";
+import { ConflitoImportacaoDialog, useConflitoImportacao, type DecisaoConflitoPendente } from "./ConflitoImportacao";
 import { marcarCriadoPorPdf } from "./criadoPorPdf";
 import { focarConteudoApos } from "@/components/app/foco";
 import { api, mensagemErro } from "@/lib/api";
@@ -48,6 +48,9 @@ export type ImportacaoAplicada = {
   /** Páginas extras do PDF (null quando não existem). */
   consideracoes: ConsideracoesFinaisLidas | null;
   previsaoSugerida: PrevisaoSugeridaLida | null;
+  /** Decisão de conflito já tomada (ver ConflitoImportacao.tsx), ainda não gravada — só deve ser
+   * persistida quando o registro for efetivamente salvo, para não logar uma mudança descartada. */
+  decisaoConflito?: DecisaoConflitoPendente | null;
 };
 
 type Props = (
@@ -232,13 +235,14 @@ function PassoEditor({
         atual: demonstrativoAtual,
         novo: demonstrativo,
       })
-      .then((demonstrativoFinal) => {
+      .then(({ demonstrativo: demonstrativoFinal, decisao }) => {
         aoAplicar({
           demonstrativo: demonstrativoFinal,
           receber: destino === "mensais" ? receberDoRelatorio(lido.relatorio, coluna) : null,
           arquivo: lido.arquivo,
           consideracoes: lido.consideracoes,
           previsaoSugerida: lido.previsaoSugerida,
+          decisaoConflito: decisao,
         });
         fechar();
         toast.success("Demonstrativo preenchido a partir do PDF. Revise e salve.");

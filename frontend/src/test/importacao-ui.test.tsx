@@ -7,6 +7,7 @@ import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { marcarCriadoPorPdf } from "@/components/importacao/criadoPorPdf";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
+import { persistirDecisaoConflito } from "@/components/importacao/ConflitoImportacao";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { definirUsuario } from "@/lib/auth";
 import { mockApi } from "@/lib/mockApi";
@@ -458,11 +459,12 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
     definirUsuario(await mockApi.auth.entrar("admin", "admin123"));
   });
 
-  it("abre o diálogo, não aplica nada até decidir todos os itens, e registra a decisão no histórico", async () => {
+  it("abre o diálogo, não aplica nada até decidir todos os itens, e devolve a decisão (ainda não gravada)", async () => {
     leitura.texto = TEXTO_OK; // Taxa condominial = 20.000,00
     const u = userEvent.setup();
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let aplicado: Demonstrativo | null = null;
+    let decisaoRecebida: DecisaoConflitoImportacao["itens"] | undefined;
     const atual = { ...demonstrativoVazio("Estrelas"), receitas: { itens: [{ nome: "Taxa condominial", valor: 15000 }], subtotal: 15000, totalComSaldo: 15000 } };
 
     render(
@@ -477,6 +479,7 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
           competencia="08/2026"
           aoAplicar={(r) => {
             aplicado = r.demonstrativo;
+            decisaoRecebida = r.decisaoConflito?.itens;
           }}
         />
       </QueryClientProvider>,
@@ -495,11 +498,11 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
 
     await waitFor(() => expect(aplicado).not.toBeNull());
     expect(aplicado!.receitas.itens).toEqual([{ nome: "Taxa condominial", valor: 15000 }]);
+    expect(decisaoRecebida).toEqual([{ secao: "receitas", nome: "Taxa condominial", ocorrencia: 0, valorAtual: 15000, valorNovo: 20000, escolha: "manter" }]);
 
-    await waitFor(async () => expect(await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao")).toHaveLength(1));
-    const [decisao] = await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao");
-    expect(decisao!.registroId).toBe("m-conflito-1");
-    expect(decisao!.itens).toEqual([{ secao: "receitas", nome: "Taxa condominial", valorAtual: 15000, valorNovo: 20000, escolha: "manter" }]);
+    // O diálogo só devolve a decisão — não grava nada sozinho (isso é feito só quando o registro é
+    // efetivamente salvo, ver `persistirDecisaoConflito`), então nada aparece no histórico ainda.
+    expect(await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao")).toHaveLength(0);
   });
 
   it("cancelar o diálogo de conflito não aplica nada", async () => {
@@ -533,6 +536,43 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
     await u.click(screen.getByRole("button", { name: "Cancelar importação" }));
     await waitFor(() => expect(screen.queryByText("Valores divergentes na reimportação")).not.toBeInTheDocument());
     expect(aplicado).toBeNull();
+    expect(await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao")).toHaveLength(0);
+  });
+});
+
+describe("persistirDecisaoConflito", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("grava a decisão com id e dados de quem/quando, só depois de chamada (ex.: no Salvar do registro)", async () => {
+    const usuario = await mockApi.auth.entrar("admin", "admin123");
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await persistirDecisaoConflito(usuario, qc, {
+      condoId: "c-1",
+      condoNome: "Residencial Teste",
+      destino: "mensais",
+      registroId: "m-1",
+      competencia: "08/2026",
+      arquivo: "relatorio.pdf",
+      itens: [{ secao: "receitas", nome: "Taxa condominial", ocorrencia: 0, valorAtual: 15000, valorNovo: 20000, escolha: "manter" }],
+    });
+    const [decisao] = await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao");
+    expect(decisao!.registroId).toBe("m-1");
+    expect(decisao!.decididoPorNome).toBe(usuario!.nome);
+    expect(decisao!.id).toBeTruthy();
+  });
+
+  it("sem usuário logado, não grava nada (e não lança erro)", async () => {
+    await mockApi.auth.entrar("admin", "admin123"); // só pra poder consultar mockApi.listar depois
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    await persistirDecisaoConflito(null, qc, {
+      condoId: "c-1",
+      condoNome: "Residencial Teste",
+      destino: "mensais",
+      registroId: "m-1",
+      competencia: "08/2026",
+      arquivo: "relatorio.pdf",
+      itens: [],
+    });
     expect(await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao")).toHaveLength(0);
   });
 });

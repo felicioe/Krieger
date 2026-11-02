@@ -273,12 +273,14 @@ export interface DecisaoDivergenciaPrevisao extends ComId {
 
 /** Uma conta/item do demonstrativo (saldo anterior ou atual, receita ou despesa) cujo valor
  * divergiu entre o que já estava gravado e o que veio numa nova importação do mesmo mês/exercício.
- * `valorAtual` nulo = item só existe na nova importação; `valorNovo` nulo = item sumiu do PDF novo. */
+ * `valorAtual` nulo = item só existe na nova importação; `valorNovo` nulo = item sumiu do PDF novo.
+ * `ocorrencia` desempata contas com o mesmo nome na mesma seção/grupo (0 = a primeira). */
 export interface ItemDivergenteImportacao {
   secao: "saldoAnterior" | "receitas" | "despesas" | "saldoAtual";
-  /** Só em despesas (nome do grupo). */
+  /** Só em despesas (nome do grupo — string vazia é um grupo válido, "Despesas" sem nome). */
   grupo?: string;
   nome: string;
+  ocorrencia: number;
   valorAtual: number | null;
   valorNovo: number | null;
 }

@@ -13,12 +13,13 @@ import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
 import { focarConteudoApos } from "@/components/app/foco";
 import { ERRO_PDF_GRANDE, LIMITE_PDF_ANEXO, textoCondominioLido, textoPeriodo } from "./anexos";
-import { ConflitoImportacaoDialog, useConflitoImportacao } from "./ConflitoImportacao";
+import { ConflitoImportacaoDialog, persistirDecisaoConflito, useConflitoImportacao, type DecisaoConflitoPendente } from "./ConflitoImportacao";
 import { api, mensagemErro } from "@/lib/api";
 import { novoId } from "@/lib/id";
 import { lerComoDataUrl } from "@/lib/arquivo";
 import { formatBRL, formatBytes } from "@/lib/format";
 import { chaves, listaQuery } from "@/lib/queries";
+import { useUsuario } from "@/lib/auth";
 import { lerRelatorio, type RelatorioLido } from "@/domain/pdfParser";
 import {
   anoDoRelatorio,
@@ -156,6 +157,7 @@ function PassoAnexar({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const usuario = useUsuario();
   const { data: exercicios = [], isPending: carregando } = useQuery(listaQuery<Exercicio>("exercicios"));
   const {
     data: mensaisExistentes = [],
@@ -243,7 +245,13 @@ function PassoAnexar({
   const [resolvendo, setResolvendo] = useState(false);
 
   const anexar = useMutation({
-    mutationFn: async (demonstrativosFinais: Record<string, Demonstrativo>) => {
+    mutationFn: async ({
+      demonstrativosFinais,
+      decisoes,
+    }: {
+      demonstrativosFinais: Record<string, Demonstrativo>;
+      decisoes: DecisaoConflitoPendente[];
+    }) => {
       if (!exercicio) throw new Error("Escolha a prestação de contas.");
       if (!confereConflitos) throw new Error("Aguarde o carregamento dos relatórios mensais antes de confirmar.");
       await Promise.all(
@@ -259,6 +267,9 @@ function PassoAnexar({
         ...novoAnexoImportado(exercicio.id, "comparativo_financeiro", rel, lido.arquivo, lido.dataUrl),
         id: idAnexo.current,
       });
+      // Só registra as decisões de conflito depois que os relatórios mensais foram mesmo salvos —
+      // gravar antes logaria uma importação que pode ainda falhar ou (no caller) ser cancelada.
+      await Promise.all(decisoes.map((d) => persistirDecisaoConflito(usuario, queryClient, d)));
       return mesesSelecionados.length;
     },
     onSuccess: (qtdMeses) => {
@@ -276,14 +287,15 @@ function PassoAnexar({
 
   // Antes de gravar qualquer coisa, resolve (mês a mês, um diálogo por vez) os conflitos conta a
   // conta dos meses que já tinham um relatório mensal com dados — cancelar em qualquer um deles
-  // aborta tudo, sem gravar nada.
+  // aborta tudo, sem gravar nada (nem o demonstrativo, nem o histórico de decisões).
   async function confirmarAnexar() {
     if (!condo) return;
     setResolvendo(true);
     const finais: Record<string, Demonstrativo> = {};
+    const decisoes: DecisaoConflitoPendente[] = [];
     try {
       for (const m of mesesSelecionados) {
-        finais[m.mes] = await conflito.resolver({
+        const { demonstrativo, decisao } = await conflito.resolver({
           condoId: condo.id,
           condoNome: condo.nome,
           destino: "mensais",
@@ -293,13 +305,15 @@ function PassoAnexar({
           atual: m.existente?.demonstrativo ?? null,
           novo: m.registro.demonstrativo ?? demonstrativoVazio(condo.nome),
         });
+        finais[m.mes] = demonstrativo;
+        if (decisao) decisoes.push(decisao);
       }
     } catch {
       setResolvendo(false);
       return; // usuário cancelou a resolução de algum mês: nada é gravado
     }
     setResolvendo(false);
-    anexar.mutate(finais);
+    anexar.mutate({ demonstrativosFinais: finais, decisoes });
   }
 
   return (
