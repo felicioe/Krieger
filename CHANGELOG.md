@@ -2,7 +2,11 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.03**.
+Versão atual: **1.04**.
+
+## 1.04 — Precisão das frações importadas
+
+- Campos de fração no cadastro exibem e editam as seis casas decimais do relatório do Systemar.
 
 ## 1.03 — Pesquisa de condomínios nas seleções
 
