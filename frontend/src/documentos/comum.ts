@@ -37,9 +37,10 @@ export function blocosDemonstrativo(d: Demonstrativo, mostrarAnaliticas = true):
   ];
   const despesas: LinhaTabela[] = [{ celulas: ["Despesas"], estilo: "grupo" }];
   for (const g of d.despesas.grupos) {
-    despesas.push({ celulas: [g.nome || "Sem grupo"], estilo: "subtotal" });
+    if (mostrarAnaliticas) despesas.push({ celulas: [g.nome || "Sem grupo"], estilo: "subtotal" });
+    else despesas.push(linha(g.nome || "Sem grupo", somar(g.itens), { estilo: "subtotal" }));
     if (mostrarAnaliticas) despesas.push(...g.itens.map((i) => linha(i.nome, i.valor, { recuo: true })));
-    despesas.push(linha(`Subtotal ${g.nome || "sem grupo"}`, somar(g.itens), { estilo: "subtotal", recuo: true }));
+    if (mostrarAnaliticas) despesas.push(linha(`Subtotal ${g.nome || "sem grupo"}`, somar(g.itens), { estilo: "subtotal", recuo: true }));
   }
   despesas.push(linha("Total das despesas", d.totais.despesas, { estilo: "total" }));
 

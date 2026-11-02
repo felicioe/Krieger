@@ -72,15 +72,19 @@ export function PreviaRelatorio({
                       const sub = g.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
                       return (
                         <Fragment key={g.nome}>
-                          <tr>
-                            <td colSpan={2} className="pt-2 text-xs font-semibold uppercase tracking-wide text-primary">
-                              {g.nome || "Sem grupo"}
-                            </td>
-                          </tr>
+                          {e.mostrarContasAnaliticasDemonstrativo === false ? (
+                            <Linha nome={g.nome || "Sem grupo"} valor={sub} forte />
+                          ) : (
+                            <tr>
+                              <td colSpan={2} className="pt-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                                {g.nome || "Sem grupo"}
+                              </td>
+                            </tr>
+                          )}
                           {e.mostrarContasAnaliticasDemonstrativo !== false && g.itens.map((i, k) => (
                             <Linha key={k} nome={i.nome} valor={i.valor} recuo />
                           ))}
-                          <Linha nome={`Subtotal ${g.nome}`} valor={sub} sutil />
+                          {e.mostrarContasAnaliticasDemonstrativo !== false && <Linha nome={`Subtotal ${g.nome}`} valor={sub} sutil />}
                         </Fragment>
                       );
                     })}
