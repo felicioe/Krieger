@@ -14,7 +14,9 @@ export function documentosObrigatoriosPadrao(): DocumentoObrigatorio[] {
     "Dedetização",
     "Alvará de Bombeiros",
     "Alvará Estrutural",
-    "Elevador",
+    // Nome completo pra não ser confundido com a linha financeira "Elevadores" de Consumo de
+    // serviços — este item é sobre conformidade (contrato em dia), não sobre valor gasto.
+    "Elevador — contrato de manutenção em dia",
   ].map((nome) => ({ nome, status: "pendente", informacao: "", observacao: observacoes[nome] ?? "", noRelatorio: true }));
 }
 

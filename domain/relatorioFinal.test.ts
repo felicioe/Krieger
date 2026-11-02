@@ -130,7 +130,12 @@ describe("relatório final", () => {
 
   it("consumo de água soma as despesas da rubrica de água; o valor manual prevalece", () => {
     const e = exercicio(4000);
-    expect(consumoAgua(e)).toEqual({ valor: 1200, manual: false, rubricas: ["Água e esgoto"] });
+    expect(consumoAgua(e)).toEqual({
+      valor: 1200,
+      manual: false,
+      rubricas: ["Água e esgoto"],
+      automatico: { valor: 1200, rubricas: ["Água e esgoto"] },
+    });
     expect(consumoAgua({ ...e, consid: { ...e.consid, consumoAguaManual: 999 } }).valor).toBe(999);
   });
 
@@ -140,8 +145,24 @@ describe("relatório final", () => {
     expect(consumoEnergia(e).valor).toBe(0);
     expect(consumoElevador(e).valor).toBe(0);
     const comRubrica = { ...e, consid: { ...e.consid, energiaRubrica: "^energia" } };
-    expect(consumoEnergia(comRubrica)).toEqual({ valor: 800, manual: false, rubricas: ["Energia"] });
+    expect(consumoEnergia(comRubrica)).toEqual({
+      valor: 800,
+      manual: false,
+      rubricas: ["Energia"],
+      automatico: { valor: 800, rubricas: ["Energia"] },
+    });
     expect(consumoEnergia({ ...comRubrica, consid: { ...comRubrica.consid, consumoEnergiaManual: 50 } }).valor).toBe(50);
+  });
+
+  it("consumo com valor manual mantém o cálculo automático disponível (não vira 0/[])", () => {
+    const e = exercicio(4000);
+    const manual = consumoAgua({ ...e, consid: { ...e.consid, consumoAguaManual: 999 } });
+    expect(manual).toEqual({
+      valor: 999,
+      manual: true,
+      rubricas: [],
+      automatico: { valor: 1200, rubricas: ["Água e esgoto"] },
+    });
   });
 
   it("sem previsão sugerida (PDF sem essa folha, ou exercício digitado à mão), os campos ficam null", () => {

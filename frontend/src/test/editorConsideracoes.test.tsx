@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { EditorConsideracoes } from "@/components/relatorio/EditorConsideracoes";
+import type { ConsumoServico } from "@/domain/relatorioFinal";
 import { considDoCondominio } from "@/domain/exercicio";
 import { condominioPadrao } from "@/domain/condominio";
 
@@ -29,6 +30,8 @@ const APOLICE = [
   "   Vendaval / Ciclone / Tornado / Granizo R$      45.000,00  R$      600,00   20        2.000,00",
 ].join("\n");
 
+const CONSUMO_VAZIO: ConsumoServico = { valor: 0, manual: false, rubricas: [], automatico: { valor: 0, rubricas: [] } };
+
 function renderEditor() {
   const consid = considDoCondominio({ ...condominioPadrao(), id: "c1" });
   const onChange = vi.fn();
@@ -38,9 +41,9 @@ function renderEditor() {
       onChange={onChange}
       condominio={null}
       receberMensais={null}
-      agua={{ valor: 0, manual: false, rubricas: [] }}
-      energia={{ valor: 0, manual: false, rubricas: [] }}
-      elevador={{ valor: 0, manual: false, rubricas: [] }}
+      agua={CONSUMO_VAZIO}
+      energia={CONSUMO_VAZIO}
+      elevador={CONSUMO_VAZIO}
     />,
   );
   const rerenderComConsid = (c: Parameters<typeof EditorConsideracoes>[0]["consid"]) =>
@@ -50,9 +53,9 @@ function renderEditor() {
         onChange={onChange}
         condominio={null}
         receberMensais={null}
-        agua={{ valor: 0, manual: false, rubricas: [] }}
-        energia={{ valor: 0, manual: false, rubricas: [] }}
-        elevador={{ valor: 0, manual: false, rubricas: [] }}
+        agua={CONSUMO_VAZIO}
+        energia={CONSUMO_VAZIO}
+        elevador={CONSUMO_VAZIO}
       />,
     );
   return { onChange, consid, rerenderComConsid };

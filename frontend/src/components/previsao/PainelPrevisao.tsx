@@ -5,6 +5,7 @@ import { AcaoAviso, QuadroAvisos, SemValor, SituacaoResultado, irPara, tipoAviso
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -142,9 +143,9 @@ export function PainelPrevisao({
             <RepeatableList
               itens={e.consid.indices}
               onChange={(indices) => onChange({ consid: { ...e.consid, indices } })}
-              novo={() => ({ ano: null, pct: null })}
-              colunas="grid-cols-1 @xs:grid-cols-[7rem_9rem]"
-              cabecalhos={["Ano", "Índice"]}
+              novo={() => ({ ano: null, pct: null, noRelatorio: true })}
+              colunas="grid-cols-1 @xs:grid-cols-[7rem_9rem_9rem]"
+              cabecalhos={["Ano", "Índice", "No relatório"]}
               rotuloAdicionar="Adicionar índice"
               vazio="Nenhum índice informado."
               reordenavel={false}
@@ -152,6 +153,10 @@ export function PainelPrevisao({
                 <>
                   <InteiroInput aria-label="Ano" value={i.ano} onChange={(v) => up({ ano: v })} maxLength={4} />
                   <PercentualInput aria-label="Índice" value={i.pct} onChange={(v) => up({ pct: v })} />
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground @xs:justify-self-center">
+                    <Switch checked={i.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                    <span className="@xs:hidden">Incluir nas Considerações finais</span>
+                  </label>
                 </>
               )}
             />

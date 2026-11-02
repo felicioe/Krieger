@@ -46,16 +46,22 @@ export interface MembroAdministracao {
   identificacao?: string;
   /** Campo novo (opcional). */
   telefone?: string;
+  /** Campo novo (opcional, padrão true): aparece nas Considerações finais do relatório. */
+  noRelatorio?: boolean;
 }
 
 export interface Cobertura {
   desc: string;
   valor: number | null;
+  /** Campo novo (opcional, padrão true): aparece nas Considerações finais do relatório. */
+  noRelatorio?: boolean;
 }
 
 export interface IndiceCorrecao {
   ano: number | null;
   pct: number | null;
+  /** Campo novo (opcional, padrão true): aparece nas Considerações finais do relatório. */
+  noRelatorio?: boolean;
 }
 
 export interface DePara {

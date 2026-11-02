@@ -350,21 +350,23 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
     if (itens.length) out.push({ tipo: "titulo", nivel: 3, texto: titulo }, { tipo: "pares", itens, ...o });
   };
 
+  const administracao = c.administracao.filter((m) => m.noRelatorio !== false);
+  const coberturas = c.seguro.coberturas.filter((cb) => cb.noRelatorio !== false);
   grupo(
     "Administração",
-    c.administracao.map((m) => ({
+    administracao.map((m) => ({
       rotulo: m.cargo || "—",
       valor: [{ texto: m.nome }, ...(m.mandatoFim ? [{ texto: ` · mandato até ${m.mandatoFim}`, suave: true }] : [])],
     })),
   );
-  if (c.seguradora || c.vigenciaSeguro || c.seguro.coberturas.length > 0) {
+  if (c.seguradora || c.vigenciaSeguro || coberturas.length > 0) {
     grupo(
       "Seguro",
       [
         ...(c.seguradora ? [{ rotulo: "Seguradora", valor: c.seguradora }] : []),
         ...(c.vigenciaSeguro ? [{ rotulo: "Vigência até", valor: formatData(c.vigenciaSeguro) }] : []),
         ...(c.seguro.riscoAbsoluto !== null ? [{ rotulo: "Risco absoluto", valor: formatBRL(c.seguro.riscoAbsoluto) }] : []),
-        ...c.seguro.coberturas.map((cb) => ({ rotulo: cb.desc || "Cobertura", valor: formatBRL(cb.valor) })),
+        ...coberturas.map((cb) => ({ rotulo: cb.desc || "Cobertura", valor: formatBRL(cb.valor) })),
       ],
       { alinhamento: "direita" },
     );
@@ -428,7 +430,9 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
   ]);
   grupo(
     "Índices de correção aplicados",
-    c.indices.filter((i) => i.pct !== null).map((i) => ({ rotulo: String(i.ano ?? "—"), valor: `${formatNumeroBR(i.pct)}%` })),
+    c.indices
+      .filter((i) => i.pct !== null && i.noRelatorio !== false)
+      .map((i) => ({ rotulo: String(i.ano ?? "—"), valor: `${formatNumeroBR(i.pct)}%` })),
   );
   for (const x of c.extras.filter((x) => String(x.rotulo).trim() || String(x.valor).trim())) {
     out.push({

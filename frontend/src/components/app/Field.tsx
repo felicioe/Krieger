@@ -3,8 +3,8 @@ import { TriangleAlert } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
-type PropsControle = {
-  id?: string;
+export type PropsControle = {
+  id?: string | undefined;
   "aria-invalid"?: boolean | undefined;
   "aria-describedby"?: string | undefined;
   "aria-required"?: boolean | undefined;

@@ -1,5 +1,80 @@
 # Estado atual e passagem de contexto
 
+## Toggle "No relatório" por item + 2 achados do Codex corrigidos (PR #118) — 02/11/2026
+
+Resolve os dois pontos que ficaram "em aberto" na entrada abaixo, decididos pelo responsável no
+mesmo fio:
+
+- **Duplicidade de "Elevador"**: existem de fato dois itens diferentes — o checklist de
+  Documentos obrigatórios ("Elevador", conformidade: contrato de manutenção em dia ou não) e a
+  linha financeira de Consumo de serviços ("Elevadores", quanto foi gasto no período). Decisão do
+  responsável: manter os dois, só deixar mais claro — o item do checklist foi renomeado para
+  "Elevador — contrato de manutenção em dia" (`domain/condominio.ts`,
+  `documentosObrigatoriosPadrao()`).
+- **Escopo de "campos opcionais no relatório"**: o responsável confirmou que é por item, nas 3
+  listas que ainda não tinham o toggle — Administração (cada membro), Coberturas do seguro (cada
+  linha) e Índices de correção (cada ano). Segue o mesmo padrão já usado em Documentos
+  obrigatórios: campo `noRelatorio?: boolean` em `MembroAdministracao`/`Cobertura`/
+  `IndiceCorrecao` (`domain/types.ts`), opt-out (`noRelatorio !== false`, não `=== true`) pra dado
+  antigo sem o campo continuar aparecendo como sempre apareceu. Toggle `Switch` adicionado nas 3
+  listas, nos dois lugares onde elas são editadas: cadastro do condomínio
+  (`_authenticated.condominios.$id.tsx`) e editor de Considerações finais do relatório
+  (`EditorConsideracoes.tsx`; Índices de correção só aparece lá quando o método de variação é
+  "média de índices" — `PainelPrevisao.tsx`). Filtro aplicado nos dois lugares que leem essas
+  listas pra montar o relatório: prévia na tela (`PreviaRelatorio.tsx`) e gerador de PDF/Word
+  (`documentos/relatorioFinal.ts`, função `consideracoes()`).
+
+Dois achados do Codex (P2) no PR, corrigidos antes de qualquer merge:
+
+- **Valor manual exibido como "calculado automaticamente"**: `consumoPorRubrica()` (domínio)
+  parava de calcular o automático assim que havia um valor manual, devolvendo `rubricas: []` —
+  então o cartão "Calculado automaticamente" de `BlocoConsumoServico` mostrava o próprio valor
+  manual com esse rótulo, e dizia "nenhuma despesa corresponde" mesmo quando havia. Corrigido:
+  `ConsumoServico` ganhou o campo `automatico: { valor, rubricas }`, sempre calculado a partir do
+  demonstrativo, independente de manual; `valor`/`manual`/`rubricas` (o que vale no relatório)
+  continuam como antes. O cartão agora sempre mostra `calculado.automatico`, com uma nota quando o
+  manual está ativo ("o relatório usa o valor manual abaixo").
+- **`Field` perdia a associação de acessibilidade (`id`/`aria-describedby`) com o campo real**:
+  "Contas a receber" e os 3 campos de valor manual envolviam o `DinheiroInput` num `<div>` junto
+  do botão ("Usar do mensal" / "Voltar a calcular") — `Field` clona só o filho único, então os
+  atributos caíam no `<div>`, não no input. Corrigido com `ComBotaoLateral` (novo componente local
+  em `EditorConsideracoes.tsx`): recebe os atributos do `Field` e os repassa ao controle real via
+  `cloneElement`, deixando o botão como irmão, sem romper a associação. `PropsControle` do `Field`
+  passou a ser exportado para isso.
+
+Testado: 207 testes de frontend (+3 — automático nunca zera com manual ativo, toggle filtra no
+PDF/Word, item antigo sem `noRelatorio` continua incluído), 194 de domínio (+1), `tsc --noEmit`
+(raiz e frontend) e `docs:check` limpos.
+
+## Reorganiza "Valores" do editor de Considerações finais — 01/11/2026
+
+Pedido do responsável, com captura de tela: depois do PR #116 (campos de palavra-chave de
+água/energia/elevador), a seção "Valores" do editor ficou com layout bagunçado — um grid de 4
+colunas misturava Contas a receber/pagar com os 3 serviços, cada um com 2 campos de alturas
+diferentes (`CampoRubrica` mais alto, `Field` do valor manual mais baixo) mais um `<div/>`
+espaçador, resultando numa grade ziguezague sem alinhamento lógico. O responsável também pediu
+que o relatório seja "o mais automatizado possível, puxando tudo do sistema".
+
+Mostrei a tela real (screenshot do servidor de dev, não mockup) antes de abrir PR — aprovado
+("perfeito").
+
+- "Contas a receber e a pagar" virou seção própria, separada de "Consumo de serviços".
+- "Consumo de serviços" (`BlocoConsumoServico`, novo componente local a `EditorConsideracoes.tsx`):
+  cada serviço (Água, Energia elétrica, Elevadores) é um cartão único e completo — palavra-chave →
+  **valor calculado automaticamente em destaque** (com a(s) rubrica(s) que bateu(ram)) → valor
+  manual escondido atrás de um link discreto "Informar valor manual em vez do calculado" (só abre
+  quem clica; não altera o dado até alguém digitar — não zera nada sozinho). Atende o pedido de
+  automação: o cálculo é o que aparece, o manual é a exceção.
+- Fornecedor dos elevadores entrou dentro do próprio cartão de Elevadores.
+
+Testado: 204 testes de frontend, 193 de domínio, `tsc --noEmit` e `docs:check` limpos. Validado
+visualmente com Playwright no servidor de dev local (dados reais do condomínio de exemplo: R$
+54.300,00 água, R$ 31.200,00 energia, R$ 14.400,00 elevadores, batendo com o demonstrativo) —
+cartões, valores calculados e o toggle do valor manual abrindo/fechando sem side effect.
+
+Os dois pontos que o responsável levantou no mesmo fio (campos opcionais no relatório e
+duplicidade de "Elevador") foram decididos e implementados na entrada acima.
+
 ## PR #117 mesclado e publicado — 02/11/2026
 
 PR #117 (gráfico "Receitas por categoria", descrito abaixo) mesclado em `main` por squash
