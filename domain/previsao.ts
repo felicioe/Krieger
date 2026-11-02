@@ -237,7 +237,9 @@ export interface DesvioAnoAnterior {
    * ajustado proporcionalmente ao período do exercício atual quando ele cobrir menos (ou mais) de
    * 12 meses, pra comparar maçã com maçã. */
   previsto: number;
-  /** O que este exercício realmente gastou (`despesas` do demonstrativo). */
+  /** O que este exercício realmente gastou, líquido da mesma dedução usada no previsto (ex.:
+   * "fundo de caixa p/ obras") — senão uma despesa deduzida do previsto, mas presente no
+   * realizado, infla o desvio sem ter ficado mais cara de verdade. */
   realizado: number;
   /** (realizado ÷ previsto − 1), em %. Base sugerida — nunca aplicada sozinha — pra variação do
    * próximo exercício, e referência pro reajuste da taxa condominial. */
@@ -247,10 +249,11 @@ export interface DesvioAnoAnterior {
 /**
  * Compara o previsto que o exercício anterior calculou pra este ano (prorrateado ao período do
  * exercício atual, caso ele não cubra os 12 meses cheios — o sistema aceita exercícios mais
- * curtos, ver `mesesNoPeriodo`) com o que este exercício realmente realizou. `null` quando falta
- * um dos dois lados (exercício atual ainda sem despesas lançadas — especificamente despesas, não
- * qualquer lançamento: um demonstrativo só com receitas ou saldos não é "realizado" pra fins de
- * desvio — ou anterior sem previsto válido) — nada a sugerir ainda.
+ * curtos, ver `mesesNoPeriodo`) com o que este exercício realmente realizou, líquido da mesma
+ * dedução (`parametrosAnterior.deducaoRegex`) usada no previsto. `null` quando falta um dos dois
+ * lados (exercício atual ainda sem despesas lançadas — especificamente despesas, não qualquer
+ * lançamento: um demonstrativo só com receitas ou saldos não é "realizado" pra fins de desvio —
+ * ou anterior sem previsto válido) — nada a sugerir ainda.
  */
 export function calcularDesvioAnoAnterior(
   demonstrativoAnterior: Demonstrativo | null,
@@ -262,7 +265,17 @@ export function calcularDesvioAnoAnterior(
   if (previstoAnual <= 0) return null;
   const meses = mesesNoPeriodo(demonstrativoAtual.periodo.ini, demonstrativoAtual.periodo.fim);
   const previsto = meses && meses > 0 && meses !== 12 ? centavos((previstoAnual * meses) / 12) : previstoAnual;
-  const realizado = demonstrativoAtual.totais.despesas;
+  const re = expressaoDeducao(parametrosAnterior.deducaoRegex);
+  const realizado = centavos(
+    demonstrativoAtual.despesas.grupos.reduce((soma, g) => {
+      const grupoDeduzido = !!re && re.test(g.nome);
+      const totalGrupo = g.itens.reduce((s, it) => {
+        const deduzido = grupoDeduzido || (!!re && re.test(it.nome));
+        return deduzido ? s : s + (Number(it.valor) || 0);
+      }, 0);
+      return soma + totalGrupo;
+    }, 0),
+  );
   const desvioPct = Math.round((realizado / previsto - 1) * 10000) / 100;
   return { previsto, realizado, desvioPct };
 }

@@ -163,6 +163,18 @@ describe("calcularDesvioAnoAnterior", () => {
     expect(calcularDesvioAnoAnterior(D, params(), null)).toBeNull();
   });
 
+  it("exclui do realizado as despesas deduzidas da previsão, como no previsto (#126)", () => {
+    const semVariacao = params({ variacaoMetodo: "manual", variacao: 0, prev: { modo: "tradicional", ajustes: [], fundoReservaPct: 10 } });
+    // D e o "atual" têm a mesma estrutura (108.000 líquido + 12.000 de "Fundo de caixa p/ obras"
+    // deduzido). Sem variação nem ajustes, nada mudou de verdade — o desvio deve ser 0%, não os
+    // +11,11% que apareceriam comparando o previsto líquido (108.000) com o realizado bruto (120.000).
+    const r = calcularDesvioAnoAnterior(D, semVariacao, D);
+    expect(r).not.toBeNull();
+    expect(r!.previsto).toBe(108000);
+    expect(r!.realizado).toBe(108000);
+    expect(r!.desvioPct).toBe(0);
+  });
+
   it("com receitas ou saldos lançados mas nenhuma despesa, ainda não há o que sugerir (#126)", () => {
     const soReceita = recalcularDemonstrativo({
       ...demonstrativoVazio("Teste"),
