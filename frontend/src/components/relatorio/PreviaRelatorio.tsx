@@ -62,8 +62,8 @@ export function PreviaRelatorio({
             <Vazio>Sem demonstrativo.</Vazio>
           ) : (
             <div className="space-y-5">
-              <Bloco titulo="Saldo anterior" linhas={d.saldoAnterior.contas} total={d.totais.saldoAnterior} mostrarAnaliticas={e.mostrarContasAnaliticasDemonstrativo !== false} />
-              <Bloco titulo="Receitas" linhas={d.receitas.itens} total={d.totais.receitas} mostrarAnaliticas={e.mostrarContasAnaliticasDemonstrativo !== false} />
+              <Bloco titulo="Saldo anterior" linhas={d.saldoAnterior.contas} total={d.totais.saldoAnterior} />
+              <Bloco titulo="Receitas" linhas={d.receitas.itens} total={d.totais.receitas} />
               <div>
                 <h4 className="mb-1 font-semibold">Despesas</h4>
                 <RolagemTabela className=""><table className="w-full">
@@ -92,7 +92,7 @@ export function PreviaRelatorio({
                   </tbody>
                 </table></RolagemTabela>
               </div>
-              <Bloco titulo="Saldo atual" linhas={d.saldoAtual.contas} total={d.totais.saldoAtual} mostrarAnaliticas={e.mostrarContasAnaliticasDemonstrativo !== false} />
+              <Bloco titulo="Saldo atual" linhas={d.saldoAtual.contas} total={d.totais.saldoAtual} />
               <RolagemTabela className=""><table className="w-full rounded-sm bg-muted/50">
                 <tbody>
                   <Linha nome="Saldo anterior" valor={d.totais.saldoAnterior} />

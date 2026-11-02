@@ -49,10 +49,10 @@ export function blocosDemonstrativo(d: Demonstrativo, mostrarAnaliticas = true):
       tipo: "tabela",
       colunas,
       linhas: [
-        ...contas("Saldo anterior", mostrarAnaliticas ? d.saldoAnterior.contas : [], d.totais.saldoAnterior),
-        ...contas("Receitas", mostrarAnaliticas ? d.receitas.itens : [], d.totais.receitas),
+        ...contas("Saldo anterior", d.saldoAnterior.contas, d.totais.saldoAnterior),
+        ...contas("Receitas", d.receitas.itens, d.totais.receitas),
         ...despesas,
-        ...contas("Saldo atual", mostrarAnaliticas ? d.saldoAtual.contas : [], d.totais.saldoAtual),
+        ...contas("Saldo atual", d.saldoAtual.contas, d.totais.saldoAtual),
       ],
     },
     {
