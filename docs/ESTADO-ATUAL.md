@@ -1,5 +1,15 @@
 # Estado atual e passagem de contexto
 
+## PR #120 mesclado e publicado — 02/11/2026
+
+PR #120 (botão "Pendente" com caixa padrão + receita sem nome agrupando em "Outras receitas",
+descrito abaixo) mesclado em `main` por squash (`e302b4c`). Codex revisou sem achados, CI verde,
+sem threads de review.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`495f033`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index-DoN6Epnw.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal). Nenhum arquivo PHP mudou (só domínio e frontend).
+
 ## Botão "Pendente" com caixa maior que o padrão + receita sem nome sumindo do gráfico — 02/11/2026
 
 Dois achados do responsável no mesmo fio, com captura de tela do "Documentos obrigatórios":
