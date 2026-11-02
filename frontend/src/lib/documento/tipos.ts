@@ -63,8 +63,13 @@ export type Bloco =
   | { tipo: "imagem"; dataUrl: string; largura: number; altura: number; alinhamento?: Alinhamento }
   | { tipo: "espaco"; altura: number }
   | { tipo: "quebraPagina" }
-  /** Linhas de assinatura lado a lado; cada item = linhas de texto abaixo do traço. */
-  | { tipo: "assinaturas"; itens: string[][] };
+  /**
+   * Linhas de assinatura lado a lado; cada item = linhas de texto abaixo do traço.
+   * `localData` (ex.: "Florianópolis, 02/11/2026.") entra no mesmo bloco átomo das linhas de
+   * assinatura — nunca como parágrafo separado antes — pra garantir que local/data e assinatura
+   * sempre fiquem juntos na mesma página, mesmo se a seção cair perto do fim de uma página.
+   */
+  | { tipo: "assinaturas"; itens: string[][]; localData?: string; localDataAlinhamento?: "centro" | "direita" };
 
 export interface Timbre {
   logo: { dataUrl: string; ratio: number } | null;

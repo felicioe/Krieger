@@ -154,23 +154,31 @@ async function bloco(b: Bloco): Promise<Content[]> {
     case "assinaturas": {
       const n = b.itens.length || 1;
       const largura = Math.min(220, (PAGINA.util - (n - 1) * 32) / n);
+      const colunas = {
+        columns: [
+          { text: "", width: "*" },
+          ...b.itens.flatMap((linhas, i) => [
+            ...(i > 0 ? [{ text: "", width: 32 }] : []),
+            {
+              width: largura,
+              stack: [
+                { canvas: [{ type: "line", x1: 0, y1: 0, x2: largura, y2: 0, lineWidth: 0.7, lineColor: c(COR.texto) }] },
+                ...linhas.map((l, k) => ({ text: l, alignment: "center", margin: [0, k === 0 ? 4 : 0, 0, 0], ...(k > 0 ? { fontSize: 9, color: c(COR.suave) } : {}) })),
+              ],
+            },
+          ]),
+          { text: "", width: "*" },
+        ],
+        margin: [0, 36, 0, 8],
+      };
+      // `localData` entra no mesmo stack e herda o `unbreakable` do bloco inteiro — local/data e
+      // assinatura nunca podem cair em páginas diferentes (ver comentário em tipos.ts).
       return [
         {
-          columns: [
-            { text: "", width: "*" },
-            ...b.itens.flatMap((linhas, i) => [
-              ...(i > 0 ? [{ text: "", width: 32 }] : []),
-              {
-                width: largura,
-                stack: [
-                  { canvas: [{ type: "line", x1: 0, y1: 0, x2: largura, y2: 0, lineWidth: 0.7, lineColor: c(COR.texto) }] },
-                  ...linhas.map((l, k) => ({ text: l, alignment: "center", margin: [0, k === 0 ? 4 : 0, 0, 0], ...(k > 0 ? { fontSize: 9, color: c(COR.suave) } : {}) })),
-                ],
-              },
-            ]),
-            { text: "", width: "*" },
+          stack: [
+            ...(b.localData ? [{ text: b.localData, alignment: ALINHA[b.localDataAlinhamento ?? "centro"], margin: [0, 0, 0, 6] }] : []),
+            colunas,
           ],
-          margin: [0, 36, 0, 8],
           unbreakable: true,
         } as Content,
       ];

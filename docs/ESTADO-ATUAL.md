@@ -1,5 +1,47 @@
 # Estado atual e passagem de contexto
 
+## Assinatura final separada de "Local, data" entre páginas do PDF/Word — 02/11/2026
+
+Pedido do responsável: "a assinatura final não pode ser dividida" entre páginas do relatório
+final; perguntei qual era o sintoma exato — confirmou "cortada no meio entre duas páginas".
+
+**Investigação**: o bloco de assinatura em si (`unbreakable: true` no PDF, `cantSplit: true` na
+linha da tabela do Word) já não quebra sozinho — testei isoladamente com `pdfmake` real, dezenas
+de pontos de conteúdo diferentes, nunca quebrou. O bug real é outro: "Local, data" (ex.:
+"Curitiba, 02/11/2026.") era um **parágrafo separado**, empurrado para o documento *antes* do
+bloco de assinatura, sem nenhum vínculo entre os dois — então quando a seção caía perto do fim de
+uma página, "Local, data" ficava sozinho no fim de uma página e a assinatura (linha + nome)
+aparecia isolada no topo da seguinte. Reproduzi isso de forma determinística (script com
+`pdfmake` real, variando a quantidade de conteúdo antes até achar o ponto exato da quebra) e
+confirmei que acontecia tanto no caminho do PDF quanto, estruturalmente, no do Word (`keepNext`
+só existia num parágrafo vazio de espaçamento, nunca ligado ao parágrafo real de local/data).
+
+**Correção**: `local e data` passou a entrar *dentro* do próprio bloco `assinaturas`
+(`tipos.ts` — novo campo opcional `localData`/`localDataAlinhamento`), em vez de um parágrafo à
+parte. No PDF, local/data e as colunas de assinatura viram um único `stack` com `unbreakable` no
+nível de fora (antes só as colunas tinham). No Word, o parágrafo de local/data ganhou
+`keepNext: true` e passou a ficar imediatamente antes do espaçador+tabela (que já tinham
+`keepNext`/`cantSplit`) — cadeia local/data → espaçador → tabela, todos presos entre si. Aplicado
+nos dois lugares que usam esse bloco: Relatório final e Ata de assembleia.
+
+**Validação**: testei de novo com `pdfmake` real (mesmo método de reprodução, ~40 pontos de
+conteúdo ao redor do limite onde quebrava antes) — zero separações depois da correção. Gerei um
+PDF de verdade pela tela (condomínio de exemplo, Playwright, login real) e conferi o texto de
+cada página do PDF baixado: a última página termina com "Curitiba, 02/11/2026. Síndico
+Responsável / CRA/SC 00000 / Krieger Assessoria..." tudo junto, como esperado. Teste de regressão
+`assinaturaAtomica.test.ts` (3 casos: relatório final com local/data, relatório final sem
+cidade/data — não quebra o bloco —, e ata com alinhamento à direita) junto da suíte completa (215
+frontend, `tsc --noEmit`, `docs:check`) — tudo limpo.
+
+**Sobre a "análise prévia pelo sistema" pedida junto**: já existe — o diálogo "Conferência antes
+de emitir" (`DialogoConferencia.tsx`), com itens de `rel.conferencia` computados em
+`montarRelatorioFinal`. Ele já cobre exatamente o lado de dados do caso da assinatura ("Assinatura
+sem nome/assinatura cadastrados", "Capa sem cidade/data") — a parte que faltava era a de
+paginação, que não dá pra prever nesse estágio (a conferência roda sobre dados puros, antes do
+motor de PDF/Word decidir onde cai cada quebra de página) — por isso corrigi na raiz, tornando a
+quebra estruturalmente impossível, em vez de tentar avisar sobre ela. Se o responsável tiver mais
+pontos específicos de layout que quer que a conferência cheque, é só listar.
+
 ## PR #118 mesclado e publicado — 02/11/2026
 
 PR #118 (toggle "no relatório" + correções do Codex, descrito abaixo) mesclado em `main` por

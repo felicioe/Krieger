@@ -258,9 +258,12 @@ export async function documentoRelatorioFinal(o: {
   if (rel.secoes.assinatura) {
     b.push({ tipo: "espaco", altura: 24 });
     const ld = localEData(e.cidade, e.dataEmissao);
-    if (ld) b.push({ tipo: "paragrafo", texto: ld, alinhamento: "centro" });
     const linhas = (escritorio?.assinatura ?? "").split("\n").map((x) => x.trim()).filter(Boolean);
-    b.push({ tipo: "assinaturas", itens: [[...(linhas.length ? linhas : [" "]), ...(escritorio?.nome ? [escritorio.nome] : [])]] });
+    b.push({
+      tipo: "assinaturas",
+      itens: [[...(linhas.length ? linhas : [" "]), ...(escritorio?.nome ? [escritorio.nome] : [])]],
+      ...(ld ? { localData: ld } : {}),
+    });
   }
 
   if (b.length === 0) b.push(vazio("Nenhuma seção incluída."));
