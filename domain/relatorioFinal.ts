@@ -164,6 +164,39 @@ export function despesasPorGrupo(d: Demonstrativo | null): { nome: string; valor
     .filter((g) => g.valor !== 0);
 }
 
+export interface SerieReceita {
+  nome: string;
+  pontos: { mes: string; valor: number }[];
+}
+
+/**
+ * Evolução de cada categoria de receita (nome do item do demonstrativo) mês a mês — um
+ * mini-gráfico por categoria, cada um com sua própria escala, porque a Taxa condominial costuma
+ * ser bem maior que as outras receitas (ver `GraficoReceitasCategoria`, no frontend). Categorias
+ * na ordem em que aparecem pela primeira vez nos relatórios mensais; meses sem aquela receita
+ * entram como zero.
+ */
+export function receitasPorCategoria(mensais: Mensal[]): SerieReceita[] {
+  const comDemonstrativo = mensais.filter((m) => m.demonstrativo);
+  const nomes: string[] = [];
+  for (const m of comDemonstrativo) {
+    for (const i of m.demonstrativo!.receitas.itens) {
+      if (i.nome.trim() && !nomes.includes(i.nome)) nomes.push(i.nome);
+    }
+  }
+  return nomes
+    .map((nome) => ({
+      nome,
+      pontos: comDemonstrativo.map((m) => ({
+        mes: rotuloCompetencia(competenciaMensal(m)),
+        valor: centavos(
+          m.demonstrativo!.receitas.itens.filter((i) => i.nome === nome).reduce((s, i) => s + (Number(i.valor) || 0), 0),
+        ),
+      })),
+    }))
+    .filter((s) => s.pontos.some((p) => p.valor !== 0));
+}
+
 export type SituacaoConferencia = "ok" | "aviso" | "erro";
 export interface ItemConferencia {
   titulo: string;
@@ -187,6 +220,7 @@ export interface RelatorioFinal {
   mensais: Mensal[];
   inadimplencia: ReturnType<typeof inadimplencia>;
   evolucaoMensal: PontoEvolucaoMensal[];
+  receitasPorCategoria: SerieReceita[];
   notas: NotaConsolidada[];
   agua: ConsumoServico;
   energia: ConsumoServico;
@@ -330,6 +364,7 @@ export function montarRelatorioFinal(entrada: {
     mensais,
     inadimplencia: inad,
     evolucaoMensal: evolucao,
+    receitasPorCategoria: receitasPorCategoria(mensais),
     notas,
     agua: consumoAgua(e),
     energia: consumoEnergia(e),
