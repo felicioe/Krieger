@@ -1,5 +1,25 @@
 # Estado atual e passagem de contexto
 
+## PR #126 mesclado e publicado — 02/11/2026
+
+PR #126 (sugestão de variação a partir do desvio previsto × realizado, descrito abaixo) mesclado em
+`main` por squash (`bacd86f`). O Codex apontou 4 problemas reais na revisão — todos corrigidos antes
+do merge: (1) `temLancamentos` considerava qualquer seção do demonstrativo (não só despesas), então
+um exercício só com receita lançada (sem despesa ainda) gerava sugestão de -100%; corrigido
+checando despesas especificamente. (2) o callout "ano fechado" do Previsto × Realizado só checava
+`mesAte.posicao === 12` (o último mês *com* relatório, não necessariamente o 12º mês de verdade) —
+com só dezembro importado, por exemplo, mostrava -91,67% com 11 meses faltando contados como zero;
+corrigido exigindo `r.meses.every(m => m.relatorios > 0)`. (3) exercícios com período menor que 12
+meses (o sistema aceita isso desde o PR #123) comparavam o realizado parcial direto com o previsto
+anual inteiro, acusando desvio artificial; corrigido prorrateando o previsto ao período real do
+exercício atual (`mesesNoPeriodo`). (4) a dedução (ex.: "fundo de caixa p/ obras") era retirada do
+previsto mas não do realizado, inflando o desvio sem a despesa comparável ter mudado; corrigido
+aplicando o mesmo filtro de dedução aos dois lados. CI verde, 4 threads de review resolvidas.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`2ec3623`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index-DHeqpRpb.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal). Nenhum arquivo PHP mudou.
+
 ## Sugestão de variação (desvio previsto × realizado) — 02/11/2026
 
 Pedido do responsável, usando o Urban Classic como exemplo: exercício 2025 fecha com R$ 776.531,36
