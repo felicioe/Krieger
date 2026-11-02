@@ -80,6 +80,35 @@ export interface CadastroBasico {
   revisar: boolean;
 }
 
+export interface UnidadeFracaoLida {
+  unidade: string;
+  fracaoUnidade: number;
+  fracaoBox: number;
+  fracaoTotal: number;
+  fracaoPrevista: number;
+  tipo?: 'unidade' | 'deposito' | 'garagem';
+}
+
+/** Lê a listagem "Listagem de unidades - Fração" do Systemar. */
+export function lerListagemFracao(texto: string): { condominio: string | null; unidades: UnidadeFracaoLida[]; total: number | null } {
+  const linhas = texto.split(/\r?\n/);
+  const cab = linhas.find((l) => /CONDOM[IÍ]NIO\s*:/i.test(l));
+  const condominio = cab?.replace(/^.*CONDOM[IÍ]NIO\s*:\s*/i, '').trim() || null;
+  const unidades: UnidadeFracaoLida[] = [];
+  const num = /\d+,\d{6}/g;
+  for (const linha of linhas) {
+    const m = linha.trim().match(/^(\d{5})\s+(.+?)\s+(\d+,\d{6})\s+(\d+,\d{6})\s+(\d+,\d{6})\s+(\d+,\d{6})\s*$/);
+    if (!m) continue;
+    const p = (s: string) => Number(s.replace('.', '').replace(',', '.'));
+    unidades.push({ unidade: m[1]!, fracaoUnidade: p(m[3]!), fracaoBox: p(m[4]!), fracaoTotal: p(m[5]!), fracaoPrevista: p(m[6]!) });
+  }
+  for (const linha of linhas) {
+    const m = linha.match(/TOTAL\s+UNIDADES\s+(\d+).*?([\d.]+,\d{6})\s*$/i);
+    if (m) return { condominio, unidades, total: Number(m[2]!.replace('.', '').replace(',', '.')) };
+  }
+  return { condominio, unidades, total: null };
+}
+
 const NUM = /-?\d{1,3}(?:\.\d{3})*,\d{2}/g;
 // "Comparativo Financeiro de X a Y" repete como cabeçalho em toda página do layout comparativo,
 // com espaçamento largo entre as palavras (colunas) — sem \s+ entre elas aqui, vaza como item de

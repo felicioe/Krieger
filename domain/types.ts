@@ -111,6 +111,7 @@ export interface Condominio extends ComId {
   cnpj: string;
   enderecoEdital: string;
   unidades: number | null;
+  fracaoUnidades?: UnidadeCondominio[];
   rateioAtual: number | null;
   prazoConvocacao: number;
   quorum: string;
@@ -167,6 +168,15 @@ export interface Condominio extends ComId {
   atualizadoEm?: string | null;
   /** Campo novo (opcional): nome de quem fez o último salvamento. */
   atualizadoPor?: string;
+}
+
+export interface UnidadeCondominio {
+  unidade: string;
+  fracaoUnidade: number;
+  fracaoBox: number;
+  fracaoTotal: number;
+  fracaoPrevista: number;
+  tipo?: "unidade" | "deposito" | "garagem";
 }
 
 // ---------- Demonstrativo ----------
