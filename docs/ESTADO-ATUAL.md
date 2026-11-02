@@ -1,5 +1,14 @@
 # Estado atual e passagem de contexto
 
+## PR #121 mesclado e publicado — 02/11/2026
+
+PR #121 (legenda de "Consumo de serviços" sem regex, descrito abaixo) mesclado em `main` por
+squash (`7719566`). Codex revisou sem achados, CI verde, sem threads de review.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`3e945bd`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index-C_T_nXvm.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal). Nenhum arquivo PHP mudou.
+
 ## "Consumo de serviços" mostrava a expressão técnica da rubrica, não o que bateu — 02/11/2026
 
 Responsável mandou print do site em produção (mobile): embaixo de "Elevadores", em "Consumo de
