@@ -1,5 +1,17 @@
 # Estado atual e passagem de contexto
 
+## PR #118 mesclado e publicado — 02/11/2026
+
+PR #118 (toggle "no relatório" + correções do Codex, descrito abaixo) mesclado em `main` por
+squash (`075dbd0`). Precisou sincronizar com o merge do PR #117 no meio do caminho (conflito só em
+`docs/ESTADO-ATUAL.md` e nos testes de `receitasPorCategoria`/`automatico`, ambos com entradas e
+casos novos em paralelo, sem tocar a mesma lógica — resolvido mantendo os dois lados). CI verde
+nesse commit de merge, threads do Codex já resolvidas antes.
+
+Build + `npm run package:hostinger` + push no `deploy-hostinger` (`635ecba`) — auto-deploy
+confirmado ao vivo: `index.html` referencia `index-DBsWWNRY.js`, hash exato do build desse commit;
+`auth.php?a=eu` responde 401 (API normal). Nenhum arquivo PHP mudou nesse PR (só frontend).
+
 ## Toggle "No relatório" por item + 2 achados do Codex corrigidos (PR #118) — 02/11/2026
 
 Resolve os dois pontos que ficaram "em aberto" na entrada abaixo, decididos pelo responsável no
