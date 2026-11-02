@@ -30,7 +30,7 @@ const contas = (titulo: string, linhas: LinhaValor[], total: number): LinhaTabel
 ];
 
 /** Demonstrativo de receitas e despesas (mesma ordem da prévia na tela). */
-export function blocosDemonstrativo(d: Demonstrativo): Bloco[] {
+export function blocosDemonstrativo(d: Demonstrativo, mostrarAnaliticas = true): Bloco[] {
   const colunas = [
     { titulo: "Descrição", largura: "*" as const },
     { titulo: "Valor", largura: 110, alinhamento: "direita" as const },
@@ -38,7 +38,7 @@ export function blocosDemonstrativo(d: Demonstrativo): Bloco[] {
   const despesas: LinhaTabela[] = [{ celulas: ["Despesas"], estilo: "grupo" }];
   for (const g of d.despesas.grupos) {
     despesas.push({ celulas: [g.nome || "Sem grupo"], estilo: "subtotal" });
-    despesas.push(...g.itens.map((i) => linha(i.nome, i.valor, { recuo: true })));
+    if (mostrarAnaliticas) despesas.push(...g.itens.map((i) => linha(i.nome, i.valor, { recuo: true })));
     despesas.push(linha(`Subtotal ${g.nome || "sem grupo"}`, somar(g.itens), { estilo: "subtotal", recuo: true }));
   }
   despesas.push(linha("Total das despesas", d.totais.despesas, { estilo: "total" }));
@@ -48,10 +48,10 @@ export function blocosDemonstrativo(d: Demonstrativo): Bloco[] {
       tipo: "tabela",
       colunas,
       linhas: [
-        ...contas("Saldo anterior", d.saldoAnterior.contas, d.totais.saldoAnterior),
-        ...contas("Receitas", d.receitas.itens, d.totais.receitas),
+        ...contas("Saldo anterior", mostrarAnaliticas ? d.saldoAnterior.contas : [], d.totais.saldoAnterior),
+        ...contas("Receitas", mostrarAnaliticas ? d.receitas.itens : [], d.totais.receitas),
         ...despesas,
-        ...contas("Saldo atual", d.saldoAtual.contas, d.totais.saldoAtual),
+        ...contas("Saldo atual", mostrarAnaliticas ? d.saldoAtual.contas : [], d.totais.saldoAtual),
       ],
     },
     {

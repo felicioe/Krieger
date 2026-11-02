@@ -62,8 +62,8 @@ export function PreviaRelatorio({
             <Vazio>Sem demonstrativo.</Vazio>
           ) : (
             <div className="space-y-5">
-              <Bloco titulo="Saldo anterior" linhas={d.saldoAnterior.contas} total={d.totais.saldoAnterior} />
-              <Bloco titulo="Receitas" linhas={d.receitas.itens} total={d.totais.receitas} />
+              <Bloco titulo="Saldo anterior" linhas={d.saldoAnterior.contas} total={d.totais.saldoAnterior} mostrarAnaliticas={e.mostrarContasAnaliticas !== false} />
+              <Bloco titulo="Receitas" linhas={d.receitas.itens} total={d.totais.receitas} mostrarAnaliticas={e.mostrarContasAnaliticas !== false} />
               <div>
                 <h4 className="mb-1 font-semibold">Despesas</h4>
                 <RolagemTabela className=""><table className="w-full">
@@ -77,7 +77,7 @@ export function PreviaRelatorio({
                               {g.nome || "Sem grupo"}
                             </td>
                           </tr>
-                          {g.itens.map((i, k) => (
+                          {e.mostrarContasAnaliticas !== false && g.itens.map((i, k) => (
                             <Linha key={k} nome={i.nome} valor={i.valor} recuo />
                           ))}
                           <Linha nome={`Subtotal ${g.nome}`} valor={sub} sutil />
@@ -88,7 +88,7 @@ export function PreviaRelatorio({
                   </tbody>
                 </table></RolagemTabela>
               </div>
-              <Bloco titulo="Saldo atual" linhas={d.saldoAtual.contas} total={d.totais.saldoAtual} />
+              <Bloco titulo="Saldo atual" linhas={d.saldoAtual.contas} total={d.totais.saldoAtual} mostrarAnaliticas={e.mostrarContasAnaliticas !== false} />
               <RolagemTabela className=""><table className="w-full rounded-sm bg-muted/50">
                 <tbody>
                   <Linha nome="Saldo anterior" valor={d.totais.saldoAnterior} />
@@ -354,13 +354,13 @@ function Linha({ nome, valor, forte, sutil, recuo }: { nome: string; valor: numb
   );
 }
 
-function Bloco({ titulo, linhas, total }: { titulo: string; linhas: LinhaValor[]; total: number }) {
+function Bloco({ titulo, linhas, total, mostrarAnaliticas = true }: { titulo: string; linhas: LinhaValor[]; total: number; mostrarAnaliticas?: boolean }) {
   return (
     <div>
       <h4 className="mb-1 font-semibold">{titulo}</h4>
       <RolagemTabela className=""><table className="w-full">
         <tbody>
-          {linhas.map((l, i) => (
+          {mostrarAnaliticas && linhas.map((l, i) => (
             <Linha key={i} nome={l.nome} valor={l.valor} recuo />
           ))}
           <Linha nome={`Total ${titulo.toLowerCase()}`} valor={total} forte />

@@ -191,7 +191,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                               onCheckedChange={(v) => mudar({ mostrarContasAnaliticas: v === true })}
                             />
                             <Label htmlFor="secao-contas-analiticas" className="min-w-0 break-words text-xs font-normal text-muted-foreground">
-                              Mostrar contas analíticas (desmarcado: só os totais por grupo)
+                              Mostrar contas analíticas no demonstrativo e no Previsto × Realizado (desmarcado: só os totais por grupo)
                             </Label>
                           </div>
                         )}

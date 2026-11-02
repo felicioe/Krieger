@@ -67,7 +67,7 @@ export async function documentoRelatorioFinal(o: {
 
   if (rel.secoes.demonstrativo) {
     b.push(titulo("demonstrativo", "Demonstrativo de receitas e despesas"));
-    b.push(...(d ? blocosDemonstrativo(d) : [vazio("Sem demonstrativo.")]));
+    b.push(...(d ? blocosDemonstrativo(d, e.mostrarContasAnaliticas !== false) : [vazio("Sem demonstrativo.")]));
   }
 
   if (rel.secoes.consideracoes) {
