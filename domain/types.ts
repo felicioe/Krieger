@@ -323,6 +323,8 @@ export interface Exercicio extends ComId {
   mostrarAnalise?: boolean;
   mostrarPizza?: boolean;
   mostrarEvolucaoMensal?: boolean;
+  /** Campo novo (opcional): mini-gráficos de evolução de cada categoria de receita, um por categoria. */
+  mostrarReceitasPorCategoria?: boolean;
   /** Linhas por rubrica (contas analíticas) na seção Previsto × Realizado; false = só os totais por grupo. */
   mostrarContasAnaliticas?: boolean;
   /**

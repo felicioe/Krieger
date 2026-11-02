@@ -5,6 +5,7 @@ import { AvisoSemRealizado } from "@/components/previsto-realizado/AvisoSemReali
 import { semRealizado } from "@/components/previsto-realizado/semRealizado";
 import { GraficoPizza } from "@/components/relatorio/GraficoPizza";
 import { GraficoEvolucaoMensal } from "@/components/relatorio/GraficoEvolucaoMensal";
+import { GraficoReceitasCategoria } from "@/components/relatorio/GraficoReceitasCategoria";
 import { dataParaBR, formatBRL, formatData, formatNumeroBR } from "@/lib/format";
 import { dataVistoria } from "@/domain/painel";
 import { cn } from "@/lib/utils";
@@ -232,6 +233,12 @@ export function PreviaRelatorio({
             <>
               <h4 className="mb-2 mt-6 font-semibold">Despesas do exercício {e.ano} por grupo</h4>
               {rel.despesasGrupo.length ? <GraficoPizza dados={rel.despesasGrupo} /> : <Vazio>Sem despesas no demonstrativo.</Vazio>}
+            </>
+          )}
+          {e.mostrarReceitasPorCategoria !== false && rel.receitasPorCategoria.length > 0 && (
+            <>
+              <h4 className="mb-2 mt-6 font-semibold">Receitas por categoria</h4>
+              <GraficoReceitasCategoria series={rel.receitasPorCategoria} />
             </>
           )}
           {e.mostrarEvolucaoMensal !== false && (

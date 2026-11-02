@@ -1,5 +1,42 @@
 # Estado atual e passagem de contexto
 
+## Gráfico "Receitas por categoria" (small multiples) no Relatório Final — 01/11/2026
+
+Pedido do responsável: na seção "Análise gráfica", o gráfico de Evolução mensal já mostra receitas
+ao longo do tempo, mas só como um total — ele queria acompanhar a evolução de cada tipo de receita
+separadamente (Taxa condominial, Fundo de reserva, Multas e juros, Rendimentos de aplicação etc.).
+Protótipo mostrado antes de implementar (Artifact): a 1ª versão (todas as categorias na mesma
+escala, como linhas de cores diferentes) foi rejeitada pelo próprio responsável — a Taxa
+condominial, ~10× maior que as outras, esmagava as receitas menores num gráfico só. A 2ª versão
+(small multiples — um mini-gráfico por categoria, cada um com escala própria) foi aprovada.
+
+- `domain/relatorioFinal.ts` — `receitasPorCategoria(mensais)`: pivota os relatórios mensais do
+  período por nome de item de receita (mesmo mecanismo que `despesasPorGrupo` já usa pros grupos
+  de despesa, só que ao longo do tempo em vez de um período só). Categorias na ordem em que
+  aparecem pela primeira vez; mês sem aquela receita entra como zero; categoria sem nenhum valor
+  no período inteiro fica de fora.
+- `frontend/src/components/relatorio/GraficoReceitasCategoria.tsx`: um mini-gráfico de linha por
+  categoria (recharts, mesmo padrão de `GraficoEvolucaoMensal`/`GraficoPizza`), cada um com sua
+  própria escala — resolve o esmagamento visual. Mostra o valor do último mês e a variação % vs.
+  o mês anterior (verde/vermelho) no canto de cada mini-gráfico. Cores: `corDoGrafico(i)`, mesma
+  sequência que a pizza de despesas já usa.
+- Entra na "Análise gráfica" do Relatório Final (tela e PDF/Word), entre "Despesas por grupo" e
+  "Evolução mensal" — mesma posição aprovada no protótipo. Checkbox próprio
+  (`Exercicio.mostrarReceitasPorCategoria`, padrão mostrado) ao lado dos já existentes de Pizza e
+  Evolução mensal; some da tela inteira (sem bloco vazio) quando não há receita nomeada nos
+  relatórios mensais do período. No PDF/Word, cada categoria vira um gráfico de linha simples
+  (`linhaSvg`, já existente) em sequência — a visão em grade 2×2 é só da tela.
+
+Testado: `domain/relatorioFinal.test.ts` (2 casos novos — zero nos meses sem a receita, categoria
+zerada no período inteiro fica de fora), 195 testes de domínio, 206 de frontend, `tsc --noEmit` e
+`docs:check` limpos, `bundle:check` em 178.146 de 256.000 bytes. Validado visualmente com
+Playwright no servidor de dev local (condomínio de exemplo, que já tem 3 categorias de receita nos
+relatórios mensais de exemplo): as 3 categorias aparecem com escalas próprias (Taxa condominial
+~31 mil, Fundo de reserva ~3,1 mil quase reto, Rendimentos de aplicação 420-540 em alta — nenhuma
+esmaga a outra), hover com tooltip funcionando, variação % com cor certa (vermelho/verde), checkbox
+de seção escondendo e mostrando o bloco corretamente (6→3 gráficos recharts na página), sem
+estouro horizontal em 375px.
+
 ## Auditoria UX do cadastro de condomínio: PR #116 mesclado e publicado — 01/11/2026
 
 PR #116 (descrito abaixo) mesclado em `main` (`c8691e1`). Dois achados reais do Codex (P2)
