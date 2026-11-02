@@ -58,6 +58,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     titulo: "Relatórios",
     itens: [
       { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows, permissao: "previsto_realizado.visualizar" },
+      { titulo: "Orçado × Realizado mensal", to: "/relatorios/orcado-realizado-mensal", icone: CalendarRange, permissao: "previsto_realizado.visualizar" },
       { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange, permissao: "relatorio_mensal.visualizar" },
     ],
   },
