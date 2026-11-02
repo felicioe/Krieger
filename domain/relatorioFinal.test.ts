@@ -124,6 +124,17 @@ describe("relatório final", () => {
     expect(receitasPorCategoria([vazio])).toEqual([]);
   });
 
+  it("receitas por categoria: item sem nome (linha nova do editor) agrupa em \"Outras receitas\", não some do gráfico", () => {
+    const semNome = { ...mensal(1, null) };
+    semNome.demonstrativo = recalcularDemonstrativo({
+      ...semNome.demonstrativo!,
+      receitas: { itens: [{ nome: "Taxa condominial", valor: 31200 }, { nome: "", valor: 500 }, { nome: "  ", valor: 300 }], subtotal: 0, totalComSaldo: 0 },
+    });
+    const r = receitasPorCategoria([semNome]);
+    expect(r.map((s) => s.nome)).toEqual(["Taxa condominial", "Outras receitas"]);
+    expect(r.find((s) => s.nome === "Outras receitas")!.pontos).toEqual([{ mes: "01/2026", valor: 800 }]);
+  });
+
   it("mês sem demonstrativo fica de fora da evolução mensal", () => {
     expect(evolucaoMensal([{ ...mensal(1, null), demonstrativo: null }, mensal(2, null)])).toHaveLength(1);
   });

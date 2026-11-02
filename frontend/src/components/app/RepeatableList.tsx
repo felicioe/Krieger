@@ -197,7 +197,7 @@ export function RepeatableList<T>({
                     aoSeta={(d) => moverPorSeta(i, d)}
                     aoRemover={() => remover(i)}
                   >
-                    <div className={cn("grid min-w-0 flex-1 gap-2", colunas)}>
+                    <div className={cn("grid min-w-0 flex-1 items-start gap-2", colunas)}>
                       {render(item, (p) => atualizar(i, p), i)}
                     </div>
                   </Linha>

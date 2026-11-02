@@ -1,5 +1,34 @@
 # Estado atual e passagem de contexto
 
+## Botão "Pendente" com caixa maior que o padrão + receita sem nome sumindo do gráfico — 02/11/2026
+
+Dois achados do responsável no mesmo fio, com captura de tela do "Documentos obrigatórios":
+
+- **Botão de status maior que os outros campos da linha**: a `div` que organiza cada linha das
+  listas repetíveis (`RepeatableList.tsx`, usada em Administração, Coberturas, Índices,
+  Documentos obrigatórios etc.) é um CSS grid sem `items-start` — por padrão (`align-items:
+  stretch`), toda célula da linha estica pra altura da maior. A `Textarea` de "Observação" tem
+  `min-h-[60px]` fixo no CSS mesmo com `rows={1}`, bem mais alto que um `Input`/`Button` comuns
+  (~32-36px) — isso esticava a linha inteira, inclusive o botão "Pendente"/"Em dia", deixando-o
+  com uma caixa desproporcional. Corrigido com `items-start` no grid da linha — cada célula volta
+  a ter sua altura própria; a "Observação" continua livre/expansível (textarea com resize), só não
+  arrasta mais o resto da linha junto. Validado visualmente (print da tela real antes/depois).
+
+- **Gráfico "Receitas por categoria" não aparecia**: investiguei perguntando se "Evolução mensal"
+  também sumia (não sumia) — isso isolou o problema pro `receitasPorCategoria()` especificamente,
+  não pra falta de relatórios mensais em geral. Achado: uma receita nova no editor do demonstrativo
+  nasce com `nome: ""` (`EditorDemonstrativo.tsx`, `novo={() => ({ nome: "", valor: 0 })}`) — se o
+  usuário preenche só o valor e não nomeia a linha (comum), o item participa normalmente dos
+  totais (por isso Evolução mensal funciona, que soma por total, não por nome) mas antes
+  desaparecia inteiro do gráfico por categoria, que indexava por nome e descartava item sem nome.
+  Corrigido: item sem nome agora agrupa em "Outras receitas" — mesmo padrão que `despesasPorGrupo`
+  já usa pra grupo sem nome ("Sem grupo"), em `domain/relatorioFinal.ts`. Validado end-to-end:
+  adicionei uma receita sem nome de verdade pela tela (relatório mensal real, Playwright), salvei,
+  e "Outras receitas" apareceu no relatório final com o valor certo.
+
+Testado: novo caso em `receitasPorCategoria` (domínio + frontend, mesmo teste espelhado), suíte
+completa (197 domínio, 216 frontend), `tsc --noEmit` e `docs:check` limpos.
+
 ## PR #119 mesclado e publicado — 02/11/2026
 
 PR #119 (assinatura final não dividida entre páginas, descrito abaixo) mesclado em `main` por

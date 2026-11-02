@@ -174,14 +174,18 @@ export interface SerieReceita {
  * mini-gráfico por categoria, cada um com sua própria escala, porque a Taxa condominial costuma
  * ser bem maior que as outras receitas (ver `GraficoReceitasCategoria`, no frontend). Categorias
  * na ordem em que aparecem pela primeira vez nos relatórios mensais; meses sem aquela receita
- * entram como zero.
+ * entram como zero. Item sem nome (linha nova do editor do demonstrativo nasce `nome: ""`) entra
+ * agrupado em "Outras receitas" — mesmo padrão de `despesasPorGrupo` ("Sem grupo") — em vez de
+ * sumir silenciosamente do gráfico.
  */
 export function receitasPorCategoria(mensais: Mensal[]): SerieReceita[] {
   const comDemonstrativo = mensais.filter((m) => m.demonstrativo);
+  const rotulo = (nome: string) => nome.trim() || "Outras receitas";
   const nomes: string[] = [];
   for (const m of comDemonstrativo) {
     for (const i of m.demonstrativo!.receitas.itens) {
-      if (i.nome.trim() && !nomes.includes(i.nome)) nomes.push(i.nome);
+      const nome = rotulo(i.nome);
+      if (!nomes.includes(nome)) nomes.push(nome);
     }
   }
   return nomes
@@ -190,7 +194,7 @@ export function receitasPorCategoria(mensais: Mensal[]): SerieReceita[] {
       pontos: comDemonstrativo.map((m) => ({
         mes: rotuloCompetencia(competenciaMensal(m)),
         valor: centavos(
-          m.demonstrativo!.receitas.itens.filter((i) => i.nome === nome).reduce((s, i) => s + (Number(i.valor) || 0), 0),
+          m.demonstrativo!.receitas.itens.filter((i) => rotulo(i.nome) === nome).reduce((s, i) => s + (Number(i.valor) || 0), 0),
         ),
       })),
     }))
