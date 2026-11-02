@@ -18,6 +18,7 @@ import { DinheiroInput, InteiroInput } from "@/components/app/inputs";
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
+import { HistoricoConflitosImportacao } from "@/components/importacao/HistoricoConflitosImportacao";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
 import { api } from "@/lib/api";
@@ -159,6 +160,9 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
               destino="mensais"
               condominio={condo}
               nomeCondominio={nomeCondo}
+              demonstrativoAtual={m.demonstrativo ?? null}
+              registroId={m.id}
+              competencia={rotuloCompetencia(competencia)}
               aoAplicar={(r) => {
                 mudar({
                   demonstrativo: r.demonstrativo,
@@ -255,6 +259,8 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
           </TabsContent>
         </Tabs>
       </form>
+
+      <HistoricoConflitosImportacao registroId={m.id} />
 
       <DialogoDivergencia
         aberto={trava.dialogo.aberto}

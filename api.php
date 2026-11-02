@@ -65,6 +65,7 @@ $ALVOS_LIMPEZA = [
   'importacoes' => ['kr_importacoes'],
   'anexos_importacao' => ['kr_anexos_importacao'],
   'decisoes_previsao' => ['kr_decisoes_previsao'],
+  'decisoes_importacao' => ['kr_decisoes_importacao'],
   'documentos' => ['kr_documento_trechos', 'kr_drive_arquivos', 'kr_documentos', 'kr_consulta_cache', 'kr_consulta_historico'],
   'backups' => ['kr_backups'],
 ];
@@ -77,7 +78,7 @@ function contar_tabela_seguro(PDO $pdo, string $tb): int {
   }
 }
 
-$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao'];
+$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao'];
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try { $pdo = conectar(); }
@@ -103,6 +104,7 @@ $permissaoStore = [
   'importacoes' => 'importador',
   'anexos_importacao' => 'prestacao_contas',
   'decisoes_previsao' => 'previsao_orcamentaria',
+  'decisoes_importacao' => 'importador',
   'config' => 'escritorio',
 ];
 if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permissaoStore[$s])) {
@@ -117,6 +119,7 @@ if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permi
     'modelos' => ['editais'],
     'config' => ['painel', 'prestacao_contas', 'relatorio_mensal', 'editais', 'atas', 'drive_documentos', 'consulta_documentos'],
     'decisoes_previsao' => ['prestacao_contas'],
+    'decisoes_importacao' => ['prestacao_contas', 'relatorio_mensal'],
   ];
   $chaves = [$permissaoStore[$s] . '.' . $acaoPermissao];
   if ($a === 'salvar' && $s === 'exercicios') $chaves[] = 'previsao_orcamentaria.editar';
@@ -344,7 +347,7 @@ try {
     $alvo = is_string($param('alvo')) ? $param('alvo') : '';
     $chavesAlvo = [];
     if ($alvo === 'tudo') {
-      $chavesAlvo = ['condominios', 'exercicios', 'mensais', 'assembleias', 'atas', 'modelos', 'importacoes', 'anexos_importacao', 'decisoes_previsao', 'documentos'];
+      $chavesAlvo = ['condominios', 'exercicios', 'mensais', 'assembleias', 'atas', 'modelos', 'importacoes', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao', 'documentos'];
     } elseif (isset($ALVOS_LIMPEZA[$alvo])) {
       $chavesAlvo = [$alvo];
     } else {

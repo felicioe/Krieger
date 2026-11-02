@@ -16,7 +16,8 @@ export type Store =
   | "importacoes"
   | "atas"
   | "anexos_importacao"
-  | "decisoes_previsao";
+  | "decisoes_previsao"
+  | "decisoes_importacao";
 
 export const STORES: Store[] = [
   "condominios",
@@ -29,6 +30,7 @@ export const STORES: Store[] = [
   "atas",
   "anexos_importacao",
   "decisoes_previsao",
+  "decisoes_importacao",
 ];
 
 export interface ComId {
@@ -264,6 +266,38 @@ export interface DecisaoDivergenciaPrevisao extends ComId {
   ano: number | string;
   campos: DivergenciaPrevisaoSugerida[];
   status: "confirmado" | "revisar_depois";
+  decididoPor: string;
+  decididoPorNome: string;
+  decididoEm: string;
+}
+
+/** Uma conta/item do demonstrativo (saldo anterior ou atual, receita ou despesa) cujo valor
+ * divergiu entre o que já estava gravado e o que veio numa nova importação do mesmo mês/exercício.
+ * `valorAtual` nulo = item só existe na nova importação; `valorNovo` nulo = item sumiu do PDF novo. */
+export interface ItemDivergenteImportacao {
+  secao: "saldoAnterior" | "receitas" | "despesas" | "saldoAtual";
+  /** Só em despesas (nome do grupo). */
+  grupo?: string;
+  nome: string;
+  valorAtual: number | null;
+  valorNovo: number | null;
+}
+
+/** Log (store `decisoes_importacao`): toda vez que uma reimportação de PDF encontra um relatório
+ * mensal ou prestação de contas que já tinha dados gravados, o sistema compara conta a conta e
+ * pede ao usuário, item por item divergente, se mantém o que já estava gravado ou atualiza para o
+ * valor novo — nunca com escolha pré-marcada. Registrado aqui para conferência futura, mesmo que a
+ * decisão não mude nada (usuário manteve tudo). */
+export interface DecisaoConflitoImportacao extends ComId {
+  condoId: string;
+  condoNome: string;
+  destino: "mensais" | "exercicios";
+  /** Id do relatório mensal ou do exercício afetado. */
+  registroId: string;
+  /** "mm/aaaa" (mensal) ou o ano (exercício). */
+  competencia: string;
+  arquivo: string;
+  itens: (ItemDivergenteImportacao & { escolha: "manter" | "atualizar" })[];
   decididoPor: string;
   decididoPorNome: string;
   decididoEm: string;

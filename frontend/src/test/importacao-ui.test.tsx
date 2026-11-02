@@ -1,5 +1,6 @@
 import { act, render, renderHook, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ConferenciaPdf } from "@/components/importacao/ResumoImportacao";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
@@ -7,8 +8,9 @@ import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { marcarCriadoPorPdf } from "@/components/importacao/criadoPorPdf";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
+import { definirUsuario } from "@/lib/auth";
 import { mockApi } from "@/lib/mockApi";
-import type { Demonstrativo } from "@/domain/types";
+import type { Demonstrativo, DecisaoConflitoImportacao } from "@/domain/types";
 
 // ---------- Fixtures ----------
 
@@ -386,14 +388,20 @@ const TEXTO_OK = [
 
 describe("foco depois da janela de importação (#71)", () => {
   function montar() {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <ImportarPdf
-        modo="editor"
-        destino="mensais"
-        condominio={undefined}
-        nomeCondominio="Estrelas"
-        aoAplicar={() => {}}
-      />,
+      <QueryClientProvider client={qc}>
+        <ImportarPdf
+          modo="editor"
+          destino="mensais"
+          condominio={undefined}
+          nomeCondominio="Estrelas"
+          demonstrativoAtual={null}
+          registroId="m-1"
+          competencia="08/2026"
+          aoAplicar={() => {}}
+        />
+      </QueryClientProvider>,
     );
     return screen.getByRole("button", { name: "Importar PDF" });
   }
@@ -441,5 +449,90 @@ describe("foco depois da janela de importação (#71)", () => {
     await screen.findByRole("button", { name: "Cancelar" });
     await u.click(screen.getByRole("button", { name: "Fechar" }));
     await waitFor(() => expect(botao).toHaveFocus());
+  });
+});
+
+describe("conflito de importação ao reimportar relatório com dados já gravados", () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    definirUsuario(await mockApi.auth.entrar("admin", "admin123"));
+  });
+
+  it("abre o diálogo, não aplica nada até decidir todos os itens, e registra a decisão no histórico", async () => {
+    leitura.texto = TEXTO_OK; // Taxa condominial = 20.000,00
+    const u = userEvent.setup();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    let aplicado: Demonstrativo | null = null;
+    const atual = { ...demonstrativoVazio("Estrelas"), receitas: { itens: [{ nome: "Taxa condominial", valor: 15000 }], subtotal: 15000, totalComSaldo: 15000 } };
+
+    render(
+      <QueryClientProvider client={qc}>
+        <ImportarPdf
+          modo="editor"
+          destino="mensais"
+          condominio={undefined}
+          nomeCondominio="Estrelas"
+          demonstrativoAtual={atual}
+          registroId="m-conflito-1"
+          competencia="08/2026"
+          aoAplicar={(r) => {
+            aplicado = r.demonstrativo;
+          }}
+        />
+      </QueryClientProvider>,
+    );
+    await u.click(screen.getByRole("button", { name: "Importar PDF" }));
+    await u.upload(screen.getByLabelText("Arquivo PDF do relatório"), new File(["%PDF"], "relatorio.pdf", { type: "application/pdf" }));
+    await u.click(await screen.findByRole("button", { name: "Preencher demonstrativo" }));
+
+    await screen.findByText("Valores divergentes na reimportação");
+    expect(aplicado).toBeNull();
+    // Confirmar fica desabilitado até decidir o único item divergente (Taxa condominial).
+    expect(screen.getByRole("button", { name: /Confirmar e aplicar/ })).toBeDisabled();
+
+    await u.click(screen.getByText("Manter o que está gravado"));
+    await u.click(screen.getByRole("button", { name: /Confirmar e aplicar/ }));
+
+    await waitFor(() => expect(aplicado).not.toBeNull());
+    expect(aplicado!.receitas.itens).toEqual([{ nome: "Taxa condominial", valor: 15000 }]);
+
+    await waitFor(async () => expect(await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao")).toHaveLength(1));
+    const [decisao] = await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao");
+    expect(decisao!.registroId).toBe("m-conflito-1");
+    expect(decisao!.itens).toEqual([{ secao: "receitas", nome: "Taxa condominial", valorAtual: 15000, valorNovo: 20000, escolha: "manter" }]);
+  });
+
+  it("cancelar o diálogo de conflito não aplica nada", async () => {
+    leitura.texto = TEXTO_OK;
+    const u = userEvent.setup();
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    let aplicado: Demonstrativo | null = null;
+    const atual = { ...demonstrativoVazio("Estrelas"), receitas: { itens: [{ nome: "Taxa condominial", valor: 15000 }], subtotal: 15000, totalComSaldo: 15000 } };
+
+    render(
+      <QueryClientProvider client={qc}>
+        <ImportarPdf
+          modo="editor"
+          destino="mensais"
+          condominio={undefined}
+          nomeCondominio="Estrelas"
+          demonstrativoAtual={atual}
+          registroId="m-conflito-2"
+          competencia="08/2026"
+          aoAplicar={(r) => {
+            aplicado = r.demonstrativo;
+          }}
+        />
+      </QueryClientProvider>,
+    );
+    await u.click(screen.getByRole("button", { name: "Importar PDF" }));
+    await u.upload(screen.getByLabelText("Arquivo PDF do relatório"), new File(["%PDF"], "relatorio.pdf", { type: "application/pdf" }));
+    await u.click(await screen.findByRole("button", { name: "Preencher demonstrativo" }));
+    await screen.findByText("Valores divergentes na reimportação");
+
+    await u.click(screen.getByRole("button", { name: "Cancelar importação" }));
+    await waitFor(() => expect(screen.queryByText("Valores divergentes na reimportação")).not.toBeInTheDocument());
+    expect(aplicado).toBeNull();
+    expect(await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao")).toHaveLength(0);
   });
 });

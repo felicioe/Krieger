@@ -13,6 +13,7 @@ import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
 import { focarConteudoApos } from "@/components/app/foco";
 import { ERRO_PDF_GRANDE, LIMITE_PDF_ANEXO, textoCondominioLido, textoPeriodo } from "./anexos";
+import { ConflitoImportacaoDialog, useConflitoImportacao } from "./ConflitoImportacao";
 import { api, mensagemErro } from "@/lib/api";
 import { novoId } from "@/lib/id";
 import { lerComoDataUrl } from "@/lib/arquivo";
@@ -29,8 +30,9 @@ import {
   type MesComparativo,
 } from "@/domain/importacao";
 import { prepararCondominio } from "@/domain/condominio";
+import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { consultarCnpjReceita, enderecoDaReceita } from "@/lib/receitaCnpj";
-import type { AnexoImportado, Condominio, Exercicio, Mensal } from "@/domain/types";
+import type { AnexoImportado, Condominio, Demonstrativo, Exercicio, Mensal } from "@/domain/types";
 
 /** Mensagem pedida para PDFs que não são o Comparativo Financeiro. */
 export const ERRO_NAO_COMPARATIVO = "Este PDF não parece ser um Comparativo Financeiro; verifique se é o relatório certo.";
@@ -237,12 +239,21 @@ function PassoAnexar({
     return idsNovos.current[m.mes]!;
   };
 
+  const conflito = useConflitoImportacao();
+  const [resolvendo, setResolvendo] = useState(false);
+
   const anexar = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (demonstrativosFinais: Record<string, Demonstrativo>) => {
       if (!exercicio) throw new Error("Escolha a prestação de contas.");
       if (!confereConflitos) throw new Error("Aguarde o carregamento dos relatórios mensais antes de confirmar.");
       await Promise.all(
-        mesesSelecionados.map((m) => api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", { ...m.registro, id: idParaMes(m) })),
+        mesesSelecionados.map((m) =>
+          api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", {
+            ...m.registro,
+            demonstrativo: demonstrativosFinais[m.mes] ?? m.registro.demonstrativo,
+            id: idParaMes(m),
+          }),
+        ),
       );
       await api.salvar<AnexoImportado>("anexos_importacao", {
         ...novoAnexoImportado(exercicio.id, "comparativo_financeiro", rel, lido.arquivo, lido.dataUrl),
@@ -262,6 +273,34 @@ function PassoAnexar({
       if (exercicio) focarConteudoApos(navigate({ to: "/prestacao-contas/$id", params: { id: exercicio.id } }));
     },
   });
+
+  // Antes de gravar qualquer coisa, resolve (mês a mês, um diálogo por vez) os conflitos conta a
+  // conta dos meses que já tinham um relatório mensal com dados — cancelar em qualquer um deles
+  // aborta tudo, sem gravar nada.
+  async function confirmarAnexar() {
+    if (!condo) return;
+    setResolvendo(true);
+    const finais: Record<string, Demonstrativo> = {};
+    try {
+      for (const m of mesesSelecionados) {
+        finais[m.mes] = await conflito.resolver({
+          condoId: condo.id,
+          condoNome: condo.nome,
+          destino: "mensais",
+          registroId: idParaMes(m),
+          competencia: m.mes,
+          arquivo: lido.arquivo,
+          atual: m.existente?.demonstrativo ?? null,
+          novo: m.registro.demonstrativo ?? demonstrativoVazio(condo.nome),
+        });
+      }
+    } catch {
+      setResolvendo(false);
+      return; // usuário cancelou a resolução de algum mês: nada é gravado
+    }
+    setResolvendo(false);
+    anexar.mutate(finais);
+  }
 
   return (
     <>
@@ -390,17 +429,18 @@ function PassoAnexar({
       )}
 
       <DialogFooter>
-        <Button variant="outline" onClick={fechar} disabled={anexar.isPending}>
+        <Button variant="outline" onClick={fechar} disabled={anexar.isPending || resolvendo}>
           Cancelar
         </Button>
         <Button
-          onClick={() => anexar.mutate()}
-          disabled={!exercicio || anexar.isPending || (!!condo && !confereConflitos)}
+          onClick={confirmarAnexar}
+          disabled={!exercicio || anexar.isPending || resolvendo || (!!condo && !confereConflitos)}
         >
-          {anexar.isPending && <Loader2 className="animate-spin" />}
+          {(anexar.isPending || resolvendo) && <Loader2 className="animate-spin" />}
           {mesesSelecionados.length > 0 ? "Anexar e importar os meses" : "Anexar à prestação de contas"}
         </Button>
       </DialogFooter>
+      <ConflitoImportacaoDialog {...conflito.dialogo} />
     </>
   );
 }

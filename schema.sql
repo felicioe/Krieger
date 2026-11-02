@@ -62,6 +62,17 @@ CREATE TABLE IF NOT EXISTS kr_decisoes_previsao (
   atualizado_em DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Log: toda vez que uma reimportação de PDF encontra um relatório mensal ou prestação de contas
+-- que já tinha dados gravados, e o usuário decide, conta a conta, manter o valor gravado ou usar o
+-- novo (ver `domain/importacao.ts`, `compararDemonstrativos`). Mesmo padrão id/dados das demais
+-- tabelas; o JSON em `dados` segue `DecisaoConflitoImportacao` (domain/types.ts). Só gravado, nunca
+-- editado/apagado pela tela.
+CREATE TABLE IF NOT EXISTS kr_decisoes_importacao (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Controle de acesso: usuários do sistema (perfil 'admin' ou 'user') e controle de tentativas de login.
 CREATE TABLE IF NOT EXISTS kr_usuarios (
   id VARCHAR(32) PRIMARY KEY,

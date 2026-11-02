@@ -16,6 +16,7 @@ import { DataInput, DinheiroInput, InteiroInput } from "@/components/app/inputs"
 import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrativo";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
+import { HistoricoConflitosImportacao } from "@/components/importacao/HistoricoConflitosImportacao";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { AnexosPrestacao, anexosQuery } from "@/components/importacao/AnexosPrestacao";
 import { excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
@@ -147,6 +148,9 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               destino="exercicios"
               condominio={condo}
               nomeCondominio={e.condoNome || condo?.nome || ""}
+              demonstrativoAtual={e.demonstrativo ?? null}
+              registroId={e.id}
+              competencia={String(e.ano)}
               aoAplicar={(r) => {
                 mudar({
                   demonstrativo: r.demonstrativo,
@@ -233,6 +237,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       <div className="mt-6">
         <AnexosPrestacao exercicioId={e.id} />
       </div>
+
+      <HistoricoConflitosImportacao registroId={e.id} />
 
       <DialogoDivergencia
         aberto={trava.dialogo.aberto}

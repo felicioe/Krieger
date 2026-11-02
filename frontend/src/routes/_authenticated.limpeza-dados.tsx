@@ -97,6 +97,13 @@ const ITENS_INDIVIDUAIS: ItemLimpeza[] = [
     rotuloBotao: "Apagar histórico de divergências",
   },
   {
+    alvo: "decisoes_importacao",
+    titulo: "Histórico de conflitos de importação",
+    tabela: "kr_decisoes_importacao",
+    descricao: "Apaga o registro histórico de decisões tomadas sobre contas divergentes ao reimportar um relatório mensal ou prestação de contas já existente.",
+    rotuloBotao: "Apagar histórico de conflitos",
+  },
+  {
     alvo: "documentos",
     titulo: "Consulta Inteligente de Documentos (Índices e Cache)",
     tabela: "kr_documentos / kr_documento_trechos / kr_consulta_*",
@@ -124,6 +131,7 @@ function totalCadastrosOperacionais(c: ContagensLimpeza | undefined): number {
     c.importacoes +
     c.anexos_importacao +
     c.decisoes_previsao +
+    c.decisoes_importacao +
     c.documentos
   );
 }
