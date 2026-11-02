@@ -104,7 +104,21 @@ function ListaExercicios() {
       </div>
       <DataTable<Linha>
         colunas={[
-          { chave: "ano", titulo: "Exercício", className: "w-24 num" },
+          {
+            chave: "ano",
+            titulo: "Exercício",
+            className: "w-32",
+            render: (e) => (
+              <>
+                <span className="num font-medium text-foreground">{e.ano}</span>
+                {e.demonstrativo?.periodo.ini && e.demonstrativo.periodo.fim && (
+                  <span className="num block text-xs text-muted-foreground">
+                    {e.demonstrativo.periodo.ini} a {e.demonstrativo.periodo.fim}
+                  </span>
+                )}
+              </>
+            ),
+          },
           {
             chave: "condoNome",
             titulo: "Condomínio",

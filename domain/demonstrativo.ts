@@ -1,3 +1,4 @@
+import { parseData } from "../lib/format";
 import type { Demonstrativo, LinhaValor } from "./types";
 
 /** Arredonda para centavos (evita resíduos de ponto flutuante). */
@@ -21,6 +22,17 @@ export function demonstrativoVazio(condominio = ""): Demonstrativo {
     avisos: [],
     erros: [],
   };
+}
+
+/**
+ * Quantos meses o período (início/fim, "dd/mm/aaaa") cobre, contando o mês inicial e o final —
+ * ex.: 01/11/2025 a 31/10/2026 = 12. `null` se alguma das datas não for válida.
+ */
+export function mesesNoPeriodo(ini: string, fim: string): number | null {
+  const di = parseData(ini);
+  const df = parseData(fim);
+  if (!di || !df) return null;
+  return (df.getFullYear() - di.getFullYear()) * 12 + (df.getMonth() - di.getMonth()) + 1;
 }
 
 /** Completa um demonstrativo vindo da API/backup com a estrutura mínima. */

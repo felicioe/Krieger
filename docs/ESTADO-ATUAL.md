@@ -1,5 +1,36 @@
 # Estado atual e passagem de contexto
 
+## Período da prestação de contas: mostrado na lista + aviso de mais de 12 meses — 02/11/2026
+
+Pedido do responsável (1ª parte de dois pedidos no mesmo fio — a 2ª, reconciliação de importação
+conta a conta, é maior e vem numa entrada própria): "na tela de prestação de contas, ou no
+relatório final, sempre deve registrar o período que o sistema está fechando... a regra geral é 12
+meses... porém podemos ter algum que tenha menor prazo... o limite é 12 meses". Exemplo dado:
+Urban, Novembro/25 a Outubro/26.
+
+**Investigação**: boa parte já funcionava — `demonstrativo.periodo.{início,fim}` já é livre (não
+preso ao ano-calendário), o Relatório Final (tela e PDF/Word) já mostra esse período na capa, e o
+comparativo Previsto × Realizado (`mesesDoExercicioSeguinte`, `domain/previstoRealizado.ts`) já
+calcula a janela de 12 meses a partir do **fim** desse período, não do ano-calendário — um
+condomínio como o Urban já funcionava certo nesse sentido. Faltava só duas coisas, confirmadas no
+código: (1) a lista de "Prestação de contas" mostrava só o ano (`2025`), sem o período — ambíguo
+pra um exercício fora do calendário; (2) nenhuma validação alertava período maior que 12 meses.
+
+**Decisão do responsável sobre a validação**: manter o padrão do sistema (avisa, não bloqueia).
+
+**Implementado**:
+- `domain/demonstrativo.ts` — `mesesNoPeriodo(ini, fim)`: quantos meses um período cobre (conta o
+  mês inicial e o final — "01/11/2025 a 31/10/2026" = 12).
+- Lista de "Prestação de contas": a coluna "Exercício" agora mostra o período embaixo do ano (ex.:
+  "2025 / 01/01/2025 a 31/12/2025").
+- Tela do exercício: aviso (`Alert variant="warning"`, não bloqueia) logo abaixo dos campos
+  Início/Fim quando o período passa de 12 meses.
+
+Testado: `mesesNoPeriodo` (5 casos — ano-calendário, não-calendário tipo Urban, menor que 12,
+maior que 12, data inválida), suíte completa (202 domínio, 217 frontend), `tsc --noEmit` e
+`docs:check` limpos. Validado visualmente pela tela real: período 01/01/2025–31/01/2027 (25 meses)
+mostra o aviso; voltando pra 31/12/2025 (12 meses) o aviso some.
+
 ## PR #122 mesclado e publicado — 02/11/2026
 
 PR #122 (selinho verde ao confirmar divergência, descrito abaixo) mesclado em `main` por squash
