@@ -1,5 +1,28 @@
 # Estado atual e passagem de contexto
 
+## Divergência de Previsão sugerida: banner amarelo eterno vira selinho verde ao confirmar — 02/11/2026
+
+Pedido do responsável, com captura de tela: ao confirmar a divergência entre os totais do PDF do
+Systemar e o recalculado (diálogo "Divergência na Previsão sugerida"), o banner por trás continuava
+amarelo pra sempre — o código (`PainelDivergenciaPrevisao` em `PainelPrevisaoSugerida.tsx`) já
+registrava a confirmação (trocava o texto pra "Divergência confirmada" e mostrava "Confirmado por
+Fulano em [data]"), mas a cor ficava fixa em `variant="warning"` (amarelo) sempre, dando a sensação
+de pendência eterna mesmo já resolvida. Perguntei se o responsável queria manter o banner (só mudando
+a cor) ou um indicador mais discreto — escolheu "selinho".
+
+Corrigido: enquanto a divergência não tem decisão (`emConferencia`), continua o `Alert` amarelo de
+sempre, inalterado. Assim que confirmada (`resolvida`), vira um badge verde compacto ("✓ Previsão
+confirmada", variant "success" — reusa o token de cor já existente no design system), clicável
+(abre o mesmo diálogo, com o histórico completo de decisões). Se uma divergência nova aparecer depois
+(outro PDF importado com números diferentes), volta a ficar amarelo automaticamente — a comparação é
+sempre refeita.
+
+Testado: `tsc --noEmit` e suíte completa (197 domínio, 217 frontend) limpos — mudança é puramente de
+apresentação, sem lógica de domínio alterada. Validado visualmente pela tela real: injetei uma
+divergência de verdade (PDF x recalculado) no condomínio de exemplo via Playwright, confirmei no
+diálogo, e o banner amarelo virou o selinho verde — recarreguei a página pra confirmar que o
+comportamento de persistência (só grava ao "Salvar") continua o mesmo de antes, sem mudança.
+
 ## PR #121 mesclado e publicado — 02/11/2026
 
 PR #121 (legenda de "Consumo de serviços" sem regex, descrito abaixo) mesclado em `main` por
