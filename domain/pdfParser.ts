@@ -666,7 +666,7 @@ export interface CondominioDaListagem {
 
 // Linhas de cabeçalho/rodapé que se repetem em toda página — nunca são dado de condomínio.
 const LISTAGEM_BOILERPLATE =
-  /Sistema de Condom[íi]nios Auto-Gest[ãa]o|Listagem Completa de Condom[íi]nios|^\s*Cod\.\s+Nome do Condom[íi]nio|^\s*Endere[çc]o\s{2,}Bairro|^\s*Cidade\s{2,}UF\s{2,}CEP|KRIEGER ASSESSORIA CONT[ÁA]BIL E CONDOMINIAL LTDA|^\s*Total:\d+\s*$/i;
+  /Sistema de Condom[íi]nios Auto-Gest[ãa]o|Listagem(?: Completa de| de)? Condom[íi]nios|^\s*Cod\.\s+Nome do Condom[íi]nio|^\s*Endere[çc]o\s{2,}Bairro|^\s*Cidade\s{2,}UF\s{2,}CEP|KRIEGER ASSESSORIA CONT[ÁA]BIL E CONDOMINIAL LTDA|^\s*Total:\d+\s*$/i;
 
 // "<código> - <nome>[  <cnpj>]  <área total m², 6 casas decimais>" — o cnpj é opcional (quando
 // ausente, "nome" vai direto pra área, sem a lacuna extra no meio).
@@ -691,7 +691,7 @@ function colunas(linha: string): string[] {
  * convenção das demais funções deste arquivo — ver cabeçalho).
  */
 export function lerListagemCondominios(texto: string): CondominioDaListagem[] | null {
-  if (!/Listagem Completa de Condom[íi]nios/i.test(texto)) return null;
+  if (!/Listagem(?: Completa de| de)? Condom[íi]nios/i.test(texto)) return null;
 
   const linhas: string[] = [];
   for (const pagina of texto.split("\f")) {

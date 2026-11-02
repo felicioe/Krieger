@@ -57,6 +57,10 @@ describe("lerListagemCondominios", () => {
     expect(lerListagemCondominios("Demonstrativo qualquer sem essa seção")).toBeNull();
   });
 
+  it("aceita a variação de título sem a palavra Completa", () => {
+    expect(lerListagemCondominios(texto.replaceAll("Listagem Completa de Condomínios", "Listagem de Condomínios"))).toHaveLength(4);
+  });
+
   it("lê os 4 condomínios das duas páginas, descartando cabeçalho/rodapé (inclusive na junção entre páginas)", () => {
     const r = lerListagemCondominios(texto)!;
     expect(r).not.toBeNull();

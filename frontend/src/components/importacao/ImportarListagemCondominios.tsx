@@ -22,7 +22,7 @@ import {
 import type { Condominio } from "@/domain/types";
 
 /** Não é a Listagem Completa de Condomínios do Systemar. */
-const ERRO_NAO_LISTAGEM = 'Este PDF não parece ser a "Listagem Completa de Condomínios"; verifique se é o relatório certo.';
+const ERRO_NAO_LISTAGEM = 'Este PDF não parece ser a "Listagem de Condomínios" do Systemar; verifique se é o relatório certo.';
 
 type Progresso = { feito: number; total: number };
 
