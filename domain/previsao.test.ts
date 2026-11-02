@@ -139,6 +139,10 @@ describe("previsão — variação e arredondamento", () => {
 
 describe("calcularDesvioAnoAnterior", () => {
   const atual = (despesas: number) => demo([{ nome: "Despesas", itens: [{ nome: "Total", valor: despesas }] }]);
+  const atualComPeriodo = (despesas: number, ini: string, fim: string): Demonstrativo => ({
+    ...atual(despesas),
+    periodo: { ini, fim },
+  });
 
   it("compara o previsto do exercício anterior (já com a variação dele) com o realizado do atual", () => {
     // Previsto do anterior (D + params()) = 121.800, confirmado nos testes de calcularPrevisao acima.
@@ -165,6 +169,22 @@ describe("calcularDesvioAnoAnterior", () => {
       receitas: { itens: [{ nome: "Taxa condominial", valor: 20000 }], subtotal: 0, totalComSaldo: 0 },
     });
     expect(calcularDesvioAnoAnterior(D, params(), soReceita)).toBeNull();
+  });
+
+  it("exercício atual com período menor que 12 meses prorrateia o previsto antes de comparar (#126)", () => {
+    // Previsto anual do anterior (D + params()) = 121.800 → prorrateado a 6 meses = 60.900.
+    // Realizado de 6 meses no mesmo ritmo do previsto (60.900) não deve acusar desvio.
+    const seisMeses = atualComPeriodo(60900, "01/01/2026", "30/06/2026");
+    const r = calcularDesvioAnoAnterior(D, params(), seisMeses);
+    expect(r).not.toBeNull();
+    expect(r!.previsto).toBe(60900);
+    expect(r!.desvioPct).toBe(0);
+  });
+
+  it("sem período informado no atual, assume os 12 meses cheios (comportamento anterior)", () => {
+    const semPeriodo = atual(130000); // periodo "" / "" (demonstrativoVazio)
+    const r = calcularDesvioAnoAnterior(D, params(), semPeriodo);
+    expect(r!.previsto).toBe(121800);
   });
 
   it("sem previsto válido no exercício anterior (base e ajustes zerados), não há o que sugerir", () => {
