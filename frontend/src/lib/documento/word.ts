@@ -286,6 +286,18 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
           });
         const vazia = (w: number) => new TableCell({ width: { size: w, type: WidthType.DXA }, borders: { top: SEM, bottom: SEM, left: SEM, right: SEM }, children: [new Paragraph({ children: [] })] });
         filhos.push(
+          // `keepNext` encadeado (local/data → espaçador → tabela) pra local/data e assinatura
+          // nunca ficarem em páginas diferentes (ver comentário em tipos.ts).
+          ...(b.localData
+            ? [
+                new Paragraph({
+                  alignment: al(b.localDataAlinhamento ?? "centro"),
+                  spacing: { after: tw(6) },
+                  keepNext: true,
+                  children: runs(b.localData),
+                }),
+              ]
+            : []),
           new Paragraph({ spacing: { before: tw(36) }, keepNext: true, children: [] }),
           new Table({
             width: { size: ws.reduce((s, w) => s + w, 0), type: WidthType.DXA },

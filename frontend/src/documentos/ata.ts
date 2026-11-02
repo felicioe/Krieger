@@ -85,13 +85,14 @@ export function documentoAta(o: { ata: Ata; condominio: Condominio | null; cidad
     ...(a.encerramento.trim() ? [{ tipo: "titulo" as const, nivel: 2 as const, texto: "Encerramento" }, ...paragrafos(a.encerramento)] : []),
     ...(a.observacoes.trim() ? [{ tipo: "titulo" as const, nivel: 2 as const, texto: "Observações" }, ...paragrafos(a.observacoes)] : []),
 
-    ...(localEData(cidade, data) ? [{ tipo: "espaco" as const, altura: 12 }, { tipo: "paragrafo" as const, texto: localEData(cidade, data), alinhamento: "direita" as const }] : []),
+    ...(localEData(cidade, data) ? [{ tipo: "espaco" as const, altura: 12 }] : []),
     {
-      tipo: "assinaturas",
+      tipo: "assinaturas" as const,
       itens: [
         [a.mesa.presidente.trim() || " ", "Presidente da mesa"],
         [a.mesa.secretario.trim() || " ", "Secretário(a)"],
       ],
+      ...(localEData(cidade, data) ? { localData: localEData(cidade, data), localDataAlinhamento: "direita" as const } : {}),
     },
   ];
 
