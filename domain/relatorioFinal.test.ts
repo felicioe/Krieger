@@ -78,6 +78,12 @@ describe("relatório final", () => {
     expect(r.mensais.map((m) => m.id)).toEqual(["m1", "m2"]);
   });
 
+  it("usa os meses já lançados do próprio exercício quando o período seguinte ainda está vazio", () => {
+    const e = exercicio(4000);
+    const r = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [mensal(1, 10), mensal(8, 20)] });
+    expect(r.mensais.map((m) => m.id)).toEqual(["m1", "m8"]);
+  });
+
   it("evolução mensal mapeia receitas, despesas e saldo de cada mês, em ordem", () => {
     const comTotais = (m: Mensal, t: { receitas: number; despesas: number; saldoAtual: number }): Mensal => ({
       ...m,

@@ -1,6 +1,6 @@
 import { formatBRL } from "../lib/format";
 import { centavos } from "./demonstrativo";
-import { normalizarMensal, competenciaMensal, ordemCompetencia, rotuloCompetencia } from "./mensal";
+import { normalizarMensal, competenciaMensal, mesAnoDe, ordemCompetencia, rotuloCompetencia } from "./mensal";
 import { calcularPrevisao, expressaoDeducao, type ResultadoPrevisao } from "./previsao";
 import {
   calcularPrevisaoSugerida,
@@ -69,6 +69,27 @@ export function mensaisDoRelatorio(condoId: string, mensais: Mensal[], comparati
     .filter((m) => m.condoId === condoId)
     .map((m) => normalizarMensal(m))
     .filter((m) => janela.has(ordemCompetencia(competenciaMensal(m))))
+    .sort((a, b) => ordemCompetencia(competenciaMensal(a)) - ordemCompetencia(competenciaMensal(b)));
+}
+
+/**
+ * Relatórios que pertencem ao período do demonstrativo da prestação.
+ * É usado como fallback quando ainda não existem relatórios no período seguinte
+ * do Previsto × Realizado; meses ausentes continuam simplesmente fora da lista.
+ */
+export function mensaisDoPeriodoExercicio(condoId: string, mensais: Mensal[], e: Pick<Exercicio, "demonstrativo">): Mensal[] {
+  const ini = mesAnoDe(e.demonstrativo?.periodo?.ini);
+  const fim = mesAnoDe(e.demonstrativo?.periodo?.fim);
+  if (!ini || !fim) return [];
+  const inicio = ini.ano * 100 + ini.mes;
+  const termino = fim.ano * 100 + fim.mes;
+  return mensais
+    .filter((m) => m.condoId === condoId)
+    .map((m) => normalizarMensal(m))
+    .filter((m) => {
+      const competencia = ordemCompetencia(competenciaMensal(m));
+      return competencia >= inicio && competencia <= termino;
+    })
     .sort((a, b) => ordemCompetencia(competenciaMensal(a)) - ordemCompetencia(competenciaMensal(b)));
 }
 
@@ -256,7 +277,13 @@ export function montarRelatorioFinal(entrada: {
     condominio,
     mesAte: e.relatorioFinal?.prAte ?? null,
   });
-  const mensais = mensaisDoRelatorio(e.condoId, entrada.mensais, comparativo);
+  const mensaisDoComparativo = mensaisDoRelatorio(e.condoId, entrada.mensais, comparativo);
+  // Uma prestação pode ser fechada antes de todos os meses do exercício seguinte
+  // existirem. Nesse caso, mostrar os relatórios já lançados do próprio exercício
+  // (por exemplo, janeiro a agosto) é mais útil do que tratar o período como vazio.
+  const mensais = mensaisDoComparativo.length > 0
+    ? mensaisDoComparativo
+    : mensaisDoPeriodoExercicio(e.condoId, entrada.mensais, e);
   const inad = inadimplencia(mensais);
   const evolucao = evolucaoMensal(mensais);
   const notas = notasConsolidadas(mensais);
