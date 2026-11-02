@@ -1,9 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "@/components/app/LinkPermitido";
 import { useQuery } from "@tanstack/react-query";
-import { TriangleAlert } from "lucide-react";
+import { CircleCheck, TriangleAlert } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -277,30 +278,34 @@ function PainelDivergenciaPrevisao({
 
   return (
     <>
-      <Alert variant="warning">
-        <TriangleAlert />
-        <AlertDescription>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p>
-              <span className="font-semibold">{emConferencia ? "Em conferência: " : "Divergência confirmada: "}</span>
-              os totais que o PDF do Systemar já traz prontos não batem com o que foi recalculado.
-            </p>
-            <Button type="button" size="sm" variant="outline" onClick={() => setAberto(true)}>
-              {emConferencia ? "Revisar e decidir" : "Ver detalhes"}
-            </Button>
-          </div>
-          {resolvida && decisao && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Confirmado por {decisao.porNome || "—"} em {formatDataHora(decisao.em)}.
-            </p>
-          )}
-          {!resolvida && decisao?.status === "revisar_depois" && decisao.chave === chaveAtual && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Adiado por {decisao.porNome || "—"} em {formatDataHora(decisao.em)} — ainda precisa de uma decisão final.
-            </p>
-          )}
-        </AlertDescription>
-      </Alert>
+      {resolvida ? (
+        <button type="button" onClick={() => setAberto(true)} className="inline-block">
+          <Badge variant="success" className="cursor-pointer gap-1.5 hover:opacity-90">
+            <CircleCheck className="size-3.5" />
+            Previsão confirmada
+          </Badge>
+        </button>
+      ) : (
+        <Alert variant="warning">
+          <TriangleAlert />
+          <AlertDescription>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p>
+                <span className="font-semibold">Em conferência: </span>
+                os totais que o PDF do Systemar já traz prontos não batem com o que foi recalculado.
+              </p>
+              <Button type="button" size="sm" variant="outline" onClick={() => setAberto(true)}>
+                Revisar e decidir
+              </Button>
+            </div>
+            {decisao?.status === "revisar_depois" && decisao.chave === chaveAtual && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Adiado por {decisao.porNome || "—"} em {formatDataHora(decisao.em)} — ainda precisa de uma decisão final.
+              </p>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Dialog open={aberto} onOpenChange={setAberto}>
         <DialogContent className="sm:max-w-lg">
