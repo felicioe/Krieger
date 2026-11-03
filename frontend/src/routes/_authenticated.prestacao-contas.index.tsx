@@ -19,9 +19,9 @@ import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
-import { exercicioPadrao, normalizarExercicio, periodoInicialDoExercicio, validarNovoExercicio } from "@/domain/exercicio";
+import { encontrarExercicioAnterior, exercicioPadrao, normalizarExercicio, periodoInicialDoExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { mesesNoPeriodo } from "@/domain/demonstrativo";
-import { calcularPrevisao } from "@/domain/previsao";
+import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
 import { calcularPrevisaoSugerida, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
 
@@ -57,11 +57,14 @@ function ListaExercicios() {
   const linhas = useMemo<Linha[]>(() => {
     const porId = new Map(condominios.map((c) => [c.id, c]));
     const q = busca.trim().toLowerCase();
-    return exercicios
-      .map((raw) => {
-        const e = normalizarExercicio(raw);
+    const todos = exercicios.map(normalizarExercicio);
+    return todos
+      .map((e) => {
         const condo = porId.get(e.condoId);
-        const r = calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, condo?.unidades ?? null);
+        // Mesma base do editor de previsão: o realizado do exercício anterior, nunca o
+        // demonstrativo do próprio — pra esta lista nunca divergir da previsão aprovada ali.
+        const demonstrativoBase = demonstrativoBasePrevisao(e, encontrarExercicioAnterior(todos, e));
+        const r = calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, condo?.unidades ?? null);
         return {
           ...e,
           condoNome: e.condoNome || condo?.nome || "",

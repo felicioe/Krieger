@@ -25,7 +25,7 @@ import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
-import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
+import { encontrarExercicioAnterior, normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { alternarSecao, montarRelatorioFinal, SECOES } from "@/domain/relatorioFinal";
 import type { Condominio, ConfigEscritorio, Exercicio, Mensal } from "@/domain/types";
 import { contagem, palavra } from "@/components/app/textos";
@@ -35,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/relatorio-final/$id")({
   loader: async ({ params, context: { queryClient } }) => {
     const [e] = await Promise.all([
       queryClient.ensureQueryData(itemQuery<Exercicio>("exercicios", params.id)),
+      queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
@@ -62,6 +63,7 @@ function PaginaRelatorio() {
 function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   const queryClient = useQueryClient();
   const usuario = useUsuario();
+  const { data: exerciciosRaw } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
@@ -72,7 +74,14 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
 
   const condoRaw = condominios.find((c) => c.id === e.condoId);
   const condo = useMemo(() => (condoRaw ? normalizarCondominio(condoRaw) : null), [condoRaw]);
-  const rel = useMemo(() => montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio, mensais }), [e, condo, escritorio, mensais]);
+  // Mesma base do editor de previsão: o realizado do exercício anterior, nunca o demonstrativo do
+  // próprio exercício — pra este relatório nunca divergir da previsão aprovada ali.
+  const exercicios = useMemo(() => exerciciosRaw.map(normalizarExercicio), [exerciciosRaw]);
+  const exercicioAnterior = encontrarExercicioAnterior(exercicios, e);
+  const rel = useMemo(
+    () => montarRelatorioFinal({ exercicio: e, exercicioAnterior: exercicioAnterior ?? null, condominio: condo, escritorio, mensais }),
+    [e, exercicioAnterior, condo, escritorio, mensais],
+  );
   const sujo = JSON.stringify(e) !== salvoJson;
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 

@@ -18,8 +18,8 @@ import { chaves, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { novoId } from "@/lib/id";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
-import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
-import { calcularDesvioAnoAnterior, calcularPrevisao } from "@/domain/previsao";
+import { encontrarExercicioAnterior, normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
+import { calcularDesvioAnoAnterior, calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
 import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
 import type { Condominio, DecisaoDivergenciaPrevisao, Exercicio } from "@/domain/types";
 
@@ -81,10 +81,11 @@ function PaginaPrevisao() {
     </Field>
   );
 
-  // Exercício anterior do mesmo condomínio — a base da sugestão de variação (desvio entre o que
-  // ele projetou pra este ano e o que este ano realmente realizou). Sem esse exercício, ou sem
-  // despesas lançadas em nenhum dos dois, não há sugestão (calcularDesvioAnoAnterior devolve null).
-  const exercicioAnterior = exercicios.find((x) => x.condoId === exercicio.condoId && Number(x.ano) === Number(exercicio.ano) - 1);
+  // Exercício anterior do mesmo condomínio — base da previsão (ver `demonstrativoBasePrevisao`) e
+  // da sugestão de variação (desvio entre o que ele projetou pra este ano e o que este ano
+  // realmente realizou). Sem esse exercício, ou sem despesas lançadas em nenhum dos dois, não há
+  // sugestão (calcularDesvioAnoAnterior devolve null).
+  const exercicioAnterior = encontrarExercicioAnterior(exercicios, exercicio);
 
   return (
     <EditorPrevisao
@@ -121,7 +122,7 @@ function EditorPrevisao({
   // exercício em edição, que vai sendo preenchido ao longo do ano e não pode servir de base móvel
   // pra uma previsão que precisa ficar estável. Sem exercício anterior (primeira prestação do
   // condomínio), cai no comportamento antigo (usa o próprio demonstrativo).
-  const demonstrativoBase = exercicioAnterior?.demonstrativo ?? e.demonstrativo;
+  const demonstrativoBase = demonstrativoBasePrevisao(e, exercicioAnterior);
   const resultado = useMemo(
     () => calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades),
     [demonstrativoBase, e, unidades],

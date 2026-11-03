@@ -21,7 +21,8 @@ import { documentoPrevistoRealizado } from "@/documentos/previstoRealizado";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { cn } from "@/lib/utils";
-import { normalizarExercicio } from "@/domain/exercicio";
+import { encontrarExercicioAnterior, normalizarExercicio } from "@/domain/exercicio";
+import { demonstrativoBasePrevisao } from "@/domain/previsao";
 import { compararPrevistoRealizado, TOLERANCIA_PADRAO, type Totais } from "@/domain/previstoRealizado";
 import type { Condominio, ConfigEscritorio, Exercicio, Mensal } from "@/domain/types";
 import { contagem } from "@/components/app/textos";
@@ -67,13 +68,21 @@ function PaginaComparativo() {
   );
   const exercicio = exercicios.find((e) => e.id === busca.exercicio) ?? exercicios[0];
   const condo = exercicio ? condominios.find((c) => c.id === exercicio.condoId) : undefined;
+  // Mesma base do editor de previsão: o realizado do exercício anterior, nunca o demonstrativo do
+  // próprio exercício — pra este comparativo nunca divergir da previsão aprovada ali.
+  const exercicioAnterior = exercicio ? encontrarExercicioAnterior(exercicios, exercicio) : undefined;
 
   const r = useMemo(
     () =>
       exercicio
-        ? compararPrevistoRealizado(exercicio, mensais, { condominio: condo ?? null, mesAte: busca.ate ?? null, tolerancia })
+        ? compararPrevistoRealizado(exercicio, mensais, {
+            condominio: condo ?? null,
+            mesAte: busca.ate ?? null,
+            tolerancia,
+            demonstrativoBase: demonstrativoBasePrevisao(exercicio, exercicioAnterior),
+          })
         : null,
-    [exercicio, mensais, condo, busca.ate, tolerancia],
+    [exercicio, mensais, condo, busca.ate, tolerancia, exercicioAnterior],
   );
 
   const cabeca = (

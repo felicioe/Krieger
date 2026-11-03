@@ -1,7 +1,7 @@
 import { centavos } from "./demonstrativo";
 import { calcularPrevisao, expressaoDeducao } from "./previsao";
 import { competenciaMensal, mesAnoDe } from "./mensal";
-import type { Condominio, DePara, Exercicio, Mensal } from "./types";
+import type { Condominio, DePara, Demonstrativo, Exercicio, Mensal } from "./types";
 
 /**
  * Comparativo Previsto × Realizado.
@@ -79,6 +79,9 @@ export interface OpcoesComparativo {
   mesAte?: number | null;
   /** Faixa em % considerada "dentro" do previsto. */
   tolerancia?: number | null;
+  /** Base pra projetar a previsão (ver `demonstrativoBasePrevisao`, em `previsao.ts`) — o realizado
+   * do exercício anterior. Sem isso, cai no demonstrativo do próprio `exercicio` (compatibilidade). */
+  demonstrativoBase?: Demonstrativo | null;
 }
 
 const p2 = (n: number) => String(n).padStart(2, "0");
@@ -166,7 +169,7 @@ export function compararPrevistoRealizado(
 
   // Previsão do exercício N, aberta por despesa (os totais por grupo são os mesmos do modo tradicional).
   const prev = calcularPrevisao(
-    exercicio.demonstrativo,
+    opcoes.demonstrativoBase ?? exercicio.demonstrativo,
     {
       ...exercicio,
       indices: exercicio.consid?.indices,
