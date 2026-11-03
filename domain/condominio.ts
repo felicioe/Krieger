@@ -73,6 +73,21 @@ export function condominioPadrao(): Omit<Condominio, "id"> {
  */
 export function normalizarCondominio(raw: Partial<Condominio> & { id?: string }): Condominio {
   const p = condominioPadrao();
+  const historicoExistente = raw.historicoApolices ?? [];
+  const historicoInicial = historicoExistente.length > 0
+    ? historicoExistente
+    : raw.seguradora || raw.vigenciaSeguro || raw.seguro?.riscoAbsoluto != null || (raw.seguro?.coberturas?.length ?? 0) > 0
+      ? [{
+          id: "legado-atual",
+          seguradora: raw.seguradora ?? "",
+          numeroApolice: "",
+          vigenciaIni: "",
+          vigenciaFim: raw.vigenciaSeguro ?? "",
+          riscoAbsoluto: raw.seguro?.riscoAbsoluto ?? null,
+          coberturas: raw.seguro?.coberturas ?? [],
+          importadaEm: "",
+        }]
+      : [];
   return {
     ...p,
     ...raw,
@@ -81,7 +96,7 @@ export function normalizarCondominio(raw: Partial<Condominio> & { id?: string })
       riscoAbsoluto: raw.seguro?.riscoAbsoluto ?? null,
       coberturas: raw.seguro?.coberturas ?? [],
     },
-    historicoApolices: raw.historicoApolices ?? [],
+    historicoApolices: historicoInicial,
     administracao: raw.administracao ?? [],
     indices: raw.indices ?? [],
     mapeamento: raw.mapeamento ?? [],
