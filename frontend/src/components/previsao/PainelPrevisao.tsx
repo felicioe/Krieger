@@ -1,21 +1,36 @@
 import { Fragment, useId, useRef, type ReactNode } from "react";
 import { Link } from "@/components/app/LinkPermitido";
 import { SinalToggle } from "./SinalToggle";
-import { AcaoAviso, QuadroAvisos, SemValor, SituacaoResultado, tipoAviso, type ItemAviso } from "./AvisosPrevisao";
+import {
+  AcaoAviso,
+  QuadroAvisos,
+  SemValor,
+  SituacaoResultado,
+  irPara,
+  tipoAviso,
+  type ItemAviso,
+} from "./AvisosPrevisao";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { DinheiroInput, InteiroInput, PercentualInput, Selecao } from "@/components/app/inputs";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
-import { cn, irPara } from "@/lib/utils";
-import type { DesvioAnoAnterior, ResultadoPrevisao } from "@/domain/previsao";
+import { cn } from "@/lib/utils";
+import type { ResultadoPrevisao } from "@/domain/previsao";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
 const SEM_GRUPO = "__geral";
@@ -48,9 +63,8 @@ export function PainelPrevisao({
   condoId,
   grupos,
   onChange,
-  desvio,
-  anoAnterior,
-  ultimaPrevisao,
+  rateioAnterior,
+  rotuloBase,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
@@ -58,18 +72,17 @@ export function PainelPrevisao({
   condoId: string;
   grupos: string[];
   onChange: (parcial: Partial<Exercicio>) => void;
-  /** Sugestão de variação (nunca aplicada sozinha) — desvio entre o previsto do exercício anterior
-   * e o realizado deste. `null` sem exercício anterior ou sem dados suficientes nos dois lados. */
-  desvio?: DesvioAnoAnterior | null;
-  anoAnterior?: number | string | undefined;
-  /** O que o exercício anterior já projetou (e aprovou) pra este ano, com os parâmetros que ELE
-   * confirmou — referência fixa, distinta da previsão (ainda em edição) deste exercício. */
-  ultimaPrevisao?: number | null;
+  /** Última previsão aprovada do exercício anterior, exibida como referência — nunca aplicada automaticamente. */
+  rateioAnterior?: number | null;
+  rotuloBase?: string;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
   const ajustes = prev.ajustes ?? [];
-  const opcoesGrupo = [{ valor: SEM_GRUPO, rotulo: "Geral" }, ...grupos.filter(Boolean).map((g) => ({ valor: g, rotulo: g }))];
+  const opcoesGrupo = [
+    { valor: SEM_GRUPO, rotulo: "Geral" },
+    ...grupos.filter(Boolean).map((g) => ({ valor: g, rotulo: g })),
+  ];
 
   // Avisos do cálculo: no topo (com o que fazer) e junto do campo a que se referem.
   const idBase = useId();
@@ -78,14 +91,25 @@ export function PainelPrevisao({
   const refVariacao = useRef<HTMLInputElement>(null);
   const parcial = r.rateioSugerido === null;
   const tipos = r.avisos.map((texto) => ({ texto, tipo: tipoAviso(texto) }));
-  const textoDe = (...t: string[]) => tipos.filter((a) => t.includes(a.tipo)).map((a) => a.texto).join(" ") || null;
-  const avisoVariacao = textoDe("variacao", ...(e.variacaoMetodo === "mediaIndices" ? ["indices"] : []));
+  const textoDe = (...t: string[]) =>
+    tipos
+      .filter((a) => t.includes(a.tipo))
+      .map((a) => a.texto)
+      .join(" ") || null;
+  const avisoVariacao = textoDe(
+    "variacao",
+    ...(e.variacaoMetodo === "mediaIndices" ? ["indices"] : []),
+  );
   const semUnidades = !unidades;
   const itensAviso: ItemAviso[] = tipos.map(({ texto, tipo }) => {
     let acao: ReactNode = null;
     if (tipo === "unidades")
       acao = (
-        <Link to="/condominios/$id" params={{ id: condoId }} className="text-xs font-medium underline underline-offset-2 hover:no-underline">
+        <Link
+          to="/condominios/$id"
+          params={{ id: condoId }}
+          className="text-xs font-medium underline underline-offset-2 hover:no-underline"
+        >
           Informar unidades no cadastro
         </Link>
       );
@@ -100,81 +124,94 @@ export function PainelPrevisao({
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)]">
       <div className="min-w-0 space-y-6">
         <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
-        {anoAnterior && (
-          <div className="rounded-md border bg-muted/30 px-4 py-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Referência — exercício {anoAnterior}
-            </div>
-            <div className="mt-1 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-              <LinhaResumo rotulo="Realizado anterior" valor={formatBRL(r.base)} />
-              <LinhaResumo
-                rotulo="Última previsão aprovada"
-                valor={ultimaPrevisao === null || ultimaPrevisao === undefined ? <SemValor /> : formatBRL(ultimaPrevisao)}
-              />
-            </div>
-          </div>
-        )}
-        {desvio && (
-          <Alert>
-            <AlertDescription>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p>
-                  <span className="font-semibold">Sugestão de variação: {pct(desvio.desvioPct, true)}.</span> Desvio entre o
-                  previsto que o exercício {anoAnterior} calculou pra este ano ({formatBRL(desvio.previsto)}) e o que foi
-                  realmente realizado ({formatBRL(desvio.realizado)}).
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onChange({ variacaoMetodo: "percentual", variacaoParam: desvio.desvioPct })}
-                >
-                  Usar sugestão
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
         <SectionCard titulo="Parâmetros da previsão">
           <div className="grid gap-4 sm:grid-cols-6">
             <Field rotulo="Modo" className="sm:col-span-3">
               <Selecao value={prev.modo} onChange={(v) => setPrev({ modo: v })} opcoes={MODOS} />
             </Field>
             <Field rotulo="Arredondamento do valor por unidade" className="sm:col-span-3">
-              <Selecao value={e.arredondamento} onChange={(v) => onChange({ arredondamento: v })} opcoes={ARREDONDAMENTO} />
+              <Selecao
+                value={e.arredondamento}
+                onChange={(v) => onChange({ arredondamento: v })}
+                opcoes={ARREDONDAMENTO}
+              />
             </Field>
             <Field rotulo="Método da variação" className="sm:col-span-2">
-              <Selecao value={e.variacaoMetodo} onChange={(v) => onChange({ variacaoMetodo: v })} opcoes={METODOS} />
+              <Selecao
+                value={e.variacaoMetodo}
+                onChange={(v) => onChange({ variacaoMetodo: v })}
+                opcoes={METODOS}
+              />
             </Field>
             {e.variacaoMetodo === "manual" && (
-              <Field rotulo="Variação" dica="Reajuste aplicado sobre a base." aviso={avisoVariacao} className="sm:col-span-2">
-                <PercentualInput ref={refVariacao} value={e.variacao} onChange={(v) => onChange({ variacao: v })} />
+              <Field
+                rotulo="Variação"
+                dica="Reajuste aplicado sobre a base."
+                aviso={avisoVariacao}
+                className="sm:col-span-2"
+              >
+                <PercentualInput
+                  ref={refVariacao}
+                  value={e.variacao}
+                  onChange={(v) => onChange({ variacao: v })}
+                />
               </Field>
             )}
             {e.variacaoMetodo === "percentual" && (
               <Field rotulo="Percentual fixo" aviso={avisoVariacao} className="sm:col-span-2">
-                <PercentualInput ref={refVariacao} value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} />
+                <PercentualInput
+                  ref={refVariacao}
+                  value={e.variacaoParam}
+                  onChange={(v) => onChange({ variacaoParam: v })}
+                />
               </Field>
             )}
             {e.variacaoMetodo === "mediaIndices" && (
-              <Field rotulo="Anos na média" dica={`Vazio = todos. Média atual: ${pct(r.variacaoPct)}`} aviso={avisoVariacao} className="sm:col-span-2">
-                <InteiroInput ref={refVariacao} value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} placeholder="Todos" />
+              <Field
+                rotulo="Anos na média"
+                dica={`Vazio = todos. Média atual: ${pct(r.variacaoPct)}`}
+                aviso={avisoVariacao}
+                className="sm:col-span-2"
+              >
+                <InteiroInput
+                  ref={refVariacao}
+                  value={e.variacaoParam}
+                  onChange={(v) => onChange({ variacaoParam: v })}
+                  placeholder="Todos"
+                />
               </Field>
             )}
             {e.variacaoMetodo === "valor" && (
-              <Field rotulo="Variação (R$)" dica="Valor fixo somado à base, positivo ou negativo — não é percentual." className="sm:col-span-2">
-                <DinheiroInput value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} />
+              <Field
+                rotulo="Variação (R$)"
+                dica="Valor fixo somado à base, positivo ou negativo — não é percentual."
+                className="sm:col-span-2"
+              >
+                <DinheiroInput
+                  value={e.variacaoParam}
+                  onChange={(v) => onChange({ variacaoParam: v })}
+                />
               </Field>
             )}
-            <Field rotulo="Fundo de reserva" dica="Sobre o valor por unidade." className="sm:col-span-2">
-              <PercentualInput value={prev.fundoReservaPct} onChange={(v) => setPrev({ fundoReservaPct: v })} />
+            <Field
+              rotulo="Fundo de reserva"
+              dica="Sobre o valor por unidade."
+              className="sm:col-span-2"
+            >
+              <PercentualInput
+                value={prev.fundoReservaPct}
+                onChange={(v) => setPrev({ fundoReservaPct: v })}
+              />
             </Field>
             <Field
               rotulo="Dedução (retirar da base)"
               dica="Despesas cujo nome ou grupo contém este texto saem da base. Aceita expressão regular."
               className="sm:col-span-4"
             >
-              <Input value={e.deducaoRegex} onChange={(ev) => onChange({ deducaoRegex: ev.target.value })} />
+              <Input
+                value={e.deducaoRegex}
+                onChange={(ev) => onChange({ deducaoRegex: ev.target.value })}
+              />
             </Field>
             <CaixaUnidades unidades={unidades} condoId={condoId} className="sm:col-span-2" />
           </div>
@@ -197,10 +234,23 @@ export function PainelPrevisao({
               reordenavel={false}
               render={(i, up) => (
                 <>
-                  <InteiroInput aria-label="Ano" value={i.ano} onChange={(v) => up({ ano: v })} maxLength={4} />
-                  <PercentualInput aria-label="Índice" value={i.pct} onChange={(v) => up({ pct: v })} />
+                  <InteiroInput
+                    aria-label="Ano"
+                    value={i.ano}
+                    onChange={(v) => up({ ano: v })}
+                    maxLength={4}
+                  />
+                  <PercentualInput
+                    aria-label="Índice"
+                    value={i.pct}
+                    onChange={(v) => up({ pct: v })}
+                  />
                   <label className="flex items-center gap-2 text-xs text-muted-foreground @xs:justify-self-center">
-                    <Switch checked={i.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                    <Switch
+                      checked={i.noRelatorio !== false}
+                      onCheckedChange={(v) => up({ noRelatorio: v })}
+                      aria-label="Incluir no relatório"
+                    />
                     <span className="@xs:hidden">Incluir nas Considerações finais</span>
                   </label>
                 </>
@@ -224,10 +274,23 @@ export function PainelPrevisao({
             vazio="Nenhum ajuste. A previsão usa só a base com a variação."
             render={(a, up) => (
               <>
-                <SinalToggle valor={a.sinal} onChange={(sinal) => up({ sinal })} rotulo="Sinal do ajuste" />
-                <Input aria-label="Descrição" placeholder="Descrição do ajuste" value={a.descricao} onChange={(ev) => up({ descricao: ev.target.value })} />
+                <SinalToggle
+                  valor={a.sinal}
+                  onChange={(sinal) => up({ sinal })}
+                  rotulo="Sinal do ajuste"
+                />
+                <Input
+                  aria-label="Descrição"
+                  placeholder="Descrição do ajuste"
+                  value={a.descricao}
+                  onChange={(ev) => up({ descricao: ev.target.value })}
+                />
                 <div className="col-span-full @min-[12rem]:col-span-1 @min-[12rem]:col-start-2 @xl:col-start-auto">
-                  <DinheiroInput aria-label="Valor anual" value={a.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
+                  <DinheiroInput
+                    aria-label="Valor anual"
+                    value={a.valor}
+                    onChange={(v) => up({ valor: Math.abs(v ?? 0) })}
+                  />
                 </div>
                 <div className="col-span-full mb-2 flex items-center gap-2 @min-[12rem]:col-start-2">
                   <span className="text-xs text-muted-foreground">Grupo</span>
@@ -245,8 +308,9 @@ export function PainelPrevisao({
         </SectionCard>
 
         <SectionCard
-          titulo={r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}
-          descricao={anoAnterior ? `"Realizado" é o de ${anoAnterior}, usado como base da previsão deste exercício.` : undefined}
+          titulo={
+            r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"
+          }
         >
           <TabelaLinhas r={r} metodo={e.variacaoMetodo} />
         </SectionCard>
@@ -255,6 +319,8 @@ export function PainelPrevisao({
       <aside className="lg:sticky lg:top-6 lg:self-start">
         <Resumo
           r={r}
+          rateioAnterior={rateioAnterior}
+          rotuloBase={rotuloBase}
           arredondamento={e.arredondamento}
           metodo={e.variacaoMetodo}
           parcial={parcial}
@@ -270,7 +336,11 @@ export function PainelPrevisao({
 
 function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMetodo }) {
   if (r.linhas.length === 0) {
-    return <p className="text-sm text-muted-foreground">Lance as despesas no demonstrativo da prestação de contas para ver a previsão.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        Lance as despesas no demonstrativo da prestação de contas para ver a previsão.
+      </p>
+    );
   }
   const ajustesPorGrupo = (g: string) => (g ? r.ajustes.filter((a) => a.grupo === g) : []);
   const grupos = [...new Set(r.linhas.map((l) => l.grupo))];
@@ -278,13 +348,20 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
   const linhaAjuste = (a: AjustePrevisao) => (
     <TableRow key={a.id} className="text-sm">
       <TableCell className="pl-6 text-muted-foreground">
-        <span className={cn("mr-1.5 font-semibold", a.sinal === "-" ? "text-destructive" : "text-primary")}>
+        <span
+          className={cn(
+            "mr-1.5 font-semibold",
+            a.sinal === "-" ? "text-destructive" : "text-primary",
+          )}
+        >
           {a.sinal === "-" ? "−" : "+"}
         </span>
         {a.descricao || "Ajuste sem descrição"}
       </TableCell>
       <TableCell className="num text-right text-muted-foreground">—</TableCell>
-      <TableCell className={cn("num whitespace-nowrap text-right", a.sinal === "-" && "text-destructive")}>
+      <TableCell
+        className={cn("num whitespace-nowrap text-right", a.sinal === "-" && "text-destructive")}
+      >
         {a.sinal === "-" ? "−" : ""}
         {formatBRL(Math.abs(a.valor))}
       </TableCell>
@@ -300,9 +377,15 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
             <TableHead className="text-xs font-semibold uppercase tracking-wide text-primary">
               {r.modo === "detalhado" ? "Despesa" : "Grupo"}
             </TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Realizado</TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Previsto</TableHead>
-            <TableHead className="w-20 text-right text-xs font-semibold uppercase tracking-wide text-primary">Var.</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">
+              Realizado
+            </TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">
+              Previsto
+            </TableHead>
+            <TableHead className="w-20 text-right text-xs font-semibold uppercase tracking-wide text-primary">
+              Var.
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -312,13 +395,19 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
               <Fragment key={g}>
                 {r.modo === "detalhado" && (
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={4} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <TableCell
+                      colSpan={4}
+                      className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
                       {g || "Sem grupo"}
                     </TableCell>
                   </TableRow>
                 )}
                 {linhas.map((l, i) => (
-                  <TableRow key={`${g}-${i}`} className={cn(l.deduzida && l.previsto === 0 && "text-muted-foreground")}>
+                  <TableRow
+                    key={`${g}-${i}`}
+                    className={cn(l.deduzida && l.previsto === 0 && "text-muted-foreground")}
+                  >
                     <TableCell className={cn(r.modo === "detalhado" && "pl-6")}>
                       <span>{l.nome || "Sem nome"}</span>
                       {l.deduzida && (
@@ -327,10 +416,16 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="num whitespace-nowrap text-right">{formatBRL(l.realizado)}</TableCell>
-                    <TableCell className="num whitespace-nowrap text-right font-medium">{formatBRL(l.previsto)}</TableCell>
+                    <TableCell className="num whitespace-nowrap text-right">
+                      {formatBRL(l.realizado)}
+                    </TableCell>
+                    <TableCell className="num whitespace-nowrap text-right font-medium">
+                      {formatBRL(l.previsto)}
+                    </TableCell>
                     <TableCell className="num text-right text-xs text-muted-foreground">
-                      {l.realizado ? pct(Math.round((l.previsto / l.realizado - 1) * 10000) / 100, true) : "—"}
+                      {l.realizado
+                        ? pct(Math.round((l.previsto / l.realizado - 1) * 10000) / 100, true)
+                        : "—"}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -341,7 +436,10 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
           {gerais.length > 0 && (
             <>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableCell colSpan={4} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <TableCell
+                  colSpan={4}
+                  className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                >
                   Ajustes gerais
                 </TableCell>
               </TableRow>
@@ -353,7 +451,9 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
           <TableRow className="bg-secondary hover:bg-secondary">
             <TableCell className="font-semibold text-primary">Anual ajustado</TableCell>
             <TableCell className="num whitespace-nowrap text-right">{formatBRL(r.base)}</TableCell>
-            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.totalAnual)}</TableCell>
+            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">
+              {formatBRL(r.totalAnual)}
+            </TableCell>
             <TableCell className="num whitespace-nowrap text-right text-xs">
               {metodo === "valor"
                 ? r.variacaoValor
@@ -384,7 +484,13 @@ function LinhaResumo({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1 text-sm", forte && "font-semibold text-primary", className)}>
+    <div
+      className={cn(
+        "flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1 text-sm",
+        forte && "font-semibold text-primary",
+        className,
+      )}
+    >
       <span className={cn(!forte && "text-muted-foreground")}>{rotulo}</span>
       <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
     </div>
@@ -399,6 +505,8 @@ const ROTULO_ARRED: Record<Arredondamento, string> = {
 
 function Resumo({
   r,
+  rateioAnterior,
+  rotuloBase,
   arredondamento,
   metodo,
   parcial,
@@ -408,6 +516,8 @@ function Resumo({
   aoAprovar,
 }: {
   r: ResultadoPrevisao;
+  rateioAnterior?: number | null;
+  rotuloBase?: string;
   arredondamento: Arredondamento;
   metodo: VariacaoMetodo;
   parcial: boolean;
@@ -416,35 +526,71 @@ function Resumo({
   anoAnterior?: number | string | undefined;
   aoAprovar: () => void;
 }) {
-  const ausente = (n: number | null, motivo?: string) => (n === null ? <SemValor motivo={motivo} /> : formatBRL(n));
+  const ausente = (n: number | null, motivo?: string) =>
+    n === null ? <SemValor motivo={motivo} /> : formatBRL(n);
   return (
     <section className="rounded-md border bg-card shadow-sm" aria-label="Resumo da previsão">
       <header className="border-b px-5 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Resumo da previsão</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">
+          Resumo da previsão
+        </h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Atualiza a cada alteração.</p>
       </header>
       <div className="px-5 py-4">
         <div className="mb-3">
           <SituacaoResultado parcial={parcial} avisos={r.avisos.length} idQuadro={idQuadro} />
         </div>
-        <LinhaResumo rotulo={anoAnterior ? `Base (realizado de ${anoAnterior})` : "Base (despesas realizadas)"} valor={formatBRL(r.base)} />
+        <LinhaResumo
+          rotulo={rotuloBase ?? "Base (despesas realizadas)"}
+          valor={formatBRL(r.base)}
+        />
         <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
         <LinhaResumo
           rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${pct(r.variacaoPct)}`}
           valor={formatBRL(r.variacaoValor)}
         />
         <LinhaResumo rotulo="(+) Ajustes" valor={formatBRL(r.ajustesMais)} />
-        <LinhaResumo rotulo="(−) Ajustes" valor={formatBRL(r.ajustesMenos)} negativo={r.ajustesMenos > 0} />
-        <LinhaResumo rotulo="Anual ajustado" valor={formatBRL(r.totalAnual)} forte className="mt-1 border-t pt-2" />
+        <LinhaResumo
+          rotulo="(−) Ajustes"
+          valor={formatBRL(r.ajustesMenos)}
+          negativo={r.ajustesMenos > 0}
+        />
+        <LinhaResumo
+          rotulo="Anual ajustado"
+          valor={formatBRL(r.totalAnual)}
+          forte
+          className="mt-1 border-t pt-2"
+        />
 
         <div className="mt-4 border-t pt-3">
           <LinhaResumo rotulo="Mensal (÷ 12)" valor={formatBRL(r.mensal)} />
-          <LinhaResumo rotulo="(÷) Unidades" valor={r.unidades ? String(r.unidades) : <SemValor motivo="não informado" />} />
+          {rateioAnterior != null && rateioAnterior > 0 && (
+            <>
+              <LinhaResumo rotulo="Rateio mensal anterior" valor={formatBRL(rateioAnterior)} />
+              <LinhaResumo
+                rotulo="Variação sobre o rateio anterior"
+                valor={pct(Math.round((r.mensal / rateioAnterior - 1) * 10000) / 100, true)}
+                forte
+                negativo={r.mensal < rateioAnterior}
+              />
+            </>
+          )}
+          <LinhaResumo
+            rotulo="(÷) Unidades"
+            valor={r.unidades ? String(r.unidades) : <SemValor motivo="não informado" />}
+          />
           <LinhaResumo rotulo="Cota por unidade" valor={ausente(r.cotaUnidade)} forte />
-          <LinhaResumo rotulo={`(+) Reserva por unidade ${pct(r.fundoReservaPct)}`} valor={ausente(r.reservaUnidade)} />
+          <LinhaResumo
+            rotulo={`(+) Reserva por unidade ${pct(r.fundoReservaPct)}`}
+            valor={ausente(r.reservaUnidade)}
+          />
         </div>
 
-        <ValorPorUnidade valor={r.rateioSugerido} rodape={ROTULO_ARRED[arredondamento]} semUnidades={semUnidades} />
+        <ValorPorUnidade
+          valor={r.rateioSugerido}
+          rodape={ROTULO_ARRED[arredondamento]}
+          semUnidades={semUnidades}
+        />
 
         <div className="mt-3">
           <LinhaResumo rotulo="Rateio atual" valor={formatBRL(r.rateioAtual)} />
@@ -457,11 +603,16 @@ function Resumo({
         </div>
 
         {r.rateioSugerido !== null && (
-          <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={aoAprovar}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full"
+            onClick={aoAprovar}
+          >
             Usar como rateio aprovado
           </Button>
         )}
-
       </div>
     </section>
   );
@@ -485,7 +636,9 @@ export function ValorPorUnidade({
         <div className="text-xs font-semibold uppercase tracking-wide">{titulo}</div>
         <div className="mt-0.5 text-base font-semibold">Não calculado</div>
         <div className="text-xs">
-          {semUnidades ? "Falta a quantidade de unidades no cadastro do condomínio." : "Faltam dados para o cálculo; veja os avisos."}
+          {semUnidades
+            ? "Falta a quantidade de unidades no cadastro do condomínio."
+            : "Faltam dados para o cálculo; veja os avisos."}
         </div>
       </div>
     );
@@ -500,7 +653,15 @@ export function ValorPorUnidade({
 }
 
 /** Quantidade de unidades (só leitura, vem do cadastro); sem unidades fica em destaque com o atalho. */
-export function CaixaUnidades({ unidades, condoId, className }: { unidades: number | null; condoId: string; className?: string }) {
+export function CaixaUnidades({
+  unidades,
+  condoId,
+  className,
+}: {
+  unidades: number | null;
+  condoId: string;
+  className?: string;
+}) {
   const falta = !unidades;
   return (
     <div className={cn("grid content-start gap-1.5", className)}>
@@ -511,13 +672,22 @@ export function CaixaUnidades({ unidades, condoId, className }: { unidades: numb
           falta ? "border-warning bg-warning/10 text-warning-foreground" : "bg-muted/40",
         )}
       >
-        <span className={cn(!falta && "num", falta && "font-medium")}>{falta ? "Não informado" : unidades}</span>
+        <span className={cn(!falta && "num", falta && "font-medium")}>
+          {falta ? "Não informado" : unidades}
+        </span>
         {condoId && (
           <Link
             to="/condominios/$id"
             params={{ id: condoId }}
-            className={cn("alvo-toque text-xs underline underline-offset-2", falta ? "font-medium" : "text-primary")}
-            aria-label={falta ? "Informar unidades no cadastro do condomínio" : "Alterar unidades no cadastro do condomínio"}
+            className={cn(
+              "alvo-toque text-xs underline underline-offset-2",
+              falta ? "font-medium" : "text-primary",
+            )}
+            aria-label={
+              falta
+                ? "Informar unidades no cadastro do condomínio"
+                : "Alterar unidades no cadastro do condomínio"
+            }
           >
             {falta ? "informar" : "alterar"}
           </Link>
