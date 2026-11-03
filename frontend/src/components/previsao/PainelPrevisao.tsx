@@ -50,6 +50,7 @@ export function PainelPrevisao({
   onChange,
   desvio,
   anoAnterior,
+  ultimaPrevisao,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
@@ -61,6 +62,9 @@ export function PainelPrevisao({
    * e o realizado deste. `null` sem exercício anterior ou sem dados suficientes nos dois lados. */
   desvio?: DesvioAnoAnterior | null;
   anoAnterior?: number | string | undefined;
+  /** O que o exercício anterior já projetou (e aprovou) pra este ano, com os parâmetros que ELE
+   * confirmou — referência fixa, distinta da previsão (ainda em edição) deste exercício. */
+  ultimaPrevisao?: number | null;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
@@ -96,6 +100,20 @@ export function PainelPrevisao({
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)]">
       <div className="min-w-0 space-y-6">
         <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
+        {anoAnterior && (
+          <div className="rounded-md border bg-muted/30 px-4 py-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Referência — exercício {anoAnterior}
+            </div>
+            <div className="mt-1 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
+              <LinhaResumo rotulo="Realizado anterior" valor={formatBRL(r.base)} />
+              <LinhaResumo
+                rotulo="Última previsão aprovada"
+                valor={ultimaPrevisao === null || ultimaPrevisao === undefined ? <SemValor /> : formatBRL(ultimaPrevisao)}
+              />
+            </div>
+          </div>
+        )}
         {desvio && (
           <Alert>
             <AlertDescription>
@@ -226,7 +244,10 @@ export function PainelPrevisao({
           />
         </SectionCard>
 
-        <SectionCard titulo={r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}>
+        <SectionCard
+          titulo={r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}
+          descricao={anoAnterior ? `"Realizado" é o de ${anoAnterior}, usado como base da previsão deste exercício.` : undefined}
+        >
           <TabelaLinhas r={r} metodo={e.variacaoMetodo} />
         </SectionCard>
       </div>
@@ -239,6 +260,7 @@ export function PainelPrevisao({
           parcial={parcial}
           semUnidades={semUnidades}
           idQuadro={idQuadro}
+          anoAnterior={anoAnterior}
           aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })}
         />
       </aside>
@@ -382,6 +404,7 @@ function Resumo({
   parcial,
   semUnidades,
   idQuadro,
+  anoAnterior,
   aoAprovar,
 }: {
   r: ResultadoPrevisao;
@@ -390,6 +413,7 @@ function Resumo({
   parcial: boolean;
   semUnidades: boolean;
   idQuadro: string;
+  anoAnterior?: number | string | undefined;
   aoAprovar: () => void;
 }) {
   const ausente = (n: number | null, motivo?: string) => (n === null ? <SemValor motivo={motivo} /> : formatBRL(n));
@@ -403,7 +427,7 @@ function Resumo({
         <div className="mb-3">
           <SituacaoResultado parcial={parcial} avisos={r.avisos.length} idQuadro={idQuadro} />
         </div>
-        <LinhaResumo rotulo="Base (despesas realizadas)" valor={formatBRL(r.base)} />
+        <LinhaResumo rotulo={anoAnterior ? `Base (realizado de ${anoAnterior})` : "Base (despesas realizadas)"} valor={formatBRL(r.base)} />
         <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
         <LinhaResumo
           rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${pct(r.variacaoPct)}`}

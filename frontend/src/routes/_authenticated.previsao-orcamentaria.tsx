@@ -117,9 +117,25 @@ function EditorPrevisao({
   const [aba, setAba] = useState(e.previsaoSugerida ? "sugerida" : "demonstrativo");
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 
+  // A base é o realizado do exercício ANTERIOR (fechado) — nunca o demonstrativo do próprio
+  // exercício em edição, que vai sendo preenchido ao longo do ano e não pode servir de base móvel
+  // pra uma previsão que precisa ficar estável. Sem exercício anterior (primeira prestação do
+  // condomínio), cai no comportamento antigo (usa o próprio demonstrativo).
+  const demonstrativoBase = exercicioAnterior?.demonstrativo ?? e.demonstrativo;
   const resultado = useMemo(
-    () => calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, unidades),
-    [e, unidades],
+    () => calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades),
+    [demonstrativoBase, e, unidades],
+  );
+
+  // Última previsão já aprovada para este exercício: o que o exercício anterior projetou, com os
+  // parâmetros (variação/ajustes) que ELE já tinha confirmado — referência fixa, não recalculada
+  // com os parâmetros (ainda não confirmados) do exercício atual.
+  const ultimaPrevisao = useMemo(
+    () =>
+      exercicioAnterior
+        ? calcularPrevisao(exercicioAnterior.demonstrativo, { ...exercicioAnterior, indices: exercicioAnterior.consid.indices }, null).totalAnual
+        : null,
+    [exercicioAnterior],
   );
 
   // Sugestão (nunca aplicada sozinha) de variação pro exercício seguinte: desvio entre o previsto
@@ -281,6 +297,7 @@ function EditorPrevisao({
               onChange={mudar}
               desvio={desvio}
               anoAnterior={exercicioAnterior?.ano}
+              ultimaPrevisao={ultimaPrevisao}
             />
           </TabsContent>
         </Tabs>
