@@ -10,6 +10,7 @@ import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { AnexarComparativo } from "@/components/importacao/AnexarComparativo";
 import { ImportarFracao } from "@/components/importacao/ImportarFracao";
+import { ImportarApolice } from "@/components/importacao/ImportarApolice";
 import { listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import type { Condominio } from "@/domain/types";
@@ -76,6 +77,14 @@ function Importador() {
         >
           <p>Importa a relação de unidades e frações ideais para o cadastro do condomínio.</p>
           <p>Os nomes de proprietários ou inquilinos não são armazenados.</p>
+        </CartaoImportacao>
+        <CartaoImportacao
+          icone={FileUp}
+          titulo="Apólice de seguro"
+          acao={<ImportarApolice condominios={condominios} />}
+        >
+          <p>Reconhece a apólice original da Allianz/FIRMO e aplica seguradora, vigência, risco absoluto e coberturas ao cadastro escolhido.</p>
+          <p>O PDF é apenas lido no navegador; nada é alterado até você clicar em “Aplicar ao cadastro”.</p>
         </CartaoImportacao>
         <CartaoImportacao
           icone={FileSpreadsheet}
