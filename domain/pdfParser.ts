@@ -522,8 +522,9 @@ export function lerConsideracoesFinais(texto: string): ConsideracoesFinaisLidas 
 }
 
 /**
- * Apólice de seguro do condomínio — layout Allianz (FIRMO Corretora), da própria seguradora, não do
- * Systemar. Diferente de `lerConsideracoesFinais` (que só repete o que o Systemar já tinha digitado,
+ * Apólice de seguro do condomínio, da própria seguradora, não do Systemar. O reconhecimento usa os
+ * campos estruturais da apólice (vigência, segurado, limite e tabela de coberturas), sem restringir
+ * a seguradora ou a corretora. Diferente de `lerConsideracoesFinais` (que só repete o que o Systemar já tinha digitado,
  * com vigência em mm/aaaa): esta lê o documento original, com data completa e a lista de coberturas
  * tal como a seguradora emitiu. `null` quando o PDF não é desse layout (cai para digitação manual).
  *
@@ -549,28 +550,29 @@ export interface ApoliceSeguroLida {
 const APOLICE_EXCLUIR_COBERTURA = new Set(['Básica Simples', 'Assistência 24h', 'Prêmio Líquido']);
 
 export function lerApoliceSeguro(texto: string): ApoliceSeguroLida | null {
-  const vig = /Vig[êe]ncia:\s*das\s*24H\s*de\s*(\d{2}\/\d{2}\/\d{4})\s*[àa]s\s*24H\s*de\s*(\d{2}\/\d{2}\/\d{4})/i.exec(texto);
+  const linhas = texto.replace(//g, '-');
+  const t = linhas.replace(/\s+/g, ' ');
+  const vig = /(?:Vig[êe]ncia|Vigencia)\s*:\s*(?:a partir.*?dia\s*)?(\d{2}\/\d{2}\/\d{4})[\s\S]{0,100}?(\d{2}\/\d{2}\/\d{4})/i.exec(t) ?? /De\s*(\d{2}\/\d{2}\/\d{4})[\s\S]{0,60}?(\d{2}\/\d{2}\/\d{4})/i.exec(t);
   if (!vig) return null;
 
-  const t = texto.replace(//g, '-');
-
   const coberturas: CoberturaLida[] = [];
-  for (const m of t.matchAll(/^\s*(.+?)\s+R\$\s*([\d.,]+)\s+R\$/gm)) {
+  const blocoCoberturas = /(?:Coberturas Contratadas|Descrição\s+Limite Máximo de Indenização)[\s\S]*?(?:Prêmio Líquido Total|Limite Máximo de Garantia)/i.exec(linhas)?.[0] ?? linhas;
+  for (const m of blocoCoberturas.matchAll(/^\s*(.+?)\s+(?:R\$\s*)?([\d.]+,\d{2})\s+(?:R\$\s*)?[\d.]+,\d{2}/gm)) {
     const desc = m[1]!.trim().replace(/\s{2,}/g, ' ');
     if (APOLICE_EXCLUIR_COBERTURA.has(desc)) continue;
     coberturas.push({ desc, valor: paraNumero(m[2]!) });
   }
 
   return {
-    seguradora: campoTexto(t, /Agradecemos por escolher a (.+?)\./i),
-    numeroApolice: campoTexto(t, /N[ºo°]\.?\s*da\s*Ap[óo]lice:\s*(\S+)/i),
+    seguradora: campoTexto(t, /(?:Agradecemos por escolher a|Este seguro [ée] garantido pela)\s+(.+?)(?:\.|\s+-\s+Rua)/i) ?? campoTexto(t, /^(Tokio Marine|Allianz|Bradesco|Porto Seguro|Zurich|HDI|Mapfre|Sompo|SulAm[ée]rica)[^|]*/i),
+    numeroApolice: campoTexto(t, /(?:N[ºo°]?\.?\s*da\s*Ap[óo]lice|Ap[óo]lice|N[úu]mero da ap[óo]lice):\s*(\S+)/i),
     vigenciaIni: vig[1]!,
     vigenciaFim: vig[2]!,
-    riscoAbsoluto: campoValor(t, /Limite\s*M[áa]ximo\s*de\s*Garantia\s*da\s*Ap[óo]lice:\s*R\$\s*(-?[\d.]+,\d{2})/i),
+    riscoAbsoluto: campoValor(t, /Limite\s*M[áa]ximo\s*de\s*Garantia(?:\s*da\s*Ap[óo]lice)?\s*:\s*R?\$?\s*(-?[\d.]+,\d{2})/i),
     coberturas,
     condominio: {
       codigo: null,
-      nome: campoTexto(t, /Nome:\s*(.+?)\s{2,}/i),
+      nome: campoTexto(linhas, /Nome:\s*(.+?)\s{2,}/i),
       cnpj: campoTexto(t, /CNPJ:\s*([\d.\/-]+)/i),
     },
   };

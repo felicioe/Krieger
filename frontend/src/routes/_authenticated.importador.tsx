@@ -83,7 +83,7 @@ function Importador() {
           titulo="Apólice de seguro"
           acao={<ImportarApolice condominios={condominios} />}
         >
-          <p>Reconhece a apólice original da Allianz/FIRMO e aplica seguradora, vigência, risco absoluto e coberturas ao cadastro escolhido.</p>
+          <p>Reconhece a apólice original da seguradora e aplica seguradora, vigência, risco absoluto e coberturas ao cadastro escolhido.</p>
           <p>O PDF é apenas lido no navegador; nada é alterado até você clicar em “Aplicar ao cadastro”.</p>
         </CartaoImportacao>
         <CartaoImportacao
