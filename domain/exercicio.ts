@@ -1,6 +1,7 @@
 import { nomeParaRelatorio } from "./condominio";
 import { demonstrativoVazio, normalizarDemonstrativo } from "./demonstrativo";
 import { resolverVariacao } from "./previsao";
+import { dataParaBR, parseData } from "../lib/format";
 import type { Condominio, Exercicio } from "./types";
 
 function hojeBR(d = new Date()) {
@@ -38,12 +39,38 @@ export function considDoCondominio(c: Condominio): Exercicio["consid"] {
 }
 
 /** Novo exercício (prestação de contas) a partir do cadastro do condomínio. */
-export function exercicioPadrao(c: Condominio, ano: number, cidade = "", hoje = new Date()): Omit<Exercicio, "id"> {
+export function periodoInicialDoExercicio(
+  condoId: string,
+  ano: number,
+  existentes: Pick<Exercicio, "condoId" | "ano" | "demonstrativo">[],
+): { ini: string; fim: string } {
+  const anterior = existentes
+    .filter((e) => e.condoId === condoId && Number(e.ano) < ano && e.demonstrativo?.periodo?.fim)
+    .sort((a, b) => Number(b.ano) - Number(a.ano))[0];
+  const fimAnterior = anterior?.demonstrativo?.periodo.fim ? parseData(anterior.demonstrativo.periodo.fim) : null;
+  if (!fimAnterior) return { ini: "", fim: "" };
+
+  const inicio = new Date(fimAnterior);
+  inicio.setDate(inicio.getDate() + 1);
+  const fim = new Date(fimAnterior);
+  fim.setFullYear(fim.getFullYear() + 1);
+  return { ini: dataParaBR(inicio), fim: dataParaBR(fim) };
+}
+
+export function exercicioPadrao(
+  c: Condominio,
+  ano: number,
+  cidade = "",
+  hoje = new Date(),
+  periodo: { ini: string; fim: string } = { ini: "", fim: "" },
+): Omit<Exercicio, "id"> {
+  const demonstrativo = demonstrativoVazio(nomeParaRelatorio(c));
+  demonstrativo.periodo = periodo;
   return {
     condoId: c.id,
     condoNome: nomeParaRelatorio(c),
     ano,
-    demonstrativo: demonstrativoVazio(nomeParaRelatorio(c)),
+    demonstrativo,
     origem: [],
     cidade,
     dataEmissao: hojeBR(hoje),
