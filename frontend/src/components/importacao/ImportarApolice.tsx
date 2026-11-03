@@ -24,7 +24,7 @@ export function ImportarApolice({ condominios }: { condominios: Condominio[] }) 
     try {
       const { extrairTextoPdf } = await import("@/lib/pdfTexto");
       const resultado = lerApoliceSeguro(await extrairTextoPdf(arquivo));
-      if (!resultado) throw new Error("PDF não reconhecido como apólice Allianz/FIRMO.");
+      if (!resultado) throw new Error("PDF não reconhecido como apólice de seguro. Confira se é o documento original da seguradora.");
       setLido(resultado);
       toast.success("Apólice reconhecida. Revise o condomínio antes de aplicar.");
     } catch (e) {
