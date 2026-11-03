@@ -120,6 +120,7 @@ export interface Condominio extends ComId {
   seguradora: string;
   vigenciaSeguro: string;
   seguro: { riscoAbsoluto: number | null; coberturas: Cobertura[] };
+  historicoApolices?: ApoliceSeguro[];
   vigenciaExtintores: string;
   ultGordura: string;
   ultDedetizacao: string;
@@ -168,6 +169,17 @@ export interface Condominio extends ComId {
   atualizadoEm?: string | null;
   /** Campo novo (opcional): nome de quem fez o último salvamento. */
   atualizadoPor?: string;
+}
+
+export interface ApoliceSeguro {
+  id: string;
+  seguradora: string;
+  numeroApolice: string;
+  vigenciaIni: string;
+  vigenciaFim: string;
+  riscoAbsoluto: number | null;
+  coberturas: Cobertura[];
+  importadaEm: string;
 }
 
 export interface UnidadeCondominio {

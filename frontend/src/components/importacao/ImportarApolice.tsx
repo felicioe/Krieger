@@ -8,7 +8,7 @@ import { formatBRL } from "@/lib/format";
 import { api, mensagemErro } from "@/lib/api";
 import { chaves } from "@/lib/queries";
 import { lerApoliceSeguro } from "@/domain/pdfParser";
-import type { Condominio } from "@/domain/types";
+import type { ApoliceSeguro, Condominio } from "@/domain/types";
 import { normalizarCondominio } from "@/domain/condominio";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -39,7 +39,8 @@ export function ImportarApolice({ condominios }: { condominios: Condominio[] }) 
     const atual = condominios.find((c) => c.id === condoId);
     if (!atual || !lido) return;
     const c = normalizarCondominio(atual);
-    await api.salvar("condominios", { ...c, seguradora: lido.seguradora ?? c.seguradora, vigenciaSeguro: lido.vigenciaFim ?? c.vigenciaSeguro, seguro: { riscoAbsoluto: lido.riscoAbsoluto ?? c.seguro.riscoAbsoluto, coberturas: lido.coberturas } });
+    const apolice: ApoliceSeguro = { id: crypto.randomUUID(), seguradora: lido.seguradora ?? "", numeroApolice: lido.numeroApolice ?? "", vigenciaIni: lido.vigenciaIni ?? "", vigenciaFim: lido.vigenciaFim ?? "", riscoAbsoluto: lido.riscoAbsoluto, coberturas: lido.coberturas, importadaEm: new Date().toISOString() };
+    await api.salvar("condominios", { ...c, seguradora: apolice.seguradora || c.seguradora, vigenciaSeguro: apolice.vigenciaFim || c.vigenciaSeguro, seguro: { riscoAbsoluto: apolice.riscoAbsoluto ?? c.seguro.riscoAbsoluto, coberturas: apolice.coberturas }, historicoApolices: [...(c.historicoApolices ?? []).filter((x) => x.numeroApolice !== apolice.numeroApolice || x.vigenciaFim !== apolice.vigenciaFim), apolice] });
     await queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
     toast.success("Dados da apólice aplicados ao cadastro do condomínio.");
     setLido(null);

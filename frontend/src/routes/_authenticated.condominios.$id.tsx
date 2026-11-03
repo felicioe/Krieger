@@ -138,6 +138,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
   const usuario = useUsuario();
   const novo = !inicial.id;
   const [c, setC] = useState<Condominio>(inicial);
+  const [apoliceSelecionada, setApoliceSelecionada] = useState<string>(inicial.historicoApolices?.at(-1)?.id ?? "");
   const [erroNome, setErroNome] = useState<string | null>(null);
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const refNome = useRef<HTMLInputElement>(null);
@@ -453,6 +454,18 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
         </SecaoRecolhivel>
 
         <SecaoRecolhivel id={idSecao("seguro")} titulo="Seguro" resumo={res.seguro} aberta={abertas.seguro} aoMudar={abrir("seguro")}>
+          {(c.historicoApolices?.length ?? 0) > 0 && (
+            <div className="mb-5 rounded-md border bg-muted/20 p-3">
+              <Field rotulo="Apólice cadastrada">
+                <Selecao
+                  value={apoliceSelecionada}
+                  onChange={(id) => { setApoliceSelecionada(id); const a = c.historicoApolices?.find((x) => x.id === id); if (a) setC((atual) => ({ ...atual, seguradora: a.seguradora, vigenciaSeguro: a.vigenciaFim, seguro: { riscoAbsoluto: a.riscoAbsoluto, coberturas: a.coberturas } })); }}
+                  opcoes={(c.historicoApolices ?? []).map((a) => ({ valor: a.id, rotulo: `${a.seguradora || "Seguradora não informada"} · ${a.vigenciaIni || "—"} a ${a.vigenciaFim || "—"}` }))}
+                />
+              </Field>
+              <p className="mt-2 text-xs text-muted-foreground">Selecione uma apólice para consultar a vigência, o risco e as coberturas importadas. A apólice escolhida não altera o histórico.</p>
+            </div>
+          )}
           <div className="mb-5 grid gap-4 sm:grid-cols-3">
             <Field rotulo="Seguradora">
               <Input value={c.seguradora} onChange={(e) => set("seguradora", e.target.value)} />
