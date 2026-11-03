@@ -2,7 +2,11 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.04**.
+Versão atual: **1.05**.
+
+## 1.05 — Relatório mensal Orçado × Realizado
+
+- Novo relatório no menu Relatórios com período de análise, rolagem, totais por linha e coluna e análises horizontal e vertical opcionais.
 
 ## 1.04 — Precisão das frações importadas
 
