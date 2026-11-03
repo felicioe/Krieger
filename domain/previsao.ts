@@ -117,6 +117,19 @@ export function somarAjustes(ajustes: AjustePrevisao[] | undefined) {
   return { mais: centavos(mais), menos: centavos(menos) };
 }
 
+/** Base financeira pra projetar a previsão de um exercício: o realizado do exercício anterior
+ * (já fechado) — nunca o demonstrativo do próprio exercício, que vai sendo preenchido ao longo do
+ * ano e não pode servir de base móvel pra uma previsão que precisa ficar estável. Sem exercício
+ * anterior (primeira prestação do condomínio), cai no demonstrativo do próprio. Usada por todo
+ * consumidor da previsão (editor, relatório final, previsto × realizado, listagens) pra nunca
+ * divergir sobre de onde ela parte. */
+export function demonstrativoBasePrevisao(
+  exercicio: Pick<Exercicio, "demonstrativo">,
+  exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null | undefined,
+): Demonstrativo | null {
+  return exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
+}
+
 export function calcularPrevisao(
   demonstrativo: Demonstrativo | null,
   parametros: ParametrosPrevisao,

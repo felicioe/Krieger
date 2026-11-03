@@ -257,4 +257,13 @@ describe("relatório final", () => {
     expect(item?.situacao).toBe("aviso"); // rateioAprovado não informado no exercício-base de teste
     expect(item?.detalhe).toMatch(/rateio aprovado ainda não informado/);
   });
+
+  it("previsão usa o realizado do exercicioAnterior como base, não o do próprio exercício (achado do Codex no PR #170: evita divergir do editor)", () => {
+    const anterior = exercicio(0);
+    anterior.demonstrativo!.despesas = { grupos: [{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 500000 }] }], subtotal: 0, saldoRestante: 0 };
+    const semAnterior = montarRelatorioFinal({ exercicio: exercicio(4000), condominio: condo, escritorio: null, mensais: [] });
+    const comAnterior = montarRelatorioFinal({ exercicio: exercicio(4000), exercicioAnterior: anterior, condominio: condo, escritorio: null, mensais: [] });
+    expect(semAnterior.previsao.base).toBe(2000); // demonstrativo do próprio exercício-base de teste (1200 + 800)
+    expect(comAnterior.previsao.base).toBe(500000); // demonstrativo do exercicioAnterior, não o do próprio
+  });
 });

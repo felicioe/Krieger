@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
-import { DataInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { DataInput, Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves } from "@/lib/queries";
 import { dataParaISO, parseData } from "@/lib/format";

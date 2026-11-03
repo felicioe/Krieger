@@ -57,11 +57,14 @@ function ListaExercicios() {
   const linhas = useMemo<Linha[]>(() => {
     const porId = new Map(condominios.map((c) => [c.id, c]));
     const q = busca.trim().toLowerCase();
-    return exercicios
-      .map((raw) => {
-        const e = normalizarExercicio(raw);
+    const todos = exercicios.map(normalizarExercicio);
+    return todos
+      .map((e) => {
         const condo = porId.get(e.condoId);
-        const r = calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, condo?.unidades ?? null);
+        // Mesma base do editor de previsão: o realizado do exercício anterior, nunca o
+        // demonstrativo do próprio — pra esta lista nunca divergir da previsão aprovada ali.
+        const demonstrativoBase = demonstrativoBasePrevisao(e, encontrarExercicioAnterior(todos, e));
+        const r = calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, condo?.unidades ?? null);
         return {
           ...e,
           condoNome: e.condoNome || condo?.nome || "",
@@ -81,6 +84,11 @@ function ListaExercicios() {
         descricao="Demonstrativo do exercício e previsão orçamentária do ano seguinte."
         acoes={
           <>
+            <Button variant="ghost" size="icon" asChild title="Ajuda sobre esta tela">
+              <Link to="/ajuda" search={{ secao: "prestacao-contas" }} aria-label="Ajuda sobre a prestação de contas">
+                <CircleHelp />
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/importador">
                 <FileUp /> Importar PDF

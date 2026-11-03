@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as TrocarSenhaRouteImport } from './routes/trocar-senha'
+import { Route as AuthenticatedAjudaRouteImport } from './routes/_authenticated.ajuda'
 import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated.backup'
 import { Route as AuthenticatedConsultaDocumentosRouteImport } from './routes/_authenticated.consulta-documentos'
 import { Route as AuthenticatedDriveDocumentosRouteImport } from './routes/_authenticated.drive-documentos'
@@ -60,6 +61,11 @@ const TrocarSenhaRoute = TrocarSenhaRouteImport.update({
   id: '/trocar-senha',
   path: '/trocar-senha',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAjudaRoute = AuthenticatedAjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedBackupRoute = AuthenticatedBackupRouteImport.update({
   id: '/backup',
@@ -224,6 +230,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/trocar-senha': typeof TrocarSenhaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/trocar-senha': typeof TrocarSenhaRoute
+  '/ajuda': typeof AuthenticatedAjudaRoute
   '/backup': typeof AuthenticatedBackupRoute
   '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/trocar-senha': typeof TrocarSenhaRoute
+  '/_authenticated/ajuda': typeof AuthenticatedAjudaRoute
   '/_authenticated/backup': typeof AuthenticatedBackupRoute
   '/_authenticated/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/_authenticated/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
@@ -327,6 +336,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/trocar-senha'
+    | '/ajuda'
     | '/backup'
     | '/consulta-documentos'
     | '/drive-documentos'
@@ -360,6 +370,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/trocar-senha'
+    | '/ajuda'
     | '/backup'
     | '/consulta-documentos'
     | '/drive-documentos'
@@ -394,6 +405,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/trocar-senha'
+    | '/_authenticated/ajuda'
     | '/_authenticated/backup'
     | '/_authenticated/consulta-documentos'
     | '/_authenticated/drive-documentos'
@@ -460,6 +472,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/trocar-senha'
       preLoaderRoute: typeof TrocarSenhaRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/ajuda': {
+      id: '/_authenticated/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AuthenticatedAjudaRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/backup': {
       id: '/_authenticated/backup'
@@ -661,6 +680,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAjudaRoute: typeof AuthenticatedAjudaRoute
   AuthenticatedBackupRoute: typeof AuthenticatedBackupRoute
   AuthenticatedConsultaDocumentosRoute: typeof AuthenticatedConsultaDocumentosRoute
   AuthenticatedDriveDocumentosRoute: typeof AuthenticatedDriveDocumentosRoute
@@ -692,6 +712,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAjudaRoute: AuthenticatedAjudaRoute,
   AuthenticatedBackupRoute: AuthenticatedBackupRoute,
   AuthenticatedConsultaDocumentosRoute: AuthenticatedConsultaDocumentosRoute,
   AuthenticatedDriveDocumentosRoute: AuthenticatedDriveDocumentosRoute,

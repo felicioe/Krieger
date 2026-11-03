@@ -326,6 +326,7 @@ export function PainelPrevisao({
           parcial={parcial}
           semUnidades={semUnidades}
           idQuadro={idQuadro}
+          anoAnterior={anoAnterior}
           aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })}
         />
       </aside>
@@ -511,6 +512,7 @@ function Resumo({
   parcial,
   semUnidades,
   idQuadro,
+  anoAnterior,
   aoAprovar,
 }: {
   r: ResultadoPrevisao;
@@ -521,6 +523,7 @@ function Resumo({
   parcial: boolean;
   semUnidades: boolean;
   idQuadro: string;
+  anoAnterior?: number | string | undefined;
   aoAprovar: () => void;
 }) {
   const ausente = (n: number | null, motivo?: string) =>

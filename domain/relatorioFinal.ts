@@ -1,7 +1,7 @@
 import { formatBRL } from "../lib/format";
 import { centavos } from "./demonstrativo";
 import { normalizarMensal, competenciaMensal, mesAnoDe, ordemCompetencia, rotuloCompetencia } from "./mensal";
-import { calcularPrevisao, expressaoDeducao, type ResultadoPrevisao } from "./previsao";
+import { calcularPrevisao, demonstrativoBasePrevisao, expressaoDeducao, type ResultadoPrevisao } from "./previsao";
 import {
   calcularPrevisaoSugerida,
   calcularPrevisaoSugeridaPorUnidade,
@@ -258,6 +258,9 @@ export interface RelatorioFinal {
 /** Monta todas as seções do relatório e a conferência dos totais. */
 export function montarRelatorioFinal(entrada: {
   exercicio: Exercicio;
+  /** Exercício anterior do mesmo condomínio — base da previsão deste (ver `demonstrativoBasePrevisao`,
+   * em `previsao.ts`). Sem isso, a previsão cai no demonstrativo do próprio exercício. */
+  exercicioAnterior?: Pick<Exercicio, "demonstrativo"> | null;
   condominio: Condominio | null;
   escritorio: ConfigEscritorio | null;
   mensais: Mensal[];
@@ -290,7 +293,8 @@ export function montarRelatorioFinal(entrada: {
   // condomínio — não serve de alternativa aqui. A única fonte do total é o cadastro (achado do
   // Codex no PR #108, que pegou uma leitura errada desse campo antes de publicar).
   const unidades = condominio?.unidades ?? null;
-  const previsao = calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, unidades);
+  const demonstrativoBase = demonstrativoBasePrevisao(e, entrada.exercicioAnterior);
+  const previsao = calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades);
   const previsaoSugerida = e.previsaoSugerida ? calcularPrevisaoSugerida(e.previsaoSugerida) : null;
   const previsaoSugeridaPorUnidade = previsaoSugerida
     ? calcularPrevisaoSugeridaPorUnidade(previsaoSugerida.rateioMensalSugerido, unidades, e.prev?.fundoReservaPct ?? 0, e.arredondamento)
@@ -298,6 +302,7 @@ export function montarRelatorioFinal(entrada: {
   const comparativo = compararPrevistoRealizado(e, entrada.mensais, {
     condominio,
     mesAte: e.relatorioFinal?.prAte ?? null,
+    demonstrativoBase,
   });
   const mensaisDoComparativo = mensaisDoRelatorio(e.condoId, entrada.mensais, comparativo);
   // Uma prestação pode ser fechada antes de todos os meses do exercício seguinte

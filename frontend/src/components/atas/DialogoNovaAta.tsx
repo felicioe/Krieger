@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
-import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves } from "@/lib/queries";
 import { formatData } from "@/lib/format";

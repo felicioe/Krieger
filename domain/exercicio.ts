@@ -142,6 +142,15 @@ export function normalizarExercicio(raw: Partial<Exercicio> & { id?: string }): 
   } as Exercicio;
 }
 
+/** O exercício do mesmo condomínio, um ano antes — base pra projetar a previsão deste exercício
+ * (o realizado de um exercício em andamento não serve de base, só o de um já fechado). */
+export function encontrarExercicioAnterior<T extends Pick<Exercicio, "id" | "condoId" | "ano">>(
+  exercicios: T[],
+  exercicio: Pick<Exercicio, "id" | "condoId" | "ano">,
+): T | undefined {
+  return exercicios.find((x) => x.id !== exercicio.id && x.condoId === exercicio.condoId && Number(x.ano) === Number(exercicio.ano) - 1);
+}
+
 export type Validacao = { ok: true } | { ok: false; erro: string };
 
 /** Condomínio e ano obrigatórios; um único exercício por condomínio e ano. */
