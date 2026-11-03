@@ -170,6 +170,13 @@ function EditorPrevisao({
     () => calcularPrevisao(demonstrativoBase, parametrosBase, unidades),
     [demonstrativoBase, parametrosBase, unidades],
   );
+  const rateioAnterior = useMemo(
+    () =>
+      exercicioAnterior?.previsaoSugerida
+        ? calcularPrevisaoSugerida(exercicioAnterior.previsaoSugerida).rateioMensalSugerido
+        : null,
+    [exercicioAnterior?.previsaoSugerida],
+  );
 
   // Só para avisar no topo que o resultado da aba aberta está incompleto (não muda o Salvar).
   const valorUnidadeSugerida = useMemo(() => {
@@ -355,6 +362,7 @@ function EditorPrevisao({
               grupos={demonstrativoBase.despesas.grupos.map((g) => g.nome)}
               onChange={mudar}
               rotuloBase={exercicioAnterior ? "Base (realizado do exercício anterior)" : undefined}
+              rateioAnterior={rateioAnterior}
             />
           </TabsContent>
         </Tabs>

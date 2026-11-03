@@ -63,7 +63,7 @@ export function PainelPrevisao({
   condoId,
   grupos,
   onChange,
-  previsaoAnterior,
+  rateioAnterior,
   rotuloBase,
 }: {
   exercicio: Exercicio;
@@ -73,7 +73,7 @@ export function PainelPrevisao({
   grupos: string[];
   onChange: (parcial: Partial<Exercicio>) => void;
   /** Última previsão aprovada do exercício anterior, exibida como referência — nunca aplicada automaticamente. */
-  previsaoAnterior?: number | null;
+  rateioAnterior?: number | null;
   rotuloBase?: string;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
@@ -319,7 +319,7 @@ export function PainelPrevisao({
       <aside className="lg:sticky lg:top-6 lg:self-start">
         <Resumo
           r={r}
-          previsaoAnterior={previsaoAnterior}
+          rateioAnterior={rateioAnterior}
           rotuloBase={rotuloBase}
           arredondamento={e.arredondamento}
           metodo={e.variacaoMetodo}
@@ -504,7 +504,7 @@ const ROTULO_ARRED: Record<Arredondamento, string> = {
 
 function Resumo({
   r,
-  previsaoAnterior,
+  rateioAnterior,
   rotuloBase,
   arredondamento,
   metodo,
@@ -514,7 +514,7 @@ function Resumo({
   aoAprovar,
 }: {
   r: ResultadoPrevisao;
-  previsaoAnterior?: number | null;
+  rateioAnterior?: number | null;
   rotuloBase?: string;
   arredondamento: Arredondamento;
   metodo: VariacaoMetodo;
@@ -561,6 +561,17 @@ function Resumo({
 
         <div className="mt-4 border-t pt-3">
           <LinhaResumo rotulo="Mensal (÷ 12)" valor={formatBRL(r.mensal)} />
+          {rateioAnterior != null && rateioAnterior > 0 && (
+            <>
+              <LinhaResumo rotulo="Rateio mensal anterior" valor={formatBRL(rateioAnterior)} />
+              <LinhaResumo
+                rotulo="Variação sobre o rateio anterior"
+                valor={pct(Math.round((r.mensal / rateioAnterior - 1) * 10000) / 100, true)}
+                forte
+                negativo={r.mensal < rateioAnterior}
+              />
+            </>
+          )}
           <LinhaResumo
             rotulo="(÷) Unidades"
             valor={r.unidades ? String(r.unidades) : <SemValor motivo="não informado" />}
