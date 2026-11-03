@@ -145,10 +145,16 @@ function Pagina() {
         </div>
       )}
       <SectionCard
-        className="mt-6"
+        className="mt-6 print-report"
         titulo="Conferência mensal"
         descricao={`${r.meses[0]?.rotulo} a ${r.meses.at(-1)?.rotulo} · ${r.relatoriosUsados} relatório(s) mensal(is) considerado(s).`}
       >
+        <div className="hidden print:block print-report-heading">
+          <h1 className="text-lg font-semibold">Orçado × Realizado mensal</h1>
+          <p>
+            {e.condoNome || "Condomínio"} · {r.meses[0]?.rotulo} a {r.meses.at(-1)?.rotulo}
+          </p>
+        </div>
         <div className="mb-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
           <span className="rounded border bg-muted/40 px-2 py-1">
             {r.relatoriosUsados} mês(es) encontrado(s)
