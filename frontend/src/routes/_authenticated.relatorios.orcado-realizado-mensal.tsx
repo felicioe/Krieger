@@ -10,7 +10,8 @@ import { Selecao } from "@/components/app/inputs";
 import { listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
-import { normalizarExercicio } from "@/domain/exercicio";
+import { encontrarExercicioAnterior, normalizarExercicio } from "@/domain/exercicio";
+import { demonstrativoBasePrevisao } from "@/domain/previsao";
 import { compararPrevistoRealizadoMensal, type CelulaMensal } from "@/domain/previstoRealizadoMensal";
 import type { Condominio, Exercicio, Mensal } from "@/domain/types";
 
@@ -30,7 +31,10 @@ function Pagina() {
   const [orcado, setOrcado] = useState(true); const [horizontal, setHorizontal] = useState(true); const [vertical, setVertical] = useState(false);
   const e = exercicios.find((x) => x.id === exercicioId) ?? exercicios[0];
   const condo = e ? condominios.find((c) => c.id === e.condoId) : null;
-  const r = e ? compararPrevistoRealizadoMensal(e, mensais, { condominio: condo ?? null, inicio, fim }) : null;
+  // Mesma base do editor de previsão: o realizado do exercício anterior, nunca o demonstrativo do
+  // próprio exercício — pra este comparativo nunca divergir da previsão aprovada ali.
+  const demonstrativoBase = e ? demonstrativoBasePrevisao(e, encontrarExercicioAnterior(exercicios, e)) : null;
+  const r = e ? compararPrevistoRealizadoMensal(e, mensais, { condominio: condo ?? null, inicio, fim, demonstrativoBase }) : null;
   const opEx = exercicios.map((x) => ({ valor: x.id, rotulo: `${x.condoNome || condominios.find((c) => c.id === x.condoId)?.nome || "Condomínio"} · previsão ${x.ano}` }));
   const opMes = Array.from({ length: 12 }, (_, i) => ({ valor: String(i + 1), rotulo: `Mês ${i + 1}` }));
   if (!r || !e) return <SectionCard titulo="Nenhuma previsão disponível"><p className="text-sm text-muted-foreground">Crie uma previsão orçamentária para gerar este relatório.</p></SectionCard>;

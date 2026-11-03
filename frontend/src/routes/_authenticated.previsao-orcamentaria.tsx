@@ -21,7 +21,7 @@ import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { encontrarExercicioAnterior, normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { calcularDesvioAnoAnterior, calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
 import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
-import type { Condominio, DecisaoDivergenciaPrevisao, Exercicio } from "@/domain/types";
+import type { Condominio, DecisaoDivergenciaPrevisao, Demonstrativo, Exercicio } from "@/domain/types";
 
 type Busca = { exercicio?: string };
 
@@ -86,6 +86,14 @@ function PaginaPrevisao() {
   // realmente realizou). Sem esse exercício, ou sem despesas lançadas em nenhum dos dois, não há
   // sugestão (calcularDesvioAnoAnterior devolve null).
   const exercicioAnterior = encontrarExercicioAnterior(exercicios, exercicio);
+  // A "última previsão" e a sugestão de variação recalculam a previsão do PRÓPRIO exercício
+  // anterior — e essa previsão segue a mesma regra: parte do realizado do anterior DELE, não do
+  // seu próprio demonstrativo (achado do Codex no PR #170: com três exercícios em sequência, usar
+  // o demonstrativo do próprio exercício anterior repete a mesma divergência que a troca de base
+  // corrigiu no exercício atual).
+  const demonstrativoBaseAnterior = exercicioAnterior
+    ? demonstrativoBasePrevisao(exercicioAnterior, encontrarExercicioAnterior(exercicios, exercicioAnterior))
+    : null;
 
   return (
     <EditorPrevisao
@@ -93,6 +101,7 @@ function PaginaPrevisao() {
       inicial={exercicio}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
       exercicioAnterior={exercicioAnterior}
+      demonstrativoBaseAnterior={demonstrativoBaseAnterior}
       seletor={seletor}
     />
   );
@@ -102,11 +111,16 @@ function EditorPrevisao({
   inicial,
   condominio,
   exercicioAnterior,
+  demonstrativoBaseAnterior,
   seletor,
 }: {
   inicial: Exercicio;
   condominio: Condominio | undefined;
   exercicioAnterior: Exercicio | undefined;
+  /** Base pra recalcular a previsão do PRÓPRIO exercício anterior (ver `demonstrativoBasePrevisao`) —
+   * nunca o demonstrativo dele mesmo, senão "última previsão" e a sugestão repetem a divergência
+   * que a troca de base corrigiu no exercício atual. */
+  demonstrativoBaseAnterior: Demonstrativo | null;
   seletor: ReactNode;
 }) {
   const queryClient = useQueryClient();
@@ -134,9 +148,9 @@ function EditorPrevisao({
   const ultimaPrevisao = useMemo(
     () =>
       exercicioAnterior
-        ? calcularPrevisao(exercicioAnterior.demonstrativo, { ...exercicioAnterior, indices: exercicioAnterior.consid.indices }, null).totalAnual
+        ? calcularPrevisao(demonstrativoBaseAnterior, { ...exercicioAnterior, indices: exercicioAnterior.consid.indices }, null).totalAnual
         : null,
-    [exercicioAnterior],
+    [exercicioAnterior, demonstrativoBaseAnterior],
   );
 
   // Sugestão (nunca aplicada sozinha) de variação pro exercício seguinte: desvio entre o previsto
@@ -145,12 +159,12 @@ function EditorPrevisao({
     () =>
       exercicioAnterior
         ? calcularDesvioAnoAnterior(
-            exercicioAnterior.demonstrativo,
+            demonstrativoBaseAnterior,
             { ...exercicioAnterior, indices: exercicioAnterior.consid.indices },
             e.demonstrativo,
           )
         : null,
-    [exercicioAnterior, e.demonstrativo],
+    [exercicioAnterior, demonstrativoBaseAnterior, e.demonstrativo],
   );
 
   // Só para avisar no topo que o resultado da aba aberta está incompleto (não muda o Salvar).
