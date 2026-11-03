@@ -42,12 +42,12 @@ export interface ButtonProps
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, permissao, type = "button", ...props }, ref) => {
+  ({ className, variant, size, asChild = false, permissao, ...props }, ref) => {
     const usuario = useUsuario();
     if (usuario && permissao && !temPermissao(usuario, permissao)) return null;
     const Comp = asChild ? Slot : "button";
     return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} type={type} {...props} />
+      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
     );
   },
 );
