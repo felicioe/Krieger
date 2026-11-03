@@ -31,6 +31,21 @@ function resposta(d: Record<string, unknown>): DadosCnpjReceita {
   };
 }
 
+function respostaReceitaWs(d: Record<string, unknown>): DadosCnpjReceita {
+  const texto = (k: string) => (typeof d[k] === "string" ? (d[k] as string) : "");
+  return {
+    razaoSocial: texto("nome") || null,
+    situacaoCadastral: texto("situacao") || null,
+    logradouro: texto("logradouro"),
+    numero: texto("numero"),
+    complemento: texto("complemento"),
+    bairro: texto("bairro"),
+    municipio: texto("municipio"),
+    uf: texto("uf"),
+    cep: texto("cep"),
+  };
+}
+
 /** Sem acento, maiúsculo, espaços únicos — pra comparar nome do cadastro com razão social sem falso positivo por acentuação/caixa. */
 function normalizarNome(s: string): string {
   return s
@@ -61,13 +76,28 @@ export function divergenciasCnpj(dados: DadosCnpjReceita, nomeAtual: string): st
 /** null quando o CNPJ não existe na base ou a consulta falha (rede, serviço fora do ar etc.). */
 export async function consultarCnpjReceita(cnpjSomenteDigitos: string): Promise<DadosCnpjReceita | null> {
   if (!/^\d{14}$/.test(cnpjSomenteDigitos)) return null;
-  try {
-    const r = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpjSomenteDigitos}`);
-    if (!r.ok) return null;
-    return resposta(await r.json());
-  } catch {
-    return null;
+  const endpoints = [
+    { url: `https://brasilapi.com.br/api/cnpj/v1/${cnpjSomenteDigitos}`, ler: resposta },
+    { url: `https://www.receitaws.com.br/v1/cnpj/${cnpjSomenteDigitos}`, ler: respostaReceitaWs },
+  ] as const;
+  for (const endpoint of endpoints) {
+    for (let tentativa = 0; tentativa < 2; tentativa++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const r = await fetch(endpoint.url, { cache: "no-store", signal: controller.signal });
+        if (r.ok) {
+          const dados = endpoint.ler(await r.json());
+          if (dados.logradouro || dados.razaoSocial) return dados;
+        }
+      } catch {
+        // Tenta novamente e, se necessário, passa para a fonte alternativa.
+      } finally {
+        clearTimeout(timer);
+      }
+    }
   }
+  return null;
 }
 
 /**
