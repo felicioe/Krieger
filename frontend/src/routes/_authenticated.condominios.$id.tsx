@@ -165,7 +165,7 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
     try {
       const dados = await consultarCnpjReceita(digitos);
       if (!dados) {
-        toast.error("Não foi possível encontrar esse CNPJ na Receita Federal.");
+        toast.error("Não foi possível consultar esse CNPJ agora. Verifique o número ou tente novamente em alguns segundos.");
         return;
       }
       set("enderecoEdital", enderecoDaReceita(dados));
