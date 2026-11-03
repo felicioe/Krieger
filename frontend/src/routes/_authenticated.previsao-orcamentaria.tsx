@@ -125,7 +125,7 @@ function EditorPrevisao({
       ...(e.prev ?? { modo: "tradicional", ajustes: [], fundoReservaPct: null }),
       // Ajustes feitos na prestação anterior corrigem a base do novo exercício.
       // Os índices e demais parâmetros continuam sendo os do exercício atual.
-      ajustes: exercicioAnterior?.prev?.ajustes ?? e.prev?.ajustes ?? [],
+      ajustes: [...(exercicioAnterior?.prev?.ajustes ?? []), ...(e.prev?.ajustes ?? [])],
     },
   }), [e, exercicioAnterior]);
   const [aba, setAba] = useState(e.previsaoSugerida ? "sugerida" : "demonstrativo");
