@@ -51,6 +51,7 @@ export function PainelPrevisao({
   desvio,
   anoAnterior,
   previsaoAnterior,
+  rotuloBase,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
@@ -64,6 +65,7 @@ export function PainelPrevisao({
   anoAnterior?: number | string | undefined;
   /** Última previsão aprovada do exercício anterior, exibida como referência — nunca aplicada automaticamente. */
   previsaoAnterior?: number | null;
+  rotuloBase?: string;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
@@ -238,6 +240,7 @@ export function PainelPrevisao({
         <Resumo
           r={r}
               previsaoAnterior={previsaoAnterior}
+              rotuloBase={rotuloBase}
           arredondamento={e.arredondamento}
           metodo={e.variacaoMetodo}
           parcial={parcial}
@@ -382,6 +385,7 @@ const ROTULO_ARRED: Record<Arredondamento, string> = {
 function Resumo({
   r,
   previsaoAnterior,
+  rotuloBase,
   arredondamento,
   metodo,
   parcial,
@@ -391,6 +395,7 @@ function Resumo({
 }: {
   r: ResultadoPrevisao;
   previsaoAnterior?: number | null;
+  rotuloBase?: string;
   arredondamento: Arredondamento;
   metodo: VariacaoMetodo;
   parcial: boolean;
@@ -409,7 +414,7 @@ function Resumo({
         <div className="mb-3">
           <SituacaoResultado parcial={parcial} avisos={r.avisos.length} idQuadro={idQuadro} />
         </div>
-        <LinhaResumo rotulo="Base (despesas realizadas)" valor={formatBRL(r.base)} />
+        <LinhaResumo rotulo={rotuloBase ?? "Base (despesas realizadas)"} valor={formatBRL(r.base)} />
         {previsaoAnterior != null && <LinhaResumo rotulo="Última previsão anterior (referência)" valor={formatBRL(previsaoAnterior)} />}
         <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
         <LinhaResumo

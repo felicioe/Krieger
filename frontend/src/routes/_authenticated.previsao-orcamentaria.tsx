@@ -286,6 +286,7 @@ function EditorPrevisao({
               desvio={desvio}
               anoAnterior={exercicioAnterior?.ano}
               previsaoAnterior={desvio?.previsto ?? null}
+              rotuloBase={exercicioAnterior ? "Base (realizado do exercício anterior)" : undefined}
             />
           </TabsContent>
         </Tabs>
