@@ -308,7 +308,7 @@ function EditorPrevisao({
               resultado={resultado}
               unidades={unidades}
               condoId={e.condoId}
-              grupos={demonstrativo.despesas.grupos.map((g) => g.nome)}
+              grupos={demonstrativoBase?.despesas.grupos.map((g) => g.nome) ?? []}
               onChange={mudar}
               desvio={desvio}
               anoAnterior={exercicioAnterior?.ano}
