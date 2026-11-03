@@ -114,12 +114,16 @@ function EditorPrevisao({
   const sujo = JSON.stringify(e) !== salvoJson;
   const unidades = condominio?.unidades ?? null;
   const demonstrativo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
+  // A previsão da nova prestação nasce do realizado da prestação anterior. O demonstrativo
+  // atual continua sendo usado pelos relatórios e pelo comparativo, mas não deve substituir a
+  // base histórica do orçamento novo.
+  const demonstrativoBase = exercicioAnterior?.demonstrativo ?? demonstrativo;
   const [aba, setAba] = useState(e.previsaoSugerida ? "sugerida" : "demonstrativo");
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 
   const resultado = useMemo(
-    () => calcularPrevisao(e.demonstrativo, { ...e, indices: e.consid.indices }, unidades),
-    [e, unidades],
+    () => calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades),
+    [demonstrativoBase, e, unidades],
   );
 
   // Sugestão (nunca aplicada sozinha) de variação pro exercício seguinte: desvio entre o previsto
@@ -277,10 +281,11 @@ function EditorPrevisao({
               resultado={resultado}
               unidades={unidades}
               condoId={e.condoId}
-              grupos={demonstrativo.despesas.grupos.map((g) => g.nome)}
+              grupos={demonstrativoBase.despesas.grupos.map((g) => g.nome)}
               onChange={mudar}
               desvio={desvio}
               anoAnterior={exercicioAnterior?.ano}
+              previsaoAnterior={desvio?.previsto ?? null}
             />
           </TabsContent>
         </Tabs>
