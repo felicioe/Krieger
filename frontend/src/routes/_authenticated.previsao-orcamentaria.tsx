@@ -19,14 +19,23 @@ import { cabecalho } from "@/lib/head";
 import { novoId } from "@/lib/id";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
-import { calcularDesvioAnoAnterior, calcularPrevisao } from "@/domain/previsao";
-import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
+import { calcularPrevisao } from "@/domain/previsao";
+import {
+  calcularPrevisaoSugerida,
+  calcularPrevisaoSugeridaPorUnidade,
+  chaveDivergencia,
+  compararComTotaisPdf,
+} from "@/domain/previsaoSugerida";
 import type { Condominio, DecisaoDivergenciaPrevisao, Exercicio } from "@/domain/types";
 
 type Busca = { exercicio?: string };
 
 export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
-  head: () => cabecalho("Previsão orçamentária", "Previsão orçamentária sugerida do exercício, com deduções e variação editáveis."),
+  head: () =>
+    cabecalho(
+      "Previsão orçamentária",
+      "Previsão orçamentária sugerida do exercício, com deduções e variação editáveis.",
+    ),
   validateSearch: (s: Record<string, unknown>): Busca => {
     const exercicio = s["exercicio"];
     return typeof exercicio === "string" && exercicio ? { exercicio } : {};
@@ -49,7 +58,10 @@ function PaginaPrevisao() {
     () =>
       exerciciosRaw
         .map((e) => normalizarExercicio(e))
-        .sort((a, b) => Number(b.ano) - Number(a.ano) || a.condoNome.localeCompare(b.condoNome, "pt-BR")),
+        .sort(
+          (a, b) =>
+            Number(b.ano) - Number(a.ano) || a.condoNome.localeCompare(b.condoNome, "pt-BR"),
+        ),
     [exerciciosRaw],
   );
   const exercicio = exercicios.find((e) => e.id === busca.exercicio) ?? exercicios[0];
@@ -57,10 +69,14 @@ function PaginaPrevisao() {
   if (!exercicio) {
     return (
       <>
-        <PageHeader titulo="Previsão orçamentária" descricao="Previsão orçamentária de cada prestação de contas." />
+        <PageHeader
+          titulo="Previsão orçamentária"
+          descricao="Previsão orçamentária de cada prestação de contas."
+        />
         <SectionCard titulo="Nenhuma prestação de contas">
           <p className="text-sm text-muted-foreground">
-            Crie uma prestação de contas (ou importe o PDF do Systemar) para montar a previsão orçamentária.
+            Crie uma prestação de contas (ou importe o PDF do Systemar) para montar a previsão
+            orçamentária.
           </p>
           <Button asChild className="mt-4">
             <Link to="/prestacao-contas">Ir para Prestação de contas</Link>
@@ -70,21 +86,28 @@ function PaginaPrevisao() {
     );
   }
 
-  const nomeCondo = (e: Exercicio) => e.condoNome || condominios.find((c) => c.id === e.condoId)?.nome || "Sem condomínio";
+  const nomeCondo = (e: Exercicio) =>
+    e.condoNome || condominios.find((c) => c.id === e.condoId)?.nome || "Sem condomínio";
   const opcoes = exercicios.map((e) => ({
     valor: e.id,
     rotulo: `${nomeCondo(e)} · exercício ${e.ano}${e.previsaoSugerida ? "" : " (sem previsão do Systemar)"}`,
   }));
   const seletor = (
     <Field rotulo="Prestação de contas" className="max-w-xl">
-      <Selecao value={exercicio.id} onChange={(id) => navigate({ search: { exercicio: id }, replace: true })} opcoes={opcoes} />
+      <Selecao
+        value={exercicio.id}
+        onChange={(id) => navigate({ search: { exercicio: id }, replace: true })}
+        opcoes={opcoes}
+      />
     </Field>
   );
 
   // Exercício anterior do mesmo condomínio — a base da sugestão de variação (desvio entre o que
   // ele projetou pra este ano e o que este ano realmente realizou). Sem esse exercício, ou sem
   // despesas lançadas em nenhum dos dois, não há sugestão (calcularDesvioAnoAnterior devolve null).
-  const exercicioAnterior = exercicios.find((x) => x.condoId === exercicio.condoId && Number(x.ano) === Number(exercicio.ano) - 1);
+  const exercicioAnterior = exercicios.find(
+    (x) => x.condoId === exercicio.condoId && Number(x.ano) === Number(exercicio.ano) - 1,
+  );
 
   return (
     <EditorPrevisao
@@ -118,16 +141,19 @@ function EditorPrevisao({
   // atual continua sendo usado pelos relatórios e pelo comparativo, mas não deve substituir a
   // base histórica do orçamento novo.
   const demonstrativoBase = exercicioAnterior?.demonstrativo ?? demonstrativo;
-  const parametrosBase = useMemo(() => ({
-    ...e,
-    indices: e.consid.indices,
-    prev: {
-      ...(e.prev ?? { modo: "tradicional", ajustes: [], fundoReservaPct: null }),
-      // Ajustes feitos na prestação anterior corrigem a base do novo exercício.
-      // Os índices e demais parâmetros continuam sendo os do exercício atual.
-      ajustes: [...(exercicioAnterior?.prev?.ajustes ?? []), ...(e.prev?.ajustes ?? [])],
-    },
-  }), [e, exercicioAnterior]);
+  const parametrosBase = useMemo(
+    () => ({
+      ...e,
+      indices: e.consid.indices,
+      prev: {
+        ...(e.prev ?? { modo: "tradicional", ajustes: [], fundoReservaPct: null }),
+        // Ajustes feitos na prestação anterior corrigem a base do novo exercício.
+        // Os índices e demais parâmetros continuam sendo os do exercício atual.
+        ajustes: [...(exercicioAnterior?.prev?.ajustes ?? []), ...(e.prev?.ajustes ?? [])],
+      },
+    }),
+    [e, exercicioAnterior],
+  );
   const [aba, setAba] = useState(e.previsaoSugerida ? "sugerida" : "demonstrativo");
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 
@@ -136,44 +162,45 @@ function EditorPrevisao({
     [demonstrativoBase, parametrosBase, unidades],
   );
 
-  // Sugestão (nunca aplicada sozinha) de variação pro exercício seguinte: desvio entre o previsto
-  // que o exercício anterior calculou pra este ano e o que este ano realmente gastou.
-  const desvio = useMemo(
-    () =>
-      exercicioAnterior
-        ? calcularDesvioAnoAnterior(
-            exercicioAnterior.demonstrativo,
-            { ...exercicioAnterior, indices: exercicioAnterior.consid.indices },
-            e.demonstrativo,
-          )
-        : null,
-    [exercicioAnterior, e.demonstrativo],
-  );
-
   // Só para avisar no topo que o resultado da aba aberta está incompleto (não muda o Salvar).
   const valorUnidadeSugerida = useMemo(() => {
     if (!e.previsaoSugerida) return null;
     const rs = calcularPrevisaoSugerida(e.previsaoSugerida);
-    return calcularPrevisaoSugeridaPorUnidade(rs.rateioMensalSugerido, unidades, e.prev?.fundoReservaPct ?? 0, e.arredondamento).valorUnidade;
+    return calcularPrevisaoSugeridaPorUnidade(
+      rs.rateioMensalSugerido,
+      unidades,
+      e.prev?.fundoReservaPct ?? 0,
+      e.arredondamento,
+    ).valorUnidade;
   }, [e.previsaoSugerida, unidades, e.prev?.fundoReservaPct, e.arredondamento]);
-  const parcial = aba === "sugerida" ? !!e.previsaoSugerida && valorUnidadeSugerida === null : resultado.rateioSugerido === null;
+  const parcial =
+    aba === "sugerida"
+      ? !!e.previsaoSugerida && valorUnidadeSugerida === null
+      : resultado.rateioSugerido === null;
 
   // Divergência entre os totais do PDF (congelados em previsaoSugerida.totaisPdf) e o recalculado a
   // partir das categorias/deduções/variação atuais — "em conferência" até confirmar (não bloqueia o
   // Salvar; só sinaliza, aqui e na lista de Prestação de contas).
   const divergenciasPv = useMemo(() => {
     if (!e.previsaoSugerida) return [];
-    return compararComTotaisPdf(calcularPrevisaoSugerida(e.previsaoSugerida), e.previsaoSugerida.totaisPdf);
+    return compararComTotaisPdf(
+      calcularPrevisaoSugerida(e.previsaoSugerida),
+      e.previsaoSugerida.totaisPdf,
+    );
   }, [e.previsaoSugerida]);
   const chaveDivergenciaAtual = useMemo(() => chaveDivergencia(divergenciasPv), [divergenciasPv]);
   const decisao = e.previsaoSugerida?.decisaoDivergencia;
-  const emConferencia = divergenciasPv.length > 0 && !(decisao?.chave === chaveDivergenciaAtual && decisao.status === "confirmado");
+  const emConferencia =
+    divergenciasPv.length > 0 &&
+    !(decisao?.chave === chaveDivergenciaAtual && decisao.status === "confirmado");
   const chaveDecisaoAntesDoSalvar = useRef<string | null>(null);
 
   const sujoRef = useRef(sujo);
   sujoRef.current = sujo;
   useBlocker({
-    shouldBlockFn: () => sujoRef.current && !window.confirm("Há alterações não salvas nesta previsão orçamentária. Sair mesmo assim?"),
+    shouldBlockFn: () =>
+      sujoRef.current &&
+      !window.confirm("Há alterações não salvas nesta previsão orçamentária. Sair mesmo assim?"),
     enableBeforeUnload: () => sujoRef.current,
   });
 
@@ -185,7 +212,10 @@ function EditorPrevisao({
       queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
       const decidida = n.previsaoSugerida?.decisaoDivergencia;
       if (decidida && decidida.chave !== chaveDecisaoAntesDoSalvar.current) {
-        const campos = compararComTotaisPdf(calcularPrevisaoSugerida(n.previsaoSugerida!), n.previsaoSugerida!.totaisPdf);
+        const campos = compararComTotaisPdf(
+          calcularPrevisaoSugerida(n.previsaoSugerida!),
+          n.previsaoSugerida!.totaisPdf,
+        );
         if (campos.length > 0) {
           api
             .salvar<DecisaoDivergenciaPrevisao>("decisoes_previsao", {
@@ -200,7 +230,9 @@ function EditorPrevisao({
               decididoPorNome: decidida.porNome,
               decididoEm: decidida.em,
             })
-            .then(() => queryClient.invalidateQueries({ queryKey: chaves.lista("decisoes_previsao") }))
+            .then(() =>
+              queryClient.invalidateQueries({ queryKey: chaves.lista("decisoes_previsao") }),
+            )
             .catch(() => undefined); // não bloqueia o salvamento da previsão; só o log de auditoria falharia
         }
       }
@@ -212,11 +244,15 @@ function EditorPrevisao({
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
-    chaveDecisaoAntesDoSalvar.current = (JSON.parse(salvoJson) as Exercicio).previsaoSugerida?.decisaoDivergencia?.chave ?? null;
+    chaveDecisaoAntesDoSalvar.current =
+      (JSON.parse(salvoJson) as Exercicio).previsaoSugerida?.decisaoDivergencia?.chave ?? null;
     salvar.mutate(prepararExercicio(e));
   }
 
-  const periodo = demonstrativo.periodo.ini && demonstrativo.periodo.fim ? `${demonstrativo.periodo.ini} a ${demonstrativo.periodo.fim}` : null;
+  const periodo =
+    demonstrativo.periodo.ini && demonstrativo.periodo.fim
+      ? `${demonstrativo.periodo.ini} a ${demonstrativo.periodo.fim}`
+      : null;
 
   return (
     <>
@@ -231,12 +267,18 @@ function EditorPrevisao({
         acoes={
           <>
             {parcial && (
-              <Badge variant="warning" title="Falta dado para o valor por unidade. Salvar continua permitido.">
+              <Badge
+                variant="warning"
+                title="Falta dado para o valor por unidade. Salvar continua permitido."
+              >
                 Resultado parcial
               </Badge>
             )}
             {emConferencia && (
-              <Badge variant="warning" title='Ver a aba "Sugerida pelo Systemar" para revisar e decidir.'>
+              <Badge
+                variant="warning"
+                title='Ver a aba "Sugerida pelo Systemar" para revisar e decidir.'
+              >
                 Em conferência
               </Badge>
             )}
@@ -246,7 +288,12 @@ function EditorPrevisao({
                 <FileSpreadsheet /> Prestação de contas
               </Link>
             </Button>
-            <Button permissao="previsao_orcamentaria.editar" type="submit" form="form-previsao" disabled={salvar.isPending}>
+            <Button
+              permissao="previsao_orcamentaria.editar"
+              type="submit"
+              form="form-previsao"
+              disabled={salvar.isPending}
+            >
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
@@ -259,8 +306,12 @@ function EditorPrevisao({
       <form id="form-previsao" onSubmit={enviar} noValidate>
         <Tabs value={aba} onValueChange={setAba}>
           <TabsList className="h-auto min-h-10 max-w-full flex-wrap justify-start bg-secondary">
-            <TabsTrigger value="sugerida" className="whitespace-normal px-4">Sugerida pelo Systemar</TabsTrigger>
-            <TabsTrigger value="demonstrativo" className="whitespace-normal px-4">Calculada pelo demonstrativo</TabsTrigger>
+            <TabsTrigger value="sugerida" className="whitespace-normal px-4">
+              Sugerida pelo Systemar
+            </TabsTrigger>
+            <TabsTrigger value="demonstrativo" className="whitespace-normal px-4">
+              Calculada pelo demonstrativo
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="sugerida" className="mt-4">
             {e.previsaoSugerida ? (
@@ -274,8 +325,9 @@ function EditorPrevisao({
             ) : (
               <SectionCard titulo="Sem previsão sugerida">
                 <p className="text-sm text-muted-foreground">
-                  Esta prestação de contas não tem a folha “Previsão orçamentária ordinária sugerida” do Systemar. Use “Importar PDF”
-                  na prestação de contas com o relatório que traz essa folha, ou trabalhe na aba “Calculada pelo demonstrativo”.
+                  Esta prestação de contas não tem a folha “Previsão orçamentária ordinária
+                  sugerida” do Systemar. Use “Importar PDF” na prestação de contas com o relatório
+                  que traz essa folha, ou trabalhe na aba “Calculada pelo demonstrativo”.
                 </p>
                 <Button variant="outline" asChild className="mt-4">
                   <Link to="/prestacao-contas/$id" params={{ id: e.id }}>
@@ -293,9 +345,6 @@ function EditorPrevisao({
               condoId={e.condoId}
               grupos={demonstrativoBase.despesas.grupos.map((g) => g.nome)}
               onChange={mudar}
-              desvio={desvio}
-              anoAnterior={exercicioAnterior?.ano}
-              previsaoAnterior={desvio?.previsto ?? null}
               rotuloBase={exercicioAnterior ? "Base (realizado do exercício anterior)" : undefined}
             />
           </TabsContent>
