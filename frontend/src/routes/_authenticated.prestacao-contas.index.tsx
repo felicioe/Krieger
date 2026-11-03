@@ -19,9 +19,9 @@ import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
-import { exercicioPadrao, normalizarExercicio, periodoInicialDoExercicio, validarNovoExercicio } from "@/domain/exercicio";
+import { encontrarExercicioAnterior, exercicioPadrao, normalizarExercicio, periodoInicialDoExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { mesesNoPeriodo } from "@/domain/demonstrativo";
-import { calcularPrevisao } from "@/domain/previsao";
+import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
 import { calcularPrevisaoSugerida, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
 
