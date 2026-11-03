@@ -1,7 +1,7 @@
 import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { FileUp, Loader2, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,14 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { Field } from "@/components/app/Field";
-import { InteiroInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { DataInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
 import { exercicioPadrao, normalizarExercicio, periodoInicialDoExercicio, validarNovoExercicio } from "@/domain/exercicio";
+import { mesesNoPeriodo } from "@/domain/demonstrativo";
 import { calcularPrevisao } from "@/domain/previsao";
 import { calcularPrevisaoSugerida, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
@@ -188,8 +189,14 @@ function DialogoNovo({
   const queryClient = useQueryClient();
   const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
   const [condoId, setCondoId] = useState("");
-  const [ano, setAno] = useState<number | null>(new Date().getFullYear() - 1);
+  const [periodo, setPeriodo] = useState({ ini: "", fim: "" });
   const [erro, setErro] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!condoId || periodo.ini || periodo.fim) return;
+    const anterior = periodoInicialDoExercicio(condoId, 9999, exercicios);
+    if (anterior.ini && anterior.fim) setPeriodo(anterior);
+  }, [condoId, exercicios, periodo.ini, periodo.fim]);
 
   const criar = useMutation({
     mutationFn: (dados: Omit<Exercicio, "id">) => api.salvar<Omit<Exercicio, "id"> & { id?: string }>("exercicios", dados),
@@ -204,12 +211,14 @@ function DialogoNovo({
 
   function enviar(e: FormEvent) {
     e.preventDefault();
+    const ano = Number(periodo.fim.slice(-4));
+    const meses = mesesNoPeriodo(periodo.ini, periodo.fim);
     const v = validarNovoExercicio(condoId, ano, exercicios);
     if (!v.ok) return setErro(v.erro);
+    if (!periodo.ini || !periodo.fim || !meses || meses < 1) return setErro("Informe um período válido, com as datas inicial e final.");
     const condo = condominios.find((c) => c.id === condoId);
     if (!condo || !ano) return;
     setErro(null);
-    const periodo = periodoInicialDoExercicio(condo.id, ano, exercicios);
     criar.mutate(exercicioPadrao(normalizarCondominio(condo), ano, escritorio?.cidade ?? "", new Date(), periodo));
   }
 
@@ -233,8 +242,11 @@ function DialogoNovo({
           <Field rotulo="Condomínio" obrigatorio>
             <SelecaoBusca value={condoId} onChange={setCondoId} opcoes={opcoes} placeholder="Escolha o condomínio" />
           </Field>
-          <Field rotulo="Ano do exercício" obrigatorio className="max-w-[10rem]">
-            <InteiroInput value={ano} onChange={setAno} maxLength={4} />
+          <Field rotulo="Período da prestação" dica="O rótulo será o ano da data final (ex.: 01/11/2025 a 31/10/2026 = prestação de contas de 2026)." obrigatorio>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <DataInput aria-label="Data inicial" value={periodo.ini} onChange={(v) => setPeriodo((p) => ({ ...p, ini: v }))} />
+              <DataInput aria-label="Data final" value={periodo.fim} onChange={(v) => setPeriodo((p) => ({ ...p, fim: v }))} />
+            </div>
           </Field>
         </form>
         <DialogFooter>

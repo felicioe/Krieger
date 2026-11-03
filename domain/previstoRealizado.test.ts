@@ -22,8 +22,8 @@ function exercicio(ajustes: AjustePrevisao[] = [], variacao = 0): Exercicio {
         { nome: "Pessoal", itens: [{ nome: "Salários", valor: 120000 }] },
         { nome: "Manutenção", itens: [{ nome: "Elevadores", valor: 24000 }, { nome: "Fundo de caixa p/ obras", valor: 12000 }] },
       ],
-      "01/01/2025",
-      "31/12/2025",
+      "01/01/2026",
+      "31/12/2026",
     ),
     origem: [],
     cidade: "",
@@ -56,9 +56,9 @@ function mensal(mes: number, ano: number, grupos: Demonstrativo["despesas"]["gru
 const salarios = (v: number) => ({ nome: "Pessoal", itens: [{ nome: "Salários", valor: v }] });
 
 describe("previsto × realizado", () => {
-  it("o exercício N+1 começa no mês seguinte ao fim do demonstrativo N", () => {
+  it("usa exatamente os meses do período informado na prestação", () => {
     const e = exercicio();
-    e.demonstrativo!.periodo = { ini: "01/07/2024", fim: "30/06/2025" };
+    e.demonstrativo!.periodo = { ini: "01/07/2025", fim: "30/06/2026" };
     const m = mesesDoExercicioSeguinte(e);
     expect(m[0]).toEqual({ mes: 7, ano: 2025 });
     expect(m[11]).toEqual({ mes: 6, ano: 2026 });

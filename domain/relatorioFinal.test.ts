@@ -23,7 +23,7 @@ function exercicio(saldoAtual: number): Exercicio {
   const e = { id: "e1", ...exercicioPadrao(condo, 2025, "Curitiba") } as Exercicio;
   e.demonstrativo = recalcularDemonstrativo({
     ...e.demonstrativo!,
-    periodo: { ini: "01/01/2025", fim: "31/12/2025" },
+    periodo: { ini: "01/01/2026", fim: "31/12/2026" },
     saldoAnterior: { contas: [{ nome: "Conta", valor: 1000 }], total: 0 },
     receitas: { itens: [{ nome: "Taxa", valor: 5000 }], subtotal: 0, totalComSaldo: 0 },
     despesas: { grupos: [{ nome: "Consumo", itens: [{ nome: "Água e esgoto", valor: 1200 }, { nome: "Energia", valor: 800 }] }], subtotal: 0, saldoRestante: 0 },
@@ -80,6 +80,7 @@ describe("relatório final", () => {
 
   it("usa os meses já lançados do próprio exercício quando o período seguinte ainda está vazio", () => {
     const e = exercicio(4000);
+    e.demonstrativo!.periodo = { ini: "", fim: "" };
     const r = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [mensal(1, 10), mensal(8, 20)] });
     expect(r.mensais.map((m) => m.id)).toEqual(["m1", "m8"]);
   });
