@@ -35,9 +35,28 @@ Autenticação por sessão (cookie), perfis `admin` e `user`; só administradore
 ## Regras novas
 ### Previsão orçamentária com linhas de ajuste (+ / −)
 `exercicio.prev.ajustes: { id, descricao, sinal: "+" | "-", valor, grupo?: string }[]`.
-Base anual = despesas ordinárias (ou soma das rubricas no modo detalhado) − dedução (fundo de obras) + variação.
-**Anual ajustado = base + Σ ajustes "+" − Σ ajustes "−".** Mensal, índice, fundo de reserva e valor por unidade partem do anual ajustado.
-Cada linha pode ser criada, editada e excluída e aparece no demonstrativo da previsão e no PDF. Sem grupo, vale para o total.
+**Base = o realizado (despesas) do exercício ANTERIOR do mesmo condomínio — nunca o demonstrativo
+do próprio exercício em edição**, que vai sendo preenchido ao longo do ano e não pode servir de
+base móvel pra uma previsão que precisa ficar estável (`demonstrativoBasePrevisao`, em
+`domain/previsao.ts`; o exercício anterior é achado por `encontrarExercicioAnterior`, em
+`domain/exercicio.ts`). Sem exercício anterior (primeira prestação do condomínio), cai no próprio
+demonstrativo. Todo consumidor da previsão de um exercício (editor de previsão orçamentária,
+Relatório Final, Previsto × Realizado, Orçado × Realizado mensal, listagem de prestações de
+contas) usa a mesma regra, pra nunca divergir sobre de onde ela parte — um exercício que já
+aprovou sua previsão mostra sempre o mesmo valor em todas essas telas, mesmo que o demonstrativo
+do exercício anterior seja editado depois.
+Base líquida = base − dedução (fundo de obras). **Anual ajustado = base líquida + variação + Σ
+ajustes "+" − Σ ajustes "−".** Mensal, índice, fundo de reserva e valor por unidade partem do
+anual ajustado.
+Cada linha de ajuste pode ser criada, editada e excluída e aparece no demonstrativo da previsão e
+no PDF. Sem grupo, vale para o total.
+
+O editor também mostra, como referência fixa (não editável), o realizado do exercício anterior e
+a "última previsão aprovada" — o anual ajustado que o PRÓPRIO exercício anterior já calculou, com
+os parâmetros que ele confirmou (não recalculada com os parâmetros, ainda não confirmados, do
+exercício atual) — e, quando o exercício atual já tem despesas lançadas, uma sugestão de variação
+(nunca aplicada sozinha) a partir do desvio entre essa última previsão e o realizado efetivo
+(`calcularDesvioAnoAnterior`).
 
 ### Previsto × Realizado
 Por rubrica e grupo: previsto anual e mensal (previsão do exercício N, já com ajustes) × realizado (demonstrativo/mensais do exercício N+1,

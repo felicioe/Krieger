@@ -1,5 +1,61 @@
 # Estado atual e passagem de contexto
 
+## PR #170 — base da previsão orçamentária passa a ser o exercício anterior — 03/11/2026
+
+Pedido do responsável, de novo com o Urban Classic: na prestação de 2026, a tela mostrava apenas
+"Base: R$ 757.320,18 / Variação: 0% / Previsão: R$ 757.320,18" (o demonstrativo do próprio
+exercício 2026, ainda vazio/placeholder) e a previsão já aprovada pelo exercício 2025 para 2026
+(R$ 845.875,61) só aparecia como comparação dentro do banner de sugestão — nunca como um valor
+carregado e permanente para a nova prestação.
+
+Causa: `calcularPrevisao` sempre recebia o demonstrativo do PRÓPRIO exercício aberto como base.
+Correto pra um exercício fechado (base = seu próprio realizado, projetando o seguinte), errado pra
+um exercício em andamento, cuja base ficava presa ao que quer que estivesse no seu demonstrativo
+naquele momento — e sujeita a derivar conforme lançamentos reais entrassem ao longo do ano.
+
+**Implementado** (ver a regra completa em `docs/ESPECIFICACAO-V2.md`, seção "Previsão orçamentária
+com linhas de ajuste"):
+- `domain/previsao.ts` — `demonstrativoBasePrevisao(exercicio, exercicioAnterior)`: resolve a base
+  correta (realizado do anterior, ou o próprio sem anterior).
+- `domain/exercicio.ts` — `encontrarExercicioAnterior(exercicios, exercicio)`: acha o exercício do
+  mesmo condomínio um ano antes.
+- `PainelPrevisao.tsx` ganhou um bloco de referência permanente (Realizado anterior + Última
+  previsão aprovada), além do banner de sugestão já existente (PR #126); "Base" foi relabelada pra
+  deixar claro de qual ano ela vem.
+
+O Codex apontou, corretamente, que a primeira versão só trocava a base no editor — Relatório
+Final, Previsto × Realizado, Orçado × Realizado mensal e a listagem de prestações continuavam
+usando o demonstrativo do próprio exercício, divergindo do que o editor passou a mostrar. Também
+apontou que "última previsão aprovada" e a sugestão de variação, ao recalcular a previsão do
+PRÓPRIO exercício anterior, repetiam o mesmo bug (usavam o demonstrativo dele mesmo, não o do
+anterior DELE). Ambos corrigidos: `compararPrevistoRealizado`, `montarRelatorioFinal` e
+`compararPrevistoRealizadoMensal` ganharam um parâmetro opcional (`demonstrativoBase` /
+`exercicioAnterior`) usado pelos 5 lugares que calculam a previsão de um exercício; o editor
+também resolve a base do exercício anterior recursivamente (a previsão QUE ELE aprovou, não o
+demonstrativo dele). Validado com Playwright reproduzindo o caso de 3 exercícios consecutivos do
+Codex (2024=100k, 2025=120k, 2026=130k, sem variação): "última previsão aprovada" em 2026 mostra
+corretamente 100k (o que 2025 aprovou, não os 120k do próprio demonstrativo de 2025) e a sugestão
+de variação sai como +30% (não +8,33%). Testes novos em `domain/previstoRealizado.test.ts`,
+`domain/relatorioFinal.test.ts` e `domain/previstoRealizadoMensal.test.ts` travam a propagação da
+base nos três consumidores de domínio.
+
+## PR #169 — conserto do CI (changelog + testes obsoletos + 7 erros de TypeScript) — 03/11/2026
+
+O CI vinha falhando em ~30 execuções seguidas (PRs e pushes em `main`) porque a versão 1.05 foi
+adicionada em `versoes.json` sem rodar `npm run changelog:gerar` — o passo `changelog:check`
+bloqueava tudo depois dele (PHP, `bundle:check`, `package:hostinger` nunca chegavam a rodar).
+Regenerado o `CHANGELOG.md`; isso destravou o CI pela primeira vez em semanas e expôs, por trás do
+bloqueio: 2 arquivos de teste em `frontend/src/test/` que eram cópias obsoletas de `domain/*.test.ts`
+(removidos — `domain/` já cobre a mesma lógica), 2 asserções desatualizadas em relação ao
+comportamento atual (corrigidas), e 7 erros reais de `tsc --noEmit` no frontend (import faltando de
+`Selecao` em dois diálogos; `tipo`/`periodo` colidindo com `exactOptionalPropertyTypes`; `condo`
+possivelmente `undefined` passado a um parâmetro que só aceita `null`) — nenhum relacionado ao
+changelog, só nunca tinham rodado de verdade. Tudo corrigido; pipeline completa validada
+localmente (testes, typecheck, build, `bundle:check`, `package:hostinger`) e commit publicado no
+`deploy-hostinger` (`330e974`). **Pendente**: o site respondeu 403 durante o deploy e voltou a 200
+em seguida, mas uma checagem rápida depois mostrou um hash de bundle diferente do commit publicado
+— precisa de uma verificação sem cache antes de considerar a publicação confirmada.
+
 ## PR #126 mesclado e publicado — 02/11/2026
 
 PR #126 (sugestão de variação a partir do desvio previsto × realizado, descrito abaixo) mesclado em

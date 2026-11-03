@@ -1,7 +1,7 @@
 import { calcularPrevisao, expressaoDeducao } from "./previsao";
 import { competenciaMensal, mesesDoExercicioSeguinte, chaveRotulo } from "./previstoRealizado";
 import { centavos } from "./demonstrativo";
-import type { Condominio, Exercicio, Mensal } from "./types";
+import type { Condominio, Demonstrativo, Exercicio, Mensal } from "./types";
 
 export type CelulaMensal = { previsto: number; realizado: number; diferenca: number; horizontal: number | null; verticalPrevisto: number | null; verticalRealizado: number | null };
 export type LinhaMensal = { grupo: string; mensal: CelulaMensal[]; total: CelulaMensal };
@@ -13,7 +13,18 @@ const fechar = (previsto: number, realizado: number, totalPrevisto: number, tota
   return { previsto: p, realizado: r, diferenca: centavos(r - p), horizontal: pct(r - p, p), verticalPrevisto: pct(p, totalPrevisto), verticalRealizado: pct(r, totalRealizado) };
 };
 
-export function compararPrevistoRealizadoMensal(exercicio: Exercicio, mensais: Mensal[], opcoes: { condominio?: Pick<Condominio, "unidades" | "mapeamento"> | null; inicio?: number; fim?: number } = {}): ResultadoMensalDetalhado {
+export function compararPrevistoRealizadoMensal(
+  exercicio: Exercicio,
+  mensais: Mensal[],
+  opcoes: {
+    condominio?: Pick<Condominio, "unidades" | "mapeamento"> | null;
+    inicio?: number;
+    fim?: number;
+    /** Base pra projetar a previsão (ver `demonstrativoBasePrevisao`, em `previsao.ts`) — o realizado
+     * do exercício anterior. Sem isso, cai no demonstrativo do próprio `exercicio` (compatibilidade). */
+    demonstrativoBase?: Demonstrativo | null;
+  } = {},
+): ResultadoMensalDetalhado {
   const janela = mesesDoExercicioSeguinte(exercicio);
   const inicio = Math.max(1, Math.min(12, opcoes.inicio ?? 1));
   const fim = Math.max(inicio, Math.min(12, opcoes.fim ?? 12));
@@ -22,7 +33,7 @@ export function compararPrevistoRealizadoMensal(exercicio: Exercicio, mensais: M
   const porPos = new Map<number, Mensal[]>();
   const pos = new Map(janela.map((m, i) => [ch(m), i + 1]));
   for (const m of mensais) { if (m.condoId !== exercicio.condoId) continue; const c = competenciaMensal(m); const p = c ? pos.get(ch(c)) : undefined; if (p && p >= inicio && p <= fim) porPos.set(p, [...(porPos.get(p) ?? []), m]); }
-  const prev = calcularPrevisao(exercicio.demonstrativo, { ...exercicio, indices: exercicio.consid?.indices, prev: { ...(exercicio.prev ?? { modo: "tradicional" }), modo: "detalhado" } }, opcoes.condominio?.unidades ?? null);
+  const prev = calcularPrevisao(opcoes.demonstrativoBase ?? exercicio.demonstrativo, { ...exercicio, indices: exercicio.consid?.indices, prev: { ...(exercicio.prev ?? { modo: "tradicional" }), modo: "detalhado" } }, opcoes.condominio?.unidades ?? null);
   const mapa = new Map((opcoes.condominio?.mapeamento ?? []).filter((x) => x.de?.trim()).map((x) => [chaveRotulo(x.de), x.para]));
   const nome = (s: string) => mapa.get(chaveRotulo(s)) ?? s;
   const grupos = new Map<string, { nome: string; previsto: number; realizado: number[] }>();

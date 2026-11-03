@@ -128,4 +128,13 @@ describe("previsto × realizado", () => {
     expect(r.total.realizado).toBe(10000);
     expect(r.avisos.some((a) => a.includes("02/2026"))).toBe(true);
   });
+
+  it("demonstrativoBase substitui o do próprio exercício na previsão (achado do Codex no PR #170: evita divergir do editor)", () => {
+    const e = exercicio();
+    const outraBase = demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 999999 }] }]);
+    const comBase = compararPrevistoRealizado(e, [], { demonstrativoBase: outraBase });
+    const semBase = compararPrevistoRealizado(e, [], {});
+    expect(comBase.total.previstoAnual).toBe(999999);
+    expect(semBase.total.previstoAnual).toBe(144000); // base do próprio exercício (120000 + 24000)
+  });
 });
