@@ -118,12 +118,22 @@ function EditorPrevisao({
   // atual continua sendo usado pelos relatórios e pelo comparativo, mas não deve substituir a
   // base histórica do orçamento novo.
   const demonstrativoBase = exercicioAnterior?.demonstrativo ?? demonstrativo;
+  const parametrosBase = useMemo(() => ({
+    ...e,
+    indices: e.consid.indices,
+    prev: {
+      ...(e.prev ?? { modo: "tradicional", ajustes: [], fundoReservaPct: null }),
+      // Ajustes feitos na prestação anterior corrigem a base do novo exercício.
+      // Os índices e demais parâmetros continuam sendo os do exercício atual.
+      ajustes: exercicioAnterior?.prev?.ajustes ?? e.prev?.ajustes ?? [],
+    },
+  }), [e, exercicioAnterior]);
   const [aba, setAba] = useState(e.previsaoSugerida ? "sugerida" : "demonstrativo");
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 
   const resultado = useMemo(
-    () => calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades),
-    [demonstrativoBase, e, unidades],
+    () => calcularPrevisao(demonstrativoBase, parametrosBase, unidades),
+    [demonstrativoBase, parametrosBase, unidades],
   );
 
   // Sugestão (nunca aplicada sozinha) de variação pro exercício seguinte: desvio entre o previsto
