@@ -2,32 +2,23 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { FileSpreadsheet, Loader2, Save } from "lucide-react";
+import { FileSpreadsheet, Loader2, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
 import { PainelPrevisao } from "@/components/previsao/PainelPrevisao";
-import { PainelPrevisaoSugerida } from "@/components/previsao/PainelPrevisaoSugerida";
 import { api } from "@/lib/api";
 import { chaves, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
-import { novoId } from "@/lib/id";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { calcularPrevisao } from "@/domain/previsao";
 import { demonstrativoDoPeriodo } from "@/domain/demonstrativoDinamico";
-import {
-  calcularPrevisaoSugerida,
-  calcularPrevisaoSugeridaPorUnidade,
-  chaveDivergencia,
-  compararComTotaisPdf,
-} from "@/domain/previsaoSugerida";
-import type { Condominio, DecisaoDivergenciaPrevisao, Exercicio, Mensal } from "@/domain/types";
+import type { Condominio, Exercicio, Mensal } from "@/domain/types";
 
 type Busca = { exercicio?: string };
 
@@ -55,7 +46,7 @@ function PaginaPrevisao() {
   const navigate = useNavigate({ from: "/previsao-orcamentaria" });
   const { data: exerciciosRaw } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
-  const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
+  const { data: mensais, refetch: atualizarMensais, isFetching: atualizandoMensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
 
   const exercicios = useMemo(
     () =>
@@ -78,7 +69,7 @@ function PaginaPrevisao() {
         />
         <SectionCard titulo="Nenhuma prestação de contas">
           <p className="text-sm text-muted-foreground">
-            Crie uma prestação de contas (ou importe o PDF do Systemar) para montar a previsão
+            Crie uma prestação de contas ou importe os relatórios mensais para montar a previsão
             orçamentária.
           </p>
           <Button asChild className="mt-4">
@@ -93,7 +84,7 @@ function PaginaPrevisao() {
     e.condoNome || condominios.find((c) => c.id === e.condoId)?.nome || "Sem condomínio";
   const opcoes = exercicios.map((e) => ({
     valor: e.id,
-    rotulo: `${nomeCondo(e)} · exercício ${e.ano}${e.previsaoSugerida ? "" : " (sem previsão do Systemar)"}`,
+    rotulo: `${nomeCondo(e)} · exercício ${e.ano}`,
   }));
   const seletor = (
     <Field rotulo="Prestação de contas" className="max-w-xl">
@@ -118,6 +109,8 @@ function PaginaPrevisao() {
       inicial={exercicio}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
       mensais={mensais}
+      atualizarMensais={atualizarMensais}
+      atualizandoMensais={atualizandoMensais}
       exercicioAnterior={exercicioAnterior}
       seletor={seletor}
     />
@@ -128,12 +121,16 @@ function EditorPrevisao({
   inicial,
   condominio,
   mensais,
+  atualizarMensais,
+  atualizandoMensais,
   exercicioAnterior,
   seletor,
 }: {
   inicial: Exercicio;
   condominio: Condominio | undefined;
   mensais: Mensal[];
+  atualizarMensais: () => Promise<unknown>;
+  atualizandoMensais: boolean;
   exercicioAnterior: Exercicio | undefined;
   seletor: ReactNode;
 }) {
@@ -163,7 +160,6 @@ function EditorPrevisao({
     }),
     [e, exercicioAnterior],
   );
-  const [aba, setAba] = useState(e.previsaoSugerida ? "sugerida" : "demonstrativo");
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 
   const resultado = useMemo(
@@ -172,44 +168,10 @@ function EditorPrevisao({
   );
   const rateioAnterior = useMemo(
     () =>
-      exercicioAnterior?.previsaoSugerida
-        ? calcularPrevisaoSugerida(exercicioAnterior.previsaoSugerida).rateioMensalSugerido
-        : null,
-    [exercicioAnterior?.previsaoSugerida],
+      exercicioAnterior?.rateioAprovado ?? exercicioAnterior?.rateioAtual ?? null,
+    [exercicioAnterior?.rateioAprovado, exercicioAnterior?.rateioAtual],
   );
-
-  // Só para avisar no topo que o resultado da aba aberta está incompleto (não muda o Salvar).
-  const valorUnidadeSugerida = useMemo(() => {
-    if (!e.previsaoSugerida) return null;
-    const rs = calcularPrevisaoSugerida(e.previsaoSugerida);
-    return calcularPrevisaoSugeridaPorUnidade(
-      rs.rateioMensalSugerido,
-      unidades,
-      e.prev?.fundoReservaPct ?? 0,
-      e.arredondamento,
-    ).valorUnidade;
-  }, [e.previsaoSugerida, unidades, e.prev?.fundoReservaPct, e.arredondamento]);
-  const parcial =
-    aba === "sugerida"
-      ? !!e.previsaoSugerida && valorUnidadeSugerida === null
-      : resultado.rateioSugerido === null;
-
-  // Divergência entre os totais do PDF (congelados em previsaoSugerida.totaisPdf) e o recalculado a
-  // partir das categorias/deduções/variação atuais — "em conferência" até confirmar (não bloqueia o
-  // Salvar; só sinaliza, aqui e na lista de Prestação de contas).
-  const divergenciasPv = useMemo(() => {
-    if (!e.previsaoSugerida) return [];
-    return compararComTotaisPdf(
-      calcularPrevisaoSugerida(e.previsaoSugerida),
-      e.previsaoSugerida.totaisPdf,
-    );
-  }, [e.previsaoSugerida]);
-  const chaveDivergenciaAtual = useMemo(() => chaveDivergencia(divergenciasPv), [divergenciasPv]);
-  const decisao = e.previsaoSugerida?.decisaoDivergencia;
-  const emConferencia =
-    divergenciasPv.length > 0 &&
-    !(decisao?.chave === chaveDivergenciaAtual && decisao.status === "confirmado");
-  const chaveDecisaoAntesDoSalvar = useRef<string | null>(null);
+  const parcial = resultado.rateioSugerido === null;
 
   const sujoRef = useRef(sujo);
   sujoRef.current = sujo;
@@ -226,32 +188,6 @@ function EditorPrevisao({
       const n = normalizarExercicio(salvo);
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
       queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
-      const decidida = n.previsaoSugerida?.decisaoDivergencia;
-      if (decidida && decidida.chave !== chaveDecisaoAntesDoSalvar.current) {
-        const campos = compararComTotaisPdf(
-          calcularPrevisaoSugerida(n.previsaoSugerida!),
-          n.previsaoSugerida!.totaisPdf,
-        );
-        if (campos.length > 0) {
-          api
-            .salvar<DecisaoDivergenciaPrevisao>("decisoes_previsao", {
-              id: novoId(),
-              condoId: n.condoId,
-              condoNome: n.condoNome || condominio?.nome || "",
-              exercicioId: n.id,
-              ano: n.ano,
-              campos,
-              status: decidida.status,
-              decididoPor: decidida.por,
-              decididoPorNome: decidida.porNome,
-              decididoEm: decidida.em,
-            })
-            .then(() =>
-              queryClient.invalidateQueries({ queryKey: chaves.lista("decisoes_previsao") }),
-            )
-            .catch(() => undefined); // não bloqueia o salvamento da previsão; só o log de auditoria falharia
-        }
-      }
       setE(n);
       setSalvoJson(JSON.stringify(n));
       toast.success("Previsão orçamentária salva.");
@@ -260,8 +196,6 @@ function EditorPrevisao({
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
-    chaveDecisaoAntesDoSalvar.current =
-      (JSON.parse(salvoJson) as Exercicio).previsaoSugerida?.decisaoDivergencia?.chave ?? null;
     salvar.mutate(prepararExercicio(e));
   }
 
@@ -290,19 +224,21 @@ function EditorPrevisao({
                 Resultado parcial
               </Badge>
             )}
-            {emConferencia && (
-              <Badge
-                variant="warning"
-                title='Ver a aba "Sugerida pelo Systemar" para revisar e decidir.'
-              >
-                Em conferência
-              </Badge>
-            )}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
             <Button variant="outline" asChild>
               <Link to="/prestacao-contas/$id" params={{ id: e.id }}>
                 <FileSpreadsheet /> Prestação de contas
               </Link>
+            </Button>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => void atualizarMensais().then(() => toast.success("Dados mensais atualizados."))}
+              disabled={atualizandoMensais}
+              title="Ler novamente os relatórios mensais importados"
+            >
+              {atualizandoMensais ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+              Atualizar dados
             </Button>
             <Button
               permissao="previsao_orcamentaria.editar"
@@ -320,52 +256,16 @@ function EditorPrevisao({
       <SectionCard className="mb-6">{seletor}</SectionCard>
 
       <form id="form-previsao" onSubmit={enviar} noValidate>
-        <Tabs value={aba} onValueChange={setAba}>
-          <TabsList className="h-auto min-h-10 max-w-full flex-wrap justify-start bg-secondary">
-            <TabsTrigger value="sugerida" className="whitespace-normal px-4">
-              Sugerida pelo Systemar
-            </TabsTrigger>
-            <TabsTrigger value="demonstrativo" className="whitespace-normal px-4">
-              Calculada pelo demonstrativo
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="sugerida" className="mt-4">
-            {e.previsaoSugerida ? (
-              <PainelPrevisaoSugerida
-                exercicio={e}
-                previsao={e.previsaoSugerida}
-                unidades={unidades}
-                condoId={e.condoId}
-                onChange={mudar}
-              />
-            ) : (
-              <SectionCard titulo="Sem previsão sugerida">
-                <p className="text-sm text-muted-foreground">
-                  Esta prestação de contas não tem a folha “Previsão orçamentária ordinária
-                  sugerida” do Systemar. Use “Importar PDF” na prestação de contas com o relatório
-                  que traz essa folha, ou trabalhe na aba “Calculada pelo demonstrativo”.
-                </p>
-                <Button variant="outline" asChild className="mt-4">
-                  <Link to="/prestacao-contas/$id" params={{ id: e.id }}>
-                    Abrir a prestação de contas
-                  </Link>
-                </Button>
-              </SectionCard>
-            )}
-          </TabsContent>
-          <TabsContent value="demonstrativo" className="mt-4">
-            <PainelPrevisao
-              exercicio={e}
-              resultado={resultado}
-              unidades={unidades}
-              condoId={e.condoId}
-              grupos={demonstrativoBase.despesas.grupos.map((g) => g.nome)}
-              onChange={mudar}
-              rotuloBase={exercicioAnterior ? "Base (realizado do exercício anterior)" : undefined}
-              rateioAnterior={rateioAnterior}
-            />
-          </TabsContent>
-        </Tabs>
+        <PainelPrevisao
+          exercicio={e}
+          resultado={resultado}
+          unidades={unidades}
+          condoId={e.condoId}
+          grupos={demonstrativoBase.despesas.grupos.map((g) => g.nome)}
+          onChange={mudar}
+          rotuloBase={exercicioAnterior ? "Base (realizado do exercício anterior)" : undefined}
+          rateioAnterior={rateioAnterior}
+        />
       </form>
     </>
   );
