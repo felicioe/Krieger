@@ -4,8 +4,8 @@ Options -Indexes
 
 # As telas HTML legadas foram substituídas pelo SPA React. Redireciona acessos antigos
 # para impedir que uma cópia residual do servidor volte a ser exibida.
-Redirect 302 /login.html /login
-Redirect 302 /usuarios.html /usuarios
+Redirect 302 /login.html /#/login
+Redirect 302 /usuarios.html /#/usuarios
 Redirect 302 /index.html /
 RedirectMatch 404 "^/(auth-guard\.js|acesso\.css)$"
 
