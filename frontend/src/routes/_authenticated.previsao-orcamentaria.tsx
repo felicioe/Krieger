@@ -20,13 +20,14 @@ import { novoId } from "@/lib/id";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { calcularPrevisao } from "@/domain/previsao";
+import { demonstrativoDoPeriodo } from "@/domain/demonstrativoDinamico";
 import {
   calcularPrevisaoSugerida,
   calcularPrevisaoSugeridaPorUnidade,
   chaveDivergencia,
   compararComTotaisPdf,
 } from "@/domain/previsaoSugerida";
-import type { Condominio, DecisaoDivergenciaPrevisao, Exercicio } from "@/domain/types";
+import type { Condominio, DecisaoDivergenciaPrevisao, Exercicio, Mensal } from "@/domain/types";
 
 type Busca = { exercicio?: string };
 
@@ -44,6 +45,7 @@ export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
     Promise.all([
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
+      queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
     ]),
   component: PaginaPrevisao,
 });
@@ -53,6 +55,7 @@ function PaginaPrevisao() {
   const navigate = useNavigate({ from: "/previsao-orcamentaria" });
   const { data: exerciciosRaw } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
+  const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
 
   const exercicios = useMemo(
     () =>
@@ -114,6 +117,7 @@ function PaginaPrevisao() {
       key={exercicio.id}
       inicial={exercicio}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
+      mensais={mensais}
       exercicioAnterior={exercicioAnterior}
       seletor={seletor}
     />
@@ -123,11 +127,13 @@ function PaginaPrevisao() {
 function EditorPrevisao({
   inicial,
   condominio,
+  mensais,
   exercicioAnterior,
   seletor,
 }: {
   inicial: Exercicio;
   condominio: Condominio | undefined;
+  mensais: Mensal[];
   exercicioAnterior: Exercicio | undefined;
   seletor: ReactNode;
 }) {
@@ -140,7 +146,10 @@ function EditorPrevisao({
   // A previsão da nova prestação nasce do realizado da prestação anterior. O demonstrativo
   // atual continua sendo usado pelos relatórios e pelo comparativo, mas não deve substituir a
   // base histórica do orçamento novo.
-  const demonstrativoBase = exercicioAnterior?.demonstrativo ?? demonstrativo;
+  const demonstrativoBase = useMemo(
+    () => demonstrativoDoPeriodo(demonstrativo, mensais, e.condoId),
+    [demonstrativo, mensais, e.condoId],
+  );
   const parametrosBase = useMemo(
     () => ({
       ...e,
