@@ -10,7 +10,7 @@ vi.mock("@/lib/documento/imagens", async (original) => ({
   svgParaPng: async () => "data:image/png;base64,AAAA",
 }));
 
-/** Caso Urban Classic: exercício 01/09/2025–31/08/2026; a comparação olha 09/2026–08/2027. */
+/** Caso Urban Classic: exercício 01/09/2025–31/08/2026; a comparação olha exatamente esse período. */
 function demo(grupos: Demonstrativo["despesas"]["grupos"], ini: string, fim: string): Demonstrativo {
   return recalcularDemonstrativo({ ...demonstrativoVazio("Urban"), periodo: { ini, fim }, despesas: { grupos, subtotal: 0, saldoRestante: 0 } });
 }
@@ -21,7 +21,7 @@ const exercicio = {
   deducaoRegex: "", arredondamento: "centavos", confer: null, consid: {} as Exercicio["consid"], prev: { modo: "tradicional", ajustes: [] },
 } as Exercicio;
 const mensal = (grupos: Demonstrativo["despesas"]["grupos"]): Mensal => ({
-  id: "m1", condoId: "c1", condoNome: "Urban Classic", demonstrativo: demo(grupos, "01/09/2026", "30/09/2026"),
+  id: "m1", condoId: "c1", condoNome: "Urban Classic", demonstrativo: demo(grupos, "01/09/2025", "30/09/2025"),
   origem: [], receber: { unidades: null, valor: null }, notas: [],
 });
 
@@ -29,10 +29,10 @@ const textos = (b: Bloco[]) => b.filter((x) => x.tipo === "paragrafo").map((x) =
 const temTabelaComparativo = (b: Bloco[]) => b.some((x) => x.tipo === "tabela" && x.colunas.some((c) => c.titulo === "Rubrica"));
 
 describe("Previsto × Realizado sem relatório mensal no período", () => {
-  it("sem nenhum relatório, a mensagem cita o período de comparação 09/2026 a 08/2027", () => {
+  it("sem nenhum relatório, a mensagem cita o período de comparação 09/2025 a 08/2026", () => {
     const r = compararPrevistoRealizado(exercicio, []);
     expect(semRealizado(r)).toBe(true);
-    expect(textoSemRealizado(r)).toContain("(09/2026 a 08/2027)");
+    expect(textoSemRealizado(r)).toContain("(09/2025 a 08/2026)");
   });
 
   it("PDF/Word: sem relatório, troca a tabela por rubrica e o gráfico pela mensagem e não mostra −100%", async () => {

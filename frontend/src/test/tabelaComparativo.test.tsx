@@ -43,7 +43,7 @@ describe("TabelaComparativo (tela)", () => {
     render(<TabelaComparativo r={comparativoFixture()} mostrarAnaliticas={false} />);
     expect(screen.queryByText("Salários")).not.toBeInTheDocument();
     expect(screen.queryByText("Encargos sociais")).not.toBeInTheDocument();
-    expect(screen.getByText("Total Pessoal")).toBeInTheDocument();
+    expect(screen.getByText("Pessoal")).toBeInTheDocument(); // cabeçalho do grupo, sem o prefixo "Total"
     expect(screen.getByText("Total geral")).toBeInTheDocument();
   });
 });
