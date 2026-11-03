@@ -112,7 +112,6 @@ function PaginaPrevisao() {
       atualizarMensais={atualizarMensais}
       atualizandoMensais={atualizandoMensais}
       exercicioAnterior={exercicioAnterior}
-      demonstrativoBaseAnterior={demonstrativoBaseAnterior}
       seletor={seletor}
     />
   );
@@ -125,7 +124,6 @@ function EditorPrevisao({
   atualizarMensais,
   atualizandoMensais,
   exercicioAnterior,
-  demonstrativoBaseAnterior,
   seletor,
 }: {
   inicial: Exercicio;
@@ -134,10 +132,6 @@ function EditorPrevisao({
   atualizarMensais: () => Promise<unknown>;
   atualizandoMensais: boolean;
   exercicioAnterior: Exercicio | undefined;
-  /** Base pra recalcular a previsão do PRÓPRIO exercício anterior (ver `demonstrativoBasePrevisao`) —
-   * nunca o demonstrativo dele mesmo, senão "última previsão" e a sugestão repetem a divergência
-   * que a troca de base corrigiu no exercício atual. */
-  demonstrativoBaseAnterior: Demonstrativo | null;
   seletor: ReactNode;
 }) {
   const queryClient = useQueryClient();
@@ -168,11 +162,6 @@ function EditorPrevisao({
   );
   const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
 
-  // A base é o realizado do exercício ANTERIOR (fechado) — nunca o demonstrativo do próprio
-  // exercício em edição, que vai sendo preenchido ao longo do ano e não pode servir de base móvel
-  // pra uma previsão que precisa ficar estável. Sem exercício anterior (primeira prestação do
-  // condomínio), cai no comportamento antigo (usa o próprio demonstrativo).
-  const demonstrativoBase = demonstrativoBasePrevisao(e, exercicioAnterior);
   const resultado = useMemo(
     () => calcularPrevisao(demonstrativoBase, parametrosBase, unidades),
     [demonstrativoBase, parametrosBase, unidades],
