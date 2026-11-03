@@ -67,7 +67,7 @@ function CondominioExistente({ id }: { id: string }) {
   const historicoIndices = exercicios
     .filter((e) => e.condoId === id && (e.consid?.indices?.length ?? 0) > 0)
     .sort((a, b) => Number(a.ano) - Number(b.ano))
-    .map((e) => ({ ano: e.ano, periodo: e.demonstrativo?.periodo, indices: e.consid.indices }));
+    .map((e) => ({ ano: e.ano, ...(e.demonstrativo?.periodo ? { periodo: e.demonstrativo.periodo } : {}), indices: e.consid.indices }));
   return <FormCondominio inicial={normalizarCondominio(data ?? { id })} historicoIndices={historicoIndices} />;
 }
 
@@ -402,7 +402,7 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           <RepeatableList
             itens={c.fracaoUnidades ?? []}
             onChange={(v) => set("fracaoUnidades", v as UnidadeCondominio[])}
-            novo={() => ({ unidade: "", fracaoUnidade: 0, fracaoBox: 0, fracaoTotal: 0, fracaoPrevista: 0, tipo: "unidade" })}
+            novo={() => ({ unidade: "", fracaoUnidade: 0, fracaoBox: 0, fracaoTotal: 0, fracaoPrevista: 0, tipo: "unidade" as const })}
             colunas="grid-cols-[6rem_8rem_8rem_8rem_8rem_7rem]"
             cabecalhos={["Unidade", "Fração unidade", "Fração box", "Fração total", "Fração prevista", "Tipo"]}
             rotuloAdicionar="Adicionar unidade"
@@ -414,7 +414,7 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
                 <NumeroInput aria-label="Fração do box" value={u.fracaoBox} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoBox: v ?? 0 })} />
                 <NumeroInput aria-label="Fração total" value={u.fracaoTotal} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoTotal: v ?? 0 })} />
                 <NumeroInput aria-label="Fração prevista" value={u.fracaoPrevista} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoPrevista: v ?? 0 })} />
-                <Selecao aria-label="Tipo" value={u.tipo ?? "unidade"} opcoes={[{ valor: "unidade", rotulo: "Unidade" }, { valor: "deposito", rotulo: "Depósito" }, { valor: "garagem", rotulo: "Garagem" }]} onChange={(v) => up({ tipo: v as UnidadeCondominio["tipo"] })} />
+                <Selecao aria-label="Tipo" value={u.tipo ?? "unidade"} opcoes={[{ valor: "unidade", rotulo: "Unidade" }, { valor: "deposito", rotulo: "Depósito" }, { valor: "garagem", rotulo: "Garagem" }]} onChange={(v) => up({ tipo: v })} />
               </>
             )}
           />
