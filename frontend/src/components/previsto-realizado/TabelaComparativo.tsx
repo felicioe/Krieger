@@ -112,11 +112,13 @@ export function TabelaComparativo({
         <TableBody>
           {r.grupos.map((g) => (
             <Fragment key={g.nome}>
-              <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableCell colSpan={nColunas} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {g.nome || "Sem grupo"}
-                </TableCell>
-              </TableRow>
+              {mostrarAnaliticas && (
+                <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableCell colSpan={nColunas} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {g.nome || "Sem grupo"}
+                  </TableCell>
+                </TableRow>
+              )}
               {mostrarAnaliticas &&
                 g.linhas.map((l) => (
                   <TableRow key={`${l.tipo}-${l.nome}`}>
@@ -142,7 +144,7 @@ export function TabelaComparativo({
                   </TableRow>
                 ))}
               <TableRow className="border-b-2 hover:bg-transparent">
-                <TableCell className={cn("font-semibold text-primary", compacta ? "pl-4" : "pl-6 text-sm")}>Total {g.nome || "sem grupo"}</TableCell>
+                <TableCell className={cn("font-semibold text-primary", compacta ? "pl-4" : "pl-6 text-sm")}>{mostrarAnaliticas ? `Total ${g.nome || "sem grupo"}` : g.nome || "Sem grupo"}</TableCell>
                 <Valores t={g.totais} forte compacta={compacta} />
               </TableRow>
             </Fragment>
