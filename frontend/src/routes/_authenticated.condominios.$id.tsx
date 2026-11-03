@@ -28,13 +28,13 @@ import {
   Selecao,
 } from "@/components/app/inputs";
 import { api } from "@/lib/api";
-import { chaves, itemQuery } from "@/lib/queries";
+import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { mascaraCNPJ, formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
 import { consultarCnpjReceita, divergenciasCnpj, enderecoDaReceita } from "@/lib/receitaCnpj";
-import type { Arredondamento, Condominio, ModoRegra, UnidadeCondominio, VariacaoMetodo } from "@/domain/types";
+import type { Arredondamento, Condominio, Exercicio, IndiceCorrecao, ModoRegra, UnidadeCondominio, VariacaoMetodo } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/condominios/$id")({
   head: () => cabecalho("Condomínio", "Cadastro completo do condomínio."),
@@ -63,7 +63,12 @@ function PaginaCondominio() {
 
 function CondominioExistente({ id }: { id: string }) {
   const { data } = useSuspenseQuery(itemQuery<Condominio>("condominios", id));
-  return <FormCondominio inicial={normalizarCondominio(data ?? { id })} />;
+  const { data: exercicios = [] } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
+  const historicoIndices = exercicios
+    .filter((e) => e.condoId === id && (e.consid?.indices?.length ?? 0) > 0)
+    .sort((a, b) => Number(a.ano) - Number(b.ano))
+    .map((e) => ({ ano: e.ano, periodo: e.demonstrativo?.periodo, indices: e.consid.indices }));
+  return <FormCondominio inicial={normalizarCondominio(data ?? { id })} historicoIndices={historicoIndices} />;
 }
 
 const ARREDONDAMENTO: { valor: Arredondamento; rotulo: string }[] = [
@@ -132,7 +137,7 @@ function resumos(c: Condominio): Record<Secao, string> {
   };
 }
 
-function FormCondominio({ inicial }: { inicial: Condominio }) {
+function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condominio; historicoIndices?: { ano: number | string; periodo?: { ini: string; fim: string }; indices: IndiceCorrecao[] }[] }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const usuario = useUsuario();
@@ -451,6 +456,25 @@ function FormCondominio({ inicial }: { inicial: Condominio }) {
               </>
             )}
           />
+          {historicoIndices.length > 0 && (
+            <div className="mt-5 space-y-3 rounded-md border border-dashed p-3">
+              <div>
+                <h4 className="font-medium">Histórico por prestação de contas</h4>
+                <p className="text-xs text-muted-foreground">Índices preservados nas prestações importadas ou cadastradas.</p>
+              </div>
+              {historicoIndices.map((h) => (
+                <div key={`${h.ano}-${h.periodo?.ini ?? ""}`} className="rounded-md border bg-muted/20 p-3 text-sm">
+                  <p className="font-medium">
+                    Prestação de contas de {h.ano}
+                    {h.periodo?.ini && h.periodo?.fim ? ` · ${h.periodo.ini} a ${h.periodo.fim}` : ""}
+                  </p>
+                  <p className="mt-1 text-muted-foreground">
+                    {h.indices.map((i) => `${i.ano ?? "—"}: ${i.pct == null ? "—" : `${i.pct.toFixed(2).replace(".", ",")}%`}`).join(" · ")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </SecaoRecolhivel>
 
         <SecaoRecolhivel id={idSecao("seguro")} titulo="Seguro" resumo={res.seguro} aberta={abertas.seguro} aoMudar={abrir("seguro")}>
