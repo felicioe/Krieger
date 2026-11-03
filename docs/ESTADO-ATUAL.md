@@ -1,5 +1,28 @@
 # Estado atual e passagem de contexto
 
+## Central de Ajuda — 03/11/2026
+
+Pedido do responsável: facilitar o uso para quem não acompanhou a construção do sistema. Nova
+tela `/ajuda` (item fixo no topo do menu, sem exigir permissão — visível a qualquer usuário
+logado), com um guia curto por tela, organizado nos mesmos grupos do menu lateral
+(`GRUPOS_MENU`, em `AppSidebar.tsx`), e um índice lateral que rola/foca a seção clicada.
+
+As telas de Prestação de contas, Previsão orçamentária e Importador — as de maior volume de
+dúvida, por terem mais conceitos encadeados — ganharam um ícone "?" no cabeçalho, linkando direto
+pra sua seção na central (`/ajuda?secao=<id>`). O conteúdo da previsão orçamentária documenta a
+regra do PR #170 (base = realizado do exercício anterior) e traz as perguntas que já surgiram
+nesta mesma sessão (por que não usa o próprio exercício como base, o que é o índice de reajuste).
+
+Implementação: `frontend/src/routes/_authenticated.ajuda.tsx` (conteúdo em JSX, sem dependência de
+markdown — mais fácil de manter junto do código quando uma tela mudar); `irPara` (rolar até um id e
+focar) deixou de ser local de `AvisosPrevisao.tsx` e passou para `lib/utils.ts`, reaproveitado
+pelas duas telas. Sem mudança em `domain/` — é só navegação e conteúdo estático.
+
+**Escopo desta primeira versão**: guia completo para as 3 telas de maior dúvida (Financeiro); as
+demais (Relatórios, Assembleias e documentos, Administração) têm uma versão mais curta — expandir
+conforme surgir necessidade. Sem busca textual nem capturas de tela (manutenção cara a cada mudança
+de layout) — só navegação por menu e links contextuais, por ora.
+
 ## PR #170 — base da previsão orçamentária passa a ser o exercício anterior — 03/11/2026
 
 Pedido do responsável, de novo com o Urban Classic: na prestação de 2026, a tela mostrava apenas

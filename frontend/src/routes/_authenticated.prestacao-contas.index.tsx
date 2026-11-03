@@ -2,7 +2,7 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { FileUp, Loader2, Plus, Search } from "lucide-react";
+import { CircleHelp, FileUp, Loader2, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -84,6 +84,11 @@ function ListaExercicios() {
         descricao="Demonstrativo do exercício e previsão orçamentária do ano seguinte."
         acoes={
           <>
+            <Button variant="ghost" size="icon" asChild title="Ajuda sobre esta tela">
+              <Link to="/ajuda" search={{ secao: "prestacao-contas" }} aria-label="Ajuda sobre a prestação de contas">
+                <CircleHelp />
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/importador">
                 <FileUp /> Importar PDF

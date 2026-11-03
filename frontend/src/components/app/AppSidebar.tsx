@@ -6,6 +6,7 @@ import {
   Calculator,
   CalendarRange,
   ChevronDown,
+  CircleHelp,
   DatabaseBackup,
   FileSearch,
   FileSpreadsheet,
@@ -35,7 +36,7 @@ import { cn } from "@/lib/utils";
 type Item = { titulo: string; to: string; icone: LucideIcon; permissao?: string; apenasAdmin?: boolean; perigoso?: boolean };
 
 /**
- * Menu agrupado por rotina do escritório. Painel e Condomínios ficam soltos no topo (uso diário);
+ * Menu agrupado por rotina do escritório. Painel, Condomínios e a Central de Ajuda ficam soltos no topo (uso diário);
  * os demais em três grupos. Todos os itens continuam a um clique — os grupos são só títulos.
  */
 export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
@@ -44,6 +45,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     itens: [
       { titulo: "Painel", to: "/painel", icone: LayoutDashboard, permissao: "painel.visualizar" },
       { titulo: "Condomínios", to: "/condominios", icone: Building2, permissao: "condominios.visualizar" },
+      { titulo: "Central de Ajuda", to: "/ajuda", icone: CircleHelp },
     ],
   },
   {

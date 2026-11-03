@@ -2,7 +2,7 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { FileSpreadsheet, Loader2, Save } from "lucide-react";
+import { CircleHelp, FileSpreadsheet, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -258,6 +258,11 @@ function EditorPrevisao({
               </Badge>
             )}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
+            <Button variant="ghost" size="icon" asChild title="Ajuda sobre esta tela">
+              <Link to="/ajuda" search={{ secao: "previsao-orcamentaria" }} aria-label="Ajuda sobre a previsão orçamentária">
+                <CircleHelp />
+              </Link>
+            </Button>
             <Button variant="outline" asChild>
               <Link to="/prestacao-contas/$id" params={{ id: e.id }}>
                 <FileSpreadsheet /> Prestação de contas

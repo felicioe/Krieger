@@ -1,7 +1,7 @@
 import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Building2, CalendarRange, FileClock, FileSpreadsheet, FileUp, GitCompareArrows } from "lucide-react";
+import { Building2, CalendarRange, CircleHelp, FileClock, FileSpreadsheet, FileUp, GitCompareArrows } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -53,11 +53,18 @@ function Importador() {
         titulo="Importador"
         descricao="Escolha o tipo de relatório do Systemar e o PDF. Você confere o que foi lido antes de gravar."
         acoes={
-          <Button variant="outline" asChild>
-            <Link to="/importacoes">
-              <FileClock /> Importações de PDF
-            </Link>
-          </Button>
+          <>
+            <Button variant="ghost" size="icon" asChild title="Ajuda sobre esta tela">
+              <Link to="/ajuda" search={{ secao: "importador" }} aria-label="Ajuda sobre o importador">
+                <CircleHelp />
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/importacoes">
+                <FileClock /> Importações de PDF
+              </Link>
+            </Button>
+          </>
         }
       />
       <AvisoImportacoesPendentes />
