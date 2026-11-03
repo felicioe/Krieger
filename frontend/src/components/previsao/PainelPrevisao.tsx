@@ -415,7 +415,6 @@ function Resumo({
           <SituacaoResultado parcial={parcial} avisos={r.avisos.length} idQuadro={idQuadro} />
         </div>
         <LinhaResumo rotulo={rotuloBase ?? "Base (despesas realizadas)"} valor={formatBRL(r.base)} />
-        {previsaoAnterior != null && <LinhaResumo rotulo="Última previsão anterior (referência)" valor={formatBRL(previsaoAnterior)} />}
         <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
         <LinhaResumo
           rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${pct(r.variacaoPct)}`}
