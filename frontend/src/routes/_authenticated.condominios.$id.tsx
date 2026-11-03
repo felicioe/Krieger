@@ -67,7 +67,7 @@ function CondominioExistente({ id }: { id: string }) {
   const historicoIndices = exercicios
     .filter((e) => e.condoId === id && (e.consid?.indices?.length ?? 0) > 0)
     .sort((a, b) => Number(a.ano) - Number(b.ano))
-    .map((e) => ({ ano: e.ano, periodo: e.demonstrativo?.periodo, indices: e.consid.indices }));
+    .map((e) => ({ ano: e.ano, ...(e.demonstrativo?.periodo ? { periodo: e.demonstrativo.periodo } : {}), indices: e.consid.indices }));
   return <FormCondominio inicial={normalizarCondominio(data ?? { id })} historicoIndices={historicoIndices} />;
 }
 
