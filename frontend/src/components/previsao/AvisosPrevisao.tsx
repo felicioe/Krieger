@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { CircleCheck, TriangleAlert } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, irPara } from "@/lib/utils";
 
 /**
  * Onde cada aviso do cálculo deve aparecer na tela. Os textos vêm prontos do cálculo da previsão;
@@ -114,14 +114,6 @@ export function SituacaoResultado({
 }
 
 /** Rola até o elemento e leva o foco a ele (sem âncora "#", que trocaria a rota em "#/..."). */
-export function irPara(id: string) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
-  el.scrollIntoView({ block: "center" });
-  el.focus({ preventScroll: true });
-}
-
 /** Valor ausente: traço visível, "não calculado" para o leitor de tela. */
 export function SemValor({ motivo = "não calculado" }: { motivo?: string | undefined }) {
   return (

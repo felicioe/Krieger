@@ -1,7 +1,7 @@
 import { Fragment, useId, useRef, type ReactNode } from "react";
 import { Link } from "@/components/app/LinkPermitido";
 import { SinalToggle } from "./SinalToggle";
-import { AcaoAviso, QuadroAvisos, SemValor, SituacaoResultado, irPara, tipoAviso, type ItemAviso } from "./AvisosPrevisao";
+import { AcaoAviso, QuadroAvisos, SemValor, SituacaoResultado, tipoAviso, type ItemAviso } from "./AvisosPrevisao";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,7 @@ import { RepeatableList } from "@/components/app/RepeatableList";
 import { DinheiroInput, InteiroInput, PercentualInput, Selecao } from "@/components/app/inputs";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
-import { cn } from "@/lib/utils";
+import { cn, irPara } from "@/lib/utils";
 import type { DesvioAnoAnterior, ResultadoPrevisao } from "@/domain/previsao";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
