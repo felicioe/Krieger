@@ -2,7 +2,7 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Calculator, FileText, Loader2, Save, Trash2, TriangleAlert } from "lucide-react";
+import { ArrowLeft, Calculator, FileText, Loader2, RefreshCw, Save, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,7 +67,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
-  const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
+  const { data: mensais, refetch: atualizarMensais, isFetching: atualizandoMensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
@@ -157,6 +157,16 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => void atualizarMensais().then(() => toast.success("Dados mensais atualizados."))}
+              disabled={atualizandoMensais}
+              title="Ler novamente os relatórios mensais e recalcular esta prestação"
+            >
+              {atualizandoMensais ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+              Atualizar dados
+            </Button>
             <ImportarPdf
               modo="editor"
               destino="exercicios"
