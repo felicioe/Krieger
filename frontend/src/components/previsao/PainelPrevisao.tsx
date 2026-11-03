@@ -6,7 +6,6 @@ import {
   QuadroAvisos,
   SemValor,
   SituacaoResultado,
-  irPara,
   tipoAviso,
   type ItemAviso,
 } from "./AvisosPrevisao";
@@ -29,7 +28,7 @@ import { RepeatableList } from "@/components/app/RepeatableList";
 import { DinheiroInput, InteiroInput, PercentualInput, Selecao } from "@/components/app/inputs";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
-import { cn } from "@/lib/utils";
+import { cn, irPara } from "@/lib/utils";
 import type { ResultadoPrevisao } from "@/domain/previsao";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
