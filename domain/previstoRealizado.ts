@@ -8,14 +8,14 @@ import type { Condominio, DePara, Exercicio, Mensal } from "./types";
  *
  * Previsto  = previsão orçamentária do exercício N (calcularPrevisao, já com os ajustes),
  *             aberta por rubrica e grupo. Previsto até o mês = anual × meses ÷ 12.
- * Realizado = soma das despesas dos relatórios mensais do exercício N+1,
- *             do primeiro mês até o mês escolhido.
+ * Realizado = soma das despesas dos relatórios mensais dentro do período
+ *             informado na prestação, do primeiro mês até o mês escolhido.
  * Diferença = realizado − previsto até o mês; % sobre o previsto até o mês.
  * Situação  = "dentro" quando |%| ≤ tolerância; senão "acima" ou "abaixo".
  *
  * Interpretações a confirmar com o escritório (fáceis de trocar aqui):
- * - o exercício N+1 começa no mês seguinte ao fim do período do demonstrativo N
- *   (sem período, janeiro a dezembro de ano + 1);
+ * - a janela de análise é exatamente o período do demonstrativo da prestação;
+ * - sem período informado, mantém-se a compatibilidade com o comportamento antigo;
  * - o mês de cada relatório mensal é o da data final do período (ou da inicial);
  * - rubricas casam pelo nome (sem acento/maiúsculas), após o de-para do condomínio;
  * - despesas que casam com a dedução ficam fora da comparação (como na previsão);
@@ -53,7 +53,7 @@ export interface GrupoComparativo {
 }
 
 export interface MesCompetencia {
-  /** 1 a 12 dentro do exercício N+1. */
+  /** Posição do mês dentro do período da prestação. */
   posicao: number;
   mes: number;
   ano: number;
@@ -85,9 +85,20 @@ const p2 = (n: number) => String(n).padStart(2, "0");
 
 export { competenciaMensal, mesAnoDe };
 
-/** Os 12 meses do exercício N+1. */
+/** Meses de competência contidos no período informado da prestação. */
 export function mesesDoExercicioSeguinte(e: Pick<Exercicio, "ano" | "demonstrativo">): { mes: number; ano: number }[] {
+  const inicio = mesAnoDe(e.demonstrativo?.periodo?.ini);
   const fim = mesAnoDe(e.demonstrativo?.periodo?.fim);
+  if (inicio && fim) {
+    const primeiro = inicio.ano * 12 + inicio.mes - 1;
+    const ultimo = fim.ano * 12 + fim.mes - 1;
+    if (ultimo >= primeiro) {
+      return Array.from({ length: Math.min(120, ultimo - primeiro + 1) }, (_, i) => {
+        const n = primeiro + i;
+        return { mes: (n % 12) + 1, ano: Math.floor(n / 12) };
+      });
+    }
+  }
   let mes = 1;
   let ano = Number(e.ano) + 1;
   if (fim) {
