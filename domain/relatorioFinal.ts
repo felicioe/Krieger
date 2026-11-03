@@ -262,7 +262,29 @@ export function montarRelatorioFinal(entrada: {
   escritorio: ConfigEscritorio | null;
   mensais: Mensal[];
 }): RelatorioFinal {
-  const { exercicio: e, condominio, escritorio } = entrada;
+  const { exercicio: entradaExercicio, condominio, escritorio } = entrada;
+  // Compatibilidade com prestações antigas criadas antes de o período ser herdado:
+  // quando os meses já foram importados, o intervalo deles é a fonte segura para
+  // montar a prestação até que o usuário salve um período explícito.
+  const mensaisDoCondominio = entrada.mensais
+    .filter((m) => m.condoId === entradaExercicio.condoId)
+    .map((m) => normalizarMensal(m))
+    .sort((a, b) => ordemCompetencia(competenciaMensal(a)) - ordemCompetencia(competenciaMensal(b)));
+  const periodoVazio = !entradaExercicio.demonstrativo?.periodo?.ini || !entradaExercicio.demonstrativo?.periodo?.fim;
+  const primeiro = mensaisDoCondominio[0];
+  const ultimo = mensaisDoCondominio.at(-1);
+  const e = periodoVazio && primeiro && ultimo
+    ? {
+        ...entradaExercicio,
+        demonstrativo: {
+          ...entradaExercicio.demonstrativo!,
+          periodo: {
+            ini: primeiro.demonstrativo?.periodo.ini ?? primeiro.demonstrativo?.periodo.fim ?? "",
+            fim: ultimo.demonstrativo?.periodo.fim ?? ultimo.demonstrativo?.periodo.ini ?? "",
+          },
+        },
+      }
+    : entradaExercicio;
   const secoes = secoesIncluidas(e);
   // `Mensal.receber.unidades` é "unidades inadimplentes" (contas a receber), não o total do
   // condomínio — não serve de alternativa aqui. A única fonte do total é o cadastro (achado do

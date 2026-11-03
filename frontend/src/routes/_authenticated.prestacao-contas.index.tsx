@@ -19,7 +19,7 @@ import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
-import { exercicioPadrao, normalizarExercicio, validarNovoExercicio } from "@/domain/exercicio";
+import { exercicioPadrao, normalizarExercicio, periodoInicialDoExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { calcularPrevisao } from "@/domain/previsao";
 import { calcularPrevisaoSugerida, chaveDivergencia, compararComTotaisPdf } from "@/domain/previsaoSugerida";
 import type { Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
@@ -209,7 +209,8 @@ function DialogoNovo({
     const condo = condominios.find((c) => c.id === condoId);
     if (!condo || !ano) return;
     setErro(null);
-    criar.mutate(exercicioPadrao(normalizarCondominio(condo), ano, escritorio?.cidade ?? ""));
+    const periodo = periodoInicialDoExercicio(condo.id, ano, exercicios);
+    criar.mutate(exercicioPadrao(normalizarCondominio(condo), ano, escritorio?.cidade ?? "", new Date(), periodo));
   }
 
   const opcoes = opcoesCondominio(condominios);
