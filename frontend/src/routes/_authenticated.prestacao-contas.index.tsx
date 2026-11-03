@@ -2,7 +2,7 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { FileUp, Loader2, Plus, Search } from "lucide-react";
+import { CircleHelp, FileUp, Loader2, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
