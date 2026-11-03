@@ -1,5 +1,28 @@
 # Estado atual e passagem de contexto
 
+## Incidente resolvido: site fora do ar (403), causa raiz no auto-deploy do Hostinger — 03/11/2026
+
+O site respondeu 403 Forbidden em produção (checado via `curl`, reproduzível). Investigado com o
+conector do Hostinger (`hosting_get-deployment`, `hosting_files_list-website-and-directories`):
+o auto-deploy do Hostinger estava configurado pra publicar a branch **`main`** direto em
+`public_html` — não a `deploy-hostinger`, como este README sempre documentou. A listagem de
+arquivos confirmou: a raiz pública tinha a árvore crua do repositório inteiro (`README.md`,
+`AGENTS.md`, `domain/`, `frontend/` como fonte não compilado, `schema.sql`, `scripts/` etc.) e
+nenhum `index.html` — por isso o 403 (sem índice e com listagem de diretório desabilitada no
+`.htaccess`). Não foi uma mudança desta sessão; alguém reconfigurou o auto-deploy em algum momento
+anterior, silenciosamente desviando do fluxo documentado.
+
+Corrigido com `hosting_deploy` (reaponta o auto-deploy para `deploy-hostinger` e publica o commit
+já empacotado que lá estava). Confirmado: `gitAutoDeployment.branch` agora é `deploy-hostinger`;
+`public_html` passou a ter exatamente os arquivos do pacote (`index.html`, `assets/`, `branding/`,
+`.htaccess`, os `.php`); site responde 200. Em seguida, gerado e publicado um pacote atualizado do
+`main` corrente (`a4e31d8`, já com os PRs #170 e #178) — confirmado ao vivo com o hash exato do
+build (`index-B28pTS9r.js`) e `auth.php?a=eu` respondendo 401 (normal, sem sessão).
+
+**Pendência**: nenhuma técnica conhecida. Vale o responsável confirmar que ninguém mais deveria
+mexer no auto-deploy do Hostinger fora deste fluxo (`main` → PR → `deploy-hostinger` empacotado),
+já que foi exatamente isso que causou o incidente.
+
 ## Central de Ajuda — 03/11/2026
 
 Pedido do responsável: facilitar o uso para quem não acompanhou a construção do sistema. Nova
@@ -75,9 +98,9 @@ comportamento atual (corrigidas), e 7 erros reais de `tsc --noEmit` no frontend 
 possivelmente `undefined` passado a um parâmetro que só aceita `null`) — nenhum relacionado ao
 changelog, só nunca tinham rodado de verdade. Tudo corrigido; pipeline completa validada
 localmente (testes, typecheck, build, `bundle:check`, `package:hostinger`) e commit publicado no
-`deploy-hostinger` (`330e974`). **Pendente**: o site respondeu 403 durante o deploy e voltou a 200
-em seguida, mas uma checagem rápida depois mostrou um hash de bundle diferente do commit publicado
-— precisa de uma verificação sem cache antes de considerar a publicação confirmada.
+`deploy-hostinger` (`330e974`). O 403 visto na hora e o hash divergente numa checagem rápida depois
+não eram deste commit — era o auto-deploy do Hostinger publicando `main` crua em vez de
+`deploy-hostinger`; ver o incidente investigado e corrigido no topo deste documento.
 
 ## PR #126 mesclado e publicado — 02/11/2026
 
