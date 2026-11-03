@@ -12,12 +12,21 @@ import { listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarExercicio } from "@/domain/exercicio";
-import { compararPrevistoRealizadoMensal, type CelulaMensal } from "@/domain/previstoRealizadoMensal";
+import {
+  compararPrevistoRealizadoMensal,
+  type CelulaMensal,
+} from "@/domain/previstoRealizadoMensal";
 import type { Condominio, Exercicio, Mensal } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/relatorios/orcado-realizado-mensal")({
-  head: () => cabecalho("Orçado × Realizado mensal", "Conferência mensal do orçamento e do realizado."),
-  loader: ({ context: { queryClient } }) => Promise.all([queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")), queryClient.ensureQueryData(listaQuery<Condominio>("condominios")), queryClient.ensureQueryData(listaQuery<Mensal>("mensais"))]),
+  head: () =>
+    cabecalho("Orçado × Realizado mensal", "Conferência mensal do orçamento e do realizado."),
+  loader: ({ context: { queryClient } }) =>
+    Promise.all([
+      queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
+      queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
+      queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
+    ]),
   component: Pagina,
 });
 
@@ -25,19 +34,266 @@ function Pagina() {
   const { data: raw } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
-  const exercicios = useMemo(() => raw.map(normalizarExercicio).sort((a, b) => Number(b.ano) - Number(a.ano)), [raw]);
+  const exercicios = useMemo(
+    () => raw.map(normalizarExercicio).sort((a, b) => Number(b.ano) - Number(a.ano)),
+    [raw],
+  );
   const [exercicioId, setExercicioId] = useState(exercicios[0]?.id ?? "");
-  const [inicio, setInicio] = useState(1); const [fim, setFim] = useState(12);
-  const [orcado, setOrcado] = useState(true); const [horizontal, setHorizontal] = useState(true);
+  const [inicio, setInicio] = useState(1);
+  const [fim, setFim] = useState(12);
+  const [orcado, setOrcado] = useState(true);
+  const [horizontal, setHorizontal] = useState(true);
   const e = exercicios.find((x) => x.id === exercicioId) ?? exercicios[0];
   const condo = e ? condominios.find((c) => c.id === e.condoId) : null;
-  const r = e ? compararPrevistoRealizadoMensal(e, mensais, { condominio: condo, inicio, fim }) : null;
-  const opEx = exercicios.map((x) => ({ valor: x.id, rotulo: `${x.condoNome || condominios.find((c) => c.id === x.condoId)?.nome || "Condomínio"} · previsão ${x.ano}` }));
-  const opMes = Array.from({ length: 12 }, (_, i) => ({ valor: String(i + 1), rotulo: `Mês ${i + 1}` }));
-  if (!r || !e) return <SectionCard titulo="Nenhuma previsão disponível"><p className="text-sm text-muted-foreground">Crie uma previsão orçamentária para gerar este relatório.</p></SectionCard>;
+  const r = e
+    ? compararPrevistoRealizadoMensal(e, mensais, { condominio: condo, inicio, fim })
+    : null;
+  const opEx = exercicios.map((x) => ({
+    valor: x.id,
+    rotulo: `${x.condoNome || condominios.find((c) => c.id === x.condoId)?.nome || "Condomínio"} · previsão ${x.ano}`,
+  }));
+  const opMes = Array.from({ length: 12 }, (_, i) => ({
+    valor: String(i + 1),
+    rotulo: `Mês ${i + 1}`,
+  }));
+  if (!r || !e)
+    return (
+      <SectionCard titulo="Nenhuma previsão disponível">
+        <p className="text-sm text-muted-foreground">
+          Crie uma previsão orçamentária para gerar este relatório.
+        </p>
+      </SectionCard>
+    );
   const qtd = (orcado ? 2 : 1) + (horizontal ? 1 : 0);
-  const celulas = (c: CelulaMensal) => <>{orcado && <><td className="num border-l px-3 py-2 text-right">{formatBRL(c.previsto)}</td><td className="num px-3 py-2 text-right">{formatBRL(c.realizado)}</td></>}{!orcado && <td className="num border-l px-3 py-2 text-right">{formatBRL(c.realizado)}</td>}{horizontal && <td className="num px-3 py-2 text-right text-muted-foreground">{c.horizontal == null ? "—" : `${c.horizontal.toFixed(2)}%`}</td>}</>;
-  return <><PageHeader titulo="Orçado × Realizado mensal" descricao="Conferência mês a mês, com totais por linha e por coluna." acoes={<Button type="button" variant="outline" onClick={() => window.print()}>Imprimir</Button>} /><SectionCard titulo="Parâmetros" descricao="Todas as análises respeitam exclusivamente o período selecionado."><div className="grid gap-4 sm:grid-cols-4"><Field rotulo="Previsão"><Selecao value={e.id} onChange={setExercicioId} opcoes={opEx} /></Field><Field rotulo="De"><Selecao value={String(inicio)} onChange={(v) => setInicio(Math.min(Number(v), fim))} opcoes={opMes} /></Field><Field rotulo="Até"><Selecao value={String(fim)} onChange={(v) => setFim(Math.max(Number(v), inicio))} opcoes={opMes} /></Field><div className="flex flex-wrap items-end gap-x-4 gap-y-2 pb-2"><Op id="mr-orcado" checked={orcado} onChange={setOrcado}>Mostrar orçado</Op><Op id="mr-h" checked={horizontal} onChange={setHorizontal}>Análise horizontal</Op></div></div></SectionCard>{r.avisos.length > 0 && <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">{r.avisos.join(" ")}</div>}<SectionCard className="mt-6" titulo="Conferência mensal" descricao={`${r.meses[0]?.rotulo} a ${r.meses.at(-1)?.rotulo} · ${r.relatoriosUsados} relatório(s) mensal(is) considerado(s).`}><div className="mb-3 flex flex-wrap gap-2 text-xs text-muted-foreground"><span className="rounded border bg-muted/40 px-2 py-1">{r.relatoriosUsados} mês(es) encontrado(s)</span><span className="rounded border bg-muted/40 px-2 py-1">{orcado ? "Orçado e realizado" : "Somente realizado"}</span>{horizontal && <span className="rounded border bg-muted/40 px-2 py-1">Análise horizontal</span>}</div><div className="max-h-[70vh] overflow-auto rounded-md border"><table className="min-w-max border-collapse text-sm"><thead className="sticky top-0 z-10 bg-card"><tr className="border-b"><th rowSpan={2} className="sticky left-0 z-20 min-w-64 bg-card px-3 py-2 text-left">Grupo</th>{r.meses.map((m) => <th key={m.posicao} colSpan={qtd} className="border-l-2 px-3 py-2 text-center">{m.rotulo}</th>)}<th colSpan={orcado ? 2 : 1} className="border-l-2 px-3 py-2 text-center">Total do período</th></tr><tr className="border-b text-xs text-muted-foreground">{r.meses.map((m) => <HeaderMes key={m.posicao} pos={m.posicao} orcado={orcado} horizontal={horizontal} />)}{orcado ? <><th className="border-l-2 px-3 py-1 text-right">Orçado</th><th className="px-3 py-1 text-right">Realizado</th></> : <th className="border-l-2 px-3 py-1 text-right">Realizado</th>}</tr></thead><tbody>{r.linhas.map((l) => <tr key={l.grupo} className="border-b last:border-0"><th className="sticky left-0 bg-card px-3 py-2 text-left font-medium">{l.grupo}</th>{l.mensal.map((c) => <>{celulas(c)}</>)}{orcado ? <><td className="num border-l-2 px-3 py-2 text-right font-medium">{formatBRL(l.total.previsto)}</td><td className="num px-3 py-2 text-right font-medium">{formatBRL(l.total.realizado)}</td></> : <td className="num border-l-2 px-3 py-2 text-right font-medium">{formatBRL(l.total.realizado)}</td>}</tr>)}<tr className="border-t-2 bg-muted/60 font-semibold"><th className="sticky left-0 bg-muted/60 px-3 py-2 text-left">Total</th>{r.meses.map((m, i) => { const p = r.linhas.reduce((s, l) => s + l.mensal[i]!.previsto, 0); const real = r.linhas.reduce((s, l) => s + l.mensal[i]!.realizado, 0); return <>{orcado && <><td className="num border-l-2 px-3 py-2 text-right">{formatBRL(p)}</td><td className="num px-3 py-2 text-right">{formatBRL(real)}</td></>}{!orcado && <td className="num border-l-2 px-3 py-2 text-right">{formatBRL(real)}</td>}{horizontal && <td className="num px-3 py-2 text-right">{p ? `${(((real - p) / Math.abs(p)) * 100).toFixed(2)}%` : "—"}</td>}</>; })}{orcado ? <><td className="num border-l-2 px-3 py-2 text-right">{formatBRL(r.total.previsto)}</td><td className="num px-3 py-2 text-right">{formatBRL(r.total.realizado)}</td></> : <td className="num border-l-2 px-3 py-2 text-right">{formatBRL(r.total.realizado)}</td>}</tr></tbody></table></div></SectionCard></>;
+  const celulas = (c: CelulaMensal) => (
+    <>
+      {orcado && (
+        <>
+          <td className="num border-l px-3 py-2 text-right">{formatBRL(c.previsto)}</td>
+          <td className="num px-3 py-2 text-right">{formatBRL(c.realizado)}</td>
+        </>
+      )}
+      {!orcado && <td className="num border-l px-3 py-2 text-right">{formatBRL(c.realizado)}</td>}
+      {horizontal && (
+        <td className="num px-3 py-2 text-right text-muted-foreground">
+          {c.horizontal == null ? "—" : `${c.horizontal.toFixed(2)}%`}
+        </td>
+      )}
+    </>
+  );
+  const exportar = async (tipo: "xlsx" | "csv") => {
+    const tabela = document.querySelector<HTMLTableElement>("#relatorio-orcado-realizado");
+    if (!tabela) return;
+    const XLSX = await import("xlsx");
+    const livro = XLSX.utils.table_to_book(tabela, { sheet: "Conferência mensal" });
+    XLSX.writeFile(livro, `orcado-realizado-${e.ano}.${tipo}`, { bookType: tipo });
+  };
+  return (
+    <>
+      <PageHeader
+        titulo="Orçado × Realizado mensal"
+        descricao="Conferência mês a mês, com totais por linha e por coluna."
+        acoes={
+          <>
+            <Button type="button" variant="outline" onClick={() => window.print()}>
+              Imprimir
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void exportar("xlsx")}>
+              XLSX
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void exportar("csv")}>
+              CSV
+            </Button>
+          </>
+        }
+      />
+      <SectionCard
+        titulo="Parâmetros"
+        descricao="Todas as análises respeitam exclusivamente o período selecionado."
+      >
+        <div className="grid gap-4 sm:grid-cols-4">
+          <Field rotulo="Previsão">
+            <Selecao value={e.id} onChange={setExercicioId} opcoes={opEx} />
+          </Field>
+          <Field rotulo="De">
+            <Selecao
+              value={String(inicio)}
+              onChange={(v) => setInicio(Math.min(Number(v), fim))}
+              opcoes={opMes}
+            />
+          </Field>
+          <Field rotulo="Até">
+            <Selecao
+              value={String(fim)}
+              onChange={(v) => setFim(Math.max(Number(v), inicio))}
+              opcoes={opMes}
+            />
+          </Field>
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2 pb-2">
+            <Op id="mr-orcado" checked={orcado} onChange={setOrcado}>
+              Mostrar orçado
+            </Op>
+            <Op id="mr-h" checked={horizontal} onChange={setHorizontal}>
+              Análise horizontal
+            </Op>
+          </div>
+        </div>
+      </SectionCard>
+      {r.avisos.length > 0 && (
+        <div className="mt-4 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          {r.avisos.join(" ")}
+        </div>
+      )}
+      <SectionCard
+        className="mt-6"
+        titulo="Conferência mensal"
+        descricao={`${r.meses[0]?.rotulo} a ${r.meses.at(-1)?.rotulo} · ${r.relatoriosUsados} relatório(s) mensal(is) considerado(s).`}
+      >
+        <div className="mb-3 flex flex-wrap gap-2 text-xs text-muted-foreground">
+          <span className="rounded border bg-muted/40 px-2 py-1">
+            {r.relatoriosUsados} mês(es) encontrado(s)
+          </span>
+          <span className="rounded border bg-muted/40 px-2 py-1">
+            {orcado ? "Orçado e realizado" : "Somente realizado"}
+          </span>
+          {horizontal && (
+            <span className="rounded border bg-muted/40 px-2 py-1">Análise horizontal</span>
+          )}
+        </div>
+        <div className="max-h-[70vh] overflow-auto rounded-md border">
+          <table id="relatorio-orcado-realizado" className="min-w-max border-collapse text-sm">
+            <thead className="sticky top-0 z-10 bg-card">
+              <tr className="border-b">
+                <th rowSpan={2} className="sticky left-0 z-20 min-w-64 bg-card px-3 py-2 text-left">
+                  Grupo
+                </th>
+                {r.meses.map((m) => (
+                  <th key={m.posicao} colSpan={qtd} className="border-l-2 px-3 py-2 text-center">
+                    {m.rotulo}
+                  </th>
+                ))}
+                <th colSpan={orcado ? 2 : 1} className="border-l-2 px-3 py-2 text-center">
+                  Total do período
+                </th>
+              </tr>
+              <tr className="border-b text-xs text-muted-foreground">
+                {r.meses.map((m) => (
+                  <HeaderMes
+                    key={m.posicao}
+                    pos={m.posicao}
+                    orcado={orcado}
+                    horizontal={horizontal}
+                  />
+                ))}
+                {orcado ? (
+                  <>
+                    <th className="border-l-2 px-3 py-1 text-right">Orçado</th>
+                    <th className="px-3 py-1 text-right">Realizado</th>
+                  </>
+                ) : (
+                  <th className="border-l-2 px-3 py-1 text-right">Realizado</th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {r.linhas.map((l) => (
+                <tr key={l.grupo} className="border-b last:border-0">
+                  <th className="sticky left-0 bg-card px-3 py-2 text-left font-medium">
+                    {l.grupo}
+                  </th>
+                  {l.mensal.map((c) => (
+                    <>{celulas(c)}</>
+                  ))}
+                  {orcado ? (
+                    <>
+                      <td className="num border-l-2 px-3 py-2 text-right font-medium">
+                        {formatBRL(l.total.previsto)}
+                      </td>
+                      <td className="num px-3 py-2 text-right font-medium">
+                        {formatBRL(l.total.realizado)}
+                      </td>
+                    </>
+                  ) : (
+                    <td className="num border-l-2 px-3 py-2 text-right font-medium">
+                      {formatBRL(l.total.realizado)}
+                    </td>
+                  )}
+                </tr>
+              ))}
+              <tr className="border-t-2 bg-muted/60 font-semibold">
+                <th className="sticky left-0 bg-muted/60 px-3 py-2 text-left">Total</th>
+                {r.meses.map((m, i) => {
+                  const p = r.linhas.reduce((s, l) => s + l.mensal[i]!.previsto, 0);
+                  const real = r.linhas.reduce((s, l) => s + l.mensal[i]!.realizado, 0);
+                  return (
+                    <>
+                      {orcado && (
+                        <>
+                          <td className="num border-l-2 px-3 py-2 text-right">{formatBRL(p)}</td>
+                          <td className="num px-3 py-2 text-right">{formatBRL(real)}</td>
+                        </>
+                      )}
+                      {!orcado && (
+                        <td className="num border-l-2 px-3 py-2 text-right">{formatBRL(real)}</td>
+                      )}
+                      {horizontal && (
+                        <td className="num px-3 py-2 text-right">
+                          {p ? `${(((real - p) / Math.abs(p)) * 100).toFixed(2)}%` : "—"}
+                        </td>
+                      )}
+                    </>
+                  );
+                })}
+                {orcado ? (
+                  <>
+                    <td className="num border-l-2 px-3 py-2 text-right">
+                      {formatBRL(r.total.previsto)}
+                    </td>
+                    <td className="num px-3 py-2 text-right">{formatBRL(r.total.realizado)}</td>
+                  </>
+                ) : (
+                  <td className="num border-l-2 px-3 py-2 text-right">
+                    {formatBRL(r.total.realizado)}
+                  </td>
+                )}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
+    </>
+  );
 }
-function HeaderMes({ orcado, horizontal }: { pos: number; orcado: boolean; horizontal: boolean }) { return <>{orcado ? <><th className="border-l px-3 py-1 text-right">Orçado</th><th className="px-3 py-1 text-right">Realizado</th></> : <th className="border-l px-3 py-1 text-right">Realizado</th>}{horizontal && <th className="px-3 py-1 text-right">H %</th>}</>; }
-function Op({ id, checked, onChange, children }: { id: string; checked: boolean; onChange: (v: boolean) => void; children: string }) { return <label className="flex items-center gap-2 text-xs text-muted-foreground"><Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} /><Label htmlFor={id}>{children}</Label></label>; }
+function HeaderMes({ orcado, horizontal }: { pos: number; orcado: boolean; horizontal: boolean }) {
+  return (
+    <>
+      {orcado ? (
+        <>
+          <th className="border-l px-3 py-1 text-right">Orçado</th>
+          <th className="px-3 py-1 text-right">Realizado</th>
+        </>
+      ) : (
+        <th className="border-l px-3 py-1 text-right">Realizado</th>
+      )}
+      {horizontal && <th className="px-3 py-1 text-right">H %</th>}
+    </>
+  );
+}
+function Op({
+  id,
+  checked,
+  onChange,
+  children,
+}: {
+  id: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  children: string;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} />
+      <Label htmlFor={id}>{children}</Label>
+    </label>
+  );
+}
