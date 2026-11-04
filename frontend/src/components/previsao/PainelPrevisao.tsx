@@ -300,6 +300,17 @@ function LinhaResumo({
   );
 }
 
+function AjusteResumo({ descricao, valor, negativo }: { descricao: string; valor: string; negativo: boolean }) {
+  return (
+    <div className="flex min-w-0 items-center justify-between gap-3 py-1 text-sm">
+      <span className="min-w-0 flex-1 truncate text-muted-foreground" title={`(+/−) Ajustes da previsão (${descricao})`}>
+        (+/−) Ajustes da previsão <span className="font-medium text-foreground">({descricao})</span>
+      </span>
+      <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
+    </div>
+  );
+}
+
 const ROTULO_ARRED: Record<Arredondamento, string> = {
   truncar: "truncado, sem centavos",
   arredondar: "arredondado, sem centavos",
@@ -352,9 +363,9 @@ function Resumo({
         {r.ajustes.filter((a) => Number(a.valor) > 0).map((a) => {
           const valor = a.sinal === "-" ? -Math.abs(a.valor) : Math.abs(a.valor);
           return (
-            <LinhaResumo
+            <AjusteResumo
               key={a.id}
-              rotulo={`Histórico: ${a.descricao || "Ajuste sem descrição"}`}
+              descricao={a.descricao || "Ajuste sem descrição"}
               valor={`${valor < 0 ? "−" : "+"}${formatBRL(Math.abs(valor))}`}
               negativo={valor < 0}
             />
