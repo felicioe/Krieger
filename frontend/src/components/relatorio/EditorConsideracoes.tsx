@@ -83,7 +83,7 @@ export function EditorConsideracoes({
       const texto = await extrairTextoPdf(arquivo);
       const lido = lerApoliceSeguro(texto);
       if (!lido) {
-        toast.error("PDF não reconhecido como apólice de seguro (layout Allianz). Preencha os campos manualmente.");
+        toast.error("PDF não reconhecido como apólice de seguro. Confira se é o documento original da seguradora ou preencha os campos manualmente.");
         return;
       }
       const atual = cRef.current;
@@ -139,7 +139,7 @@ export function EditorConsideracoes({
 
       <SectionCard
         titulo="Seguro"
-        descricao="Preencha manualmente ou importe o PDF da apólice (layout Allianz)."
+        descricao="Preencha manualmente ou importe o PDF original da seguradora."
         acoes={
           <>
             <Button type="button" variant="outline" size="sm" onClick={() => entradaApolice.current?.click()} disabled={importandoApolice}>
