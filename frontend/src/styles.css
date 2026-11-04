@@ -161,16 +161,25 @@
   html {
     font-family: var(--font-sans);
     font-optical-sizing: auto;
-    text-rendering: optimizeLegibility;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
     font-synthesis: none;
     line-height: 1.45;
+  }
+
+  /*
+   * Suavização "antialiased/grayscale" (sem subpixel) só em telas de alta densidade
+   * (Retina). Em monitor comum e zoom 100%, ela afina demais o texto pequeno
+   * (text-xs, 12px) e piora a legibilidade; o subpixel padrão do SO é mais nítido aí.
+   */
+  @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    body {
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
   }
 
   h1,
@@ -181,6 +190,7 @@
   h6 {
     text-wrap: balance;
     letter-spacing: -0.012em;
+    text-rendering: optimizeLegibility;
   }
 
   button,
