@@ -15,7 +15,7 @@ import { DinheiroInput, InteiroInput, PercentualInput, Selecao } from "@/compone
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
 import { cn, irPara } from "@/lib/utils";
-import type { DesvioAnoAnterior, ResultadoPrevisao } from "@/domain/previsao";
+import type { ResultadoPrevisao } from "@/domain/previsao";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
 const SEM_GRUPO = "__geral";
@@ -48,9 +48,6 @@ export function PainelPrevisao({
   condoId,
   grupos,
   onChange,
-  desvio,
-  anoAnterior,
-  ultimaPrevisao,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
@@ -58,13 +55,6 @@ export function PainelPrevisao({
   condoId: string;
   grupos: string[];
   onChange: (parcial: Partial<Exercicio>) => void;
-  /** Sugestão de variação (nunca aplicada sozinha) — desvio entre o previsto do exercício anterior
-   * e o realizado deste. `null` sem exercício anterior ou sem dados suficientes nos dois lados. */
-  desvio?: DesvioAnoAnterior | null;
-  anoAnterior?: number | string | undefined;
-  /** O que o exercício anterior já projetou (e aprovou) pra este ano, com os parâmetros que ELE
-   * confirmou — referência fixa, distinta da previsão (ainda em edição) deste exercício. */
-  ultimaPrevisao?: number | null;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
@@ -100,41 +90,6 @@ export function PainelPrevisao({
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,21rem)]">
       <div className="min-w-0 space-y-6">
         <QuadroAvisos id={idQuadro} itens={itensAviso} parcial={parcial} />
-        {anoAnterior && (
-          <div className="rounded-md border bg-muted/30 px-4 py-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Referência — exercício {anoAnterior}
-            </div>
-            <div className="mt-1 grid grid-cols-1 gap-x-6 sm:grid-cols-2">
-              <LinhaResumo rotulo="Realizado anterior" valor={formatBRL(r.base)} />
-              <LinhaResumo
-                rotulo="Última previsão aprovada"
-                valor={ultimaPrevisao === null || ultimaPrevisao === undefined ? <SemValor /> : formatBRL(ultimaPrevisao)}
-              />
-            </div>
-          </div>
-        )}
-        {desvio && (
-          <Alert>
-            <AlertDescription>
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p>
-                  <span className="font-semibold">Sugestão de variação: {pct(desvio.desvioPct, true)}.</span> Desvio entre o
-                  previsto que o exercício {anoAnterior} calculou pra este ano ({formatBRL(desvio.previsto)}) e o que foi
-                  realmente realizado ({formatBRL(desvio.realizado)}).
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onChange({ variacaoMetodo: "percentual", variacaoParam: desvio.desvioPct })}
-                >
-                  Usar sugestão
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
         <SectionCard titulo="Parâmetros da previsão">
           <div className="grid gap-4 sm:grid-cols-6">
             <Field rotulo="Modo" className="sm:col-span-3">
@@ -246,7 +201,7 @@ export function PainelPrevisao({
 
         <SectionCard
           titulo={r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}
-          descricao={anoAnterior ? `"Realizado" é o de ${anoAnterior}, usado como base da previsão deste exercício.` : undefined}
+          descricao="Baseado exclusivamente no realizado reduzido do período analisado."
         >
           <TabelaLinhas r={r} metodo={e.variacaoMetodo} />
         </SectionCard>
@@ -260,7 +215,6 @@ export function PainelPrevisao({
           parcial={parcial}
           semUnidades={semUnidades}
           idQuadro={idQuadro}
-          anoAnterior={anoAnterior}
           aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })}
         />
       </aside>
