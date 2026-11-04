@@ -141,7 +141,7 @@ export function calcularPrevisao(
 ): ResultadoPrevisao {
   const avisos: string[] = [];
   const modo = parametros.prev?.modo ?? "tradicional";
-  const ajustes = (parametros.prev?.ajustes ?? []).filter((a) => a.descricao.trim().toLocaleLowerCase("pt-BR") !== "água");
+  const ajustes = parametros.prev?.ajustes ?? [];
   const variacaoDespesas = parametros.prev?.variacaoDespesas;
   const re = expressaoDeducao(parametros.deducaoRegex);
   const { pct, valorFixo, aviso } = resolverVariacao(parametros);
