@@ -52,6 +52,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     itens: [
       { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet, permissao: "prestacao_contas.visualizar" },
       { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator, permissao: "previsao_orcamentaria.visualizar" },
+      { titulo: "Previsão para relatórios", to: "/previsao-orcamentaria?modo=relatorios", icone: Calculator, permissao: "previsao_orcamentaria.visualizar" },
     ],
   },
   {
