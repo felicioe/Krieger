@@ -293,8 +293,8 @@ function LinhaResumo({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 py-1 text-sm", forte && "font-semibold text-primary", className)}>
-      <span className={cn(!forte && "text-muted-foreground")}>{rotulo}</span>
+    <div className={cn("flex min-w-0 flex-nowrap items-baseline justify-between gap-3 py-1 text-sm", forte && "font-semibold text-primary", className)}>
+      <span className={cn("min-w-0 flex-1 truncate", !forte && "text-muted-foreground")} title={rotulo}>{rotulo}</span>
       <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
     </div>
   );
