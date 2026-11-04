@@ -24,12 +24,6 @@ const MODOS = [
   { valor: "tradicional" as const, rotulo: "Tradicional (por grupo)" },
   { valor: "detalhado" as const, rotulo: "Detalhado (por despesa)" },
 ];
-const METODOS: { valor: VariacaoMetodo; rotulo: string }[] = [
-  { valor: "manual", rotulo: "Manual" },
-  { valor: "percentual", rotulo: "Percentual fixo" },
-  { valor: "mediaIndices", rotulo: "Média dos índices" },
-  { valor: "valor" as const, rotulo: "Valor fixo (R$)" },
-];
 export const ARREDONDAMENTO: { valor: Arredondamento; rotulo: string }[] = [
   { valor: "truncar", rotulo: "Truncar (sem centavos, para baixo)" },
   { valor: "arredondar", rotulo: "Arredondar (sem centavos)" },
@@ -69,7 +63,7 @@ export function PainelPrevisao({
   const parcial = r.rateioSugerido === null;
   const tipos = r.avisos.map((texto) => ({ texto, tipo: tipoAviso(texto) }));
   const textoDe = (...t: string[]) => tipos.filter((a) => t.includes(a.tipo)).map((a) => a.texto).join(" ") || null;
-  const avisoVariacao = textoDe("variacao", ...(e.variacaoMetodo === "mediaIndices" ? ["indices"] : []));
+  const avisoVariacao = textoDe("variacao");
   const semUnidades = !unidades;
   const itensAviso: ItemAviso[] = tipos.map(({ texto, tipo }) => {
     let acao: ReactNode = null;
@@ -98,29 +92,9 @@ export function PainelPrevisao({
             <Field rotulo="Arredondamento do valor por unidade" className="sm:col-span-3">
               <Selecao value={e.arredondamento} onChange={(v) => onChange({ arredondamento: v })} opcoes={ARREDONDAMENTO} />
             </Field>
-            <Field rotulo="Método da variação" className="sm:col-span-2">
-              <Selecao value={e.variacaoMetodo} onChange={(v) => onChange({ variacaoMetodo: v })} opcoes={METODOS} />
+            <Field rotulo="Percentual fixo" dica="Reajuste aplicado sobre a base realizada deste exercício." aviso={avisoVariacao} className="sm:col-span-2">
+              <PercentualInput ref={refVariacao} value={e.variacaoMetodo === "percentual" ? e.variacaoParam : e.variacao} onChange={(v) => onChange({ variacao: v, variacaoMetodo: "percentual", variacaoParam: v })} />
             </Field>
-            {e.variacaoMetodo === "manual" && (
-              <Field rotulo="Variação" dica="Reajuste aplicado sobre a base." aviso={avisoVariacao} className="sm:col-span-2">
-                <PercentualInput ref={refVariacao} value={e.variacao} onChange={(v) => onChange({ variacao: v })} />
-              </Field>
-            )}
-            {e.variacaoMetodo === "percentual" && (
-              <Field rotulo="Percentual fixo" aviso={avisoVariacao} className="sm:col-span-2">
-                <PercentualInput ref={refVariacao} value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} />
-              </Field>
-            )}
-            {e.variacaoMetodo === "mediaIndices" && (
-              <Field rotulo="Anos na média" dica={`Vazio = todos. Média atual: ${pct(r.variacaoPct)}`} aviso={avisoVariacao} className="sm:col-span-2">
-                <InteiroInput ref={refVariacao} value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} placeholder="Todos" />
-              </Field>
-            )}
-            {e.variacaoMetodo === "valor" && (
-              <Field rotulo="Variação (R$)" dica="Valor fixo somado à base, positivo ou negativo — não é percentual." className="sm:col-span-2">
-                <DinheiroInput value={e.variacaoParam} onChange={(v) => onChange({ variacaoParam: v })} />
-              </Field>
-            )}
             <Field rotulo="Fundo de reserva" dica="Sobre o valor por unidade." className="sm:col-span-2">
               <PercentualInput value={prev.fundoReservaPct} onChange={(v) => setPrev({ fundoReservaPct: v })} />
             </Field>
