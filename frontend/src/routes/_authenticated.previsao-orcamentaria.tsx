@@ -2,7 +2,8 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Fragment, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { CircleHelp, FileSpreadsheet, Loader2, RefreshCw, Save } from "lucide-react";
+import { CircleHelp, Download, FileSpreadsheet, FileText, Loader2, Printer, RefreshCw, Save } from "lucide-react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -252,12 +253,29 @@ function RelatorioPrevisao({
   );
   const totalRealizado = linhas.reduce((s, linha) => s + linha.realizado, 0);
   const totalPrevisto = totalRealizado * fator;
+  const dadosExportacao = linhas.map((linha) => ({ Grupo: linha.grupo, Conta: linha.nome, Realizado: linha.realizado, Previsto: linha.realizado * fator, "Variação (%)": linha.realizado ? Number(((fator - 1) * 100).toFixed(2)) : null }));
+  const nomeArquivo = `previsao-relatorios-${exercicio.ano}`;
+  const baixarCsv = () => {
+    const cabecalho = ["Grupo", "Conta", "Realizado", "Previsto", "Variação (%)"];
+    const conteudo = [cabecalho, ...dadosExportacao.map((linha) => [linha.Grupo, linha.Conta, linha.Realizado.toFixed(2), linha.Previsto.toFixed(2), linha["Variação (%)"] ?? ""])].map((linha) => linha.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(";")).join("\r\n");
+    const url = URL.createObjectURL(new Blob(["\ufeff" + conteudo], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a"); a.href = url; a.download = `${nomeArquivo}.csv`; a.click(); URL.revokeObjectURL(url);
+  };
+  const baixarXlsx = () => {
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dadosExportacao), "Previsto x Realizado"); XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
+  };
+  const imprimirPdf = () => {
+    const janela = window.open("", "_blank", "noopener,noreferrer,width=1100,height=800");
+    if (!janela) return;
+    const linhasHtml = dadosExportacao.map((linha) => `<tr><td>${linha.Grupo}</td><td>${linha.Conta}</td><td>${formatBRL(linha.Realizado)}</td><td>${formatBRL(linha.Previsto)}</td><td>${linha["Variação (%)"] == null ? "—" : `${linha["Variação (%)"]}%`}</td></tr>`).join("");
+    janela.document.write(`<html><head><title>${nomeArquivo}</title><style>body{font:12px Arial;color:#123b60;padding:24px}h1{font-size:18px}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ccd6df;padding:6px;text-align:right}th:first-child,td:first-child,td:nth-child(2){text-align:left}th{background:#edf2f6}@media print{button{display:none}}</style></head><body><h1>Previsto × Realizado — ${exercicio.condoNome} — Exercício ${exercicio.ano}</h1><p>${periodo ?? ""}</p><table><thead><tr><th>Grupo</th><th>Conta</th><th>Realizado</th><th>Previsto</th><th>Variação (%)</th></tr></thead><tbody>${linhasHtml}</tbody><tfoot><tr><th colspan="2">Total</th><th>${formatBRL(totalRealizado)}</th><th>${formatBRL(totalPrevisto)}</th><th>${totalRealizado ? `${((fator - 1) * 100).toFixed(2)}%` : "—"}</th></tr></tfoot></table><script>window.onload=()=>window.print()</script></body></html>`); janela.document.close();
+  };
   return (
     <>
       <PageHeader
         titulo={`Previsão para relatórios — Exercício ${exercicio.ano}`}
         descricao={<>{exercicio.condoNome}{periodo && <span className="num"> · período {periodo}</span>}</>}
-        acoes={<Button variant="outline" onClick={() => window.print()}>Imprimir</Button>}
+        acoes={<div className="flex flex-wrap gap-2"><Button variant="outline" onClick={imprimirPdf}><FileText /> PDF</Button><Button variant="outline" onClick={baixarXlsx}><FileSpreadsheet /> XLSX</Button><Button variant="outline" onClick={baixarCsv}><Download /> CSV</Button><Button variant="outline" onClick={imprimirPdf}><Printer /> Imprimir</Button></div>}
       />
       <SectionCard className="mb-6">{seletor}</SectionCard>
       <SectionCard
