@@ -1,8 +1,8 @@
 import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Calculator, FileText, Loader2, Save, Trash2, TriangleAlert } from "lucide-react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
+import { ArrowLeft, Calculator, FileText, Loader2, RefreshCw, Save, Trash2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +26,11 @@ import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { demonstrativoVazio, mesesNoPeriodo } from "@/domain/demonstrativo";
+import { demonstrativoDoPeriodo } from "@/domain/demonstrativoDinamico";
 import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
 import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
-import type { Condominio, Exercicio } from "@/domain/types";
+import type { Condominio, Exercicio, Mensal } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
   head: () => cabecalho("Prestação de contas", "Dados e demonstrativo do exercício."),
@@ -66,6 +67,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
+  const { data: mensais, refetch: atualizarMensais, isFetching: atualizandoMensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
@@ -77,7 +79,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const trava = useTravaImportacao("exercicios", inicial.id, inicial.demonstrativo ?? null);
 
   const condo = condominios.find((c) => c.id === e.condoId);
-  const demonstrativo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
+  const demonstrativoSalvo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
+  const demonstrativo = useMemo(() => demonstrativoDoPeriodo(demonstrativoSalvo, mensais, e.condoId), [demonstrativoSalvo, mensais, e.condoId]);
   const sujo = JSON.stringify(e) !== salvoJson;
   const mesesPeriodo = mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim);
 
@@ -135,7 +138,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       return;
     }
     setErroAno(null);
-    trava.salvar(e.demonstrativo ?? demonstrativoVazio(e.condoNome), () => salvar.mutateAsync(prepararExercicio(e)));
+    trava.salvar(demonstrativo, () => salvar.mutateAsync(prepararExercicio({ ...e, demonstrativo })));
   }
 
   return (
@@ -153,6 +156,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
+            <Button variant="outline" type="button" onClick={() => void atualizarMensais().then(() => toast.success("Dados mensais atualizados."))} disabled={atualizandoMensais} title="Ler novamente os relatórios mensais e recalcular esta prestação">
+              {atualizandoMensais ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+              Atualizar dados
+            </Button>
             <ImportarPdf
               modo="editor"
               destino="exercicios"
