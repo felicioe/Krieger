@@ -342,13 +342,28 @@ function Resumo({
           rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${pct(r.variacaoPct)}`}
           valor={formatBRL(r.variacaoValor)}
         />
-        <LinhaResumo rotulo="(+/−) Variação de despesas sugeridas" valor={`${r.variacaoDespesasValor < 0 ? "−" : r.variacaoDespesasValor > 0 ? "+" : ""}${formatBRL(Math.abs(r.variacaoDespesasValor))}`} negativo={r.variacaoDespesasValor < 0} />
-        <LinhaResumo rotulo="(+) Ajustes" valor={formatBRL(r.ajustesMais)} />
-        <LinhaResumo rotulo="(−) Ajustes" valor={formatBRL(r.ajustesMenos)} negativo={r.ajustesMenos > 0} />
+        {r.variacaoDespesasValor !== 0 && (
+          <LinhaResumo
+            rotulo="Histórico de variação de despesas sugeridas"
+            valor={`${r.variacaoDespesasValor < 0 ? "−" : "+"}${formatBRL(Math.abs(r.variacaoDespesasValor))}`}
+            negativo={r.variacaoDespesasValor < 0}
+          />
+        )}
+        {r.ajustes.filter((a) => Number(a.valor) > 0).map((a) => {
+          const valor = a.sinal === "-" ? -Math.abs(a.valor) : Math.abs(a.valor);
+          return (
+            <LinhaResumo
+              key={a.id}
+              rotulo={`Histórico: ${a.descricao || "Ajuste sem descrição"}`}
+              valor={`${valor < 0 ? "−" : "+"}${formatBRL(Math.abs(valor))}`}
+              negativo={valor < 0}
+            />
+          );
+        })}
         <LinhaResumo rotulo="Anual ajustado" valor={formatBRL(r.totalAnual)} forte className="mt-1 border-t pt-2" />
 
         <div className="mt-4 border-t pt-3">
-          <LinhaResumo rotulo="Mensal (÷ 12)" valor={formatBRL(r.mensal)} />
+          <LinhaResumo rotulo={`Média mensal (÷ ${r.mesesAnalisados})`} valor={formatBRL(r.mensal)} />
           <LinhaResumo rotulo="(÷) Unidades" valor={r.unidades ? String(r.unidades) : <SemValor motivo="não informado" />} />
           <LinhaResumo rotulo="Cota por unidade" valor={ausente(r.cotaUnidade)} forte />
           <LinhaResumo rotulo={`(+) Reserva por unidade ${pct(r.fundoReservaPct)}`} valor={ausente(r.reservaUnidade)} />
