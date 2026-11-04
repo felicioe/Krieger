@@ -215,7 +215,7 @@ export function calcularPrevisao(
   const totalAnual = centavos(baseLiquida + variacaoValor + mais - menos);
   const totalComVariacaoDespesas = centavos(totalAnual + variacaoDespesasValor);
 
-  const mesesAnalisados = demonstrativo?.periodo.ini && demonstrativo.periodo.fim ? mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim) ?? 12 : 12;
+  const mesesAnalisados = demonstrativo?.periodo?.ini && demonstrativo.periodo.fim ? mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim) ?? 12 : 12;
   const mensal = centavos(totalComVariacaoDespesas / mesesAnalisados);
   const fundoReservaPct = parametros.prev?.fundoReservaPct ?? 0;
 

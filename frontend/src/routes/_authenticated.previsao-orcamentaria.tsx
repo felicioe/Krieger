@@ -79,7 +79,7 @@ function PaginaPrevisao() {
   const primeiraPrestacao = exerciciosDoCondominio[0];
   const selecionarCondominio = (condoId: string) => {
     const primeira = exercicios.find((e) => e.condoId === condoId);
-    if (primeira) void navigate({ search: { exercicio: primeira.id, modo: busca.modo }, replace: true });
+    if (primeira) void navigate({ search: { exercicio: primeira.id, modo: busca.modo ?? "rateio" }, replace: true });
     else void navigate({ search: {}, replace: true });
   };
   const seletor = (
@@ -96,7 +96,7 @@ function PaginaPrevisao() {
       <Field rotulo="Prestação de contas">
         <Selecao
           value={exercicio.id}
-          onChange={(id) => void navigate({ search: { exercicio: id, modo: busca.modo }, replace: true })}
+          onChange={(id) => void navigate({ search: { exercicio: id, modo: busca.modo ?? "rateio" }, replace: true })}
           opcoes={opcoesExercicio}
           disabled={!primeiraPrestacao}
         />
@@ -178,7 +178,7 @@ function EditorPrevisao({
   return (
     <>
       <PageHeader
-        titulo={`${modo === "relatorios" ? "Previsão para relatórios" : "Previsão orçamentária"} — Exercício ${e.ano}`}
+        titulo={`Previsão orçamentária — Exercício ${e.ano}`}
         descricao={
           <>
             {e.condoNome || condominio?.nome}
@@ -212,12 +212,6 @@ function EditorPrevisao({
       />
 
       <SectionCard className="mb-6">{seletor}</SectionCard>
-
-      {modo === "relatorios" && (
-        <SectionCard className="mb-6" titulo="Previsão efetiva dos relatórios" descricao="Mantenha aqui os valores previstos que serão comparados ao realizado nos relatórios Previsto × Realizado.">
-          <p className="text-sm text-muted-foreground">Esta tela usa a mesma previsão salva do exercício, sem alterar a apuração do percentual de rateio. Ajustes feitos aqui refletem nos relatórios previstos x realizados após salvar.</p>
-        </SectionCard>
-      )}
 
       <form id="form-previsao" onSubmit={enviar} noValidate>
         <PainelPrevisao
