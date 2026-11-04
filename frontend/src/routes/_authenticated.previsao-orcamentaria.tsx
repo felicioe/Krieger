@@ -19,13 +19,14 @@ import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { calcularPrevisao } from "@/domain/previsao";
 import type { Condominio, Exercicio } from "@/domain/types";
 
-type Busca = { exercicio?: string };
+type Busca = { exercicio?: string; modo?: "rateio" | "relatorios" };
 
 export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
   head: () => cabecalho("Previsão orçamentária", "Previsão orçamentária sugerida do exercício, com deduções e variação editáveis."),
   validateSearch: (s: Record<string, unknown>): Busca => {
     const exercicio = s["exercicio"];
-    return typeof exercicio === "string" && exercicio ? { exercicio } : {};
+    const modo = s["modo"] === "relatorios" ? "relatorios" : "rateio";
+    return typeof exercicio === "string" && exercicio ? { exercicio, modo } : { modo };
   },
   loader: ({ context: { queryClient } }) =>
     Promise.all([
@@ -107,6 +108,7 @@ function PaginaPrevisao() {
       inicial={exercicio}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
       seletor={seletor}
+      modo={busca.modo ?? "rateio"}
     />
   );
 }
@@ -115,10 +117,12 @@ function EditorPrevisao({
   inicial,
   condominio,
   seletor,
+  modo,
 }: {
   inicial: Exercicio;
   condominio: Condominio | undefined;
   seletor: ReactNode;
+  modo: "rateio" | "relatorios";
 }) {
   const queryClient = useQueryClient();
   const [e, setE] = useState<Exercicio>(inicial);
@@ -168,7 +172,7 @@ function EditorPrevisao({
   return (
     <>
       <PageHeader
-        titulo={`Previsão orçamentária — Exercício ${e.ano}`}
+        titulo={`${modo === "relatorios" ? "Previsão para relatórios" : "Previsão orçamentária"} — Exercício ${e.ano}`}
         descricao={
           <>
             {e.condoNome || condominio?.nome}
@@ -202,6 +206,12 @@ function EditorPrevisao({
       />
 
       <SectionCard className="mb-6">{seletor}</SectionCard>
+
+      {modo === "relatorios" && (
+        <SectionCard className="mb-6" titulo="Previsão efetiva dos relatórios" descricao="Mantenha aqui os valores previstos que serão comparados ao realizado nos relatórios Previsto × Realizado.">
+          <p className="text-sm text-muted-foreground">Esta tela usa a mesma previsão salva do exercício, sem alterar a apuração do percentual de rateio. Ajustes feitos aqui refletem nos relatórios previstos x realizados após salvar.</p>
+        </SectionCard>
+      )}
 
       <form id="form-previsao" onSubmit={enviar} noValidate>
         <PainelPrevisao
