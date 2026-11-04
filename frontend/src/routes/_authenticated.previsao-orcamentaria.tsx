@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
-import { Selecao } from "@/components/app/inputs";
+import { opcoesCondominio, Selecao, SelecaoBusca } from "@/components/app/inputs";
 import { PainelPrevisao } from "@/components/previsao/PainelPrevisao";
 import { api } from "@/lib/api";
 import { chaves, listaQuery } from "@/lib/queries";
@@ -56,7 +56,7 @@ function PaginaPrevisao() {
         <PageHeader titulo="Previsão orçamentária" descricao="Previsão orçamentária de cada prestação de contas." />
         <SectionCard titulo="Nenhuma prestação de contas">
           <p className="text-sm text-muted-foreground">
-            Crie uma prestação de contas (ou importe o PDF do Systemar) para montar a previsão orçamentária.
+            Crie uma prestação de contas para montar a previsão orçamentária.
           </p>
           <Button asChild className="mt-4">
             <Link to="/prestacao-contas">Ir para Prestação de contas</Link>
@@ -66,15 +66,39 @@ function PaginaPrevisao() {
     );
   }
 
-  const nomeCondo = (e: Exercicio) => e.condoNome || condominios.find((c) => c.id === e.condoId)?.nome || "Sem condomínio";
-  const opcoes = exercicios.map((e) => ({
-    valor: e.id,
-    rotulo: `${nomeCondo(e)} · exercício ${e.ano}`,
-  }));
+  const condoIdSelecionado = exercicio.condoId;
+  const exerciciosDoCondominio = exercicios.filter((e) => e.condoId === condoIdSelecionado);
+  const opcoesExercicio = exerciciosDoCondominio.map((e) => {
+    const periodo = e.demonstrativo?.periodo;
+    const intervalo = periodo?.ini && periodo.fim ? ` · ${periodo.ini} a ${periodo.fim}` : "";
+    return { valor: e.id, rotulo: `Exercício ${e.ano}${intervalo}` };
+  });
+  const primeiraPrestacao = exerciciosDoCondominio[0];
+  const selecionarCondominio = (condoId: string) => {
+    const primeira = exercicios.find((e) => e.condoId === condoId);
+    if (primeira) void navigate({ search: { exercicio: primeira.id }, replace: true });
+    else void navigate({ search: {}, replace: true });
+  };
   const seletor = (
-    <Field rotulo="Prestação de contas" className="max-w-xl">
-      <Selecao value={exercicio.id} onChange={(id) => navigate({ search: { exercicio: id }, replace: true })} opcoes={opcoes} />
-    </Field>
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(18rem,0.85fr)]">
+      <Field rotulo="Condomínio">
+        <SelecaoBusca
+          value={condoIdSelecionado}
+          onChange={selecionarCondominio}
+          opcoes={opcoesCondominio(condominios)}
+          placeholder="Escolha o condomínio"
+          placeholderBusca="Pesquisar condomínio por nome, código ou CNPJ..."
+        />
+      </Field>
+      <Field rotulo="Prestação de contas">
+        <Selecao
+          value={exercicio.id}
+          onChange={(id) => void navigate({ search: { exercicio: id }, replace: true })}
+          opcoes={opcoesExercicio}
+          disabled={!primeiraPrestacao}
+        />
+      </Field>
+    </div>
   );
 
   return (
