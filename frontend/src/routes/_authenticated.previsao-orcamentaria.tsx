@@ -219,7 +219,6 @@ function EditorPrevisao({
               resultado={resultado}
               unidades={unidades}
               condoId={e.condoId}
-              grupos={demonstrativo.despesas.grupos.map((g) => g.nome)}
               onChange={mudar}
         />
       </form>

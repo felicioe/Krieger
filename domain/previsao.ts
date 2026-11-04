@@ -40,6 +40,8 @@ export interface ResultadoPrevisao {
   /** 0 quando o método é "valor" (variação em R$ direto, sem percentual associado). */
   variacaoPct: number;
   variacaoValor: number;
+  /** Variação de despesas sugeridas, separada dos ajustes por grupo. */
+  variacaoDespesasValor: number;
   ajustesMais: number;
   ajustesMenos: number;
   /** Anual ajustado. */
@@ -204,22 +206,23 @@ export function calcularPrevisao(
   deducao = centavos(deducao);
   const baseLiquida = centavos(base - deducao);
   const variacaoValor = ehValorFixo ? centavos(valorFixo ?? 0) : centavos(baseLiquida * (pct / 100));
-  const { mais, menos } = somarAjustes([
-    ...ajustes,
-    ...(variacaoDespesas && variacaoDespesas.valor > 0
-      ? [{ id: "variacao-despesas-sugeridas", descricao: "Variação de despesas sugeridas", sinal: variacaoDespesas.sinal, valor: variacaoDespesas.valor }]
-      : []),
-  ]);
+  const ajustesTotais = somarAjustes(ajustes);
+  const variacaoDespesasValor = variacaoDespesas && variacaoDespesas.valor > 0
+    ? centavos((variacaoDespesas.sinal === "-" ? -1 : 1) * variacaoDespesas.valor)
+    : 0;
+  const mais = ajustesTotais.mais;
+  const menos = ajustesTotais.menos;
   const totalAnual = centavos(baseLiquida + variacaoValor + mais - menos);
+  const totalComVariacaoDespesas = centavos(totalAnual + variacaoDespesasValor);
 
   const mesesAnalisados = demonstrativo?.periodo.ini && demonstrativo.periodo.fim ? mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim) ?? 12 : 12;
-  const mensal = centavos(totalAnual / mesesAnalisados);
+  const mensal = centavos(totalComVariacaoDespesas / mesesAnalisados);
   const fundoReservaPct = parametros.prev?.fundoReservaPct ?? 0;
 
   const temUnidades = typeof unidades === "number" && unidades > 0;
   if (!temUnidades) avisos.push("Informe a quantidade de unidades no cadastro do condomínio para calcular o valor por unidade.");
   // Sem arredondar as etapas intermediárias; o arredondamento vale só para o valor final por unidade.
-  const cota = temUnidades ? totalAnual / mesesAnalisados / unidades : null;
+  const cota = temUnidades ? totalComVariacaoDespesas / mesesAnalisados / unidades : null;
   const reserva = cota !== null ? cota * (fundoReservaPct / 100) : null;
   const rateioSugerido = cota !== null && reserva !== null ? arredondarValor(cota + reserva, parametros.arredondamento) : null;
 
@@ -241,7 +244,8 @@ export function calcularPrevisao(
     variacaoValor,
     ajustesMais: mais,
     ajustesMenos: menos,
-    totalAnual,
+    totalAnual: totalComVariacaoDespesas,
+    variacaoDespesasValor,
     mesesAnalisados,
     mensal,
     fundoReservaPct,
