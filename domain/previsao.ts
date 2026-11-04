@@ -44,7 +44,9 @@ export interface ResultadoPrevisao {
   ajustesMenos: number;
   /** Anual ajustado. */
   totalAnual: number;
-  /** Anual ajustado ÷ 12. */
+  /** Quantidade de meses coberta pelo período analisado. */
+  mesesAnalisados: number;
+  /** Anual ajustado ÷ mesesAnalisados. */
   mensal: number;
   fundoReservaPct: number;
   /** Anual ajustado ÷ 12 ÷ unidades (null sem unidades). */
@@ -210,13 +212,14 @@ export function calcularPrevisao(
   ]);
   const totalAnual = centavos(baseLiquida + variacaoValor + mais - menos);
 
-  const mensal = centavos(totalAnual / 12);
+  const mesesAnalisados = demonstrativo?.periodo.ini && demonstrativo.periodo.fim ? mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim) ?? 12 : 12;
+  const mensal = centavos(totalAnual / mesesAnalisados);
   const fundoReservaPct = parametros.prev?.fundoReservaPct ?? 0;
 
   const temUnidades = typeof unidades === "number" && unidades > 0;
   if (!temUnidades) avisos.push("Informe a quantidade de unidades no cadastro do condomínio para calcular o valor por unidade.");
   // Sem arredondar as etapas intermediárias; o arredondamento vale só para o valor final por unidade.
-  const cota = temUnidades ? totalAnual / 12 / unidades : null;
+  const cota = temUnidades ? totalAnual / mesesAnalisados / unidades : null;
   const reserva = cota !== null ? cota * (fundoReservaPct / 100) : null;
   const rateioSugerido = cota !== null && reserva !== null ? arredondarValor(cota + reserva, parametros.arredondamento) : null;
 
@@ -239,6 +242,7 @@ export function calcularPrevisao(
     ajustesMais: mais,
     ajustesMenos: menos,
     totalAnual,
+    mesesAnalisados,
     mensal,
     fundoReservaPct,
     cotaUnidade: cota !== null ? centavos(cota) : null,

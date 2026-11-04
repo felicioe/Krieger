@@ -239,7 +239,7 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
               {r.modo === "detalhado" ? "Despesa" : "Grupo"}
             </TableHead>
             <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Realizado</TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Previsto</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Média</TableHead>
             <TableHead className="w-20 text-right text-xs font-semibold uppercase tracking-wide text-primary">Var.</TableHead>
           </TableRow>
         </TableHeader>
@@ -266,7 +266,7 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
                       )}
                     </TableCell>
                     <TableCell className="num whitespace-nowrap text-right">{formatBRL(l.realizado)}</TableCell>
-                    <TableCell className="num whitespace-nowrap text-right font-medium">{formatBRL(l.previsto)}</TableCell>
+                    <TableCell className="num whitespace-nowrap text-right font-medium">{formatBRL(l.previsto / r.mesesAnalisados)}</TableCell>
                     <TableCell className="num text-right text-xs text-muted-foreground">
                       {l.realizado ? pct(Math.round((l.previsto / l.realizado - 1) * 10000) / 100, true) : "—"}
                     </TableCell>
@@ -291,7 +291,7 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
           <TableRow className="bg-secondary hover:bg-secondary">
             <TableCell className="font-semibold text-primary">Anual ajustado</TableCell>
             <TableCell className="num whitespace-nowrap text-right">{formatBRL(r.base)}</TableCell>
-            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.totalAnual)}</TableCell>
+            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.mensal)}</TableCell>
             <TableCell className="num whitespace-nowrap text-right text-xs">
               {metodo === "valor"
                 ? r.variacaoValor
