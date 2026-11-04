@@ -19,7 +19,7 @@ import type { Condominio, Mensal } from "@/domain/types";
 type Busca = { condo?: string; novo?: string };
 
 export const Route = createFileRoute("/_authenticated/relatorio-mensal/")({
-  head: () => cabecalho("Relatório mensal", "Relatórios mensais de receitas e despesas dos condomínios."),
+  head: () => cabecalho("Acompanhamento de carga de dados mensais", "Conferência dos dados mensais carregados dos condomínios."),
   validateSearch: (s: Record<string, unknown>): Busca => {
     const condo = s["condo"];
     const novo = s["novo"];
@@ -78,7 +78,7 @@ function ListaMensais() {
   return (
     <>
       <PageHeader
-        titulo="Relatório mensal"
+        titulo="Acompanhamento de carga de dados mensais"
         descricao="Demonstrativo do mês, contas a receber e notas explicativas de cada condomínio."
         acoes={
           <>
