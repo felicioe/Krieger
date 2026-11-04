@@ -547,7 +547,17 @@ export interface ApoliceSeguroLida {
 // Linhas da tabela "COBERTURAS" (2 colunas de valor: Limite Máximo de Indenização, Preço por
 // Cobertura) — só a primeira interessa aqui. Exclui a cobertura básica (já é o risco absoluto) e as
 // linhas que não são cobertura (assistência 24h, prêmio líquido), que têm só 1 "R$" na linha.
-const APOLICE_EXCLUIR_COBERTURA = new Set(['Básica Simples', 'Assistência 24h', 'Prêmio Líquido']);
+const APOLICE_EXCLUIR_COBERTURA = new Set(['básica simples', 'prêmio líquido']);
+
+function deveIgnorarCobertura(descricao: string) {
+  const normalizada = descricao.toLocaleLowerCase("pt-BR").replace(/\s+/g, " ").trim();
+  return (
+    APOLICE_EXCLUIR_COBERTURA.has(normalizada) ||
+    normalizada.startsWith("assistência 24") ||
+    normalizada.startsWith("premio liquido") ||
+    normalizada.startsWith("incêndio, raio, explosão")
+  );
+}
 
 export function lerApoliceSeguro(texto: string): ApoliceSeguroLida | null {
   const linhas = texto.replace(//g, '-');
@@ -559,12 +569,15 @@ export function lerApoliceSeguro(texto: string): ApoliceSeguroLida | null {
   const blocoCoberturas = /(?:Coberturas Contratadas|Descrição\s+Limite Máximo de Indenização)[\s\S]*?(?:Prêmio Líquido Total|Limite Máximo de Garantia)/i.exec(linhas)?.[0] ?? linhas;
   for (const m of blocoCoberturas.matchAll(/^\s*(.+?)\s+(?:R\$\s*)?([\d.]+,\d{2})\s+(?:R\$\s*)?[\d.]+,\d{2}/gm)) {
     const desc = m[1]!.trim().replace(/\s{2,}/g, ' ');
-    if (APOLICE_EXCLUIR_COBERTURA.has(desc)) continue;
+    if (deveIgnorarCobertura(desc)) continue;
     coberturas.push({ desc, valor: paraNumero(m[2]!) });
   }
 
   return {
-    seguradora: campoTexto(t, /(?:Agradecemos por escolher a|Este seguro [ée] garantido pela)\s+(.+?)(?:\.|\s+-\s+Rua)/i) ?? campoTexto(t, /^(Tokio Marine|Allianz|Bradesco|Porto Seguro|Zurich|HDI|Mapfre|Sompo|SulAm[ée]rica)[^|]*/i),
+    seguradora:
+      campoTexto(t, /(?:Agradecemos|Obrigado) por escolher a\s+(.+?)(?:!|\.)/i) ??
+      campoTexto(t, /Este seguro [ée] garantido pela\s+(.+?)(?:\s*-\s*Rua|\s+Rua)/i) ??
+      campoTexto(t, /^(Tokio Marine|Allianz|Bradesco|Porto Seguro|Zurich|HDI|Mapfre|Sompo|SulAm[ée]rica)[^|]*/i),
     numeroApolice: campoTexto(t, /(?:N[ºo°]?\.?\s*da\s*Ap[óo]lice|Ap[óo]lice|N[úu]mero da ap[óo]lice):\s*(\S+)/i),
     vigenciaIni: vig[1]!,
     vigenciaFim: vig[2]!,
