@@ -83,7 +83,7 @@ export function exercicioPadrao(
     arredondamento: c.arredondamento ?? "truncar",
     confer: null,
     consid: considDoCondominio(c),
-    prev: { modo: "tradicional", ajustes: [], fundoReservaPct: null },
+    prev: { modo: "tradicional", ajustes: [], variacaoDespesas: { sinal: "+", valor: 0 }, fundoReservaPct: null },
     mostrarAnalise: true,
     mostrarPizza: true,
   };
@@ -137,6 +137,7 @@ export function normalizarExercicio(raw: Partial<Exercicio> & { id?: string }): 
       ...raw.prev,
       modo: raw.prev?.modo ?? "tradicional",
       ajustes: raw.prev?.ajustes ?? [],
+      variacaoDespesas: raw.prev?.variacaoDespesas ?? { sinal: "+", valor: 0 },
       fundoReservaPct: raw.prev?.fundoReservaPct ?? null,
     },
   } as Exercicio;

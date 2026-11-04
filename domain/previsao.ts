@@ -138,6 +138,7 @@ export function calcularPrevisao(
   const avisos: string[] = [];
   const modo = parametros.prev?.modo ?? "tradicional";
   const ajustes = parametros.prev?.ajustes ?? [];
+  const variacaoDespesas = parametros.prev?.variacaoDespesas;
   const re = expressaoDeducao(parametros.deducaoRegex);
   const { pct, valorFixo, aviso } = resolverVariacao(parametros);
   if (aviso) avisos.push(aviso);
@@ -201,7 +202,12 @@ export function calcularPrevisao(
   deducao = centavos(deducao);
   const baseLiquida = centavos(base - deducao);
   const variacaoValor = ehValorFixo ? centavos(valorFixo ?? 0) : centavos(baseLiquida * (pct / 100));
-  const { mais, menos } = somarAjustes(ajustes);
+  const { mais, menos } = somarAjustes([
+    ...ajustes,
+    ...(variacaoDespesas && variacaoDespesas.valor > 0
+      ? [{ id: "variacao-despesas-sugeridas", descricao: "Variação de despesas sugeridas", sinal: variacaoDespesas.sinal, valor: variacaoDespesas.valor }]
+      : []),
+  ]);
   const totalAnual = centavos(baseLiquida + variacaoValor + mais - menos);
 
   const mensal = centavos(totalAnual / 12);
