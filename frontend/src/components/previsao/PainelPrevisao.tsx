@@ -195,24 +195,7 @@ function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
   if (r.linhas.length === 0) {
     return <p className="text-sm text-muted-foreground">Lance as despesas no demonstrativo da prestação de contas para ver a previsão.</p>;
   }
-  const ajustesPorGrupo = (g: string) => (g ? r.ajustes.filter((a) => a.grupo === g) : []);
   const grupos = [...new Set(r.linhas.map((l) => l.grupo))];
-  const gerais = r.ajustes.filter((a) => !a.grupo || !grupos.includes(a.grupo));
-  const linhaAjuste = (a: AjustePrevisao) => (
-    <TableRow key={a.id} className="text-sm">
-      <TableCell className="pl-6 text-muted-foreground">
-        <span className={cn("mr-1.5 font-semibold", a.sinal === "-" ? "text-destructive" : "text-primary")}>
-          {a.sinal === "-" ? "−" : "+"}
-        </span>
-        {a.descricao || "Ajuste sem descrição"}
-      </TableCell>
-      <TableCell className="num text-right text-muted-foreground">—</TableCell>
-      <TableCell className={cn("num whitespace-nowrap text-right", a.sinal === "-" && "text-destructive")}>
-        {a.sinal === "-" ? "−" : ""}
-        {formatBRL(Math.abs(a.valor))}
-      </TableCell>
-    </TableRow>
-  );
 
   return (
     <div className="-mx-5 -mb-5 overflow-x-auto @max-[14rem]:-mx-3 @max-[14rem]:-mb-3">
@@ -252,26 +235,15 @@ function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
                     <TableCell className="num whitespace-nowrap text-right font-medium">{formatBRL(l.previsto / r.mesesAnalisados)}</TableCell>
                   </TableRow>
                 ))}
-                {ajustesPorGrupo(g).map(linhaAjuste)}
               </Fragment>
             );
           })}
-          {gerais.length > 0 && (
-            <>
-              <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={3} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Ajustes gerais
-                </TableCell>
-              </TableRow>
-              {gerais.map(linhaAjuste)}
-            </>
-          )}
         </TableBody>
         <TableFooter>
           <TableRow className="bg-secondary hover:bg-secondary">
             <TableCell className="font-semibold text-primary">Anual ajustado</TableCell>
             <TableCell className="num whitespace-nowrap text-right">{formatBRL(r.base)}</TableCell>
-            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.mensal)}</TableCell>
+            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.base / r.mesesAnalisados)}</TableCell>
           </TableRow>
         </TableFooter>
       </Table>
