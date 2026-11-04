@@ -18,6 +18,7 @@ import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
 import { calcularPrevisao } from "@/domain/previsao";
 import type { Condominio, Exercicio } from "@/domain/types";
+import { formatBRL } from "@/lib/format";
 
 type Busca = { exercicio?: string; modo?: "rateio" | "relatorios" };
 
@@ -169,6 +170,10 @@ function EditorPrevisao({
 
   const periodo = demonstrativo.periodo.ini && demonstrativo.periodo.fim ? `${demonstrativo.periodo.ini} a ${demonstrativo.periodo.fim}` : null;
 
+  if (modo === "relatorios") {
+    return <RelatorioPrevisao seletor={seletor} exercicio={e} resultado={resultado} periodo={periodo} />;
+  }
+
   return (
     <>
       <PageHeader
@@ -222,6 +227,57 @@ function EditorPrevisao({
               onChange={mudar}
         />
       </form>
+    </>
+  );
+}
+
+function RelatorioPrevisao({
+  seletor,
+  exercicio,
+  resultado,
+  periodo,
+}: {
+  seletor: ReactNode;
+  exercicio: Exercicio;
+  resultado: ReturnType<typeof calcularPrevisao>;
+  periodo: string | null;
+}) {
+  const [detalhado, setDetalhado] = useState(false);
+  const demonstrativo = exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
+  const fator = 1 + resultado.variacaoPct / 100;
+  const linhas = demonstrativo.despesas.grupos.flatMap((grupo) =>
+    detalhado
+      ? grupo.itens.map((item) => ({ nome: item.nome || "Sem nome", realizado: Number(item.valor) || 0, grupo: grupo.nome }))
+      : [{ nome: grupo.nome || "Sem grupo", realizado: grupo.itens.reduce((s, item) => s + (Number(item.valor) || 0), 0), grupo: grupo.nome }],
+  );
+  const totalRealizado = linhas.reduce((s, linha) => s + linha.realizado, 0);
+  const totalPrevisto = totalRealizado * fator;
+  return (
+    <>
+      <PageHeader
+        titulo={`Previsão para relatórios — Exercício ${exercicio.ano}`}
+        descricao={<>{exercicio.condoNome}{periodo && <span className="num"> · período {periodo}</span>}</>}
+        acoes={<Button variant="outline" onClick={() => window.print()}>Imprimir</Button>}
+      />
+      <SectionCard className="mb-6">{seletor}</SectionCard>
+      <SectionCard
+        titulo="Previsto × Realizado"
+        descricao={`Realizado aplicado pelo reajuste de ${resultado.variacaoPct.toFixed(2).replace(".", ",")}% · sem deduções, ajustes ou variação de despesas sugeridas.`}
+      >
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex rounded-md border bg-muted/40 p-1" role="group" aria-label="Modo de apresentação">
+            <Button type="button" size="sm" variant={!detalhado ? "secondary" : "ghost"} onClick={() => setDetalhado(false)}>Por grupo</Button>
+            <Button type="button" size="sm" variant={detalhado ? "secondary" : "ghost"} onClick={() => setDetalhado(true)}>Detalhado</Button>
+          </div>
+        </div>
+        <div className="overflow-x-auto rounded-md border">
+          <table className="w-full border-collapse text-sm">
+            <thead className="bg-muted/60"><tr className="border-b"><th className="px-3 py-2 text-left">{detalhado ? "Conta" : "Grupo"}</th><th className="px-3 py-2 text-right">Realizado</th><th className="px-3 py-2 text-right">Previsto</th></tr></thead>
+            <tbody>{linhas.map((linha, index) => <tr key={`${linha.grupo}-${linha.nome}-${index}`} className="border-b last:border-0"><td className="px-3 py-2">{linha.nome}</td><td className="num px-3 py-2 text-right">{formatBRL(linha.realizado)}</td><td className="num px-3 py-2 text-right font-medium">{formatBRL(linha.realizado * fator)}</td></tr>)}</tbody>
+            <tfoot><tr className="bg-secondary font-semibold"><td className="px-3 py-2">Total</td><td className="num px-3 py-2 text-right">{formatBRL(totalRealizado)}</td><td className="num px-3 py-2 text-right text-primary">{formatBRL(totalPrevisto)}</td></tr></tfoot>
+          </table>
+        </div>
+      </SectionCard>
     </>
   );
 }
