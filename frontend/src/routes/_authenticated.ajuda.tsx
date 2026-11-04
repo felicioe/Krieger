@@ -32,7 +32,7 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
     titulo: "Relatórios",
     itens: [
       { id: "previsto-realizado", titulo: "Previsto × Realizado" },
-      { id: "relatorio-mensal", titulo: "Relatório mensal" },
+      { id: "relatorio-mensal", titulo: "Acompanhamento de carga de dados mensais" },
     ],
   },
   {
@@ -192,13 +192,13 @@ function Ajuda() {
               <p>
                 Relatório só de leitura: mostra, por rubrica e por grupo, o previsto (anual e acumulado até o mês escolhido) ao lado do
                 realizado dos relatórios mensais lançados. Não altera nem compõe a previsão — é só para acompanhar o quanto o condomínio está
-                dentro, acima ou abaixo do orçamento aprovado. A versão "Orçado × Realizado mensal" mostra a mesma comparação mês a mês, numa
+                dentro, acima ou abaixo do orçamento aprovado. A versão "Previsto × Realizado mensal" mostra a mesma comparação mês a mês, numa
                 tabela com totais por linha e coluna.
               </p>
             </Texto>
           </SectionCard>
 
-          <SectionCard id="relatorio-mensal" titulo="Relatório mensal" descricao="O boletim mensal enviado ao condomínio.">
+          <SectionCard id="relatorio-mensal" titulo="Acompanhamento de carga de dados mensais" descricao="O boletim mensal enviado ao condomínio.">
             <Texto>
               <p>
                 Reúne o demonstrativo do mês, inadimplência e notas explicativas num documento pronto para PDF/Word — o relatório de rotina,

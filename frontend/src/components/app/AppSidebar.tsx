@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 type Item = { titulo: string; to: string; icone: LucideIcon; permissao?: string; apenasAdmin?: boolean; perigoso?: boolean };
 
 /**
- * Menu agrupado por rotina do escritório. Painel, Condomínios e a Central de Ajuda ficam soltos no topo (uso diário);
+ * Menu agrupado por rotina do escritório. Painel e Condomínios ficam soltos no topo (uso diário);
  * os demais em três grupos. Todos os itens continuam a um clique — os grupos são só títulos.
  */
 export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
@@ -45,7 +45,6 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     itens: [
       { titulo: "Painel", to: "/painel", icone: LayoutDashboard, permissao: "painel.visualizar" },
       { titulo: "Condomínios", to: "/condominios", icone: Building2, permissao: "condominios.visualizar" },
-      { titulo: "Central de Ajuda", to: "/ajuda", icone: CircleHelp },
     ],
   },
   {
@@ -53,15 +52,14 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     itens: [
       { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet, permissao: "prestacao_contas.visualizar" },
       { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator, permissao: "previsao_orcamentaria.visualizar" },
-      { titulo: "Importador", to: "/importador", icone: FileUp, permissao: "importador.visualizar" },
     ],
   },
   {
     titulo: "Relatórios",
     itens: [
       { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows, permissao: "previsto_realizado.visualizar" },
-      { titulo: "Orçado × Realizado mensal", to: "/relatorios/orcado-realizado-mensal", icone: CalendarRange, permissao: "previsto_realizado.visualizar" },
-      { titulo: "Relatório mensal", to: "/relatorio-mensal", icone: CalendarRange, permissao: "relatorio_mensal.visualizar" },
+      { titulo: "Previsto × Realizado mensal", to: "/relatorios/orcado-realizado-mensal", icone: CalendarRange, permissao: "previsto_realizado.visualizar" },
+      { titulo: "Acompanhamento de carga de dados mensais", to: "/relatorio-mensal", icone: CalendarRange, permissao: "relatorio_mensal.visualizar" },
     ],
   },
   {
@@ -77,6 +75,8 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
   {
     titulo: "Administração",
     itens: [
+      { titulo: "Importador", to: "/importador", icone: FileUp, permissao: "importador.visualizar" },
+      { titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp },
       { titulo: "Escritório", to: "/escritorio", icone: Briefcase, permissao: "escritorio.visualizar" },
       { titulo: "Backup", to: "/backup", icone: DatabaseBackup, permissao: "backup.visualizar" },
       { titulo: "Limpeza de Dados", to: "/limpeza-dados", icone: Trash2, apenasAdmin: true, perigoso: true },
