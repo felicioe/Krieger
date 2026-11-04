@@ -69,7 +69,7 @@ function PaginaPrevisao() {
   const nomeCondo = (e: Exercicio) => e.condoNome || condominios.find((c) => c.id === e.condoId)?.nome || "Sem condomínio";
   const opcoes = exercicios.map((e) => ({
     valor: e.id,
-    rotulo: `${nomeCondo(e)} · exercício ${e.ano}${e.previsaoSugerida ? "" : " (sem previsão do Systemar)"}`,
+    rotulo: `${nomeCondo(e)} · exercício ${e.ano}`,
   }));
   const seletor = (
     <Field rotulo="Prestação de contas" className="max-w-xl">
