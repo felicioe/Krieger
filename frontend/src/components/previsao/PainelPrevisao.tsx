@@ -53,6 +53,7 @@ export function PainelPrevisao({
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
   const ajustes = prev.ajustes ?? [];
+  const variacaoDespesas = prev.variacaoDespesas ?? { sinal: "+" as const, valor: 0 };
   const opcoesGrupo = [{ valor: SEM_GRUPO, rotulo: "Geral" }, ...grupos.filter(Boolean).map((g) => ({ valor: g, rotulo: g }))];
 
   // Avisos do cálculo: no topo (com o que fazer) e junto do campo a que se referem.
@@ -171,6 +172,15 @@ export function PainelPrevisao({
               </>
             )}
           />
+        </SectionCard>
+
+        <SectionCard titulo="Variação de despesas sugeridas" descricao="Valor anual somado (+) ou subtraído (−) do total ordinário.">
+          <div className="@container max-w-md">
+            <div className="grid grid-cols-1 gap-2 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)]">
+              <SinalToggle valor={variacaoDespesas.sinal} onChange={(sinal) => setPrev({ variacaoDespesas: { ...variacaoDespesas, sinal } })} rotulo="Sinal da variação" />
+              <DinheiroInput aria-label="Valor da variação de despesas sugeridas" value={variacaoDespesas.valor} onChange={(v) => setPrev({ variacaoDespesas: { ...variacaoDespesas, valor: Math.abs(v ?? 0) } })} />
+            </div>
+          </div>
         </SectionCard>
 
         <SectionCard

@@ -381,6 +381,8 @@ export interface Exercicio extends ComId {
     driver?: unknown;
     alvos?: unknown;
     ajustes?: AjustePrevisao[];
+    /** Variação anual sugerida em R$, independente do percentual fixo. */
+    variacaoDespesas?: { sinal: "+" | "-"; valor: number };
     /** Campo novo (opcional): % do fundo de reserva sobre a cota mensal. */
     fundoReservaPct?: number | null;
   };
