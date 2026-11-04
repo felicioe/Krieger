@@ -187,7 +187,7 @@ export function PainelPrevisao({
           titulo={r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}
           descricao="Baseado exclusivamente no realizado reduzido do período analisado."
         >
-          <TabelaLinhas r={r} metodo={e.variacaoMetodo} />
+          <TabelaLinhas r={r} />
         </SectionCard>
       </div>
 
@@ -206,7 +206,7 @@ export function PainelPrevisao({
   );
 }
 
-function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMetodo }) {
+function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
   if (r.linhas.length === 0) {
     return <p className="text-sm text-muted-foreground">Lance as despesas no demonstrativo da prestação de contas para ver a previsão.</p>;
   }
@@ -226,7 +226,6 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
         {a.sinal === "-" ? "−" : ""}
         {formatBRL(Math.abs(a.valor))}
       </TableCell>
-      <TableCell />
     </TableRow>
   );
 
@@ -240,7 +239,6 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
             </TableHead>
             <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Realizado</TableHead>
             <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Média</TableHead>
-            <TableHead className="w-20 text-right text-xs font-semibold uppercase tracking-wide text-primary">Var.</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -250,7 +248,7 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
               <Fragment key={g}>
                 {r.modo === "detalhado" && (
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={4} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <TableCell colSpan={3} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       {g || "Sem grupo"}
                     </TableCell>
                   </TableRow>
@@ -267,9 +265,6 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
                     </TableCell>
                     <TableCell className="num whitespace-nowrap text-right">{formatBRL(l.realizado)}</TableCell>
                     <TableCell className="num whitespace-nowrap text-right font-medium">{formatBRL(l.previsto / r.mesesAnalisados)}</TableCell>
-                    <TableCell className="num text-right text-xs text-muted-foreground">
-                      {l.realizado ? pct(Math.round((l.previsto / l.realizado - 1) * 10000) / 100, true) : "—"}
-                    </TableCell>
                   </TableRow>
                 ))}
                 {ajustesPorGrupo(g).map(linhaAjuste)}
@@ -279,7 +274,7 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
           {gerais.length > 0 && (
             <>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
-                <TableCell colSpan={4} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <TableCell colSpan={3} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Ajustes gerais
                 </TableCell>
               </TableRow>
@@ -292,15 +287,6 @@ function TabelaLinhas({ r, metodo }: { r: ResultadoPrevisao; metodo: VariacaoMet
             <TableCell className="font-semibold text-primary">Anual ajustado</TableCell>
             <TableCell className="num whitespace-nowrap text-right">{formatBRL(r.base)}</TableCell>
             <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.mensal)}</TableCell>
-            <TableCell className="num whitespace-nowrap text-right text-xs">
-              {metodo === "valor"
-                ? r.variacaoValor
-                  ? `${r.variacaoValor < 0 ? "−" : "+"}${formatBRL(Math.abs(r.variacaoValor))}`
-                  : "—"
-                : r.base
-                  ? pct(Math.round((r.totalAnual / r.base - 1) * 10000) / 100, true)
-                  : "—"}
-            </TableCell>
           </TableRow>
         </TableFooter>
       </Table>
