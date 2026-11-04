@@ -1,5 +1,37 @@
 # Estado atual e passagem de contexto
 
+## Fonte difícil de ler em zoom 100% + CI vermelho desde #219 — publicado — 04/11/2026
+
+Pedido do responsável: zoom do navegador em 150% ficava legível, voltando a 100% (ou outro
+percentual) o texto ficava fino e difícil de ler. Causa: `frontend/src/styles.css` forçava
+globalmente `-webkit-font-smoothing: antialiased`/`-moz-osx-font-smoothing: grayscale` no `body` e
+`text-rendering: optimizeLegibility` no `html` — smoothing pensado pra Retina/alta densidade, que
+em monitor comum e zoom 100% afina demais texto pequeno (`text-xs`, 12px, uso extenso no app). Em
+150% o mesmo texto renderiza com mais pixels por glifo, disfarçando o afinamento. Corrigido: o
+smoothing só entra em `@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi)`;
+`optimizeLegibility` ficou restrito a `h1`-`h6`. PR #210.
+
+Ao validar o deploy dessa correção, achado `main` com CI vermelho desde os merges de hoje (#219 em
+diante, nunca pego por CI): (1) crash em `calcularPrevisao` — `demonstrativo?.periodo.ini` só
+protegia `demonstrativo`, não `periodo` ausente (dado legado/incompleto) — `?.` encadeado também em
+`periodo`; (2) build do frontend não compilava em `_authenticated.previsao-orcamentaria.tsx` —
+código morto inalcançável (`modo === "relatorios"` testado depois de um early return que já cobre
+esse caso; o card "Previsão efetiva dos relatórios" nunca era renderizado em nenhum modo, removido)
+e uma violação de `exactOptionalPropertyTypes` em duas chamadas de `navigate` (`?? "rateio"`
+resolve sem mudar comportamento). PR #226, mergeado antes do #210 pra destravar o build.
+
+**Publicado**: `npm ci && npm test && npm run typecheck` (raiz, 240 testes) + `cd frontend && npm
+ci && npm run build` + `npm run package:hostinger`, a partir de `main` (`7fd2006`) — push pro
+`deploy-hostinger` (`d32f596`). Confirmado ao vivo: `index.html` referencia `index-B7L5_9zn.js`,
+hash exato do build; `auth.php?a=eu` e `api.php?a=listar&s=condominios` respondem 401 (normal, sem
+sessão); `lib_auth.php` 403 direto; `config.php`/`krieger-config.php` 404. Nenhum arquivo PHP
+mudou nesta publicação. **Não testado**: login/logout e gravação de registro de teste (sem
+credenciais de administrador nesta sessão) — pendente de validação manual pelo responsável.
+
+**Pendência de produto**: o card "Previsão efetiva dos relatórios" removido em #226 nunca era
+exibido (código morto desde #219); se a intenção era mostrá-lo em algum momento, é uma decisão de
+UX a retomar — não assumida nesta correção.
+
 ## Incidente resolvido: site fora do ar (403), causa raiz no auto-deploy do Hostinger — 03/11/2026
 
 O site respondeu 403 Forbidden em produção (checado via `curl`, reproduzível). Investigado com o
