@@ -18,8 +18,6 @@ import { cn, irPara } from "@/lib/utils";
 import type { ResultadoPrevisao } from "@/domain/previsao";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
-const SEM_GRUPO = "__geral";
-
 const MODOS = [
   { valor: "tradicional" as const, rotulo: "Tradicional (por grupo)" },
   { valor: "detalhado" as const, rotulo: "Detalhado (por despesa)" },
@@ -40,21 +38,18 @@ export function PainelPrevisao({
   resultado: r,
   unidades,
   condoId,
-  grupos,
   onChange,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
   unidades: number | null;
   condoId: string;
-  grupos: string[];
   onChange: (parcial: Partial<Exercicio>) => void;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
   const ajustes = prev.ajustes ?? [];
   const variacaoDespesas = prev.variacaoDespesas ?? { sinal: "+" as const, valor: 0 };
-  const opcoesGrupo = [{ valor: SEM_GRUPO, rotulo: "Geral" }, ...grupos.filter(Boolean).map((g) => ({ valor: g, rotulo: g }))];
 
   // Avisos do cálculo: no topo (com o que fazer) e junto do campo a que se referem.
   const idBase = useId();
@@ -148,7 +143,7 @@ export function PainelPrevisao({
             onChange={(v) => setPrev({ ajustes: v })}
             novo={() => ({ id: novoId(), descricao: "", sinal: "+", valor: 0 })}
             colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)] @xl:grid-cols-[5.75rem_minmax(0,1fr)_9.5rem]"
-            cabecalhos={["Sinal", "Descrição e grupo", "Valor anual"]}
+            cabecalhos={["Sinal", "Descrição", "Valor anual"]}
             reordenavel={false}
             rotuloAdicionar="Adicionar ajuste"
             vazio="Nenhum ajuste. A previsão usa só a base com a variação."
@@ -159,22 +154,12 @@ export function PainelPrevisao({
                 <div className="col-span-full @min-[12rem]:col-span-1 @min-[12rem]:col-start-2 @xl:col-start-auto">
                   <DinheiroInput aria-label="Valor anual" value={a.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
                 </div>
-                <div className="col-span-full mb-2 flex items-center gap-2 @min-[12rem]:col-start-2">
-                  <span className="text-xs text-muted-foreground">Grupo</span>
-                  <Selecao
-                    aria-label="Grupo do ajuste"
-                    value={a.grupo || SEM_GRUPO}
-                    onChange={(v) => up({ grupo: v === SEM_GRUPO ? "" : v })}
-                    opcoes={opcoesGrupo}
-                    className="min-h-8 py-1 text-xs sm:max-w-[16rem]"
-                  />
-                </div>
               </>
             )}
           />
         </SectionCard>
 
-        <SectionCard titulo="Variação de despesas sugeridas" descricao="Valor anual somado (+) ou subtraído (−) do total ordinário.">
+        <SectionCard titulo="(+/−) Variação de despesas sugeridas" descricao="Valor anual somado (+) ou subtraído (−) do total ordinário, sem vínculo com grupo de despesas.">
           <div className="@container max-w-md">
             <div className="grid grid-cols-1 gap-2 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)]">
               <SinalToggle valor={variacaoDespesas.sinal} onChange={(sinal) => setPrev({ variacaoDespesas: { ...variacaoDespesas, sinal } })} rotulo="Sinal da variação" />
@@ -357,6 +342,7 @@ function Resumo({
           rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${pct(r.variacaoPct)}`}
           valor={formatBRL(r.variacaoValor)}
         />
+        <LinhaResumo rotulo="(+/−) Variação de despesas sugeridas" valor={`${r.variacaoDespesasValor < 0 ? "−" : r.variacaoDespesasValor > 0 ? "+" : ""}${formatBRL(Math.abs(r.variacaoDespesasValor))}`} negativo={r.variacaoDespesasValor < 0} />
         <LinhaResumo rotulo="(+) Ajustes" valor={formatBRL(r.ajustesMais)} />
         <LinhaResumo rotulo="(−) Ajustes" valor={formatBRL(r.ajustesMenos)} negativo={r.ajustesMenos > 0} />
         <LinhaResumo rotulo="Anual ajustado" valor={formatBRL(r.totalAnual)} forte className="mt-1 border-t pt-2" />
