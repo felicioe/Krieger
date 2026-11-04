@@ -1,5 +1,5 @@
 import { Link } from "@/components/app/LinkPermitido";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Briefcase,
   Building2,
@@ -92,8 +92,25 @@ const classeItem =
   "flex w-full items-center gap-3 border-l-4 border-transparent px-4 py-2 text-sm max-md:min-h-11 pointer-coarse:min-h-11 text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring";
 const classeAtivo = "bg-sidebar-accent border-sidebar-indicator text-sidebar-accent-foreground font-medium";
 
+function itemMenuAtivo(to: string, pathname: string, searchStr: string) {
+  const [itemPath, itemSearch = ""] = to.split("?");
+  if (itemPath !== pathname) return false;
+
+  const itemParams = new URLSearchParams(itemSearch);
+  const currentParams = new URLSearchParams(searchStr);
+  if (itemParams.size === 0) {
+    return !currentParams.has("modo") || currentParams.get("modo") !== "relatorios";
+  }
+
+  return Array.from(itemParams.entries()).every(
+    ([key, value]) => currentParams.get(key) === value,
+  );
+}
+
 function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | undefined }) {
   const Icone = item.icone;
+  const location = useRouterState({ select: (state) => state.location });
+  const ativo = itemMenuAtivo(item.to, location.pathname, location.searchStr);
   return (
     <Link
       to={item.to}
@@ -101,12 +118,8 @@ function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | 
       className={cn(
         classeItem,
         item.perigoso && "text-red-400 hover:bg-red-950/60 hover:text-red-300 font-medium",
+        ativo && (item.perigoso ? "bg-red-950/80 border-red-500 text-red-200 font-semibold" : classeAtivo),
       )}
-      activeProps={{
-        className: item.perigoso
-          ? "bg-red-950/80 border-red-500 text-red-200 font-semibold"
-          : classeAtivo,
-      }}
     >
       <Icone className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-400 opacity-100")} />
       <span className="min-w-0 break-words">{item.titulo}</span>
