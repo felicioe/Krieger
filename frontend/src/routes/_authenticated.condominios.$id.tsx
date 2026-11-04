@@ -328,9 +328,6 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
             <Field rotulo="Rateio mensal atual" className="sm:col-span-2">
               <DinheiroInput value={c.rateioAtual} onChange={(v) => set("rateioAtual", v)} />
             </Field>
-            <Field rotulo="Variação padrão" dica="Usada na previsão orçamentária." className="sm:col-span-2">
-              <PercentualInput value={c.variacaoPadrao} onChange={(v) => set("variacaoPadrao", v)} />
-            </Field>
             <Field rotulo="Área total (m²)" dica="Informativo, lido da Listagem de Condomínios." className="sm:col-span-2">
               <NumeroInput value={c.areaTotalM2 ?? null} onChange={(v) => set("areaTotalM2", v)} />
             </Field>
