@@ -1,7 +1,7 @@
 import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Fragment, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { CircleHelp, FileSpreadsheet, Loader2, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ function PaginaPrevisao() {
   const primeiraPrestacao = exerciciosDoCondominio[0];
   const selecionarCondominio = (condoId: string) => {
     const primeira = exercicios.find((e) => e.condoId === condoId);
-    if (primeira) void navigate({ search: { exercicio: primeira.id }, replace: true });
+    if (primeira) void navigate({ search: { exercicio: primeira.id, modo: busca.modo }, replace: true });
     else void navigate({ search: {}, replace: true });
   };
   const seletor = (
@@ -95,7 +95,7 @@ function PaginaPrevisao() {
       <Field rotulo="Prestação de contas">
         <Selecao
           value={exercicio.id}
-          onChange={(id) => void navigate({ search: { exercicio: id }, replace: true })}
+          onChange={(id) => void navigate({ search: { exercicio: id, modo: busca.modo }, replace: true })}
           opcoes={opcoesExercicio}
           disabled={!primeiraPrestacao}
         />
@@ -272,9 +272,9 @@ function RelatorioPrevisao({
         </div>
         <div className="overflow-x-auto rounded-md border">
           <table className="w-full border-collapse text-sm">
-            <thead className="bg-muted/60"><tr className="border-b"><th className="px-3 py-2 text-left">{detalhado ? "Conta" : "Grupo"}</th><th className="px-3 py-2 text-right">Realizado</th><th className="px-3 py-2 text-right">Previsto</th></tr></thead>
-            <tbody>{linhas.map((linha, index) => <tr key={`${linha.grupo}-${linha.nome}-${index}`} className="border-b last:border-0"><td className="px-3 py-2">{linha.nome}</td><td className="num px-3 py-2 text-right">{formatBRL(linha.realizado)}</td><td className="num px-3 py-2 text-right font-medium">{formatBRL(linha.realizado * fator)}</td></tr>)}</tbody>
-            <tfoot><tr className="bg-secondary font-semibold"><td className="px-3 py-2">Total</td><td className="num px-3 py-2 text-right">{formatBRL(totalRealizado)}</td><td className="num px-3 py-2 text-right text-primary">{formatBRL(totalPrevisto)}</td></tr></tfoot>
+            <thead className="bg-muted/60"><tr className="border-b"><th className="px-3 py-2 text-left">{detalhado ? "Conta" : "Grupo"}</th><th className="px-3 py-2 text-right">Realizado</th><th className="px-3 py-2 text-right">Previsto</th><th className="px-3 py-2 text-right">Variação</th></tr></thead>
+            <tbody>{linhas.map((linha, index) => { const previsto = linha.realizado * fator; const variacao = linha.realizado ? ((previsto / Math.abs(linha.realizado) - 1) * 100).toFixed(2).replace(".", ",") + "%" : "—"; const novoGrupo = detalhado && (index === 0 || linhas[index - 1]!.grupo !== linha.grupo); return <Fragment key={`${linha.grupo}-${linha.nome}-${index}`}>{novoGrupo && <tr className="border-b bg-muted/30"><th colSpan={4} className="px-3 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">{linha.grupo || "Sem grupo"}</th></tr>}<tr className="border-b last:border-0"><td className="px-3 py-2">{linha.nome}</td><td className="num px-3 py-2 text-right">{formatBRL(linha.realizado)}</td><td className="num px-3 py-2 text-right font-medium">{formatBRL(previsto)}</td><td className="num px-3 py-2 text-right text-muted-foreground">{variacao}</td></tr></Fragment>; })}</tbody>
+            <tfoot><tr className="bg-secondary font-semibold"><td className="px-3 py-2">Total</td><td className="num px-3 py-2 text-right">{formatBRL(totalRealizado)}</td><td className="num px-3 py-2 text-right text-primary">{formatBRL(totalPrevisto)}</td><td className="num px-3 py-2 text-right text-primary">{totalRealizado ? `${((totalPrevisto / Math.abs(totalRealizado) - 1) * 100).toFixed(2).replace(".", ",")}%` : "—"}</td></tr></tfoot>
           </table>
         </div>
       </SectionCard>
