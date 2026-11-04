@@ -562,15 +562,39 @@ function deveIgnorarCobertura(descricao: string) {
 export function lerApoliceSeguro(texto: string): ApoliceSeguroLida | null {
   const linhas = texto.replace(//g, '-');
   const t = linhas.replace(/\s+/g, ' ');
-  const vig = /(?:Vig[êe]ncia|Vigencia)\s*:\s*(?:a partir.*?dia\s*)?(\d{2}\/\d{2}\/\d{4})[\s\S]{0,100}?(\d{2}\/\d{2}\/\d{4})/i.exec(t) ?? /De\s*(\d{2}\/\d{2}\/\d{4})[\s\S]{0,60}?(\d{2}\/\d{2}\/\d{4})/i.exec(t);
+  const vig = /(?:Vig[êe]ncia|Vigencia)(?:\s+do\s+Seguro)?\s*:\s*(?:a partir.*?dia\s*)?(\d{2}\/\d{2}\/\d{4})[\s\S]{0,100}?(\d{2}\/\d{2}\/\d{4})/i.exec(t) ?? /De\s*(\d{2}\/\d{2}\/\d{4})[\s\S]{0,60}?(\d{2}\/\d{2}\/\d{4})/i.exec(t);
   if (!vig) return null;
 
   const coberturas: CoberturaLida[] = [];
-  const blocoCoberturas = /(?:Coberturas Contratadas|Descrição\s+Limite Máximo de Indenização)[\s\S]*?(?:Prêmio Líquido Total|Limite Máximo de Garantia)/i.exec(linhas)?.[0] ?? linhas;
-  for (const m of blocoCoberturas.matchAll(/^\s*(.+?)\s+(?:R\$\s*)?([\d.]+,\d{2})\s+(?:R\$\s*)?[\d.]+,\d{2}/gm)) {
-    const desc = m[1]!.trim().replace(/\s{2,}/g, ' ');
-    if (deveIgnorarCobertura(desc)) continue;
-    coberturas.push({ desc, valor: paraNumero(m[2]!) });
+  const linhasApolice = linhas.split(/\r?\n/);
+  const inicioCoberturas = linhasApolice.findIndex((linha) => /(?:Coberturas Contratadas|Descrição\s+Limite Máximo de Indenização)/i.test(linha));
+  const fimCoberturas = inicioCoberturas >= 0
+    ? linhasApolice.slice(inicioCoberturas + 1).findIndex((linha) => /^(?:Prêmio\s+Líquido\s+Total|Limite\s+Máximo\s+de\s+Garantia)\s*:/i.test(linha.trim()))
+    : -1;
+  const blocoCoberturas = inicioCoberturas >= 0
+    ? linhasApolice.slice(inicioCoberturas, fimCoberturas >= 0 ? inicioCoberturas + 1 + fimCoberturas : undefined).join("\n")
+    : linhas;
+  let descricaoPendente = "";
+  for (const linhaBruta of blocoCoberturas.split(/\r?\n/)) {
+    const linha = linhaBruta.trim().replace(/\s{2,}/g, " ");
+    if (!linha || /^(?:Coberturas|Limite Máximo|de Indenização|Prêmio Líquido|Franquias|P\.O\.S|Tipo de Indenização|Valor de Novo|Serviços)/i.test(linha)) continue;
+    const m = /^(.*?)\s+(?:R\$\s*)?([\d.]+,\d{2})\s+(?:R\$\s*)?[\d.]+,\d{2}(?:\s|$)/i.exec(linha);
+    if (m) {
+      const desc = `${descricaoPendente} ${m[1]!}`.trim().replace(/\s{2,}/g, " ");
+      descricaoPendente = "";
+      if (!deveIgnorarCobertura(desc)) coberturas.push({ desc, valor: paraNumero(m[2]!) });
+      continue;
+    }
+    if (!/^(?:Incêndio|Fumaça|Danos|Vendaval|Roubo|Quebra|Responsabilidade|Impacto|Vazamento|Despesas|Assistência|Cobertura)/i.test(linha)) continue;
+    if (coberturas.length && !descricaoPendente) {
+      const anterior = coberturas[coberturas.length - 1]!;
+      if (/^(?:Fumaça|Aeronave|Tornado|Luminosos|Arrombamento|Tubulações)$/i.test(linha)) {
+        anterior.desc = `${anterior.desc} ${linha}`.trim();
+        continue;
+      }
+    }
+    if (!coberturas.length && /^(?:Fumaça|Aeronave|Tornado|Luminosos|Arrombamento|Tubulações)\b/i.test(linha)) continue;
+    descricaoPendente = linha;
   }
 
   return {
@@ -585,7 +609,7 @@ export function lerApoliceSeguro(texto: string): ApoliceSeguroLida | null {
     coberturas,
     condominio: {
       codigo: null,
-      nome: campoTexto(linhas, /Nome:\s*(.+?)\s{2,}/i),
+      nome: campoTexto(linhas, /Nome:\s*(.+?)\s{2,}/i) ?? campoTexto(t, /Segurado:\s*(.+?)(?:\s+CNPJ:|$)/i),
       cnpj: campoTexto(t, /CNPJ:\s*([\d.\/-]+)/i),
     },
   };
