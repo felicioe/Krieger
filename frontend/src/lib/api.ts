@@ -49,6 +49,9 @@ export function mensagemErro(e: unknown): string {
 }
 
 export const api = {
+  anexos: {
+    listar: (exercicioId: string) => guarda(() => impl().anexos.listar(exercicioId)),
+  },
   listar: <T>(store: Store) => guarda(() => impl().listar<T>(store)),
   obter: <T>(store: Store, id: string) => guarda(() => impl().obter<T>(store, id)),
   salvar: <T extends { id?: string }>(store: Store, o: T) =>

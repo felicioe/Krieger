@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 import { formatData } from "@/lib/format";
 import type { RelatorioLido } from "@/domain/pdfParser";
-import type { AnexoImportado, TipoAnexoImportacao } from "@/domain/types";
+import type { TipoAnexoImportacao } from "@/domain/types";
 
 export const ROTULO_TIPO_ANEXO: Record<TipoAnexoImportacao, string> = {
   comparativo_financeiro: "Comparativo Financeiro",
@@ -17,8 +17,7 @@ export const ERRO_PDF_GRANDE = "PDF maior que 10 MB — escolha um arquivo menor
  * repetida, sem deixar anexo órfão de uma prestação que já não existe.
  */
 export async function excluirPrestacaoComAnexos(exercicioId: string): Promise<number> {
-  const anexos = await api.listar<AnexoImportado>("anexos_importacao");
-  const dela = anexos.filter((a) => a.exercicioId === exercicioId);
+  const dela = await api.anexos.listar(exercicioId);
   for (const a of dela) await api.excluir("anexos_importacao", a.id);
   await api.excluir("exercicios", exercicioId);
   return dela.length;

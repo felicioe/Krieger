@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@/components/app/LinkPermitido";
-import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Download, FileUp, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -9,17 +9,23 @@ import { DataTable } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { ROTULO_TIPO_ANEXO, textoPeriodo } from "./anexos";
 import { api, mensagemErro } from "@/lib/api";
-import { bytesDoDataUrl, dataUrlParaBlob } from "@/lib/arquivo";
+import { dataUrlParaBlob } from "@/lib/arquivo";
 import { salvarArquivo } from "@/lib/documento/baixar";
 import { formatBytes, formatDataHora } from "@/lib/format";
-import { chaves, listaQuery } from "@/lib/queries";
+import { chaves } from "@/lib/queries";
 import type { AnexoImportado } from "@/domain/types";
+import type { MetadadosAnexoImportado } from "@/lib/apiTypes";
 
-export const anexosQuery = () => listaQuery<AnexoImportado>("anexos_importacao");
+export const anexosQuery = (exercicioId: string) => queryOptions({
+  queryKey: [...chaves.store("anexos_importacao"), "metadados", exercicioId],
+  queryFn: () => api.anexos.listar(exercicioId),
+});
 
-async function baixar(a: AnexoImportado) {
+async function baixar(a: MetadadosAnexoImportado) {
   try {
-    salvarArquivo(await dataUrlParaBlob(a.arquivoDataUrl), a.arquivo || "comparativo.pdf");
+    const completo = await api.obter<AnexoImportado>("anexos_importacao", a.id);
+    if (!completo?.arquivoDataUrl) throw new Error("Arquivo indisponível. Atualize a lista e tente novamente.");
+    salvarArquivo(await dataUrlParaBlob(completo.arquivoDataUrl), a.arquivo || "comparativo.pdf");
   } catch (e) {
     toast.error(`Não foi possível baixar o PDF: ${mensagemErro(e)}`);
   }
@@ -28,12 +34,13 @@ async function baixar(a: AnexoImportado) {
 /** PDFs anexados a esta prestação de contas pelo Importador (referência, não mexem no demonstrativo). */
 export function AnexosPrestacao({ exercicioId }: { exercicioId: string }) {
   const queryClient = useQueryClient();
-  const { data: todos } = useSuspenseQuery(anexosQuery());
-  const anexos = todos.filter((a) => a.exercicioId === exercicioId).sort((a, b) => b.importadoEm.localeCompare(a.importadoEm));
-  const [excluindo, setExcluindo] = useState<AnexoImportado | null>(null);
+  const { data: metadados } = useSuspenseQuery(anexosQuery(exercicioId));
+  const anexos = [...metadados].sort((a, b) => b.importadoEm.localeCompare(a.importadoEm));
+  const [excluindo, setExcluindo] = useState<MetadadosAnexoImportado | null>(null);
+  const [baixandoId, setBaixandoId] = useState<string | null>(null);
 
   const excluir = useMutation({
-    mutationFn: (a: AnexoImportado) => api.excluir("anexos_importacao", a.id),
+    mutationFn: (a: MetadadosAnexoImportado) => api.excluir("anexos_importacao", a.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: chaves.store("anexos_importacao") });
       toast.success("Anexo excluído.");
@@ -52,7 +59,7 @@ export function AnexosPrestacao({ exercicioId }: { exercicioId: string }) {
         </Button>
       }
     >
-      <DataTable<AnexoImportado>
+      <DataTable<MetadadosAnexoImportado>
         colunas={[
           {
             chave: "arquivo",
@@ -62,7 +69,7 @@ export function AnexosPrestacao({ exercicioId }: { exercicioId: string }) {
                 <span className="font-medium">{a.arquivo || "Sem nome"}</span>
                 <span className="block text-xs text-muted-foreground">
                   {ROTULO_TIPO_ANEXO[a.tipo] ?? a.tipo}
-                  {a.arquivoDataUrl ? ` · ${formatBytes(bytesDoDataUrl(a.arquivoDataUrl))}` : ""}
+                  {a.temArquivo ? ` · ${formatBytes(a.arquivoBytes)}` : ""}
                 </span>
               </span>
             ),
@@ -79,11 +86,15 @@ export function AnexosPrestacao({ exercicioId }: { exercicioId: string }) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => baixar(a)}
-                  disabled={!a.arquivoDataUrl}
+                  onClick={async () => {
+                    if (baixandoId) return;
+                    setBaixandoId(a.id);
+                    try { await baixar(a); } finally { setBaixandoId(null); }
+                  }}
+                  disabled={!a.temArquivo || !!baixandoId}
                   aria-label={`Baixar ${a.arquivo}`}
                 >
-                  <Download /> Baixar
+                  <Download /> {baixandoId === a.id ? "Baixando…" : "Baixar"}
                 </Button>
                 <Button
                   type="button"

@@ -1,4 +1,5 @@
 import type {
+  AnexoImportado,
   Backup,
   BackupRegistro,
   Condominio,
@@ -28,6 +29,11 @@ export class ApiError extends Error {
 }
 
 export type Registro = { id: string } & Record<string, unknown>;
+/** Projeção de leitura: o PDF permanece no servidor até o download. */
+export type MetadadosAnexoImportado = Omit<AnexoImportado, "arquivoDataUrl"> & {
+  arquivoBytes: number;
+  temArquivo: boolean;
+};
 export type PermissaoCatalogo = { chave: string; modulo: string; tela: string; acao: string; descricao?: string | null; ativo?: boolean };
 export type PermissaoExcecao = { usuarioId: string; permissaoChave: string; efeito: "permitir" | "negar" };
 
@@ -66,6 +72,9 @@ export type ContagensLimpeza = Record<Exclude<AlvoLimpeza, "tudo">, number>;
 
 /** Contrato único de acesso a dados — implementado pela API PHP e pelo mock. */
 export interface ApiAdapter {
+  anexos: {
+    listar(exercicioId: string): Promise<MetadadosAnexoImportado[]>;
+  };
   listar<T = Registro>(store: Store): Promise<T[]>;
   obter<T = Registro>(store: Store, id: string): Promise<T | null>;
   salvar<T extends { id?: string }>(store: Store, o: T): Promise<T & { id: string }>;

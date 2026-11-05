@@ -22,6 +22,7 @@ const fromRoot = [
   'lib_permissoes.php',
   'lib_importacao.php',
   'lib_backup.php',
+  'lib_anexos.php',
   'lib_documentos.php',
   'lib_claude.php',
 ];

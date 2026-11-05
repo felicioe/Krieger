@@ -6,6 +6,7 @@ declare(strict_types=1);
 require __DIR__ . '/lib_auth.php';
 require __DIR__ . '/lib_importacao.php';
 require __DIR__ . '/lib_backup.php';
+require __DIR__ . '/lib_anexos.php';
 aplicar_cabecalhos_seguranca();
 
 function erro(string $msg, int $codigo = 400): never { json_erro($msg, $codigo); }
@@ -378,6 +379,9 @@ try {
 
   switch ($a) {
     case 'listar':
+      if ($s === 'anexos_importacao' && $param('metadados') === '1') {
+        saida(listar_metadados_anexos($pdo, id_valido($param('exercicioId'))));
+      }
       $linhas = $pdo->query('SELECT dados FROM ' . $tb)->fetchAll();
       saida(array_map(fn($r) => json_decode($r['dados'], true), $linhas));
 
