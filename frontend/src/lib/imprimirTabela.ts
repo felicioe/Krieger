@@ -31,11 +31,13 @@ export function imprimirTabela(tabela: TabelaImpressao): boolean {
   if (!janela) return false;
   try {
     janela.opener = null;
+    janela.document.open();
+    // Registrar DEPOIS de document.open(): abrir o documento descarta os listeners anteriores da
+    // janela, e o de load se perderia — o relatório abriria sem nunca chamar print().
     janela.addEventListener("load", () => {
       janela.focus();
       janela.print();
     }, { once: true });
-    janela.document.open();
     janela.document.write(htmlTabelaImpressao(tabela));
     janela.document.close();
     return true;

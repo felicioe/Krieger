@@ -37,14 +37,16 @@ describe("#229 impressão em janela própria", () => {
         write: (html: string) => { expect(html).toContain("&lt;teste&gt;"); eventos.push("escreveu"); },
         close: () => eventos.push("fechou documento"),
       },
-      addEventListener: (_: string, fn: () => void) => { aoCarregar = fn; },
+      addEventListener: (_: string, fn: () => void) => { eventos.push("registrou"); aoCarregar = fn; },
       focus: () => eventos.push("focou"),
       print: () => eventos.push("imprimiu"),
       close: vi.fn(),
     };
     const abrir = vi.spyOn(window, "open").mockReturnValue(janela as unknown as Window);
     expect(imprimirTabela(tabela)).toBe(true);
-    expect(eventos).toEqual(["isolou", "abriu documento", "escreveu", "fechou documento"]);
+    // O listener de load so sobrevive se for registrado depois de document.open().
+    expect(eventos.indexOf("registrou")).toBeGreaterThan(eventos.indexOf("abriu documento"));
+    expect(eventos).toEqual(["isolou", "abriu documento", "registrou", "escreveu", "fechou documento"]);
     expect(abrir.mock.calls[0]?.[2]).not.toContain("noopener");
     aoCarregar?.();
     expect(eventos.slice(-2)).toEqual(["focou", "imprimiu"]);
