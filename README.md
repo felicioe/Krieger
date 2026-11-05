@@ -28,8 +28,8 @@ compilado antes, `cd frontend && npm run build`) junto com o backend PHP — ver
 `## Publicação` abaixo.
 
 ## Arquivos que vão para o servidor
-`index.html`, `assets/` e `favicon.png` (build de `frontend/`), `branding/`, `.htaccess`,
-`api.php`, `auth.php`, `api_documentos.php`, `lib_auth.php`, `lib_importacao.php`,
+`index.html`, `assets/`, `favicon.png` e `robots.txt` (build de `frontend/`), `branding/`, `.htaccess`,
+`api.php`, `auth.php`, `api_documentos.php`, `lib_auth.php`, `lib_permissoes.php`, `lib_importacao.php`,
 `lib_backup.php`, `lib_documentos.php` e `lib_claude.php`.
 A configuração real `krieger-config.php`
 fica no servidor, fora da pasta publicada e do Git; não integra o pacote.
