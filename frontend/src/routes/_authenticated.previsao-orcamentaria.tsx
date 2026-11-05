@@ -16,8 +16,8 @@ import { api } from "@/lib/api";
 import { chaves, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
-import { normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
-import { calcularPrevisao } from "@/domain/previsao";
+import { encontrarExercicioAnterior, normalizarExercicio, prepararExercicio } from "@/domain/exercicio";
+import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
 import type { Condominio, Exercicio } from "@/domain/types";
 import { formatBRL } from "@/lib/format";
 
@@ -52,6 +52,7 @@ function PaginaPrevisao() {
     [exerciciosRaw],
   );
   const exercicio = exercicios.find((e) => e.id === busca.exercicio) ?? exercicios[0];
+  const exercicioAnterior = exercicio ? encontrarExercicioAnterior(exercicios, exercicio) : undefined;
 
   if (!exercicio) {
     return (
@@ -108,6 +109,7 @@ function PaginaPrevisao() {
     <EditorPrevisao
       key={exercicio.id}
       inicial={exercicio}
+      exercicioAnterior={exercicioAnterior ?? null}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
       seletor={seletor}
       modo={busca.modo ?? "rateio"}
@@ -117,11 +119,13 @@ function PaginaPrevisao() {
 
 function EditorPrevisao({
   inicial,
+  exercicioAnterior,
   condominio,
   seletor,
   modo,
 }: {
   inicial: Exercicio;
+  exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null;
   condominio: Condominio | undefined;
   seletor: ReactNode;
   modo: "rateio" | "relatorios";
@@ -137,10 +141,12 @@ function EditorPrevisao({
   // A base é o realizado do exercício ANTERIOR (fechado) — nunca o demonstrativo do próprio
   // exercício em edição, que vai sendo preenchido ao longo do ano e não pode servir de base móvel
   // pra uma previsão que precisa ficar estável. Sem exercício anterior (primeira prestação do
-  // condomínio), cai no comportamento antigo (usa o próprio demonstrativo).
+  // condomínio), cai no comportamento antigo (usa o próprio demonstrativo). Mesma regra de
+  // domain/relatorioFinal.ts e das demais telas que calculam a previsão de um exercício.
+  const demonstrativoBase = demonstrativoBasePrevisao(e, exercicioAnterior) ?? demonstrativoVazio(e.condoNome);
   const resultado = useMemo(
-    () => calcularPrevisao(demonstrativo, { ...e, indices: e.consid.indices }, unidades),
-    [demonstrativo, e, unidades],
+    () => calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades),
+    [demonstrativoBase, e, unidades],
   );
 
   const parcial = resultado.rateioSugerido === null;
