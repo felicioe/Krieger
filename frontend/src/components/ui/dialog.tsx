@@ -5,6 +5,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { ID_CONTEUDO } from "@/components/app/foco";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -32,25 +33,54 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
-        className,
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 flex items-center justify-center rounded-sm opacity-70 max-md:right-2 max-md:top-2 max-md:size-11 pointer-coarse:size-11 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Fechar</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-));
+>(({ className, children, onOpenAutoFocus, onCloseAutoFocus, ...props }, ref) => {
+  const origem = React.useRef<Element | null>(null);
+  return (
+    <DialogPortal>
+      <DialogOverlay />
+      <DialogPrimitive.Content
+        ref={ref}
+        className={cn(
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 sm:rounded-lg",
+          className,
+        )}
+        {...props}
+        onOpenAutoFocus={(evento) => {
+          origem.current = document.activeElement;
+          onOpenAutoFocus?.(evento);
+        }}
+        onCloseAutoFocus={(evento) => {
+          onCloseAutoFocus?.(evento);
+          if (evento.defaultPrevented) return;
+          evento.preventDefault();
+          const destino = origem.current;
+          origem.current = null;
+          if (
+            destino instanceof HTMLElement &&
+            destino.isConnected &&
+            !destino.matches(":disabled")
+          ) {
+            destino.focus({ preventScroll: true });
+          }
+          // A origem pode ter sido removida por uma ação do diálogo ou por navegação.
+          if (
+            !document.activeElement ||
+            document.activeElement === document.body ||
+            !document.activeElement.isConnected
+          ) {
+            document.getElementById(ID_CONTEUDO)?.focus({ preventScroll: true });
+          }
+        }}
+      >
+        {children}
+        <DialogPrimitive.Close className="absolute right-4 top-4 flex items-center justify-center rounded-sm opacity-70 max-md:right-2 max-md:top-2 max-md:size-11 pointer-coarse:size-11 ring-offset-background cursor-pointer transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Fechar</span>
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  );
+});
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

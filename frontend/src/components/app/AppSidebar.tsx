@@ -111,9 +111,16 @@ function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | 
   const Icone = item.icone;
   const location = useRouterState({ select: (state) => state.location });
   const ativo = itemMenuAtivo(item.to, location.pathname, location.searchStr);
+  const [caminho] = item.to.split("?");
+  const modo = caminho === "/previsao-orcamentaria"
+    ? item.to.includes("modo=relatorios") ? "relatorios" as const : "rateio" as const
+    : undefined;
+  // A seleção de exercício pode acrescentar parâmetros sem trocar o modo da previsão.
   return (
     <Link
-      to={item.to}
+      to={caminho!}
+      {...(modo ? { search: { modo } } : {})}
+      activeOptions={{ exact: !modo, includeSearch: true }}
       onClick={aoNavegar}
       className={cn(
         classeItem,

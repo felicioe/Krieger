@@ -10,12 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { SecaoRecolhivel } from "@/components/app/SecaoRecolhivel";
 import { Field } from "@/components/app/Field";
-import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import {
   MODALIDADES_NOTIFICACAO,
   dataPorExtenso,
@@ -351,25 +350,16 @@ function PaginaConsultaDocumentos() {
               rotulo="Filtrar por documento (opcional)"
               dica="Restrinja a análise a um único arquivo do Drive ou consulte todo o acervo."
             >
-              <Select
+              <Selecao
                 value={documentoFiltroId}
-                onValueChange={(v) => setDocumentoFiltroId(v)}
+                onChange={setDocumentoFiltroId}
                 disabled={escopoId === "*" || docsDisponiveis.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Todos os documentos do escopo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">
-                    Todos os documentos ({docsDisponiveis.length})
-                  </SelectItem>
-                  {docsDisponiveis.map((d) => (
-                    <SelectItem key={d.id} value={d.id}>
-                      {d.nomeArquivo} ({rotuloCategoriaDocumento(d.tipo)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                placeholder="Todos os documentos do escopo"
+                opcoes={[
+                  { valor: "todos", rotulo: `Todos os documentos (${docsDisponiveis.length})` },
+                  ...docsDisponiveis.map((d) => ({ valor: d.id, rotulo: `${d.nomeArquivo} (${rotuloCategoriaDocumento(d.tipo)})` })),
+                ]}
+              />
             </Field>
           </div>
         </div>
@@ -380,12 +370,14 @@ function PaginaConsultaDocumentos() {
         descricao="Cole a dúvida recebida (WhatsApp, e-mail, ligação) ou faça uma pergunta direta sobre regras, prazos, multas, quórum, seguro, contratos ou atas."
       >
         <form onSubmit={enviar} className="space-y-3">
-          <Textarea
-            value={pergunta}
-            onChange={(e) => setPergunta(e.target.value)}
-            rows={4}
-            placeholder="Ex.: Quais são as penalidades e multas previstas caso um animal de estimação suje as áreas comuns ou faça barulho excessivo? / Qual o prazo de convocação de assembleia?"
-          />
+          <Field rotulo="Pergunta">
+            <Textarea
+              value={pergunta}
+              onChange={(e) => setPergunta(e.target.value)}
+              rows={4}
+              placeholder="Ex.: Quais são as penalidades e multas previstas caso um animal de estimação suje as áreas comuns ou faça barulho excessivo? / Qual o prazo de convocação de assembleia?"
+            />
+          </Field>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Button type="submit" disabled={perguntar.isPending || !pergunta.trim()}>
               {perguntar.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
@@ -492,38 +484,29 @@ function PaginaConsultaDocumentos() {
                   </Field>
 
                   <Field rotulo="Modalidade do Documento">
-                    <Select
+                    <Selecao
                       value={modalidade}
-                      onValueChange={(v) => setModalidade(v as ModalidadeNotificacao)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {MODALIDADES_NOTIFICACAO.map((m) => (
-                          <SelectItem key={m.valor} value={m.valor}>
-                            {m.rotulo}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(v) => setModalidade(v as ModalidadeNotificacao)}
+                      opcoes={MODALIDADES_NOTIFICACAO}
+                    />
                   </Field>
 
-                  <Field rotulo="Cidade e Data de Emissão (dd/mm/aaaa)" dica={`${cidadeNotif}, ${dataPorExtenso(dataEmissaoNotif)}.`}>
-                    <div className="flex gap-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <Field rotulo="Cidade de emissão">
                       <Input
                         value={cidadeNotif}
                         onChange={(e) => setCidadeNotif(e.target.value)}
                         placeholder="Camboriú"
                       />
+                    </Field>
+                    <Field rotulo="Data de emissão (dd/mm/aaaa)" dica={`${cidadeNotif}, ${dataPorExtenso(dataEmissaoNotif)}.`}>
                       <Input
                         value={dataEmissaoNotif}
                         onChange={(e) => setDataEmissaoNotif(e.target.value)}
                         placeholder="30/10/2026"
-                        className="w-32 shrink-0"
                       />
-                    </div>
-                  </Field>
+                    </Field>
+                  </div>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">

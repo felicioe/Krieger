@@ -46,11 +46,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
-import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import {
   extrairPastaDoDocumento,
   gerarSlugCategoria,
@@ -1395,21 +1394,14 @@ function PaginaDriveDocumentos() {
                 rotulo="Alocação de pasta para arquivos avulsos"
                 dica="Deixe em Automático para usar a identificação inteligente + Outros Documentos."
               >
-                <Select value={pastaForcadaEnvio} onValueChange={setPastaForcadaEnvio}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="automatico">
-                      ✨ Automático (Subpasta da origem → Auto pelo nome → {pastaOutros.rotulo})
-                    </SelectItem>
-                    {arvorePastas.map((no) => (
-                      <SelectItem key={no.caminho} value={no.caminho}>
-                        📁 Forçar pasta: {no.caminho}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Selecao
+                  value={pastaForcadaEnvio}
+                  onChange={setPastaForcadaEnvio}
+                  opcoes={[
+                    { valor: "automatico", rotulo: `Automático (Subpasta da origem → Auto pelo nome → ${pastaOutros.rotulo})` },
+                    ...arvorePastas.map((no) => ({ valor: no.caminho, rotulo: `Forçar pasta: ${no.caminho}` })),
+                  ]}
+                />
               </Field>
               <Field rotulo="Data do documento (opcional)">
                 <Input
@@ -1612,18 +1604,11 @@ function PaginaDriveDocumentos() {
               ))}
             </datalist>
             <Field rotulo="Categoria">
-              <Select value={novaCategoria} onValueChange={(v) => setNovaCategoria(v as TipoDocumentoConsulta)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoriasAtivas.map((cat) => (
-                    <SelectItem key={cat.valor} value={cat.valor}>
-                      {cat.rotulo}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Selecao
+                value={novaCategoria}
+                onChange={(v) => setNovaCategoria(v as TipoDocumentoConsulta)}
+                opcoes={categoriasAtivas}
+              />
             </Field>
             <Field rotulo="Data do documento">
               <Input type="date" value={novaDataDoc} onChange={(e) => setNovaDataDoc(e.target.value)} />
