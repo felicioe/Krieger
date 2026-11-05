@@ -1,6 +1,6 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { forwardRef, useEffect, useMemo, useRef, useState, type ComponentPropsWithoutRef, type InputHTMLAttributes } from "react";
+import { forwardRef, useEffect, useId, useMemo, useRef, useState, type ComponentPropsWithoutRef, type InputHTMLAttributes } from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { formatNumeroBR, mascaraData, mascaraHora, mascaraMesAno, parseNumeroBR } from "@/lib/format";
@@ -247,6 +247,8 @@ export function SelecaoBusca<V extends string>({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listaRef = useRef<HTMLDivElement>(null);
+  const idLista = `${useId()}-opcoes`;
+  const idOpcao = (indice: number) => `${idLista}-${indice}`;
 
   const selecionada = useMemo(() => opcoes.find((o) => o.valor === value), [opcoes, value]);
 
@@ -295,9 +297,10 @@ export function SelecaoBusca<V extends string>({
           ref={triggerRef}
           id={id}
           type="button"
-          role="combobox"
+          role={aberto ? undefined : "combobox"}
           aria-expanded={aberto}
           aria-haspopup="listbox"
+          aria-controls={aberto ? idLista : undefined}
           data-placeholder={selecionada ? undefined : ""}
           onKeyDown={(e) => {
             if (atributos.disabled) return;
@@ -319,7 +322,7 @@ export function SelecaoBusca<V extends string>({
           {selecionada ? (
             <span className="flex min-w-0 items-center gap-2 text-left">
               {selecionada.detalhe && (
-                <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+                <span className="max-w-[40%] shrink-0 break-words rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
                   {selecionada.detalhe}
                 </span>
               )}
@@ -348,6 +351,12 @@ export function SelecaoBusca<V extends string>({
           <input
             ref={inputRef}
             type="text"
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded="true"
+            aria-controls={idLista}
+            aria-activedescendant={filtradas[indiceAtivo] ? idOpcao(indiceAtivo) : undefined}
+            aria-describedby={atributos["aria-describedby"]}
             value={termo}
             onChange={(e) => setTermo(e.target.value)}
             placeholder={placeholderBusca}
@@ -373,7 +382,7 @@ export function SelecaoBusca<V extends string>({
                 triggerRef.current?.focus();
               }
             }}
-            className="flex h-8 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            className="flex h-8 min-w-0 w-full max-md:min-h-11 pointer-coarse:min-h-11 rounded-sm bg-transparent text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring placeholder:text-muted-foreground"
           />
           {termo && (
             <button
@@ -383,7 +392,7 @@ export function SelecaoBusca<V extends string>({
                 inputRef.current?.focus();
               }}
               aria-label="Limpar pesquisa"
-              className="ml-1 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+              className="ml-1 flex size-7 max-md:size-11 pointer-coarse:size-11 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X className="h-3.5 w-3.5" aria-hidden="true" />
             </button>
@@ -391,6 +400,7 @@ export function SelecaoBusca<V extends string>({
         </div>
         <div
           ref={listaRef}
+          id={idLista}
           role="listbox"
           aria-label="Opções disponíveis"
           className="max-h-72 overflow-y-auto overflow-x-hidden p-1"
@@ -405,17 +415,20 @@ export function SelecaoBusca<V extends string>({
                   key={o.valor}
                   type="button"
                   role="option"
+                  id={idOpcao(i)}
+                  tabIndex={-1}
                   data-indice={i}
                   aria-selected={selecionado}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => escolher(o.valor)}
                   onMouseMove={() => setIndiceAtivo(i)}
                   className={cn(
-                    "relative flex w-full cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-left text-sm outline-none",
+                    "relative flex min-h-8 max-md:min-h-11 pointer-coarse:min-h-11 w-full cursor-pointer select-none items-center gap-2 rounded-sm py-1.5 pl-2 pr-8 text-left text-sm outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
                     i === indiceAtivo ? "bg-accent text-accent-foreground" : "hover:bg-accent/60",
                   )}
                 >
                   {o.detalhe && (
-                    <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
+                    <span className="max-w-[40%] shrink-0 break-words rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
                       {o.detalhe}
                     </span>
                   )}
