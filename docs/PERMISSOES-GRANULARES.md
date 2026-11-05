@@ -37,7 +37,9 @@ Botões que levam a uma tela devem verificar a permissão da tela de destino. Se
 
 ## Migração
 
-Aplicar `migrations/20261031_permissoes_granulares.sql` após backup. O script não remove colunas nem altera usuários atuais. A implementação do middleware e da administração de permissões será feita em PRs posteriores.
+Aplicar `migrations/20261031_permissoes_granulares.sql` após backup. O script não remove colunas nem altera usuários atuais.
+
+O `schema.sql` passou a incluir as mesmas quatro tabelas e o catálogo (idempotente, `INSERT IGNORE`), para que uma instalação nova já nasça com as permissões configuradas. A migração continua sendo o caminho para bancos já existentes, como o de produção.
 # Verificação da migração em produção
 
 Em 01/11/2026, o responsável informou ter executado a migração pelo phpMyAdmin
