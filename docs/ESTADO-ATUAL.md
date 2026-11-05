@@ -1,5 +1,23 @@
 # Estado atual e passagem de contexto
 
+## Impressao, acessibilidade e permissoes granulares - publicado - 06/11/2026
+
+Publicado `main` `b6f886c` (PRs #231, #232 e #233) -> `deploy-hostinger` `39ca573`.
+
+**Mudancas:**
+- **#231/#232:** impressao em janela propria com escape de texto, leitura do mensal sem transformar falta de dados em -100%, acessibilidade (foco em dialogos, aria-current, rotulos programaticos) e recuperacao de falha ao aplicar apolice/fracao.
+- **#231 (correcao adicional):** a rota da previsao orcamentaria voltou a usar o realizado do exercicio anterior como base (`demonstrativoBasePrevisao`); o refactor havia deixado o proprio exercicio como base, divergindo do Relatorio Final.
+- **#233:** tabelas de permissoes granulares incluídas no `schema.sql` (instalacao nova ja nasce com o catalogo); README e ARQUITETURA corrigidos.
+
+**Evidencia ao vivo:**
+- Asset novo do build em producao: `/assets/_authenticated.previsao-orcamentaria-DULmjhLg.js` responde HTTP 200.
+- Endpoints: `auth.php` 401, `api.php` 401, `lib_auth.php` 403, `krieger-config.php` 404, `robots.txt` 200.
+- Nao validado nesta sessao: login/logout e gravacao real (sem credencial de administrador).
+
+**Pendencia de banco:** `kr_decisoes_importacao` continua sem confirmacao de criacao em producao.
+Ate rodar o `CREATE TABLE IF NOT EXISTS` (SQL ja entregue), o historico de conflitos de
+reimportacao fica vazio; o salvamento normal nao e afetado.
+
 ## Fonte difícil de ler em zoom 100% + CI vermelho desde #219 — publicado — 04/11/2026
 
 Pedido do responsável: zoom do navegador em 150% ficava legível, voltando a 100% (ou outro
