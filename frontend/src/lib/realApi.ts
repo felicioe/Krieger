@@ -11,7 +11,7 @@ import type {
   Usuario,
   UsuarioAdmin,
 } from "@/domain/types";
-import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type PermissaoCatalogo, type PermissaoExcecao } from "./apiTypes";
+import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type MetadadosAnexoImportado, type PermissaoCatalogo, type PermissaoExcecao } from "./apiTypes";
 
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
   let resp: Response;
@@ -63,6 +63,11 @@ function objeto<T>(r: unknown): T | null {
 const enc = encodeURIComponent;
 
 export const realApi: ApiAdapter = {
+  anexos: {
+    async listar(exercicioId: string) {
+      return lista<MetadadosAnexoImportado>(await req(`api.php?a=listar&s=anexos_importacao&metadados=1&exercicioId=${enc(exercicioId)}`));
+    },
+  },
   async listar<T>(store: Store) {
     return lista<T>(await req(`api.php?a=listar&s=${enc(store)}`));
   },

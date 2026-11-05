@@ -29,3 +29,12 @@ separadamente qualquer laboratório, sua rota, dados fictícios, engine, viewpor
 CPU/rede e método. INP de campo exige observação de uso; não inventar nota a
 partir de um build ou de uma resposta HTTP. Testes de fornecedor devem ser
 identificados como tais, sem confundi-los com verificação independente.
+
+## Anexos da prestação de contas
+
+A listagem usa `api.anexos.listar(exercicioId)`: o filtro por exercício e a remoção
+de `arquivoDataUrl` acontecem no banco. Apenas metadados e tamanho do arquivo
+chegam ao frontend; o PDF completo é solicitado por id ao baixar. A consulta de
+metadados e a listagem genérica têm chaves de cache distintas, invalidadas pelo
+mesmo prefixo da store. O contrato também se aplica ao adaptador de demonstração.
+Backups continuam contendo os arquivos completos. Ver [correção #230](auditorias/CORRECOES-ANEXOS-2026-11-05.md).

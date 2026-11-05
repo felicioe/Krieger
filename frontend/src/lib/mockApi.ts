@@ -12,6 +12,8 @@ import { novaAtaDeAssembleia } from "@/domain/ata";
 import { normalizarAssembleia } from "@/domain/edital";
 import { dataParaBR, dataParaISO } from "./format";
 import { novoId } from "./id";
+import { bytesDoDataUrl } from "./arquivo";
+import type { AnexoImportado } from "@/domain/types";
 import { rotasPermissoes } from './permissoes';
 import type { PermissaoExcecao, PermissaoCatalogo } from './apiTypes';
 
@@ -518,6 +520,18 @@ const codigoCondoNormal = (s: unknown) => {
 };
 
 export const mockApi: ApiAdapter = {
+  anexos: {
+    async listar(exercicioId: string) {
+      await espera();
+      sessao();
+      if (!exercicioId || exercicioId.length > 64) throw new ApiError("Id inválido (obrigatório, até 64 caracteres).", 400);
+      const anexos = dados().anexos_importacao as unknown as AnexoImportado[];
+      return anexos.filter((a) => a.exercicioId === exercicioId).map((a) => {
+        const { arquivoDataUrl, ...metadados } = clone(a);
+        return { ...metadados, arquivoBytes: bytesDoDataUrl(arquivoDataUrl || ""), temArquivo: !!arquivoDataUrl };
+      });
+    },
+  },
   async listar<T>(store: Store) {
     await espera();
     sessao();

@@ -39,7 +39,7 @@ export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
       queryClient.ensureQueryData(itemQuery<Exercicio>("exercicios", params.id)),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
-      queryClient.ensureQueryData(anexosQuery()),
+      queryClient.ensureQueryData(anexosQuery(params.id)),
     ]);
     if (!e) throw notFound();
     return null;
@@ -114,8 +114,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
     },
   });
 
-  const { data: anexos } = useSuspenseQuery(anexosQuery());
-  const qtdAnexos = anexos.filter((a) => a.exercicioId === e.id).length;
+  const { data: anexos } = useSuspenseQuery(anexosQuery(e.id));
+  const qtdAnexos = anexos.length;
 
   const excluir = useMutation({
     // Cascata: os anexos de referência desta prestação saem junto.
