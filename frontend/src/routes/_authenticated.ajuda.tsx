@@ -25,7 +25,7 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
     itens: [
       { id: "prestacao-contas", titulo: "Prestação de contas" },
       { id: "previsao-orcamentaria", titulo: "Previsão orçamentária" },
-      { id: "importador", titulo: "Importador" },
+      { id: "previsao-relatorios", titulo: "Previsão para relatórios" },
     ],
   },
   {
@@ -42,7 +42,7 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
       { id: "drive-documentos", titulo: "Drive de Documentos" },
     ],
   },
-  { titulo: "Administração", itens: [{ id: "administracao", titulo: "Escritório, usuários e backup" }] },
+  { titulo: "Administração", itens: [{ id: "importador", titulo: "Importador" }, { id: "administracao", titulo: "Escritório, usuários e backup" }] },
 ];
 
 function Ajuda() {
@@ -123,48 +123,21 @@ function Ajuda() {
             </Texto>
           </SectionCard>
 
-          <SectionCard
-            id="previsao-orcamentaria"
-            titulo="Previsão orçamentária"
-            descricao="Projeta o orçamento do exercício a partir do realizado do ano anterior."
-          >
+          <SectionCard id="previsao-orcamentaria" titulo="Previsão orçamentária" descricao="Apura o reajuste do rateio a partir do realizado do período analisado.">
             <Texto>
-              <p>
-                Esta tela tem duas abas. <strong>Sugerida pelo Systemar</strong> usa os totais que já vêm prontos no PDF importado (quando o
-                relatório traz essa folha). <strong>Calculada pelo demonstrativo</strong> monta a previsão a partir do demonstrativo do
-                exercício — é a mais usada e a mais sujeita a dúvida, por isso vale detalhar.
-              </p>
-              <p>
-                <strong>De onde vem a base.</strong> A previsão de um exercício sempre parte do <strong>realizado do exercício anterior</strong>{" "}
-                (já fechado) — nunca do demonstrativo do próprio exercício em edição, que ainda está sendo preenchido ao longo do ano. No topo
-                da tela, um bloco de referência mostra separadamente:
-              </p>
-              <ul className="list-disc space-y-1 pl-5">
-                <li><strong>Realizado anterior</strong> — o total de despesas do exercício anterior, a base da conta.</li>
-                <li>
-                  <strong>Última previsão aprovada</strong> — o que o exercício anterior já projetou e aprovou para este ano, com os parâmetros
-                  que ele mesmo confirmou. É só referência: não é somada nem reaplicada automaticamente.
-                </li>
-              </ul>
-              <p>
-                <strong>Sugestão de variação.</strong> Quando o exercício atual já tem despesas lançadas, aparece um aviso comparando a
-                última previsão aprovada com o que foi de fato realizado — um <strong>índice sugerido</strong> para o reajuste. Essa sugestão
-                nunca é aplicada sozinha: é preciso clicar em "Usar sugestão" (que preenche o campo Variação, ainda editável) ou digitar
-                outro percentual à mão. Isso evita que um ano fora da curva vire tendência permanente sem revisão.
-              </p>
-              <p>
-                <strong>Ajustes</strong> são acréscimos/reduções manuais (obras programadas, contrato novo etc.), somados ao anual ajustado e
-                sempre específicos da prestação atual — não se misturam com os ajustes do exercício anterior.
-              </p>
-              <Pergunta titulo="Por que a previsão usa o ano anterior como base, e não o próprio exercício?">
-                Porque o exercício em edição ainda está em andamento — seu demonstrativo vai sendo preenchido mês a mês. Usar um
-                demonstrativo que muda ao longo do ano como base da previsão faria o valor "andar" sem ninguém mexer em nada. O realizado do
-                ano anterior já está fechado e não muda mais, por isso serve de base estável.
-              </Pergunta>
-              <Pergunta titulo='O que significa "Índice de reajuste" no resumo?'>
-                É o quanto o valor por unidade calculado nesta previsão difere do rateio atual (o valor que o condomínio já cobra hoje). Serve
-                de referência para decidir o novo valor da taxa condominial — não é aplicado automaticamente em lugar nenhum.
-              </Pergunta>
+              <p>Escolha o condomínio e a prestação de contas. A base vem das despesas realizadas no período dessa prestação. A previsão sugerida do Systemar, quando importada, é uma referência de origem e não substitui esse cálculo.</p>
+              <p>O <strong>Percentual fixo</strong> aplica o reajuste sobre a base realizada após as deduções. <strong>Ajustes da previsão</strong> acrescentam ou retiram valores anuais, como obras programadas e contratos encerrados. A <strong>Variação de despesas sugeridas</strong> é outro valor anual, positivo ou negativo, sem vínculo com um grupo específico.</p>
+              <p>A tabela apresenta o realizado e a média prevista dos grupos. O <strong>Resumo da previsão</strong> concilia base, deduções, percentual e valores avulsos até o anual ajustado. A média mensal usa a quantidade de meses do período analisado; o valor por unidade considera as unidades do cadastro, o fundo de reserva e o arredondamento escolhido.</p>
+              <p>Depois de revisar, clique em <strong>Salvar</strong>. Os ajustes usados para apurar o rateio não devem ser confundidos com a previsão da tela de relatórios.</p>
+              <Pergunta titulo='O que significa "Índice de reajuste" no resumo?'>É a diferença percentual entre o valor por unidade calculado e o rateio atual do condomínio. “Usar como rateio aprovado” preenche o valor aprovado na prestação; é preciso salvar para gravá-lo.</Pergunta>
+              <Pergunta titulo="Por que a soma das médias dos grupos difere da média mensal do resumo?">A média dos grupos considera deduções e percentual. Ajustes avulsos e variação de despesas sugeridas entram separadamente no resumo, pois não pertencem a um grupo de despesas.</Pergunta>
+            </Texto>
+          </SectionCard>
+
+          <SectionCard id="previsao-relatorios" titulo="Previsão para relatórios" descricao="Consulta o realizado e o previsto calculados separadamente, sem os ajustes exclusivos do rateio.">
+            <Texto>
+              <p>Selecione o condomínio e a prestação de contas. O realizado vem das despesas do demonstrativo; o previsto aplica o percentual de reajuste a esse realizado. Esta comparação não incorpora deduções, ajustes avulsos ou variação de despesas sugeridas da previsão orçamentária.</p>
+              <p>Alterne entre <strong>Por grupo</strong> e <strong>Detalhado</strong> para conferir os valores. Use PDF ou Imprimir para abrir a saída em uma janela própria, sem o menu lateral; XLSX e CSV baixam os dados da apresentação selecionada.</p>
             </Texto>
           </SectionCard>
 
@@ -176,6 +149,7 @@ function Ajuda() {
                 trazer linhas que o sistema interpreta de forma diferente do esperado (por isso a tela sempre mostra um comparativo entre o
                 que o PDF trouxe e o que foi efetivamente reconhecido).
               </p>
+              <p>O <strong>Comparativo Financeiro</strong> guarda o PDF na prestação escolhida e também permite criar ou atualizar os relatórios mensais dos meses marcados. Os meses novos vêm marcados; revise a seleção e os avisos antes de confirmar. Esses mensais alimentam os relatórios do sistema. O demonstrativo da prestação escolhida é preservado.</p>
               <p>
                 Quando já existe um lançamento para o mesmo mês/exercício, o sistema avisa o conflito e deixa você decidir, item por item, se
                 mantém o que já estava ou atualiza com o que veio do PDF novo.
@@ -193,7 +167,7 @@ function Ajuda() {
                 Relatório só de leitura: mostra, por rubrica e por grupo, o previsto (anual e acumulado até o mês escolhido) ao lado do
                 realizado dos relatórios mensais lançados. Não altera nem compõe a previsão — é só para acompanhar o quanto o condomínio está
                 dentro, acima ou abaixo do orçamento aprovado. A versão "Previsto × Realizado mensal" mostra a mesma comparação mês a mês, numa
-                tabela com totais por linha e coluna.
+                tabela com totais por linha e coluna. Sem relatórios mensais no período, o sistema informa a falta de dados. No mensal, meses ausentes aparecem como “Sem dados”; com carga parcial, o total realizado é identificado como parcial. Uma despesa efetivamente zerada em um mês com relatório pode apresentar variação real de −100%.
               </p>
             </Texto>
           </SectionCard>

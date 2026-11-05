@@ -42,9 +42,9 @@ type Lido = { arquivo: string; tamanho: number; dataUrl: string; relatorio: Rela
 
 /**
  * Card "Comparativo Financeiro" do Importador: lê o PDF, confere que é o layout comparativo e
- * o anexa (como referência, sem mexer no demonstrativo) a uma prestação de contas que já existe.
+ * o anexa a uma prestação existente e importa os meses selecionados como relatórios mensais, sem alterar o demonstrativo da prestação.
  */
-export function AnexarComparativo({ condominios, rotulo = "Anexar comparativo financeiro" }: { condominios: Condominio[]; rotulo?: string }) {
+export function AnexarComparativo({ condominios, rotulo = "Importar comparativo financeiro" }: { condominios: Condominio[]; rotulo?: string }) {
   const entrada = useRef<HTMLInputElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
   const vaiNavegar = useRef(false);
@@ -108,9 +108,9 @@ export function AnexarComparativo({ condominios, rotulo = "Anexar comparativo fi
           }}
         >
           <DialogHeader>
-            <DialogTitle>Anexar Comparativo Financeiro</DialogTitle>
+            <DialogTitle>Importar Comparativo Financeiro</DialogTitle>
             <DialogDescription>
-              O PDF fica guardado na prestação de contas como referência, para consulta e download. O demonstrativo não muda.
+              O PDF fica guardado na prestação para consulta e download. Os meses marcados criam ou atualizam relatórios mensais e alimentam as comparações do sistema. Revise a seleção antes de confirmar; o demonstrativo da prestação é preservado.
             </DialogDescription>
           </DialogHeader>
           {lendo ? (
