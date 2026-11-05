@@ -81,7 +81,7 @@ async function montar() {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   );
-  await screen.findByRole("button", { name: "Anexar comparativo financeiro" });
+  await screen.findByRole("button", { name: "Importar comparativo financeiro" });
   return router;
 }
 const pdf = (nome: string) => new File(["%PDF-1.4 conteúdo"], nome, { type: "application/pdf" });
@@ -207,7 +207,7 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     // antes de reabrir o diálogo pra anexar o segundo comparativo.
     await waitFor(() => expect(router.state.location.pathname).toBe("/prestacao-contas/exe-acacias-2025"));
     await router.navigate({ to: "/" });
-    await screen.findByRole("button", { name: "Anexar comparativo financeiro" });
+    await screen.findByRole("button", { name: "Importar comparativo financeiro" });
 
     // Reabre e agora marca 01/2025: sobrescreve o mesmo id, não duplica.
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 002.pdf"));

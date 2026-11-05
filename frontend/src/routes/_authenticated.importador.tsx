@@ -110,8 +110,9 @@ function Importador() {
           acao={<AnexarComparativo condominios={condominios} />}
         >
           <p>
-            Anexa o PDF do Comparativo Financeiro a uma prestação de contas que já existe, como referência para consulta e
-            download. Não altera o demonstrativo.
+            Guarda o PDF do Comparativo Financeiro na prestação de contas e importa os meses selecionados como relatórios mensais,
+            criando os novos ou atualizando os existentes após sua revisão. Esses meses alimentam os relatórios do sistema.
+            O demonstrativo da prestação escolhida é preservado.
           </p>
           <p>PDF de até 10 MB. Os anexos aparecem no fim da tela da prestação de contas.</p>
         </CartaoImportacao>

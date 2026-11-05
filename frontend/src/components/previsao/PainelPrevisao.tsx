@@ -191,7 +191,7 @@ export function PainelPrevisao({
   );
 }
 
-function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
+export function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
   if (r.linhas.length === 0) {
     return <p className="text-sm text-muted-foreground">Lance as despesas no demonstrativo da prestação de contas para ver a previsão.</p>;
   }
@@ -206,7 +206,7 @@ function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
               {r.modo === "detalhado" ? "Despesa" : "Grupo"}
             </TableHead>
             <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Realizado</TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Média</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Média prevista dos grupos</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -241,12 +241,13 @@ function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
         </TableBody>
         <TableFooter>
           <TableRow className="bg-secondary hover:bg-secondary">
-            <TableCell className="font-semibold text-primary">Anual ajustado</TableCell>
+            <TableCell className="font-semibold text-primary">Total dos grupos</TableCell>
             <TableCell className="num whitespace-nowrap text-right">{formatBRL(r.base)}</TableCell>
-            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.base / r.mesesAnalisados)}</TableCell>
+            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.linhas.reduce((soma, linha) => soma + linha.previsto, 0) / r.mesesAnalisados)}</TableCell>
           </TableRow>
         </TableFooter>
       </Table>
+      <p className="px-5 py-3 text-xs text-muted-foreground @max-[14rem]:px-3">A média dos grupos considera as deduções e o percentual. Valores sem vínculo com grupos, como ajustes avulsos e variação de despesas sugeridas, aparecem no Resumo da previsão e compõem o anual ajustado.</p>
     </div>
   );
 }
