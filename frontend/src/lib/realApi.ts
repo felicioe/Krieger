@@ -1,5 +1,6 @@
 import type {
   Backup,
+  Exercicio,
   BackupRegistro,
   ConsultaHistoricoItem,
   ConsultaResposta,
@@ -63,6 +64,9 @@ function objeto<T>(r: unknown): T | null {
 const enc = encodeURIComponent;
 
 export const realApi: ApiAdapter = {
+  async fechamentoExercicio(id, fechar, motivo, versao) {
+    return post<Exercicio>("api.php?a=fechamento_exercicio", { id, fechar, motivo, versao });
+  },
   anexos: {
     async listar(exercicioId: string) {
       return lista<MetadadosAnexoImportado>(await req(`api.php?a=listar&s=anexos_importacao&metadados=1&exercicioId=${enc(exercicioId)}`));

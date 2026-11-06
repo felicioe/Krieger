@@ -32,6 +32,7 @@ import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { mascaraCNPJ, formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
+import { validarIndicesCondominio } from "@/domain/indicesCondominio";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
 import { consultarCnpjReceita, divergenciasCnpj, enderecoDaReceita } from "@/lib/receitaCnpj";
 import type { Arredondamento, Condominio, Exercicio, IndiceCorrecao, ModoRegra, UnidadeCondominio, VariacaoMetodo } from "@/domain/types";
@@ -186,7 +187,7 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
   }
 
   const salvar = useMutation({
-    mutationFn: (dados: Condominio) => api.salvar("condominios", dados),
+    mutationFn: (dados: Condominio) => api.salvar("condominios", { ...dados, indices: validarIndicesCondominio(dados.indices) }),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
       queryClient.setQueryData(chaves.item("condominios", salvo.id), salvo);
@@ -605,6 +606,7 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
         </SecaoRecolhivel>
 
         <SecaoRecolhivel id={idSecao("indices")} titulo="Índices de correção aplicados" resumo={res.indices} aberta={abertas.indices} aoMudar={abrir("indices")}>
+          <p className="mb-3 text-sm text-muted-foreground">Histórico exclusivo deste condomínio. A primeira importação preenche os índices; alterações e exclusões são gravadas ao salvar o cadastro. Relatórios fechados preservam seu histórico original.</p>
           <RepeatableList
             itens={c.indices}
             onChange={(v) => set("indices", v)}

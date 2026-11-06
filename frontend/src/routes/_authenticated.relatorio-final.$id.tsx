@@ -72,7 +72,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   const [aba, setAba] = useState("previa");
   const [conferir, setConferir] = useState(false);
 
-  const condoRaw = condominios.find((c) => c.id === e.condoId);
+  const condoRaw = e.fechado && e.fechamento ? e.fechamento.condominio : condominios.find((c) => c.id === e.condoId);
   const condo = useMemo(() => (condoRaw ? normalizarCondominio(condoRaw) : null), [condoRaw]);
   // Mesma base do editor de previsão: o realizado do exercício anterior, nunca o demonstrativo do
   // próprio exercício — pra este relatório nunca divergir da previsão aprovada ali.
@@ -83,7 +83,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
     [e, exercicioAnterior, condo, escritorio, mensais],
   );
   const sujo = JSON.stringify(e) !== salvoJson;
-  const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
+  const mudar = (parcial: Partial<Exercicio>) => setE((x) => x.fechado ? x : ({ ...x, ...parcial }));
 
   const sujoRef = useRef(sujo);
   sujoRef.current = sujo;
@@ -106,12 +106,13 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
+    if (e.fechado) return;
     salvar.mutate({ dados: prepararExercicio(e), mensagem: "Relatório salvo." });
   }
 
   async function emitir(formato: Formato) {
-    const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio });
-    await salvar.mutateAsync({
+    const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio: e.fechado && e.fechamento ? e.fechamento.escritorio : escritorio });
+    if (!e.fechado) await salvar.mutateAsync({
       dados: prepararExercicio({
         ...e,
         relatorioFinal: { ...e.relatorioFinal, emitidoEm: new Date().toISOString(), emitidoPor: usuario?.nome || usuario?.login || "" },
@@ -157,7 +158,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <Button permissao="prestacao_contas.editar" variant="outline" type="submit" form="form-relatorio" disabled={salvar.isPending}>
+            <Button permissao="prestacao_contas.editar" variant="outline" type="submit" form="form-relatorio" disabled={salvar.isPending || e.fechado}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
@@ -168,6 +169,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
         }
       />
 
+      {e.fechado && <p className="mb-4 text-sm">Relatório consolidado. As fontes e os valores foram preservados no fechamento.</p>}
       <form id="form-relatorio" onSubmit={enviar} noValidate>
         <Tabs value={aba} onValueChange={setAba}>
           <TabsList className="h-10 bg-secondary">
@@ -184,6 +186,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                       <li key={s.id}>
                         <div className="flex items-center gap-2 max-md:min-h-11 max-md:gap-3 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                           <Checkbox
+                            disabled={e.fechado}
                             id={`secao-${s.id}`}
                             checked={rel.secoes[s.id]}
                             onCheckedChange={(v) => mudar(alternarSecao(e, s.id, v === true))}
@@ -195,6 +198,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                         {s.id === "demonstrativo" && rel.secoes.demonstrativo && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
+                            disabled={e.fechado}
                               id="secao-contas-analiticas-demonstrativo"
                               checked={e.mostrarContasAnaliticasDemonstrativo !== false}
                               onCheckedChange={(v) => mudar({ mostrarContasAnaliticasDemonstrativo: v === true })}
@@ -207,6 +211,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                         {s.id === "previstoRealizado" && rel.secoes.previstoRealizado && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
+                            disabled={e.fechado}
                               id="secao-contas-analiticas"
                               checked={e.mostrarContasAnaliticas !== false}
                               onCheckedChange={(v) => mudar({ mostrarContasAnaliticas: v === true })}
@@ -219,6 +224,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                         {s.id === "previsao" && rel.secoes.previsao && (rel.previsao.unidades !== null || rel.previsaoSugeridaPorUnidade?.unidades != null) && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
+                            disabled={e.fechado}
                               id="secao-previsao-por-unidade"
                               checked={e.mostrarPrevisaoPorUnidade !== false}
                               onCheckedChange={(v) => mudar({ mostrarPrevisaoPorUnidade: v === true })}
@@ -239,6 +245,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                         {s.id === "analise" && rel.secoes.analise && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
+                            disabled={e.fechado}
                               id="secao-evolucao-mensal"
                               checked={e.mostrarEvolucaoMensal !== false}
                               onCheckedChange={(v) => mudar({ mostrarEvolucaoMensal: v === true })}
@@ -251,6 +258,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                         {s.id === "analise" && rel.secoes.analise && rel.receitasPorCategoria.length > 0 && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
+                            disabled={e.fechado}
                               id="secao-receitas-categoria"
                               checked={e.mostrarReceitasPorCategoria !== false}
                               onCheckedChange={(v) => mudar({ mostrarReceitasPorCategoria: v === true })}
@@ -295,13 +303,13 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
               </aside>
 
               <div className="min-w-0 rounded-md bg-muted/40 p-2 sm:p-6">
-                <PreviaRelatorio rel={rel} exercicio={e} condominio={condo} escritorio={escritorio} />
+                <PreviaRelatorio rel={rel} exercicio={e} condominio={condo} escritorio={e.fechado && e.fechamento ? e.fechamento.escritorio : escritorio} />
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="consideracoes" className="mt-4">
-            <EditorConsideracoes
+            <fieldset disabled={e.fechado} className="min-w-0"><EditorConsideracoes
               consid={e.consid}
               onChange={(consid) => mudar({ consid })}
               condominio={condo}
@@ -309,7 +317,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
               agua={rel.agua}
               energia={rel.energia}
               elevador={rel.elevador}
-            />
+            /></fieldset>
           </TabsContent>
         </Tabs>
       </form>

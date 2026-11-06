@@ -25,6 +25,10 @@ export function compararPrevistoRealizadoMensal(
     demonstrativoBase?: Demonstrativo | null;
   } = {},
 ): ResultadoMensalDetalhado {
+  if (exercicio.fechado && exercicio.fechamento) {
+    mensais = exercicio.fechamento.mensais;
+    opcoes = { ...opcoes, condominio: exercicio.fechamento.condominio, demonstrativoBase: exercicio.fechamento.exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo };
+  }
   const janela = mesesDoExercicioSeguinte(exercicio);
   const inicio = Math.max(1, Math.min(12, opcoes.inicio ?? 1));
   const fim = Math.max(inicio, Math.min(12, opcoes.fim ?? 12));

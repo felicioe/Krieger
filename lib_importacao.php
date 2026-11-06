@@ -2,6 +2,9 @@
 declare(strict_types=1);
 if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) { http_response_code(403); exit; }
 
+require_once __DIR__ . '/lib_indices.php';
+require_once __DIR__ . '/lib_exercicios.php';
+
 /** Confirmação atômica; o id do staging é a chave idempotente de uma tentativa. */
 function confirmar_importacao(PDO $pdo, array $pedido): array {
   $id = static function ($valor): string {
@@ -98,6 +101,7 @@ function confirmar_importacao(PDO $pdo, array $pedido): array {
         }
       }
     }
+    if ($destino === 'exercicios') { validar_edicao_exercicio(null, $registro); inicializar_indices_importados($pdo, $registro); }
     $salvo = $gravar($destino, $registro, true);
     $imp['status'] = 'confirmado';
     $imp['condominioId'] = $condoId;

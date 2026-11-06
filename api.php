@@ -7,6 +7,8 @@ require __DIR__ . '/lib_auth.php';
 require __DIR__ . '/lib_importacao.php';
 require __DIR__ . '/lib_backup.php';
 require __DIR__ . '/lib_anexos.php';
+require_once __DIR__ . '/lib_indices.php';
+require_once __DIR__ . '/lib_exercicios.php';
 aplicar_cabecalhos_seguranca();
 
 function erro(string $msg, int $codigo = 400): never { json_erro($msg, $codigo); }
@@ -57,7 +59,7 @@ function resolver_id_condominio(PDO $pdo, array $o, string $idProposto): string 
 }
 
 $ALVOS_LIMPEZA = [
-  'condominios' => ['kr_condominios'],
+  'condominios' => ['kr_indices_condominio', 'kr_condominios'],
   'exercicios' => ['kr_exercicios'],
   'mensais' => ['kr_mensais'],
   'assembleias' => ['kr_assembleias'],
@@ -217,13 +219,18 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
   $stores = stores_restauraveis($pdo, $dados, $stores);
   $pdo->beginTransaction();
   try {
+    exigir_exercicios_abertos($pdo);
     foreach ($stores as $st) {
-      if ($substituir) $pdo->exec('DELETE FROM ' . $tabela($st));
+      if ($substituir) {
+        if ($st === 'condominios') $pdo->exec('DELETE FROM kr_indices_condominio');
+        $pdo->exec('DELETE FROM ' . $tabela($st));
+      }
       $stmt = $pdo->prepare('REPLACE INTO ' . $tabela($st) . ' (id, dados, atualizado_em) VALUES (?, ?, ?)');
       $lista = is_array($dados[$st] ?? null) ? $dados[$st] : [];
       foreach ($lista as $linha) {
         if (!is_array($linha) || empty($linha['id'])) continue;
         $id = id_valido($linha['id']);
+        if ($st === 'condominios') $linha = substituir_indices_condominio($pdo, $linha);
         $quando = is_string($linha['atualizadoEm'] ?? null) ? str_replace('T', ' ', substr($linha['atualizadoEm'], 0, 19)) : date('Y-m-d H:i:s');
         $stmt->execute([$id, json_encode($linha, JSON_UNESCAPED_UNICODE), $quando]);
       }
@@ -236,6 +243,12 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
 }
 
 try {
+  if ($a === 'fechamento_exercicio') {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST.', 405);
+    exigir_permissao($usuario, 'prestacao_contas.editar');
+    if (!is_bool($corpo['fechar'] ?? null)) erro('Estado inválido.');
+    saida(alterar_fechamento_exercicio($pdo, id_valido($corpo['id'] ?? null), $corpo['fechar'], $usuario, (string)($corpo['motivo'] ?? ''), isset($corpo['versao']) ? (string)$corpo['versao'] : null));
+  }
   // Backups integrais não podem contornar restrições individuais de leitura.
   if (in_array($a, ['exportar', 'backup_criar', 'backup_listar', 'backup_baixar'], true)) {
     exigir_permissao($usuario, 'backup.visualizar');
@@ -357,6 +370,7 @@ try {
     $apagados = 0;
     $pdo->beginTransaction();
     try {
+      exigir_exercicios_abertos($pdo);
       foreach ($chavesAlvo as $ch) {
         foreach ($ALVOS_LIMPEZA[$ch] as $tbLimpar) {
           try {
@@ -383,13 +397,14 @@ try {
         saida(listar_metadados_anexos($pdo, id_valido($param('exercicioId'))));
       }
       $linhas = $pdo->query('SELECT dados FROM ' . $tb)->fetchAll();
-      saida(array_map(fn($r) => json_decode($r['dados'], true), $linhas));
+      saida(array_map(function($r) use ($pdo, $s) { $o = json_decode($r['dados'], true); return $s === 'condominios' ? incluir_indices_tabela($pdo, $o) : $o; }, $linhas));
 
     case 'obter':
       $stmt = $pdo->prepare('SELECT dados FROM ' . $tb . ' WHERE id = ?');
       $stmt->execute([id_valido($param('id'))]);
       $r = $stmt->fetch();
-      saida($r ? json_decode($r['dados'], true) : null);
+      $o = $r ? json_decode($r['dados'], true) : null;
+      saida($o && $s === 'condominios' ? incluir_indices_tabela($pdo, $o) : $o);
 
     case 'salvar':
       $o = $corpo['o'] ?? null;
@@ -404,23 +419,51 @@ try {
         }
         saida($salvo);
       }
-      if ($s === 'condominios') {
-        $id = resolver_id_condominio($pdo, $o, $id);
-        $o['id'] = $id;
-      }
-      $o['atualizadoEm'] = date('c');
-      $stmt = $pdo->prepare('REPLACE INTO ' . $tb . ' (id, dados, atualizado_em) VALUES (?, ?, ?)');
-      $stmt->execute([$id, json_encode($o, JSON_UNESCAPED_UNICODE), date('Y-m-d H:i:s')]);
+      $pdo->beginTransaction();
+      try {
+        if ($s === 'condominios') {
+          $id = resolver_id_condominio($pdo, $o, $id);
+          $o['id'] = $id;
+          $existente = ler_registro_exercicio($pdo, 'condominios', $id);
+          $indicesAlterados = !empty($o['indicesInicializados']) || ($existente['indices'] ?? []) !== ($o['indices'] ?? []);
+          if ($indicesAlterados || !empty($existente['indicesInicializados']) || !empty($o['indices'])) $o = substituir_indices_condominio($pdo, $o);
+          else unset($o['indicesInicializados']);
+        }
+        if ($s === 'anexos_importacao') {
+          $anexoAntigo = ler_registro_exercicio($pdo, 'anexos_importacao', $id);
+          if ($anexoAntigo) { $origem = ler_registro_exercicio($pdo, 'exercicios', (string)($anexoAntigo['exercicioId'] ?? '')); if (!empty($origem['fechado'])) throw new RuntimeException('Reabra o exercício antes de alterar anexos.', 409); }
+          $e = ler_registro_exercicio($pdo, 'exercicios', (string)($o['exercicioId'] ?? ''));
+          if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de alterar anexos.', 409);
+        }
+        if ($s === 'exercicios') {
+          $anterior = ler_registro_exercicio($pdo, 'exercicios', $id);
+          validar_edicao_exercicio($anterior, $o);
+          unset($o['historicoFechamento']);
+          if (isset($anterior['historicoFechamento'])) $o['historicoFechamento'] = $anterior['historicoFechamento'];
+          inicializar_indices_importados($pdo, $o);
+        }
+        $o = gravar_registro_exercicio($pdo, $s, $o);
+        $pdo->commit();
+      } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
       saida($o);
 
     case 'excluir':
-      $pdo->prepare('DELETE FROM ' . $tb . ' WHERE id = ?')->execute([id_valido($param('id'))]);
+      $id = id_valido($param('id'));
+      $pdo->beginTransaction();
+      try {
+        if ($s === 'exercicios') { $e = ler_registro_exercicio($pdo, $s, $id); if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de excluir.', 409); }
+        if ($s === 'anexos_importacao') { $anexo = ler_registro_exercicio($pdo, $s, $id); $e = ler_registro_exercicio($pdo, 'exercicios', (string)($anexo['exercicioId'] ?? '')); if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de excluir anexos.', 409); }
+        if ($s === 'condominios') { exigir_exercicios_abertos($pdo, $id); $pdo->prepare('DELETE FROM kr_indices_condominio WHERE condo_id = ?')->execute([$id]); }
+        $pdo->prepare('DELETE FROM ' . $tb . ' WHERE id = ?')->execute([$id]);
+        $pdo->commit();
+      } catch (Throwable $e) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $e; }
       saida(['ok' => true]);
 
     default:
       erro('Ação inválida.');
   }
 } catch (Throwable $e) {
+  if ($e instanceof InvalidArgumentException) erro($e->getMessage());
   if ($e instanceof RuntimeException && $e->getCode() === 409) erro($e->getMessage(), 409);
   error_log('[krieger] ' . $e->getMessage());
   // Tabela ausente (schema.sql tem uma tabela que o banco deste servidor ainda não tem,

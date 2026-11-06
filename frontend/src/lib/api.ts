@@ -49,6 +49,7 @@ export function mensagemErro(e: unknown): string {
 }
 
 export const api = {
+  fechamentoExercicio: (id: string, fechar: boolean, motivo: string, versao: string | null) => guarda(() => impl().fechamentoExercicio(id, fechar, motivo, versao)),
   anexos: {
     listar: (exercicioId: string) => guarda(() => impl().anexos.listar(exercicioId)),
   },

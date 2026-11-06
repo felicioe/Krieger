@@ -1,30 +1,29 @@
-import { describe, it, expect } from 'vitest';
-import type { IndiceAplicado } from './types';
+import { describe, expect, it } from "vitest";
+import { condominioPadrao } from "./condominio";
+import { exercicioPadrao } from "./exercicio";
+import { inicializarIndicesImportados, validarIndicesCondominio } from "./indicesCondominio";
 
-describe('Histórico de Índices por Condomínio', () => {
- it('deve validar a estrutura do IndiceAplicado', () => {
- const indice: IndiceAplicado = {
- id: 'idx-1',
- condoId: 'condo-123',
- ano: 2026,
- indice: 5.5,
- tipo: 'IGP-M',
- mesReferencia: 1,
- dataAplicacao: '2026-01-01T00:00:00Z',
- };
- expect(indice.condoId).toBe('condo-123');
- expect(indice.indice).toBe(5.5);
- });
-
- it('deve permitir índices sem tipo ou mês (índices anuais manuais)', () => {
- const indice: IndiceAplicado = {
- id: 'idx-2',
- condoId: 'condo-456',
- ano: 2025,
- indice: 10.0,
- dataAplicacao: '2025-12-31T23:59:59Z',
- };
- expect(indice.tipo).toBeUndefined();
- expect(indice.mesReferencia).toBeUndefined();
- });
+describe("Índices exclusivos por condomínio", () => {
+  const c = { ...condominioPadrao(), id: "condo-ficticio" };
+  const e = { ...exercicioPadrao(c, 2026), id: "ex-ficticio" };
+  e.consid.indices = [{ ano: 2024, pct: 4 }, { ano: 2025, pct: 6 }];
+  it("preenche a primeira importação sem compartilhar com outro condomínio", () => {
+    expect(inicializarIndicesImportados(c, e).indices).toEqual(e.consid.indices.map((i) => ({ ...i, noRelatorio: true })));
+    expect(inicializarIndicesImportados({ ...c, id: "outro" }, e).indices).toEqual([]);
+  });
+  it("mantém a inclusão manual e não ressuscita índices excluídos", () => {
+    const manual = { ...c, indices: [{ ano: 2025, pct: 8 }], indicesInicializados: true };
+    expect(inicializarIndicesImportados(manual, e)).toBe(manual);
+    expect(inicializarIndicesImportados({ ...manual, indices: [] }, e).indices).toEqual([]);
+  });
+  it("preserva o cadastro legado e valida duplicações e campos vazios", () => {
+    expect(inicializarIndicesImportados({ ...c, indices: [{ ano: 2023, pct: 9 }] }, e).indices[0]?.pct).toBe(9);
+    expect(() => validarIndicesCondominio([{ ano: 2025, pct: 3 }, { ano: 2025, pct: 4 }])).toThrow(/mesmo ano/);
+    expect(() => validarIndicesCondominio([{ ano: 2025, pct: null }])).toThrow(/válidos/);
+  });
+  it("aceita zero e percentual negativo, preservando visibilidade", () => {
+    expect(validarIndicesCondominio([{ ano: 2025, pct: 0, noRelatorio: false }, { ano: 2024, pct: -2 }])).toEqual([
+      { ano: 2024, pct: -2, noRelatorio: true }, { ano: 2025, pct: 0, noRelatorio: false },
+    ]);
+  });
 });

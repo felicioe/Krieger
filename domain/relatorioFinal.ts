@@ -265,6 +265,8 @@ export function montarRelatorioFinal(entrada: {
   escritorio: ConfigEscritorio | null;
   mensais: Mensal[];
 }): RelatorioFinal {
+  const congelado = entrada.exercicio.fechado ? entrada.exercicio.fechamento : undefined;
+  if (congelado) entrada = { ...entrada, condominio: congelado.condominio, escritorio: congelado.escritorio, mensais: congelado.mensais, exercicioAnterior: congelado.exercicioAnterior };
   const { exercicio: entradaExercicio, condominio, escritorio } = entrada;
   // Compatibilidade com prestações antigas criadas antes de o período ser herdado:
   // quando os meses já foram importados, o intervalo deles é a fonte segura para

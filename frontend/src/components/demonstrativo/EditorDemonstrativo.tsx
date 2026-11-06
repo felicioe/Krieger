@@ -76,12 +76,12 @@ export function EditorDemonstrativo({
   bloqueado?: boolean;
 }) {
   const d = valor;
-  const mudar = (parcial: Partial<Demonstrativo>) => onChange(recalcularDemonstrativo({ ...d, ...parcial }));
+  const mudar = (parcial: Partial<Demonstrativo>) => !bloqueado && onChange(recalcularDemonstrativo({ ...d, ...parcial }));
   const grupos = d.despesas.grupos;
   const mudarGrupos = (g: Demonstrativo["despesas"]["grupos"]) => mudar({ despesas: { ...d.despesas, grupos: g } });
 
   return (
-    <div className="space-y-6">
+    <fieldset disabled={bloqueado} className="min-w-0 space-y-6">
       <SectionCard titulo="Período" descricao="Intervalo coberto pelo demonstrativo.">
         <div className="grid max-w-md gap-4 sm:grid-cols-2">
           <Field rotulo="Início">
@@ -207,6 +207,6 @@ export function EditorDemonstrativo({
           </Alert>
         )}
       </SectionCard>
-    </div>
+    </fieldset>
   );
 }

@@ -1,5 +1,19 @@
 # Estado atual e passagem de contexto
 
+## Integração do histórico de índices e fechamento protegido — em validação
+
+A implementação local anterior declarava tipos e tabela, mas não integrava a persistência.
+Esta entrega conecta `kr_indices_condominio` à primeira importação e à manutenção na seção
+existente do cadastro. Inclui fechamento/reabertura persistidos, permissão de edição sem exigir
+admin, auditoria e snapshot das fontes do relatório. Bloqueio também no PHP, não só na tela.
+
+O responsável confirmou no phpMyAdmin a criação de `kr_indices_condominio` e que
+`kr_decisoes_importacao` já existia. Não há SQL adicional. `fechado` é campo do JSON do exercício.
+Contrato e testes em [FECHAMENTO-INDICES.md](FECHAMENTO-INDICES.md).
+
+Publicação ainda não confirmada nesta entrada. O resultado real do CI e o SHA publicado serão
+registrados após validação, sem confundir commit local com versão no servidor.
+
 ## Impressao, acessibilidade e permissoes granulares - publicado - 06/11/2026
 
 Publicado `main` `b6f886c` (PRs #231, #232 e #233) -> `deploy-hostinger` `39ca573`.

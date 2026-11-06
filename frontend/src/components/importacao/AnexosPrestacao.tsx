@@ -32,7 +32,7 @@ async function baixar(a: MetadadosAnexoImportado) {
 }
 
 /** PDFs anexados a esta prestação de contas pelo Importador (referência, não mexem no demonstrativo). */
-export function AnexosPrestacao({ exercicioId }: { exercicioId: string }) {
+export function AnexosPrestacao({ exercicioId, bloqueado = false }: { exercicioId: string; bloqueado?: boolean }) {
   const queryClient = useQueryClient();
   const { data: metadados } = useSuspenseQuery(anexosQuery(exercicioId));
   const anexos = [...metadados].sort((a, b) => b.importadoEm.localeCompare(a.importadoEm));
@@ -52,7 +52,7 @@ export function AnexosPrestacao({ exercicioId }: { exercicioId: string }) {
       titulo="Anexos de referência"
       descricao="PDFs anexados pelo Importador, como o Comparativo Financeiro. Ficam só para consulta e download; não alteram o demonstrativo."
       acoes={
-        <Button variant="outline" size="sm" asChild>
+        <Button disabled={bloqueado} variant="outline" size="sm" asChild>
           <Link to="/importador">
             <FileUp /> Anexar comparativo
           </Link>
@@ -101,7 +101,7 @@ export function AnexosPrestacao({ exercicioId }: { exercicioId: string }) {
                   variant="ghost"
                   size="sm"
                   className="text-destructive hover:text-destructive"
-                  onClick={() => setExcluindo(a)}
+                  disabled={bloqueado} onClick={() => setExcluindo(a)}
                   aria-label={`Excluir anexo ${a.arquivo}`}
                 >
                   <Trash2 /> Excluir
