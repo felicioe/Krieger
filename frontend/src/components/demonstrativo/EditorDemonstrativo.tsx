@@ -18,12 +18,14 @@ function ListaValores({
   rotuloNome,
   rotuloAdicionar,
   vazio,
+  bloqueado,
 }: {
   itens: LinhaValor[];
   onChange: (v: LinhaValor[]) => void;
   rotuloNome: string;
   rotuloAdicionar: string;
   vazio: string;
+  bloqueado?: boolean;
 }) {
   return (
     <RepeatableList
@@ -37,8 +39,8 @@ function ListaValores({
       vazio={vazio}
       render={(l, up) => (
         <>
-          <Input aria-label={rotuloNome} placeholder={rotuloNome} value={l.nome} onChange={(e) => up({ nome: e.target.value })} />
-          <DinheiroInput aria-label="Valor" value={l.valor} onChange={(v) => up({ valor: v ?? 0 })} />
+          <Input aria-label={rotuloNome} placeholder={rotuloNome} value={l.nome} onChange={(e) => up({ nome: e.target.value })} disabled={bloqueado} />
+          <DinheiroInput aria-label="Valor" value={l.valor} onChange={(v) => up({ valor: v ?? 0 })} disabled={bloqueado} />
         </>
       )}
     />
@@ -63,12 +65,15 @@ export function EditorDemonstrativo({
   onChange,
   descricaoDespesas = "Organize as despesas por grupo (Pessoal, Consumo, Manutenção…).",
   avisoPeriodo,
+  bloqueado = false,
 }: {
   valor: Demonstrativo;
   onChange: (d: Demonstrativo) => void;
   descricaoDespesas?: string;
   /** Aviso extra abaixo dos campos de período (ex.: período maior que 12 meses) — só a prestação de contas anual usa. */
   avisoPeriodo?: ReactNode;
+  /** Se true, desabilita todos os campos de entrada. */
+  bloqueado?: boolean;
 }) {
   const d = valor;
   const mudar = (parcial: Partial<Demonstrativo>) => onChange(recalcularDemonstrativo({ ...d, ...parcial }));
@@ -97,6 +102,7 @@ export function EditorDemonstrativo({
             rotuloNome="Conta"
             rotuloAdicionar="Adicionar conta"
             vazio="Nenhuma conta informada."
+            bloqueado={bloqueado}
           />
           <Total rotulo="Total do saldo anterior" valor={d.saldoAnterior.total} />
         </SectionCard>
@@ -107,6 +113,7 @@ export function EditorDemonstrativo({
             rotuloNome="Conta"
             rotuloAdicionar="Adicionar conta"
             vazio="Nenhuma conta informada."
+            bloqueado={bloqueado}
           />
           <Total rotulo="Total do saldo atual" valor={d.saldoAtual.total} />
         </SectionCard>
@@ -119,6 +126,7 @@ export function EditorDemonstrativo({
           rotuloNome="Receita"
           rotuloAdicionar="Adicionar receita"
           vazio="Nenhuma receita lançada."
+          bloqueado={bloqueado}
         />
         <Total rotulo="Subtotal das receitas" valor={d.receitas.subtotal} />
       </SectionCard>
@@ -127,9 +135,11 @@ export function EditorDemonstrativo({
         titulo="Despesas"
         descricao={descricaoDespesas}
         acoes={
-          <Button type="button" variant="outline" size="sm" onClick={() => mudarGrupos([...grupos, { nome: "", itens: [] }])}>
-            <Plus /> Adicionar grupo
-          </Button>
+          !bloqueado && (
+            <Button type="button" variant="outline" size="sm" onClick={() => mudarGrupos([...grupos, { nome: "", itens: [] }])}>
+              <Plus /> Adicionar grupo
+            </Button>
+          )
         }
       >
         {grupos.length === 0 ? (
@@ -165,6 +175,7 @@ export function EditorDemonstrativo({
                   rotuloNome="Despesa"
                   rotuloAdicionar="Adicionar despesa"
                   vazio="Nenhuma despesa neste grupo."
+                  bloqueado={bloqueado}
                 />
                 <Total rotulo={`Subtotal ${g.nome || "do grupo"}`} valor={g.itens.reduce((s, l) => s + (l.valor || 0), 0)} />
               </div>

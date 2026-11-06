@@ -66,6 +66,17 @@ export interface IndiceCorrecao {
   noRelatorio?: boolean;
 }
 
+/** Histórico de índices aplicados por condomínio. */
+export interface IndiceAplicado {
+  id: string;
+  condoId: string;
+  ano: number;
+  indice: number; // percentual aplicado
+  mesReferencia?: number; // opcional, se for índice mensal
+  tipo?: string; // ex: "IGP-M", "INPC", "Manual"
+  dataAplicacao: string; // ISO
+}
+
 export interface DePara {
   de: string;
   para: string;
@@ -340,6 +351,8 @@ export interface Exercicio extends ComId {
   variacao: number | null;
   variacaoMetodo: VariacaoMetodo;
   variacaoParam: number | null;
+  /** Trava de edição: quando true, os valores realizados não podem ser alterados. */
+  fechado?: boolean;
   deducaoRegex: string;
   arredondamento: Arredondamento;
   confer: unknown;
