@@ -233,12 +233,11 @@ export interface RelatorioFinal {
   secoes: Secoes;
   demonstrativo: Demonstrativo | null;
   previsao: ResultadoPrevisao;
-  /**
-   * Previsão orçamentária sugerida (folha do PDF do Systemar, menu próprio — ver
-   * domain/previsaoSugerida.ts). `null` quando o exercício não tem essa folha (não veio do PDF, ou
-   * o PDF não trazia essa página) — nesse caso a seção "Previsão orçamentária" do relatório mostra
-   * só `previsao` (cálculo a partir do demonstrativo do próprio exercício).
-   */
+  /** Origem explícita da base, inclusive quando preservada no fechamento. */
+  origemBasePrevisao: string;
+  /** Aviso compartilhado entre conferência, prévia e PDF/Word; não converte dados. */
+  avisoRateioAprovado: string | null;
+  /** Referência histórica importada; nunca substitui o cálculo principal do Krieger. */
   previsaoSugerida: ResultadoPrevisaoSugerida | null;
   previsaoSugeridaPorUnidade: ResultadoPrevisaoSugeridaPorUnidade | null;
   comparativo: ResultadoComparativo;
@@ -301,6 +300,15 @@ export function montarRelatorioFinal(entrada: {
   const previsaoSugeridaPorUnidade = previsaoSugerida
     ? calcularPrevisaoSugeridaPorUnidade(previsaoSugerida.rateioMensalSugerido, unidades, e.prev?.fundoReservaPct ?? 0, e.arredondamento)
     : null;
+  const baseAnterior = entrada.exercicioAnterior?.demonstrativo != null;
+  const anoBase = baseAnterior ? Number(e.ano) - 1 : e.ano;
+  const periodoBase = demonstrativoBase?.periodo;
+  const origemBasePrevisao = `Base: realizado do exercício ${anoBase}${periodoBase?.ini && periodoBase.fim ? ` · ${periodoBase.ini} a ${periodoBase.fim}` : ""}${congelado ? " · fontes preservadas no fechamento" : ""}.`;
+  const aprovado = e.rateioAprovado;
+  const sugerido = previsao.rateioSugerido;
+  const avisoRateioAprovado = aprovado != null && sugerido != null && centavos(aprovado) !== centavos(sugerido)
+    ? `Atenção: rateio aprovado por unidade informado (${formatBRL(aprovado)}) difere da sugestão do Krieger (${formatBRL(sugerido)}). Confira se foi informado o total mensal do condomínio (${formatBRL(previsao.mensal)}) neste campo. Nenhuma conversão foi aplicada.`
+    : null;
   const comparativo = compararPrevistoRealizado(e, entrada.mensais, {
     condominio,
     mesAte: e.relatorioFinal?.prAte ?? null,
@@ -337,37 +345,12 @@ export function montarRelatorioFinal(entrada: {
   }
 
   if (secoes.previsao) {
-    if (previsaoSugerida) {
-      // Com a previsão sugerida (menu próprio, folha do PDF do Systemar), ela é quem manda nesta
-      // conferência — substitui o cálculo antigo a partir do demonstrativo (domain/previsao.ts).
-      const valorUnidade = previsaoSugeridaPorUnidade?.valorUnidade ?? null;
-      if (valorUnidade === null) {
-        c.push({ titulo: "Previsão orçamentária", situacao: "aviso", detalhe: "Sem valor por unidade (faltam unidades no cadastro do condomínio)." });
-      } else if (e.rateioAprovado == null) {
-        c.push({
-          titulo: "Previsão orçamentária",
-          situacao: "aviso",
-          detalhe: `Valor por unidade calculado ${formatBRL(valorUnidade)} (rateio mensal sugerido ${formatBRL(previsaoSugerida.rateioMensalSugerido)}); rateio aprovado ainda não informado.`,
-        });
-      } else if (centavos(e.rateioAprovado) !== centavos(valorUnidade)) {
-        c.push({
-          titulo: "Previsão orçamentária",
-          situacao: "aviso",
-          detalhe: `Rateio aprovado (${formatBRL(e.rateioAprovado)}) diferente do valor por unidade calculado (${formatBRL(valorUnidade)}).`,
-        });
-      } else {
-        c.push({
-          titulo: "Previsão orçamentária",
-          situacao: "ok",
-          detalhe: `Rateio mensal sugerido ${formatBRL(previsaoSugerida.rateioMensalSugerido)}; valor por unidade ${formatBRL(valorUnidade)} = rateio aprovado.`,
-        });
-      }
-    } else if (previsao.rateioSugerido === null) {
+    if (previsao.rateioSugerido === null) {
       c.push({ titulo: "Previsão orçamentária", situacao: "aviso", detalhe: "Sem valor por unidade (faltam unidades no cadastro do condomínio)." });
     } else if (e.rateioAprovado == null) {
       c.push({ titulo: "Previsão orçamentária", situacao: "aviso", detalhe: `Valor por unidade calculado ${formatBRL(previsao.rateioSugerido)}; rateio aprovado ainda não informado.` });
     } else if (centavos(e.rateioAprovado) !== centavos(previsao.rateioSugerido)) {
-      c.push({ titulo: "Previsão orçamentária", situacao: "aviso", detalhe: `Rateio aprovado (${formatBRL(e.rateioAprovado)}) diferente do valor calculado (${formatBRL(previsao.rateioSugerido)}).` });
+      c.push({ titulo: "Previsão orçamentária", situacao: "aviso", detalhe: avisoRateioAprovado! });
     } else {
       c.push({ titulo: "Previsão orçamentária", situacao: "ok", detalhe: `Anual ajustado ${formatBRL(previsao.totalAnual)}; valor por unidade ${formatBRL(previsao.rateioSugerido)} = rateio aprovado.` });
     }
@@ -418,6 +401,8 @@ export function montarRelatorioFinal(entrada: {
     secoes,
     demonstrativo: d,
     previsao,
+    origemBasePrevisao,
+    avisoRateioAprovado,
     previsaoSugerida,
     previsaoSugeridaPorUnidade,
     comparativo,

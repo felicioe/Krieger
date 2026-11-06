@@ -118,15 +118,13 @@ export function PreviaRelatorio({
           titulo={`Previsão orçamentária — Exercício ${e.ano}`}
           {...(d?.periodo.ini && d.periodo.fim ? { sub: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.` } : {})}
         >
-          {e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade ? (
-            <PrevisaoSugeridaPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} u={rel.previsaoSugeridaPorUnidade} />
-          ) : (
-            <>
+          <p className="mb-3 text-sm">Previsão calculada pelo Krieger. {rel.origemBasePrevisao}</p>
+          {rel.avisoRateioAprovado && <p role="alert" className="mb-3 rounded border border-amber-400 bg-amber-50 p-3 text-sm text-amber-950">{rel.avisoRateioAprovado}</p>}
           <RolagemTabela className=""><table className="w-full">
             <thead>
               <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="py-1 text-left font-semibold">{rel.previsao.modo === "detalhado" ? "Rubrica" : "Grupo"}</th>
-                <th className="py-1 text-right font-semibold">Realizado {e.ano}</th>
+                <th className="py-1 text-right font-semibold">Realizado da base</th>
                 <th className="py-1 text-right font-semibold">Previsto</th>
               </tr>
             </thead>
@@ -168,26 +166,32 @@ export function PreviaRelatorio({
                 nome={e.variacaoMetodo === "valor" ? "(+) Variação" : `(+) Variação ${formatNumeroBR(rel.previsao.variacaoPct)}%`}
                 valor={rel.previsao.variacaoValor}
               />
+              <Linha nome="Variação de despesas sugeridas (+/−)" valor={rel.previsao.variacaoDespesasValor} />
               <Linha nome="(+) Ajustes" valor={rel.previsao.ajustesMais} />
               <Linha nome="(−) Ajustes" valor={rel.previsao.ajustesMenos} />
               <Linha nome="Anual ajustado" valor={rel.previsao.totalAnual} forte />
-              <Linha nome="Mensal (÷ 12)" valor={rel.previsao.mensal} />
+              <Linha nome={`Total mensal do condomínio (÷ ${rel.previsao.mesesAnalisados} meses)`} valor={rel.previsao.mensal} />
               {e.mostrarPrevisaoPorUnidade !== false && rel.previsao.unidades !== null && (
                 <>
                   <Linha nome={`Cota por unidade (÷ ${rel.previsao.unidades} unidades)`} valor={rel.previsao.cotaUnidade} />
                   <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(rel.previsao.fundoReservaPct)}%`} valor={rel.previsao.reservaUnidade} />
-                  <Linha nome="Valor por unidade" valor={rel.previsao.rateioSugerido} forte />
+                  <Linha nome="Valor sugerido por unidade" valor={rel.previsao.rateioSugerido} forte />
                 </>
               )}
-              <Linha nome="Rateio atual" valor={rel.previsao.rateioAtual} />
+              <Linha nome="Rateio atual por unidade" valor={rel.previsao.rateioAtual} />
               <tr>
                 <td className="px-3 py-1">Índice de reajuste</td>
                 <td className="num px-3 py-1 text-right">{pctTexto(rel.previsao.indice)}</td>
               </tr>
-              {e.rateioAprovado != null && <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />}
+              {e.rateioAprovado != null && <Linha nome="Rateio aprovado por unidade (informado)" valor={e.rateioAprovado} forte />}
             </tbody>
           </table></RolagemTabela>
-            </>
+          {e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade && (
+            <div className="mt-6 border-t pt-4">
+              <h4 className="font-semibold">Referência histórica importada do Systemar</h4>
+              <p className="mb-3 text-sm">Dados de origem preservados, sem substituir o cálculo do Krieger acima.</p>
+              <PrevisaoSugeridaPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} u={rel.previsaoSugeridaPorUnidade} />
+            </div>
           )}
         </Secao>
       )}

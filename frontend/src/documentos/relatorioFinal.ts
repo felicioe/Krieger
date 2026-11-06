@@ -74,19 +74,17 @@ export async function documentoRelatorioFinal(o: {
     b.push(titulo("consideracoes", "Considerações finais"), ...consideracoes(e, rel));
   }
 
-  if (rel.secoes.previsao && e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade) {
-    b.push(titulo("previsao", `Previsão orçamentária — Exercício ${e.ano}`));
-    if (d?.periodo.ini && d.periodo.fim) b.push({ tipo: "paragrafo", texto: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.`, suave: true, tamanho: "pequeno" });
-    b.push(...blocosPrevisaoSugerida(e, e.previsaoSugerida, rel.previsaoSugerida, rel.previsaoSugeridaPorUnidade));
-  } else if (rel.secoes.previsao) {
+  if (rel.secoes.previsao) {
     const p = rel.previsao;
     b.push(titulo("previsao", `Previsão orçamentária — Exercício ${e.ano}`));
     if (d?.periodo.ini && d.periodo.fim) b.push({ tipo: "paragrafo", texto: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.`, suave: true, tamanho: "pequeno" });
+    b.push({ tipo: "paragrafo", texto: `Previsão calculada pelo Krieger. ${rel.origemBasePrevisao}` });
+    if (rel.avisoRateioAprovado) b.push({ tipo: "paragrafo", texto: rel.avisoRateioAprovado, negrito: true });
     b.push({
       tipo: "tabela",
       colunas: [
         { titulo: p.modo === "detalhado" ? "Rubrica" : "Grupo", largura: "*" },
-        { titulo: `Realizado ${e.ano}`, largura: 100, alinhamento: "direita" },
+        { titulo: "Realizado da base", largura: 100, alinhamento: "direita" },
         { titulo: "Previsto", largura: 100, alinhamento: "direita" },
       ],
       linhas: p.linhas.map((x) => ({
@@ -116,22 +114,29 @@ export async function documentoRelatorioFinal(o: {
         l("Base (despesas realizadas)", p.base),
         l("(−) Dedução", p.deducao),
         l(e.variacaoMetodo === "valor" ? "(+) Variação" : `(+) Variação ${formatNumeroBR(p.variacaoPct)}%`, p.variacaoValor),
+        l("Variação de despesas sugeridas (+/−)", p.variacaoDespesasValor),
         l("(+) Ajustes", p.ajustesMais),
         l("(−) Ajustes", p.ajustesMenos),
         l("Anual ajustado", p.totalAnual, { estilo: "total" }),
-        l("Mensal (÷ 12)", p.mensal),
+        l(`Total mensal do condomínio (÷ ${p.mesesAnalisados} meses)`, p.mensal),
         ...(mostrarPorUnidadeTrad
           ? [
               l(`Cota por unidade (÷ ${p.unidades} unidades)`, p.cotaUnidade),
               l(`(+) Reserva por unidade ${formatNumeroBR(p.fundoReservaPct)}%`, p.reservaUnidade),
-              l("Valor por unidade", p.rateioSugerido, { estilo: "total" }),
+              l("Valor sugerido por unidade", p.rateioSugerido, { estilo: "total" }),
             ]
           : []),
-        l("Rateio atual", p.rateioAtual),
+        l("Rateio atual por unidade", p.rateioAtual),
         { celulas: ["Índice de reajuste", pctTexto(p.indice)] },
-        ...(e.rateioAprovado != null ? [l("Rateio aprovado", e.rateioAprovado, { estilo: "total" })] : []),
+        ...(e.rateioAprovado != null ? [l("Rateio aprovado por unidade (informado)", e.rateioAprovado, { estilo: "total" })] : []),
       ]),
     );
+  }
+
+  if (rel.secoes.previsao && e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade) {
+    b.push({ tipo: "titulo", nivel: 3, texto: "Referência histórica importada do Systemar" });
+    b.push({ tipo: "paragrafo", texto: "Dados de origem preservados, sem substituir o cálculo do Krieger acima.", suave: true });
+    b.push(...blocosPrevisaoSugerida(e, e.previsaoSugerida, rel.previsaoSugerida, rel.previsaoSugeridaPorUnidade));
   }
 
   const c = rel.comparativo;

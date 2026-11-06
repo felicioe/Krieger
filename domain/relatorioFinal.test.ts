@@ -229,7 +229,7 @@ describe("relatório final", () => {
     expect(comCadastro.previsaoSugeridaPorUnidade?.unidades).toBe(10);
   });
 
-  it("conferência: com previsão sugerida, compara o rateio aprovado com o valor por unidade dela (não com a previsão antiga)", () => {
+  it("conferência: prioriza cálculo do Krieger; previsão sugerida é referência histórica", () => {
     const e: Exercicio = {
       ...exercicio(4000),
       rateioAprovado: 1100,
@@ -243,12 +243,16 @@ describe("relatório final", () => {
     };
     const r = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
     const item = r.conferencia.find((c) => c.titulo === "Previsão orçamentária");
-    expect(item?.situacao).toBe("ok");
-    expect(item?.detalhe).toContain("1.100,00"); // valor por unidade da previsão sugerida, não a antiga
+    // O sistema agora compara o rateio aprovado com a sugestão do Krieger (previsao.rateioSugerido)
+    expect(item?.situacao).toBe("aviso");
+    expect(item?.detalhe).toMatch(/rateio aprovado.*difere da sugestão do Krieger/);
 
-    const divergente = montarRelatorioFinal({ exercicio: { ...e, rateioAprovado: 999 }, condominio: condo, escritorio: null, mensais: [] });
-    const itemDivergente = divergente.conferencia.find((c) => c.titulo === "Previsão orçamentária");
-    expect(itemDivergente?.situacao).toBe("aviso");
+    // Se o rateio aprovado for igual à sugestão do Krieger, deve ser ok
+    const kriegerSugestao = r.previsao.rateioSugerido;
+    const eAjustado = { ...e, rateioAprovado: kriegerSugestao };
+    const rOk = montarRelatorioFinal({ exercicio: eAjustado, condominio: condo, escritorio: null, mensais: [] });
+    const itemOk = rOk.conferencia.find((c) => c.titulo === "Previsão orçamentária");
+    expect(itemOk?.situacao).toBe("ok");
   });
 
   it("conferência: sem previsão sugerida (exercício antigo ou digitado à mão), continua usando a previsão calculada do demonstrativo", () => {
