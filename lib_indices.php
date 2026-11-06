@@ -40,22 +40,12 @@ function inicializar_indices_importados(PDO $pdo, array $e): void {
   if ($json === false) return;
   $c = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
 
-  // Mescla os índices existentes com os novos da importação, evitando duplicatas de ano.
-  $novos = $e['consid']['indices'];
-  $existentes = [];
-  foreach ($c['indices'] ?? [] as $idx) {
-    $existentes[(int)$idx['ano']] = $idx;
-  }
-  foreach ($novos as $novo) {
-    $ano = (int)$novo['ano'];
-    // Só adiciona se não existir ou se o percentual for diferente (atualização).
-    if (!isset($existentes[$ano]) || abs($existentes[$ano]['pct'] - $novo['pct']) > 0.0001) {
-      $existentes[$ano] = $novo;
-    }
-  }
-
-  $c['indices'] = array_values($existentes);
-  $c['indicesInicializados'] = true;
+  // Cada reajuste é negociado por condomínio e ano. Depois da carga inicial,
+  // somente o cadastro mantém o histórico, inclusive exclusões intencionais.
+  // Reimportar uma prestação não aprova nem substitui reajustes negociados.
+  if (!empty($c['indicesInicializados'])) return;
+  // Preserva também o histórico legado já informado no cadastro.
+  $c['indices'] = !empty($c['indices']) ? $c['indices'] : $e['consid']['indices'];
   $c = substituir_indices_condominio($pdo, $c);
   $pdo->prepare('UPDATE kr_condominios SET dados = ?, atualizado_em = ? WHERE id = ?')->execute([json_encode($c, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), date('Y-m-d H:i:s'), $c['id']]);
 }

@@ -4,7 +4,11 @@
 
 O histórico anual é exclusivo de cada condomínio. Não há catálogo compartilhado de IGP-M,
 INPC ou outros índices econômicos. O percentual representa o reajuste efetivamente registrado
-para aquele condomínio e ano.
+para aquele condomínio e ano. Condomínios diferentes podem ter percentuais diferentes no
+mesmo ano. Após a carga inicial, novos anos e correções são registrados no cadastro;
+um PDF reimportado não confirma um novo reajuste nem substitui o percentual negociado.
+Esta correção não recupera automaticamente valores que uma importação anterior já tenha
+sobrescrito: esses casos exigem conferência com a prestação original ou um backup.
 
 - Na primeira importação de prestação com histórico, a confirmação transacional preenche
   `kr_indices_condominio` e espelha o histórico no cadastro. Reimportações não substituem
