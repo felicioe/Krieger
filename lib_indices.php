@@ -32,16 +32,30 @@ function substituir_indices_condominio(PDO $pdo, array $c): array {
   $c['indicesInicializados'] = true; // inclusive []: exclusão manual não pode ressuscitar na reimportação.
   return $c;
 }
-/** A primeira importação com histórico inicializa somente o condomínio correspondente. */
+/** Importa índices da prestação de contas para a tabela do condomínio. */
 function inicializar_indices_importados(PDO $pdo, array $e): void {
   if (empty($e['consid']['indices']) || empty($e['condoId'])) return;
   $st = $pdo->prepare('SELECT dados FROM kr_condominios WHERE id = ? FOR UPDATE');
   $st->execute([$e['condoId']]); $json = $st->fetchColumn();
   if ($json === false) return;
   $c = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
-  if (!empty($c['indicesInicializados'])) return;
-  // Preserva o cadastro legado se já tiver valores; nunca substitui escolhas do usuário pelo PDF.
-  $c['indices'] = !empty($c['indices']) ? $c['indices'] : $e['consid']['indices'];
+
+  // Mescla os índices existentes com os novos da importação, evitando duplicatas de ano.
+  $novos = $e['consid']['indices'];
+  $existentes = [];
+  foreach ($c['indices'] ?? [] as $idx) {
+    $existentes[(int)$idx['ano']] = $idx;
+  }
+  foreach ($novos as $novo) {
+    $ano = (int)$novo['ano'];
+    // Só adiciona se não existir ou se o percentual for diferente (atualização).
+    if (!isset($existentes[$ano]) || abs($existentes[$ano]['pct'] - $novo['pct']) > 0.0001) {
+      $existentes[$ano] = $novo;
+    }
+  }
+
+  $c['indices'] = array_values($existentes);
+  $c['indicesInicializados'] = true;
   $c = substituir_indices_condominio($pdo, $c);
   $pdo->prepare('UPDATE kr_condominios SET dados = ?, atualizado_em = ? WHERE id = ?')->execute([json_encode($c, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR), date('Y-m-d H:i:s'), $c['id']]);
 }
