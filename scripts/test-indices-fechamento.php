@@ -19,6 +19,15 @@ $assert(count(incluir_indices_tabela($pdo,$c)['indices'])===2, 'Cadastro não l�
 $pdo->beginTransaction(); $c['indices']=[['ano'=>2025,'pct'=>7,'noRelatorio'=>false]]; $c=substituir_indices_condominio($pdo,$c); gravar_registro_exercicio($pdo,'condominios',$c); $pdo->commit();
 $assert(incluir_indices_tabela($pdo,$c)['indices'][0]['pct']===7.0, 'Edição do cadastro não persistiu.');
 $assert(incluir_indices_tabela($pdo,$c)['indices'][0]['noRelatorio']===false, 'Preferência de impressão perdida.');
+// Mesmo ano, negociações independentes: outro condomínio recebe seu próprio percentual.
+$outro = ['id'=>'teste-indices-outro', 'nome'=>'Outro condomínio fictício', 'indices'=>[]];
+gravar_registro_exercicio($pdo,'condominios',$outro);
+$importadoOutro = ['condoId'=>$outro['id'], 'consid'=>['indices'=>[['ano'=>2025,'pct'=>12]]]];
+$pdo->beginTransaction(); inicializar_indices_importados($pdo,$importadoOutro); inicializar_indices_importados($pdo,$e); $pdo->commit();
+$recarregado = ler_registro_exercicio($pdo,'condominios',$c['id']);
+$assert(incluir_indices_tabela($pdo,$recarregado)['indices']===[['ano'=>2025,'pct'=>7.0,'noRelatorio'=>false]], 'Reimportação alterou negociação ou recriou ano excluído.');
+$outro = ler_registro_exercicio($pdo,'condominios',$outro['id']);
+$assert(incluir_indices_tabela($pdo,$outro)['indices'][0]['pct']===12.0, 'Reajuste foi compartilhado entre condomínios.');
 $pdo->beginTransaction(); $c['indices']=[]; $c=substituir_indices_condominio($pdo,$c); gravar_registro_exercicio($pdo,'condominios',$c); inicializar_indices_importados($pdo,$e); $pdo->commit();
 $assert(count(incluir_indices_tabela($pdo,$c)['indices'])===0, 'Reimportação ressuscitou índice excluído.');
 $falha(fn()=>validar_indices_condominio([['ano'=>2025,'pct'=>3],['ano'=>2025,'pct'=>5]]));
