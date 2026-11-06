@@ -56,6 +56,11 @@ jobs:
           KRIEGER_TEST_DSN: mysql:host=127.0.0.1;port=3306;dbname=krieger_test;charset=utf8mb4
           KRIEGER_TEST_PASSWORD: krieger-ci-only
         run: php scripts/test-anexos.php
+      - name: Testar índices e fechamento no MySQL efêmero
+        env:
+          KRIEGER_TEST_DSN: mysql:host=127.0.0.1;port=3306;dbname=krieger_test;charset=utf8mb4
+          KRIEGER_TEST_PASSWORD: krieger-ci-only
+        run: php scripts/test-indices-fechamento.php
       - run: npm run bundle:check
       - run: npm run package:hostinger
       - uses: actions/upload-artifact@v4

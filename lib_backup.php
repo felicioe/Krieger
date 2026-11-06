@@ -10,7 +10,7 @@ function tabela_anexos_disponivel(PDO $pdo): bool {
 function ler_colecao_backup(PDO $pdo, string $store): array {
   if ($store === 'anexos_importacao' && !tabela_anexos_disponivel($pdo)) return [];
   $linhas = $pdo->query('SELECT dados FROM kr_' . $store)->fetchAll(PDO::FETCH_COLUMN);
-  return array_map(static fn(string $json) => json_decode($json, true, 512, JSON_THROW_ON_ERROR), $linhas);
+  return array_map(static function(string $json) use ($pdo, $store) { $o = json_decode($json, true, 512, JSON_THROW_ON_ERROR); return $store === 'condominios' ? incluir_indices_tabela($pdo, $o) : $o; }, $linhas);
 }
 /** Nunca ignorar anexos presentes num backup: impedir restauração antes de alterar dados. */
 function stores_restauraveis(PDO $pdo, array $dados, array $stores): array {

@@ -72,6 +72,7 @@ export type ContagensLimpeza = Record<Exclude<AlvoLimpeza, "tudo">, number>;
 
 /** Contrato único de acesso a dados — implementado pela API PHP e pelo mock. */
 export interface ApiAdapter {
+  fechamentoExercicio(id: string, fechar: boolean, motivo: string, versao: string | null): Promise<Exercicio>;
   anexos: {
     listar(exercicioId: string): Promise<MetadadosAnexoImportado[]>;
   };
