@@ -4,3 +4,4 @@ config.local.php
 node_modules/
 dist/
 resultado-build.log
+resultado-build.log
