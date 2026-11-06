@@ -67,7 +67,7 @@ export interface ResultadoPrevisao {
 export type ParametrosPrevisao = Pick<
   Exercicio,
   "variacao" | "variacaoMetodo" | "variacaoParam" | "arredondamento" | "prev" | "deducaoRegex" | "rateioAtual"
-> & { indices?: IndiceCorrecao[] };
+> & { indices?: IndiceCorrecao[]; fechado?: boolean; fechamento?: Exercicio["fechamento"] };
 
 /** Aplica o arredondamento do condomínio ao valor por unidade. */
 export function arredondarValor(valor: number, modo: Arredondamento): number {
@@ -128,9 +128,10 @@ export function somarAjustes(ajustes: AjustePrevisao[] | undefined) {
  * consumidor da previsão (editor, relatório final, previsto × realizado, listagens) pra nunca
  * divergir sobre de onde ela parte. */
 export function demonstrativoBasePrevisao(
-  exercicio: Pick<Exercicio, "demonstrativo">,
+  exercicio: Pick<Exercicio, "demonstrativo" | "fechado" | "fechamento">,
   exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null | undefined,
 ): Demonstrativo | null {
+  if (exercicio.fechado && exercicio.fechamento) return exercicio.fechamento.exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
   return exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
 }
 
@@ -139,6 +140,7 @@ export function calcularPrevisao(
   parametros: ParametrosPrevisao,
   unidades: number | null,
 ): ResultadoPrevisao {
+  if (parametros.fechado && parametros.fechamento) unidades = parametros.fechamento.condominio.unidades;
   const avisos: string[] = [];
   const modo = parametros.prev?.modo ?? "tradicional";
   const ajustes = parametros.prev?.ajustes ?? [];
@@ -222,7 +224,7 @@ export function calcularPrevisao(
   const temUnidades = typeof unidades === "number" && unidades > 0;
   if (!temUnidades) avisos.push("Informe a quantidade de unidades no cadastro do condomínio para calcular o valor por unidade.");
   // Sem arredondar as etapas intermediárias; o arredondamento vale só para o valor final por unidade.
-  const cota = temUnidades ? totalComVariacaoDespesas / mesesAnalisados / unidades : null;
+  const cota = unidades !== null && temUnidades ? totalComVariacaoDespesas / mesesAnalisados / unidades : null;
   const reserva = cota !== null ? cota * (fundoReservaPct / 100) : null;
   const rateioSugerido = cota !== null && reserva !== null ? arredondarValor(cota + reserva, parametros.arredondamento) : null;
 

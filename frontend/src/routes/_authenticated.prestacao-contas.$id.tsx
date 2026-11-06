@@ -71,6 +71,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
+  const [confirmarFechamento, setConfirmarFechamento] = useState(false);
+  const [motivoReabertura, setMotivoReabertura] = useState("");
   const [erroAno, setErroAno] = useState<string | null>(null);
   // Decisão de conflito de importação (ver ConflitoImportacao.tsx) ainda pendente de gravar — só
   // registrada quando o Salvar abaixo for bem-sucedido, pra não logar uma importação descartada.
@@ -80,11 +82,11 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
 
   const condo = condominios.find((c) => c.id === e.condoId);
   const demonstrativoSalvo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
-  const demonstrativo = useMemo(() => demonstrativoDoPeriodo(demonstrativoSalvo, mensais, e.condoId), [demonstrativoSalvo, mensais, e.condoId]);
+  const demonstrativo = useMemo(() => e.fechado ? demonstrativoSalvo : demonstrativoDoPeriodo(demonstrativoSalvo, mensais, e.condoId), [demonstrativoSalvo, mensais, e.condoId, e.fechado]);
   const sujo = JSON.stringify(e) !== salvoJson;
   const mesesPeriodo = mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim);
 
-  const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
+  const mudar = (parcial: Partial<Exercicio>) => setE((x) => x.fechado ? x : ({ ...x, ...parcial }));
 
   // Avisa antes de sair com alterações não salvas (refs para ler o estado mais recente).
   const sujoRef = useRef(sujo);
@@ -114,6 +116,17 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
     },
   });
 
+  const fechamento = useMutation({
+    mutationFn: () => api.fechamentoExercicio(e.id, !e.fechado, motivoReabertura, e.atualizadoEm ?? null),
+    onSuccess: (salvo) => {
+      const n = normalizarExercicio(salvo);
+      setE(n); setSalvoJson(JSON.stringify(n)); setMotivoReabertura("");
+      queryClient.invalidateQueries({ queryKey: chaves.store("exercicios") });
+      queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
+      toast.success(salvo.fechado ? "Exercício fechado e salvo. Dados consolidados protegidos." : "Exercício reaberto. Motivo registrado no histórico.");
+    },
+  });
+
   const { data: anexos } = useSuspenseQuery(anexosQuery(e.id));
   const qtdAnexos = anexos.length;
 
@@ -131,6 +144,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
+    if (e.fechado) return;
     const v = validarNovoExercicio(e.condoId, Number(e.ano) || null, exercicios, e.id);
     if (!v.ok) {
       setErroAno(v.erro);
@@ -155,12 +169,13 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         descricao={e.condoNome || condo?.nome}
         acoes={
           <>
+            {e.fechado && <Badge variant="success">Exercício fechado</Badge>}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <Button variant="outline" type="button" onClick={() => void atualizarMensais().then(() => toast.success("Dados mensais atualizados."))} disabled={atualizandoMensais} title="Ler novamente os relatórios mensais e recalcular esta prestação">
+            <Button variant="outline" type="button" onClick={() => void atualizarMensais().then(() => toast.success("Dados mensais atualizados."))} disabled={atualizandoMensais || e.fechado} title="Ler novamente os relatórios mensais e recalcular esta prestação">
               {atualizandoMensais ? <Loader2 className="animate-spin" /> : <RefreshCw />}
               Atualizar dados
             </Button>
-            <ImportarPdf
+            {!e.fechado && <ImportarPdf
               modo="editor"
               destino="exercicios"
               condominio={condo}
@@ -178,7 +193,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                 trava.marcarImportado(r.demonstrativo);
                 setDecisaoPendente(r.decisaoConflito ?? null);
               }}
-            />
+            />}
             <Button variant="outline" asChild>
               <Link to="/previsao-orcamentaria" search={{ exercicio: e.id }}>
                 <Calculator /> Previsão orçamentária
@@ -194,10 +209,16 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                 <FileText /> Relatório final
               </Link>
             </Button>
-            <Button permissao="prestacao_contas.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button permissao="prestacao_contas.editar" variant="outline" type="button"
+              disabled={salvar.isPending || fechamento.isPending || sujo || (!e.fechado && JSON.stringify(demonstrativo) !== JSON.stringify(demonstrativoSalvo))}
+              title="Salve os dados e a previsão antes de fechar o exercício."
+              onClick={() => setConfirmarFechamento(true)}>
+              {e.fechado ? "Reabrir exercício" : "Fechar exercício"}
+            </Button>
+            <Button permissao="prestacao_contas.editar" variant="outline" type="button" disabled={e.fechado} onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
               <Trash2 /> Excluir
             </Button>
-            <Button permissao="prestacao_contas.editar" type="submit" form="form-exercicio" disabled={salvar.isPending}>
+            <Button permissao="prestacao_contas.editar" type="submit" form="form-exercicio" disabled={salvar.isPending || e.fechado}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
@@ -205,7 +226,14 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         }
       />
 
+      {e.fechado && <Alert className="mb-4"><AlertDescription>Exercício fechado: números e fontes do relatório estão preservados. Para corrigir, use Reabrir exercício e informe o motivo.</AlertDescription></Alert>}
+      <ConfirmDialog aberto={confirmarFechamento} aoMudar={setConfirmarFechamento}
+        titulo={e.fechado ? "Reabrir exercício?" : "Fechar exercício?"}
+        descricao={<div className="space-y-3"><p>{e.fechado ? "A reabertura libera a edição e fica registrada." : "Os dados salvos, o percentual e as fontes usadas no relatório serão preservados. Salve também a previsão antes de confirmar."}</p>
+          {e.fechado && <Field rotulo="Motivo da reabertura"><Input value={motivoReabertura} onChange={(ev) => setMotivoReabertura(ev.target.value)} /></Field>}</div>}
+        rotuloConfirmar={e.fechado ? "Reabrir e salvar" : "Fechar e salvar"} aoConfirmar={() => fechamento.mutateAsync()} />
       <form id="form-exercicio" onSubmit={enviar} className="space-y-6" noValidate>
+        <fieldset disabled={e.fechado} className="min-w-0 space-y-6">
         <SectionCard titulo="Dados do exercício">
           <div className="grid gap-4 sm:grid-cols-6">
             <Field rotulo="Ano" erro={erroAno} className="sm:col-span-1">
@@ -225,10 +253,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               <DataInput value={e.dataEmissao} onChange={(v) => mudar({ dataEmissao: v })} />
             </Field>
             <Field rotulo="Rateio atual (por unidade)" className="sm:col-span-3">
-              <DinheiroInput value={e.rateioAtual} onChange={(v) => mudar({ rateioAtual: v })} />
+              <DinheiroInput value={e.rateioAtual} onChange={(v) => mudar({ rateioAtual: v })} disabled={e.fechado} />
             </Field>
             <Field rotulo="Rateio aprovado" dica="Valor aprovado em assembleia." className="sm:col-span-3">
-              <DinheiroInput value={e.rateioAprovado} onChange={(v) => mudar({ rateioAprovado: v })} />
+              <DinheiroInput value={e.rateioAprovado} onChange={(v) => mudar({ rateioAprovado: v })} disabled={e.fechado} />
             </Field>
           </div>
         </SectionCard>
@@ -237,6 +265,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           valor={demonstrativo}
           onChange={(d) => mudar({ demonstrativo: d })}
           descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão calculada pelo demonstrativo."
+          bloqueado={e.fechado === true}
           avisoPeriodo={
             mesesPeriodo !== null && mesesPeriodo > 12 ? (
               <Alert variant="warning" className="mt-3">
@@ -249,13 +278,15 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
             ) : null
           }
         />
+        </fieldset>
       </form>
 
       {/* Fora do formulário: baixar/excluir anexo não envia nem suja a prestação. */}
       <div className="mt-6">
-        <AnexosPrestacao exercicioId={e.id} />
+        <AnexosPrestacao exercicioId={e.id} bloqueado={e.fechado === true} />
       </div>
 
+      {e.historicoFechamento?.length ? <SectionCard titulo="Histórico de fechamento" className="mt-6"><ul className="space-y-2 text-sm">{e.historicoFechamento.map((h, i) => <li key={i}>{h.acao === "fechar" ? "Fechado" : "Reaberto"} · {h.em} · {h.por}{h.motivo ? ` · ${h.motivo}` : ""}</li>)}</ul></SectionCard> : null}
       <HistoricoConflitosImportacao registroId={e.id} />
 
       <DialogoDivergencia

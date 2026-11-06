@@ -137,9 +137,9 @@ function EditorPrevisao({
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const sujo = JSON.stringify(e) !== salvoJson;
-  const unidades = condominio?.unidades ?? null;
+  const unidades = e.fechado && e.fechamento ? e.fechamento.condominio.unidades : condominio?.unidades ?? null;
   const demonstrativo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
-  const mudar = (parcial: Partial<Exercicio>) => setE((x) => ({ ...x, ...parcial }));
+  const mudar = (parcial: Partial<Exercicio>) => setE((x) => x.fechado ? x : ({ ...x, ...parcial }));
 
   // A base é o realizado do exercício ANTERIOR (fechado) — nunca o demonstrativo do próprio
   // exercício em edição, que vai sendo preenchido ao longo do ano e não pode servir de base móvel
@@ -175,6 +175,7 @@ function EditorPrevisao({
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
+    if (e.fechado) return;
     salvar.mutate(prepararExercicio(e));
   }
 
@@ -212,7 +213,7 @@ function EditorPrevisao({
                 <FileSpreadsheet /> Prestação de contas
               </Link>
             </Button>
-            <Button permissao="previsao_orcamentaria.editar" type="submit" form="form-previsao" disabled={salvar.isPending}>
+            <Button permissao="previsao_orcamentaria.editar" type="submit" form="form-previsao" disabled={salvar.isPending || e.fechado}>
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
@@ -222,7 +223,9 @@ function EditorPrevisao({
 
       <SectionCard className="mb-6">{seletor}</SectionCard>
 
+      {e.fechado && <p className="mb-4 text-sm">Exercício fechado. Reabra na prestação de contas para alterar a previsão.</p>}
       <form id="form-previsao" onSubmit={enviar} noValidate>
+        <fieldset disabled={e.fechado} className="min-w-0">
         <PainelPrevisao
               exercicio={e}
               resultado={resultado}
@@ -230,6 +233,7 @@ function EditorPrevisao({
               condoId={e.condoId}
               onChange={mudar}
         />
+        </fieldset>
       </form>
     </>
   );

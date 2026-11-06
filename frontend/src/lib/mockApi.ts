@@ -5,6 +5,8 @@
  */
 import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type ConsultaHistoricoItem, type DocumentoDrive, type DocumentoDriveConteudo, type DocumentoDriveRegistro, type Importacao, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
 import { condominioPadrao, normalizarCondominio } from "@/domain/condominio";
+import { inicializarIndicesImportados, validarIndicesCondominio } from "@/domain/indicesCondominio";
+import type { Exercicio, ConfigEscritorio } from "@/domain/types";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
 import { validarLogin, validarNovaSenha } from "@/domain/usuario";
@@ -520,6 +522,30 @@ const codigoCondoNormal = (s: unknown) => {
 };
 
 export const mockApi: ApiAdapter = {
+  async fechamentoExercicio(id, fechar, motivo, versao) {
+    await espera();
+    const eu = sessao();
+    if (eu.perfil !== "admin" && !eu.permissoes?.includes("*") && !eu.permissoes?.includes("prestacao_contas.editar")) throw new ApiError("Sem permissão para editar prestação de contas.", 403);
+    const d = dados(); const i = d.exercicios.findIndex((e) => e.id === id);
+    if (i < 0) throw new ApiError("Prestação de contas não encontrada.", 404);
+    const e = clone(d.exercicios[i]) as unknown as Exercicio;
+    if ((e.atualizadoEm ?? null) !== versao) throw new ApiError("A prestação foi alterada. Atualize a página.", 409);
+    if (!!e.fechado === fechar) throw new ApiError("O exercício já está nesse estado.", 409);
+    if (!fechar && !motivo.trim()) throw new ApiError("Informe o motivo da reabertura.", 400);
+    if (fechar) {
+      const c = d.condominios.find((c) => c.id === e.condoId) as unknown as Condominio | undefined;
+      if (!c || !e.demonstrativo) throw new ApiError("Informe condomínio e demonstrativo antes de fechar.", 400);
+      const anterior = d.exercicios.find((x) => x["condoId"] === e.condoId && Number(x["ano"]) === Number(e.ano) - 1) as unknown as Exercicio | undefined;
+      e.fechamento = { versao: 1, fechadoEm: new Date().toISOString(), fechadoPor: eu.id, condominio: clone(c),
+        mensais: clone(d.mensais.filter((m) => m["condoId"] === e.condoId)) as unknown as Mensal[],
+        exercicioAnterior: anterior ? { demonstrativo: clone(anterior.demonstrativo) } : null,
+        escritorio: clone(d.config.find((x) => x.id === "escritorio") ?? null) as unknown as ConfigEscritorio | null };
+    } else delete e.fechamento;
+    e.fechado = fechar;
+    e.historicoFechamento = [...(e.historicoFechamento ?? []), { acao: fechar ? "fechar" : "reabrir", em: new Date().toISOString(), por: eu.id, motivo: motivo.trim() }];
+    e.atualizadoEm = new Date().toISOString();
+    d.exercicios[i] = e as unknown as Registro; gravar(CHAVE_DADOS, d); return clone(e);
+  },
   anexos: {
     async listar(exercicioId: string) {
       await espera();
@@ -561,7 +587,23 @@ export const mockApi: ApiAdapter = {
       }
       if (i >= 0) id = d.condominios[i]!.id;
     }
-    const obj = { ...clone(o), id } as unknown as Registro;
+    const obj = { ...clone(o), id, ...(["exercicios", "condominios"].includes(s) ? { atualizadoEm: new Date().toISOString() } : {}) } as unknown as Registro;
+    if (s === "anexos_importacao") {
+      const anterior = d.anexos_importacao.find((a) => a.id === id);
+      if (d.exercicios.some((e) => e["fechado"] && (e.id === obj["exercicioId"] || e.id === anterior?.["exercicioId"]))) throw new ApiError("Reabra o exercício antes de alterar anexos.", 409);
+    }
+    if (s === "exercicios") {
+      if (d.exercicios[i]?.["fechado"] || obj["fechado"] || obj["fechamento"]) throw new ApiError("Exercício fechado. Use a ação explícita de fechamento/reabertura.", 409);
+      delete obj["historicoFechamento"];
+      if (d.exercicios[i]?.["historicoFechamento"]) obj["historicoFechamento"] = d.exercicios[i]!["historicoFechamento"];
+      const ci = d.condominios.findIndex((c) => c.id === obj["condoId"]);
+      if (ci >= 0) d.condominios[ci] = inicializarIndicesImportados(d.condominios[ci] as unknown as Condominio, obj as unknown as Exercicio) as unknown as Registro;
+    }
+    if (s === "condominios") {
+      obj["indices"] = validarIndicesCondominio((obj as unknown as Condominio).indices ?? []);
+      if (obj["indicesInicializados"] || d.condominios[i]?.["indicesInicializados"] || JSON.stringify(d.condominios[i]?.["indices"] ?? []) !== JSON.stringify(obj["indices"]) || (obj["indices"] as unknown[]).length) obj["indicesInicializados"] = true;
+      else delete obj["indicesInicializados"];
+    }
     if (i >= 0) d[s][i] = obj;
     else d[s].push(obj);
     gravar(CHAVE_DADOS, d);
@@ -572,6 +614,9 @@ export const mockApi: ApiAdapter = {
     sessao();
     const d = dados();
     const s = validarStore(store);
+    if (s === "anexos_importacao" && d.exercicios.some((e) => e["fechado"] && e.id === d.anexos_importacao.find((a) => a.id === id)?.["exercicioId"])) throw new ApiError("Reabra o exercício antes de excluir anexos.", 409);
+    if (s === "exercicios" && d.exercicios.find((e) => e.id === id)?.["fechado"]) throw new ApiError("Reabra o exercício antes de excluir.", 409);
+    if (s === "condominios" && d.exercicios.some((e) => e["condoId"] === id && e["fechado"])) throw new ApiError("Reabra os exercícios antes de excluir o condomínio.", 409);
     d[s] = d[s].filter((x) => x.id !== id);
     gravar(CHAVE_DADOS, d);
   },
@@ -624,6 +669,11 @@ export const mockApi: ApiAdapter = {
     }
     // Tudo validado: uma única gravação (não sobra condomínio sem relatório nem importação pendente).
     if (!existe) d.condominios.push(clone(pedido.condominio) as unknown as Registro);
+    if (destino === "exercicios") {
+      if (registro["fechado"] || registro["fechamento"]) throw new ApiError("Use o fechamento explícito após importar.", 409);
+      const ci = d.condominios.findIndex((c) => c.id === condoId);
+      d.condominios[ci] = inicializarIndicesImportados(d.condominios[ci] as unknown as Condominio, registro as unknown as Exercicio) as unknown as Registro;
+    }
     d[destino].push(clone(registro));
     d.importacoes[i] = {
       ...imp,
@@ -640,6 +690,7 @@ export const mockApi: ApiAdapter = {
     exigirAdmin();
     if (!backup || typeof backup !== "object") throw new ApiError("Arquivo de backup inválido.", 400);
     const d = dados();
+    if (d.exercicios.some((e) => e["fechado"])) throw new ApiError("Reabra os exercícios antes de restaurar dados.", 409);
     let total = 0;
     for (const s of STORES) {
       const itens = backup[s];
@@ -727,6 +778,7 @@ export const mockApi: ApiAdapter = {
       };
     },
     async limpar(alvo: AlvoLimpeza) {
+      if (dados().exercicios.some((e) => e["fechado"])) throw new ApiError("Reabra os exercícios antes de limpar dados.", 409);
       await espera();
       exigirAdmin();
       const d = dados();

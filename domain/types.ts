@@ -35,6 +35,7 @@ export const STORES: Store[] = [
 
 export interface ComId {
   id: string;
+  atualizadoEm?: string | null;
 }
 
 // ---------- Condomínio ----------
@@ -64,6 +65,17 @@ export interface IndiceCorrecao {
   pct: number | null;
   /** Campo novo (opcional, padrão true): aparece nas Considerações finais do relatório. */
   noRelatorio?: boolean;
+}
+
+/** Histórico de índices aplicados por condomínio. */
+export interface IndiceAplicado {
+  id: string;
+  condoId: string;
+  ano: number;
+  indice: number; // percentual aplicado
+  mesReferencia?: number; // opcional, se for índice mensal
+  tipo?: string; // origem opcional, exclusiva do condomínio
+  dataAplicacao: string; // ISO
 }
 
 export interface DePara {
@@ -129,6 +141,7 @@ export interface Condominio extends ComId {
   vistoriaLei: string;
   vistoriaIntervalo: number;
   indices: IndiceCorrecao[];
+  indicesInicializados?: boolean;
   mapeamento: DePara[];
   deducaoRegex: string;
   aguaRubrica: string;
@@ -340,6 +353,18 @@ export interface Exercicio extends ComId {
   variacao: number | null;
   variacaoMetodo: VariacaoMetodo;
   variacaoParam: number | null;
+  /** Trava de edição: quando true, os valores realizados não podem ser alterados. */
+  fechado?: boolean;
+  fechamento?: {
+    versao: 1;
+    fechadoEm: string;
+    fechadoPor: string;
+    condominio: Condominio;
+    mensais: Mensal[];
+    exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null;
+    escritorio: ConfigEscritorio | null;
+  };
+  historicoFechamento?: { acao: "fechar" | "reabrir"; em: string; por: string; motivo: string }[];
   deducaoRegex: string;
   arredondamento: Arredondamento;
   confer: unknown;

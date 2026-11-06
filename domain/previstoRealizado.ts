@@ -162,6 +162,10 @@ export function compararPrevistoRealizado(
   mensais: Mensal[],
   opcoes: OpcoesComparativo = {},
 ): ResultadoComparativo {
+  if (exercicio.fechado && exercicio.fechamento) {
+    mensais = exercicio.fechamento.mensais;
+    opcoes = { ...opcoes, condominio: exercicio.fechamento.condominio, demonstrativoBase: exercicio.fechamento.exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo };
+  }
   const avisos: string[] = [];
   const tolerancia = Math.abs(opcoes.tolerancia ?? TOLERANCIA_PADRAO);
   const mapa = new Map((opcoes.condominio?.mapeamento ?? []).filter((d: DePara) => d.de?.trim()).map((d) => [chaveRotulo(d.de), d.para] as const));
