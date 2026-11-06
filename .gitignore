@@ -1,0 +1,6 @@
+config.php
+config.local.php
+.claude/
+node_modules/
+dist/
+resultado-build.log
