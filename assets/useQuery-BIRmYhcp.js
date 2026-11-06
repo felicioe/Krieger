@@ -1,0 +1,1 @@
+import{d as e,p as t}from"./queries-M2mFYIdr.js";function n(n,r){return e(n,t,r)}export{n as t};
