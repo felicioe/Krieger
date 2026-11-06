@@ -11,6 +11,18 @@ CREATE TABLE IF NOT EXISTS kr_exercicios (
   atualizado_em DATETIME NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Histórico de índices de correção aplicados por condomínio.
+CREATE TABLE IF NOT EXISTS kr_indices_condominio (
+  id VARCHAR(64) PRIMARY KEY,
+  condo_id VARCHAR(64) NOT NULL,
+  ano INT NOT NULL,
+  indice DECIMAL(10, 4) NOT NULL,
+  tipo VARCHAR(50), -- ex: 'IGP-M', 'INPC', 'Manual'
+  mes_referencia INT, -- opcional
+  data_aplicacao DATETIME NOT NULL,
+  INDEX idx_condo_ano (condo_id, ano)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS kr_mensais (
   id VARCHAR(64) PRIMARY KEY,
   dados LONGTEXT NOT NULL,

@@ -194,6 +194,16 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                 <FileText /> Relatório final
               </Link>
             </Button>
+            <Button
+              variant={e.fechado ? "destructive" : "outline"}
+              type="button"
+              onClick={() => {
+                mudar({ fechado: !e.fechado });
+                toast.success(e.fechado ? "Exercício reaberto para edição." : "Exercício fechado. Valores realizados bloqueados.");
+              }}
+            >
+              {e.fechado ? "Reabrir Exercício" : "Fechar Exercício"}
+            </Button>
             <Button permissao="prestacao_contas.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
               <Trash2 /> Excluir
             </Button>
@@ -225,10 +235,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               <DataInput value={e.dataEmissao} onChange={(v) => mudar({ dataEmissao: v })} />
             </Field>
             <Field rotulo="Rateio atual (por unidade)" className="sm:col-span-3">
-              <DinheiroInput value={e.rateioAtual} onChange={(v) => mudar({ rateioAtual: v })} />
+              <DinheiroInput value={e.rateioAtual} onChange={(v) => mudar({ rateioAtual: v })} disabled={e.fechado} />
             </Field>
             <Field rotulo="Rateio aprovado" dica="Valor aprovado em assembleia." className="sm:col-span-3">
-              <DinheiroInput value={e.rateioAprovado} onChange={(v) => mudar({ rateioAprovado: v })} />
+              <DinheiroInput value={e.rateioAprovado} onChange={(v) => mudar({ rateioAprovado: v })} disabled={e.fechado} />
             </Field>
           </div>
         </SectionCard>
@@ -237,6 +247,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           valor={demonstrativo}
           onChange={(d) => mudar({ demonstrativo: d })}
           descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão calculada pelo demonstrativo."
+          bloqueado={e.fechado}
           avisoPeriodo={
             mesesPeriodo !== null && mesesPeriodo > 12 ? (
               <Alert variant="warning" className="mt-3">
