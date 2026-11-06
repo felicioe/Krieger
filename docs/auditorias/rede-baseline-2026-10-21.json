@@ -1,0 +1,93 @@
+{
+  "url": "https://krieger.therafinancial.com.br/",
+  "method": "urllib GET Accept-Encoding:gzip, compressed response body bytes; excludes HTTP headers, TLS, fonts, CSS and additional route imports",
+  "declaredModulePreloads": [
+    {
+      "path": "/assets/index-BW-D6XlB.js",
+      "wireBodyBytes": 117519,
+      "contentEncoding": "gzip",
+      "decodedBytes": 383202
+    },
+    {
+      "path": "/assets/rolldown-runtime-Dd_uD5pT.js",
+      "wireBodyBytes": 627,
+      "contentEncoding": "gzip",
+      "decodedBytes": 1106
+    },
+    {
+      "path": "/assets/utils-BMHac4La.js",
+      "wireBodyBytes": 11855,
+      "contentEncoding": "gzip",
+      "decodedBytes": 36491
+    },
+    {
+      "path": "/assets/react-dom-BZUEaxRm.js",
+      "wireBodyBytes": 1416,
+      "contentEncoding": "gzip",
+      "decodedBytes": 3901
+    },
+    {
+      "path": "/assets/not-found-i5RsCZif.js",
+      "wireBodyBytes": 118,
+      "contentEncoding": "identity",
+      "decodedBytes": 118
+    },
+    {
+      "path": "/assets/head-S5JJBmI3.js",
+      "wireBodyBytes": 1621,
+      "contentEncoding": "gzip",
+      "decodedBytes": 4369
+    },
+    {
+      "path": "/assets/link-CM39ghpB.js",
+      "wireBodyBytes": 4989,
+      "contentEncoding": "gzip",
+      "decodedBytes": 11302
+    },
+    {
+      "path": "/assets/useMatch-BKJSeVZL.js",
+      "wireBodyBytes": 425,
+      "contentEncoding": "gzip",
+      "decodedBytes": 677
+    },
+    {
+      "path": "/assets/useRouter-CsKzC0zt.js",
+      "wireBodyBytes": 189,
+      "contentEncoding": "identity",
+      "decodedBytes": 189
+    },
+    {
+      "path": "/assets/queries-BA3fnrRn.js",
+      "wireBodyBytes": 5169,
+      "contentEncoding": "gzip",
+      "decodedBytes": 15077
+    },
+    {
+      "path": "/assets/dist-TpCYL6Os.js",
+      "wireBodyBytes": 1430,
+      "contentEncoding": "gzip",
+      "decodedBytes": 3176
+    },
+    {
+      "path": "/assets/createLucideIcon-CivpwGZo.js",
+      "wireBodyBytes": 711,
+      "contentEncoding": "gzip",
+      "decodedBytes": 1233
+    },
+    {
+      "path": "/assets/api-CGx9UbKA.js",
+      "wireBodyBytes": 12293,
+      "contentEncoding": "gzip",
+      "decodedBytes": 35905
+    },
+    {
+      "path": "/assets/preload-helper-Czpn1I53.js",
+      "wireBodyBytes": 675,
+      "contentEncoding": "gzip",
+      "decodedBytes": 1196
+    }
+  ],
+  "initialDeclaredWireBodyBytes": 159037,
+  "lcpMeasured": false,
+  "inpMeasured": false
+}

@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-21",
+  "site": "https://krieger.therafinancial.com.br",
+  "sourceMain": "960d6fcbb26f838290a2d6af0c12dc68457b32f2",
+  "deployment": {
+    "branch": "deploy-hostinger",
+    "commit": "4d3bfd1b74f9b4f4f6ef61a1685b439fbd30d2c7",
+    "declaredMain": "5709184bad465e98a2b9048c1d3a6415ee0bd7ea",
+    "entry": "assets/index-D_dJBo1m.js",
+    "css": "assets/styles-9y22bij-.css",
+    "originAssurance": "Commit message declaration plus matching resource names, not a cryptographic build attestation"
+  },
+  "viewportsActual": [[1745, 828], [355, 767], [291, 655], [698, 931]],
+  "checks": {
+    "condominioRows": {"count": 2, "eachTabIndex": -1, "eachInteractiveControls": 0, "tabFromSearch": "BODY"},
+    "emptyForm": {"labelsPresent": true, "hintDescribedBy": null, "nameRequired": null, "inputHeightPx": 35.99},
+    "mobileMenu": {"widthPx": 288, "openerPx": [35.99, 35.99], "initialFocus": "Close", "escapeCloses": true, "focusAfterEscape": "BODY"},
+    "compactLogo": {"naturalPx": [1600, 901], "renderedPx": [49.72, 28], "variantHashesIdentical": true},
+    "globalOverflowInSample": false,
+    "packagingWithoutFrontendBuildExitCode": 1
+  },
+  "resourcesFromDeploymentGitBlobs": {
+    "entryRawBytes": 382151,
+    "entryLocalGzipBytes": 117426,
+    "declaredModulePreloadCount": 14,
+    "declaredModulePreloadRawBytes": 495205,
+    "declaredModulePreloadLocalGzipBytes": 158427,
+    "networkTransferMeasured": false
+  },
+  "detector": {
+    "skill": "impeccable 4.7.0",
+    "target": "frontend/src",
+    "findings": [{"rule": "side-tab", "file": "frontend/src/components/app/AppSidebar.tsx", "line": 41, "review": "false-positive: functional active-menu indicator"}]
+  },
+  "notTested": ["screen reader", "physical or synthesized touch", "200% text zoom", "pixel contrast", "LCP", "INP", "controlled network", "save/import/export/delete", "all populated editors"],
+  "privacy": "No record identifiers, names, financial values, credentials, PDFs or screenshots with real data retained in this evidence file"
+}

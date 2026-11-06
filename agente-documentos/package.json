@@ -1,0 +1,22 @@
+{
+  "name": "krieger-agente-documentos",
+  "private": true,
+  "type": "module",
+  "description": "Agente local de indexação da Consulta Inteligente de Documentos (convenção/regimento/atas). Roda numa máquina com acesso ao NAS da empresa, nunca no Hostinger.",
+  "scripts": {
+    "indexar": "tsx src/indexar.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^1.0.13",
+    "pdfjs-dist": "^6.4.299",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.0",
+    "vitest": "^5.0.5"
+  }
+}

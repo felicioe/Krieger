@@ -1,0 +1,141 @@
+{
+  "method": "Computed CSS colors observed on production, OKLCH converted to sRGB, alpha compositing and WCAG relative luminance; not screenshot pixel sampling or certification",
+  "samples": [
+    {
+      "sample": "Texto principal/cartao",
+      "foregroundOklch": [
+        0.281,
+        0.029,
+        253
+      ],
+      "backgroundOklch": [
+        1,
+        0,
+        0
+      ],
+      "alpha": 1,
+      "ratio": 14.527078602714052,
+      "referenceMinimum": 4.5,
+      "meetsReference": true
+    },
+    {
+      "sample": "Rotulo e dica/cartao",
+      "foregroundOklch": [
+        0.52,
+        0.025,
+        255
+      ],
+      "backgroundOklch": [
+        1,
+        0,
+        0
+      ],
+      "alpha": 1,
+      "ratio": 5.499839341436918,
+      "referenceMinimum": 4.5,
+      "meetsReference": true
+    },
+    {
+      "sample": "Salvar",
+      "foregroundOklch": [
+        0.985,
+        0.003,
+        250
+      ],
+      "backgroundOklch": [
+        0.338,
+        0.08,
+        246.9
+      ],
+      "alpha": 1,
+      "ratio": 11.310681041989946,
+      "referenceMinimum": 4.5,
+      "meetsReference": true
+    },
+    {
+      "sample": "Titulo/pagina",
+      "foregroundOklch": [
+        0.338,
+        0.08,
+        246.9
+      ],
+      "backgroundOklch": [
+        0.972,
+        0.005,
+        258.3
+      ],
+      "alpha": 1,
+      "ratio": 10.889779605401202,
+      "referenceMinimum": 3,
+      "meetsReference": true
+    },
+    {
+      "sample": "Menu normal",
+      "foregroundOklch": [
+        0.94,
+        0.012,
+        250
+      ],
+      "backgroundOklch": [
+        0.338,
+        0.08,
+        246.9
+      ],
+      "alpha": 0.85,
+      "ratio": 7.6156963758499865,
+      "referenceMinimum": 4.5,
+      "meetsReference": true
+    },
+    {
+      "sample": "Menu ativo",
+      "foregroundOklch": [
+        0.94,
+        0.012,
+        250
+      ],
+      "backgroundOklch": [
+        0.391,
+        0.085,
+        244
+      ],
+      "alpha": 0.85,
+      "ratio": 6.25213840744691,
+      "referenceMinimum": 4.5,
+      "meetsReference": true
+    },
+    {
+      "sample": "Borda input/cartao",
+      "foregroundOklch": [
+        0.88,
+        0.015,
+        251.6
+      ],
+      "backgroundOklch": [
+        1,
+        0,
+        0
+      ],
+      "alpha": 1,
+      "ratio": 1.4336742888132925,
+      "referenceMinimum": 3,
+      "meetsReference": false
+    },
+    {
+      "sample": "Anel foco/cartao",
+      "foregroundOklch": [
+        0.5,
+        0.08,
+        246.9
+      ],
+      "backgroundOklch": [
+        1,
+        0,
+        0
+      ],
+      "alpha": 1,
+      "ratio": 5.95742284561466,
+      "referenceMinimum": 3,
+      "meetsReference": true
+    }
+  ]
+}

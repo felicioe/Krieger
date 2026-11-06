@@ -1,0 +1,447 @@
+import { useMemo, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FileUp, Loader2, TriangleAlert } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Field } from "@/components/app/Field";
+import { InteiroInput } from "@/components/app/inputs";
+import { ResumoImportacao } from "./ResumoImportacao";
+import { SugestaoParecidos } from "./SugestaoParecidos";
+import { ConflitoImportacaoDialog, useConflitoImportacao, type DecisaoConflitoPendente } from "./ConflitoImportacao";
+import { marcarCriadoPorPdf } from "./criadoPorPdf";
+import { focarConteudoApos } from "@/components/app/foco";
+import { api, mensagemErro } from "@/lib/api";
+import { chaves, itemQuery, listaQuery } from "@/lib/queries";
+import {
+  lerConsideracoesFinais,
+  lerPrevisaoSugerida,
+  lerRelatorio,
+  type ConsideracoesFinaisLidas,
+  type PrevisaoSugeridaLida,
+  type RelatorioLido,
+} from "@/domain/pdfParser";
+import { normalizarCondominio } from "@/domain/condominio";
+import {
+  anoDoRelatorio,
+  aplicarConsideracoesAoExercicio,
+  colunaPadrao,
+  demonstrativoDoRelatorio,
+  condominiosParecidos,
+  encontrarCondominio,
+  exercicioImportado,
+  mensalImportado,
+  novaImportacao,
+  receberDoRelatorio,
+} from "@/domain/importacao";
+import { normalizarMensal, validarMensal } from "@/domain/mensal";
+import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
+import { validarNovoExercicio } from "@/domain/exercicio";
+import type { Condominio, ConfigEscritorio, Demonstrativo, DestinoImportacao, Exercicio, Importacao, Mensal } from "@/domain/types";
+
+export type ImportacaoAplicada = {
+  demonstrativo: Demonstrativo;
+  receber: Mensal["receber"] | null;
+  arquivo: string;
+  /** Páginas extras do PDF (null quando não existem). */
+  consideracoes: ConsideracoesFinaisLidas | null;
+  previsaoSugerida: PrevisaoSugeridaLida | null;
+  /** Decisão de conflito já tomada (ver ConflitoImportacao.tsx), ainda não gravada — só deve ser
+   * persistida quando o registro for efetivamente salvo, para não logar uma mudança descartada. */
+  decisaoConflito?: DecisaoConflitoPendente | null;
+};
+
+type Props = (
+  | {
+      /** Preenche o editor aberto (nada é gravado até o usuário salvar). */
+      modo: "editor";
+      destino: DestinoImportacao;
+      condominio: Condominio | undefined;
+      nomeCondominio: string;
+      /** Demonstrativo atualmente no editor (antes desta importação) — comparado conta a conta com o do PDF. */
+      demonstrativoAtual: Demonstrativo | null;
+      /** Id do relatório mensal ou do exercício sendo editado — usado no log de conflito, se houver. */
+      registroId: string;
+      /** "mm/aaaa" (mensal) ou o ano, como texto (exercício) — usado no log de conflito, se houver. */
+      competencia: string;
+      aoAplicar: (r: ImportacaoAplicada) => void;
+    }
+  | {
+      /** Cria um relatório novo (ou envia para a conferência do cadastro, se o condomínio não existir). */
+      modo: "novo";
+      destino: DestinoImportacao;
+      condominios: Condominio[];
+    }
+) & {
+  /** Texto do botão (padrão "Importar PDF"); use um nome próprio quando houver vários na mesma tela. */
+  rotulo?: string;
+};
+
+type Lido = {
+  arquivo: string;
+  relatorio: RelatorioLido;
+  consideracoes: ConsideracoesFinaisLidas | null;
+  previsaoSugerida: PrevisaoSugeridaLida | null;
+};
+
+/** Botão "Importar PDF": lê o relatório do Systemar no navegador e mostra o resumo para revisão. */
+export function ImportarPdf(props: Props) {
+  const entrada = useRef<HTMLInputElement>(null);
+  const botao = useRef<HTMLButtonElement>(null);
+  // Quando a janela fecha porque a página vai mudar, o foco não volta ao botão (ele vai sumir).
+  const vaiNavegar = useRef(false);
+  const [aberto, setAberto] = useState(false);
+  const [lendo, setLendo] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [lido, setLido] = useState<Lido | null>(null);
+  const [coluna, setColuna] = useState<string | null>(null);
+
+  async function escolher(arquivo: File | undefined) {
+    if (!arquivo) return;
+    setAberto(true);
+    setLendo(true);
+    setErro(null);
+    setLido(null);
+    try {
+      const { extrairTextoPdf } = await import("@/lib/pdfTexto");
+      const texto = await extrairTextoPdf(arquivo);
+      if (!texto.trim()) throw new Error("O PDF não tem texto legível (pode ser uma imagem digitalizada).");
+      const relatorio = lerRelatorio(texto, arquivo.name);
+      const temSecoes = relatorio.saldoAnterior || relatorio.receitas || relatorio.despesas || relatorio.saldoAtual;
+      if (!temSecoes) throw new Error("Não encontrei saldo anterior, receitas, despesas nem saldo atual neste PDF. Confira se é um relatório do Systemar.");
+      setLido({
+        arquivo: arquivo.name,
+        relatorio,
+        consideracoes: lerConsideracoesFinais(texto),
+        previsaoSugerida: lerPrevisaoSugerida(texto),
+      });
+      setColuna(colunaPadrao(relatorio, props.destino));
+    } catch (e) {
+      setErro(e instanceof Error && /password|Invalid PDF/i.test(e.message) ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)." : mensagemErro(e));
+    } finally {
+      setLendo(false);
+      if (entrada.current) entrada.current.value = "";
+    }
+  }
+
+  return (
+    <>
+      <Button ref={botao} type="button" variant="outline" onClick={() => entrada.current?.click()}>
+        <FileUp /> {props.rotulo ?? "Importar PDF"}
+      </Button>
+      <input
+        ref={entrada}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="hidden"
+        aria-label="Arquivo PDF do relatório"
+        onChange={(e) => escolher(e.target.files?.[0])}
+      />
+      <Dialog open={aberto} onOpenChange={setAberto}>
+        <DialogContent
+          className="max-h-[90vh] overflow-y-auto sm:max-w-2xl"
+          // A janela abre depois da escolha do arquivo (o foco já tinha saído do botão): ao fechar —
+          // Cancelar, Escape, Fechar ou depois de um erro — o foco volta ao "Importar PDF".
+          onCloseAutoFocus={(ev) => {
+            ev.preventDefault();
+            if (vaiNavegar.current) {
+              vaiNavegar.current = false;
+              return;
+            }
+            botao.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>Importar PDF do Systemar</DialogTitle>
+            <DialogDescription>Confira o que foi lido antes de usar. Você ainda poderá corrigir tudo no editor.</DialogDescription>
+          </DialogHeader>
+          {lendo ? (
+            <p className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" /> Lendo o PDF…
+            </p>
+          ) : erro ? (
+            <>
+              <Alert variant="destructive" role="alert">
+                <AlertDescription>{erro}</AlertDescription>
+              </Alert>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setAberto(false)}>
+                  Fechar
+                </Button>
+              </DialogFooter>
+            </>
+          ) : lido ? (
+            props.modo === "editor" ? (
+              <PassoEditor {...props} lido={lido} coluna={coluna} setColuna={setColuna} fechar={() => setAberto(false)} />
+            ) : (
+              <PassoNovo
+                {...props}
+                lido={lido}
+                coluna={coluna}
+                setColuna={setColuna}
+                fechar={() => setAberto(false)}
+                antesDeNavegar={() => {
+                  vaiNavegar.current = true;
+                }}
+              />
+            )
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+type Passo = { lido: Lido; coluna: string | null; setColuna: (c: string) => void; fechar: () => void };
+
+function PassoEditor({
+  destino,
+  condominio,
+  nomeCondominio,
+  demonstrativoAtual,
+  registroId,
+  competencia,
+  aoAplicar,
+  lido,
+  coluna,
+  setColuna,
+  fechar,
+}: Extract<Props, { modo: "editor" }> & Passo) {
+  const demonstrativo = useMemo(
+    () => demonstrativoDoRelatorio(lido.relatorio, coluna, nomeCondominio),
+    [lido, coluna, nomeCondominio],
+  );
+  const rc = lido.relatorio.condominio;
+  const outro =
+    !!condominio &&
+    !!(rc.codigo || rc.cnpj) &&
+    !!(condominio.codigo || condominio.cnpj) &&
+    !encontrarCondominio([condominio], rc);
+  const [aplicando, setAplicando] = useState(false);
+  const conflito = useConflitoImportacao();
+
+  function preencher() {
+    setAplicando(true);
+    conflito
+      .resolver({
+        condoId: condominio?.id ?? "",
+        condoNome: nomeCondominio,
+        destino,
+        registroId,
+        competencia,
+        arquivo: lido.arquivo,
+        atual: demonstrativoAtual,
+        novo: demonstrativo,
+      })
+      .then(({ demonstrativo: demonstrativoFinal, decisao }) => {
+        aoAplicar({
+          demonstrativo: demonstrativoFinal,
+          receber: destino === "mensais" ? receberDoRelatorio(lido.relatorio, coluna) : null,
+          arquivo: lido.arquivo,
+          consideracoes: lido.consideracoes,
+          previsaoSugerida: lido.previsaoSugerida,
+          decisaoConflito: decisao,
+        });
+        fechar();
+        toast.success("Demonstrativo preenchido a partir do PDF. Revise e salve.");
+      })
+      .catch(() => {
+        /* usuário cancelou a resolução do conflito: nada é aplicado */
+      })
+      .finally(() => setAplicando(false));
+  }
+
+  return (
+    <>
+      <ResumoImportacao
+        arquivo={lido.arquivo}
+        relatorio={lido.relatorio}
+        demonstrativo={demonstrativo}
+        coluna={coluna}
+        aoMudarColuna={setColuna}
+        destino={destino}
+        consideracoes={lido.consideracoes}
+        previsaoSugerida={lido.previsaoSugerida}
+      />
+      {outro && (
+        <Alert variant="warning">
+          <TriangleAlert />
+          <AlertDescription>
+            Este PDF parece ser de outro condomínio (código/CNPJ diferentes de {condominio?.nome}).
+          </AlertDescription>
+        </Alert>
+      )}
+      <p className="text-xs text-muted-foreground">
+        O demonstrativo atual será substituído
+        {destino === "mensais"
+          ? " (e as contas a receber, se o PDF trouxer)"
+          : lido.consideracoes || lido.previsaoSugerida
+            ? " e as Considerações finais serão preenchidas com o que foi lido"
+            : ""}
+        . Nada é gravado até você clicar em Salvar.
+      </p>
+      <DialogFooter>
+        <Button variant="outline" onClick={fechar} disabled={aplicando}>
+          Cancelar
+        </Button>
+        <Button onClick={preencher} disabled={aplicando}>
+          {aplicando && <Loader2 className="animate-spin" />}
+          Preencher demonstrativo
+        </Button>
+      </DialogFooter>
+      <ConflitoImportacaoDialog {...conflito.dialogo} />
+    </>
+  );
+}
+
+function PassoNovo({
+  destino,
+  condominios,
+  lido,
+  coluna,
+  setColuna,
+  fechar,
+  antesDeNavegar,
+}: Extract<Props, { modo: "novo" }> & Passo & { antesDeNavegar: () => void }) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const { data: mensais = [] } = useQuery({ ...listaQuery<Mensal>("mensais"), enabled: destino === "mensais" });
+  const { data: exercicios = [] } = useQuery({ ...listaQuery<Exercicio>("exercicios"), enabled: destino === "exercicios" });
+  const { data: escritorio } = useQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
+  const [ano, setAno] = useState<number | null>(() => anoDoRelatorio(lido.relatorio, coluna));
+  const exato = encontrarCondominio(condominios, lido.relatorio.condominio);
+  // Sem correspondência exata, o usuário pode escolher um cadastro de nome parecido (o cadastro não muda).
+  const [escolhidoId, setEscolhidoId] = useState<string | null>(null);
+  const parecidos = useMemo(
+    () => (exato ? [] : condominiosParecidos(condominios, lido.relatorio.condominio)),
+    [exato, condominios, lido.relatorio.condominio],
+  );
+  const escolhido = !exato && escolhidoId ? (parecidos.find((x) => x.condominio.id === escolhidoId)?.condominio ?? null) : null;
+  const existente = exato ?? escolhido;
+  const condo = existente ? normalizarCondominio(existente) : null;
+  const refCadastro = useRef<HTMLDivElement>(null);
+  const refSugestao = useRef<HTMLDivElement>(null);
+  const escolher = (id: string | null) => {
+    setEscolhidoId(id);
+    // O botão clicado some; o foco vai para o bloco que o substitui.
+    requestAnimationFrame(() => (id ? refCadastro : refSugestao).current?.focus());
+  };
+  const demonstrativo = useMemo(() => demonstrativoDoRelatorio(lido.relatorio, coluna, condo?.nome ?? ""), [lido, coluna, condo?.nome]);
+  const rotulo = destino === "mensais" ? "relatório mensal" : "prestação de contas";
+
+  const criar = useMutation({
+    mutationFn: async () => {
+      if (!condo) throw new Error("Condomínio não encontrado.");
+      if (destino === "mensais") {
+        const { registro, competencia } = mensalImportado(condo, lido.relatorio, coluna, lido.arquivo);
+        const v = validarMensal(condo.id, competencia, mensais.map((m) => normalizarMensal(m)));
+        if (!v.ok) throw new Error(v.erro);
+        return api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", registro);
+      }
+      const v = validarNovoExercicio(condo.id, ano, exercicios);
+      if (!v.ok || !ano) throw new Error(v.ok ? "Informe o ano do exercício." : v.erro);
+      const base = exercicioImportado(condo, ano, escritorio?.cidade ?? "", lido.relatorio, coluna, lido.arquivo);
+      const registro = {
+        ...base,
+        consid: aplicarConsideracoesAoExercicio(base.consid, lido.consideracoes),
+        previsaoSugerida: lido.previsaoSugerida ? previsaoSugeridaDoPdf(lido.previsaoSugerida) : null,
+      };
+      return api.salvar<Omit<Exercicio, "id"> & { id?: string }>("exercicios", registro);
+    },
+    onSuccess: (salvo) => {
+      queryClient.invalidateQueries({ queryKey: chaves.store(destino) });
+      queryClient.setQueryData(chaves.item(destino, salvo.id), salvo);
+      toast.success(`${destino === "mensais" ? "Relatório mensal criado" : "Prestação de contas criada"} a partir do PDF. Revise e salve as correções.`);
+      marcarCriadoPorPdf(destino, salvo.id);
+      antesDeNavegar();
+      fechar();
+      focarConteudoApos(
+        destino === "mensais"
+          ? navigate({ to: "/relatorio-mensal/$id", params: { id: salvo.id } })
+          : navigate({ to: "/prestacao-contas/$id", params: { id: salvo.id } }),
+      );
+    },
+  });
+
+  const conferir = useMutation({
+    mutationFn: () => api.salvar<Omit<Importacao, "id"> & { id?: string }>("importacoes", novaImportacao(lido.relatorio, lido.arquivo, destino, lido.consideracoes, lido.previsaoSugerida)),
+    onSuccess: (salvo) => {
+      queryClient.invalidateQueries({ queryKey: chaves.store("importacoes") });
+      antesDeNavegar();
+      fechar();
+      focarConteudoApos(navigate({ to: "/importacoes/$id", params: { id: salvo.id } }));
+    },
+  });
+
+  const ocupado = criar.isPending || conferir.isPending;
+
+  return (
+    <>
+      <ResumoImportacao
+        arquivo={lido.arquivo}
+        relatorio={lido.relatorio}
+        demonstrativo={demonstrativo}
+        coluna={coluna}
+        aoMudarColuna={setColuna}
+        destino={destino}
+        consideracoes={lido.consideracoes}
+        previsaoSugerida={lido.previsaoSugerida}
+      />
+      {condo ? (
+        <div ref={refCadastro} tabIndex={-1} className="grid gap-3 rounded-md border p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <p>
+            Condomínio cadastrado: <span className="font-medium">{condo.codigo ? `${condo.codigo} · ` : ""}{condo.nome}</span>
+          </p>
+          {escolhido && (
+            <p className="text-xs text-muted-foreground">
+              Escolhido pela semelhança do nome; o cadastro do condomínio não é alterado.{" "}
+              <Button variant="link" className="h-auto p-0 text-xs" onClick={() => escolher(null)} disabled={ocupado}>
+                Não é este, é um condomínio novo
+              </Button>
+            </p>
+          )}
+          {destino === "exercicios" && (
+            <Field rotulo="Ano do exercício" obrigatorio className="max-w-[10rem]">
+              <InteiroInput value={ano} onChange={setAno} maxLength={4} />
+            </Field>
+          )}
+        </div>
+      ) : (
+        <div ref={refSugestao} tabIndex={-1} className="grid gap-3 outline-none">
+          <Alert variant="warning">
+            <TriangleAlert />
+            <AlertDescription>
+              {parecidos.length > 0
+                ? `Nenhum condomínio cadastrado com este código ou CNPJ. Se for um condomínio novo, confira o cadastro básico lido do PDF; ao confirmar, o condomínio é criado e o ${rotulo} é gravado.`
+                : `Nenhum condomínio cadastrado com este código ou CNPJ. Confira o cadastro básico lido do PDF; ao confirmar, o condomínio é criado e o ${rotulo} é gravado.`}
+            </AlertDescription>
+          </Alert>
+          <SugestaoParecidos
+            nomeLido={lido.relatorio.condominio.nome}
+            parecidos={parecidos}
+            aoEscolher={(c) => escolher(c.id)}
+            desabilitado={ocupado}
+          />
+        </div>
+      )}
+      <DialogFooter>
+        <Button variant="outline" onClick={fechar} disabled={ocupado}>
+          Cancelar
+        </Button>
+        {condo ? (
+          <Button onClick={() => criar.mutate()} disabled={ocupado}>
+            {criar.isPending && <Loader2 className="animate-spin" />}
+            Criar {rotulo}
+          </Button>
+        ) : (
+          <Button onClick={() => conferir.mutate()} disabled={ocupado}>
+            {conferir.isPending && <Loader2 className="animate-spin" />}
+            {parecidos.length > 0 ? "Conferir cadastro novo" : "Conferir cadastro"}
+          </Button>
+        )}
+      </DialogFooter>
+    </>
+  );
+}
