@@ -496,8 +496,10 @@ export function lerConsideracoesFinais(texto: string): ConsideracoesFinaisLidas 
   }
 
   const indices: ConsideracoesFinaisLidas['indices'] = [];
-  for (const m of bloco.matchAll(/[ÍI]ndice de corre[çc][ãa]o aplicado no condom[íi]nio em\s*(\d{4})[.\s]*%\s*(-?[\d.]+,\d{2})/gi)) {
-    indices.push({ ano: Number(m[1]!), pct: paraNumero(m[2]!) });
+  // Os relatórios usam tanto "% 3,00" quanto "3,00%". Não atravessa
+  // linhas: um ano sem valor não pode receber o percentual do ano seguinte.
+  for (const m of bloco.matchAll(/[ÍI]ndice de corre[çc][ãa]o aplicado no condom[íi]nio em[^\S\r\n]*(\d{4})[.\t ]*(?:%[^\S\r\n]*(-?[\d.]+,\d{2})(?![\d,])|(-?[\d.]+,\d{2})[^\S\r\n]*%)/gi)) {
+    indices.push({ ano: Number(m[1]!), pct: paraNumero((m[2] ?? m[3])!) });
   }
 
   return {
