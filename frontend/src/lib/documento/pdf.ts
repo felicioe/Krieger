@@ -1,14 +1,14 @@
 import type { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
-import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, type Alinhamento, type Bloco, type Coluna, type Documento, type LinhaTabela, type Texto } from "./tipos";
+import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA, type Alinhamento, type Bloco, type Coluna, type Documento, type LinhaTabela, type Texto } from "./tipos";
 import { carregarPng, paraPng } from "./imagens";
+import { FAMILIA, FONTES, vfsFonte } from "./fontes";
 
 /** Desenha o documento em PDF (pdfmake, carregado sob demanda). */
 export async function gerarPdf(doc: Documento): Promise<Blob> {
-  const [{ default: pdfMake }, { default: vfs }] = await Promise.all([
-    import("pdfmake/build/pdfmake"),
-    import("pdfmake/build/vfs_fonts"),
-  ]);
-  pdfMake.addVirtualFileSystem(vfs);
+  const { default: pdfMake } = await import("pdfmake/build/pdfmake");
+  // Fonte embutida no próprio chunk (base64): sem VFS do Roboto e sem requisição de rede.
+  pdfMake.addVirtualFileSystem(vfsFonte());
+  pdfMake.addFonts(FONTES);
   const definicao = await montarDefinicao(doc);
   return pdfMake.createPdf(definicao).getBlob();
 }
@@ -47,7 +47,7 @@ async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
     pageSize: "A4",
     pageMargins: [PAGINA.margem, topo, PAGINA.margem, 64],
     info: { title: doc.titulo, creator: "Sistema Krieger" },
-    defaultStyle: { font: "Roboto", fontSize: 10, lineHeight: 1.25, color: c(COR.texto) },
+    defaultStyle: { font: FAMILIA, fontSize: 10, lineHeight: 1.25, color: c(COR.texto) },
     ...(doc.marcaDagua ? { watermark: { text: doc.marcaDagua, color: c(COR.primaria), opacity: 0.07, bold: true } } : {}),
     header: (pagina: number) => {
       if (!timbre || (doc.semTimbreNaCapa && pagina === 1)) return null;
@@ -191,7 +191,7 @@ function tabela(
   linhas: LinhaTabela[],
   o: { semCabecalho?: boolean; fundo?: boolean; pequena?: boolean; alturaLinha?: number; grade?: boolean },
 ): Content {
-  const tam = o.pequena ? 7.5 : 9.5;
+  const tam = o.pequena ? TAMANHO_TABELA.pequena : TAMANHO_TABELA.normal;
   const n = colunas.length;
   const alin = (i: number) => ALINHA_COL[colunas[i]?.alinhamento ?? "esquerda"];
   const corpo: TableCell[][] = [];

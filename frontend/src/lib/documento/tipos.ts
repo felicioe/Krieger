@@ -110,9 +110,21 @@ export const PAGINA = { largura: 595.28, altura: 841.89, margem: 56, util: 595.2
  * Margem interna lateral de cada célula de tabela (pt, de cada lado), igual no PDF e no Word.
  * A largura de uma coluna fixa é só a do texto; a margem soma por fora.
  */
-export const MARGEM_CELULA = { pequena: 4, normal: 5 } as const;
+export const MARGEM_CELULA = { pequena: 3, normal: 5 } as const;
 /** Recuo da primeira célula nas linhas com `recuo` (pt). */
 export const RECUO_CELULA = 10;
+
+/**
+ * Corpo de texto das tabelas (pt): a normal e a "pequena" (comparativo com muitas colunas).
+ * Fonte única para PDF, Word e a conferência de larguras — os três precisam medir o mesmo.
+ */
+export const TAMANHO_TABELA = { normal: 9.5, pequena: 7.5 } as const;
+
+/**
+ * Folga mínima entre o texto e a borda de uma coluna de largura fixa (pt).
+ * O pdfmake não quebra um valor monetário que não caiba: ele vaza para a coluna vizinha.
+ */
+export const FOLGA_COLUNA = 3;
 
 export function textoPlano(t: Texto): string {
   return typeof t === "string" ? t : t.map((x) => x.texto).join("");

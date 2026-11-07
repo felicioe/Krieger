@@ -295,17 +295,20 @@ export function valores(t: Totais): Texto[] {
 }
 
 /**
- * Colunas do comparativo no PDF/Word. Larguras fixas (pt, só o texto) dimensionadas para valores até
- * R$ 9.999.999,99 em fonte 7,5; o resto da página fica para a Rubrica (conferido em src/test/documentosLargura.test.ts).
+ * Colunas do comparativo no PDF/Word. A largura fixa é só a do texto (a margem da célula soma por
+ * fora), calculada para o pior caso de cada coluna em Source Sans 3 a 7,5 pt: um total de
+ * R$ 9.999.999,99 com sinal e o marcador de situação, mais folga. O que sobra da página fica com a
+ * Rubrica, que é a coluna flexível — a conferência mede o texto real em
+ * `src/test/documentosLargura.test.ts`.
  */
 export function colunasComparativo(ate: string): Coluna[] {
   return [
     { titulo: "Rubrica", largura: "*" },
-    { titulo: "Previsto anual", largura: 56, alinhamento: "direita" },
-    { titulo: `Previsto até ${ate}`, largura: 56, alinhamento: "direita" },
-    { titulo: `Realizado até ${ate}`, largura: 56, alinhamento: "direita" },
-    { titulo: "Diferença", largura: 60, alinhamento: "direita" },
-    { titulo: "%", largura: 40, alinhamento: "direita" },
+    { titulo: "Previsto anual", largura: 54, alinhamento: "direita" },
+    { titulo: `Previsto até ${ate}`, largura: 54, alinhamento: "direita" },
+    { titulo: `Realizado até ${ate}`, largura: 54, alinhamento: "direita" },
+    { titulo: "Diferença", largura: 58, alinhamento: "direita" },
+    { titulo: "%", largura: 44, alinhamento: "direita" },
   ];
 }
 

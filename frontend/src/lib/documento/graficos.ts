@@ -10,7 +10,7 @@ import type { Bloco } from "./tipos";
  * nenhum rótulo se sobrepõe nem é cortado, qualquer que seja o número de grupos.
  */
 
-const FONTE = "Roboto, 'Helvetica Neue', Arial, sans-serif";
+const FONTE = "'Source Sans 3', Roboto, 'Helvetica Neue', Arial, sans-serif";
 export const PALETA = [
   "#0b3a5e",
   "#8fa3c0",
@@ -57,7 +57,7 @@ const esc = (s: string) =>
 const eixo = (v: number) =>
   Math.abs(v) >= 1000 ? `${formatNumeroBR(v / 1000, 0)} mil` : formatNumeroBR(v, 0);
 
-/** Largura estimada do texto (Roboto/Helvetica): maiúsculas e números mais largos que minúsculas. */
+/** Largura estimada do texto (Source Sans 3/Roboto na tela): maiúsculas e números mais largos que minúsculas. */
 export function larguraTexto(texto: string, fonte: number): number {
   let em = 0;
   for (const ch of texto) {
