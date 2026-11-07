@@ -1,5 +1,32 @@
 # Estado atual e passagem de contexto
 
+## Relatório final: tipografia do PDF e colunas do comparativo — em validação
+
+O PDF do relatório final saía em Roboto enquanto a interface usa Source Sans 3, e as colunas
+numéricas do comparativo Previsto × Realizado estavam no limite: `R$ 1.234.567,89` em negrito
+media 55,1 pt numa coluna de 56 pt. O pdfmake não quebra um valor monetário (é um token só), então
+acima desse tamanho o texto vazava para a coluna vizinha — reproduzido com um valor de 68 pt numa
+célula de 60 pt, terminando 12 pt além da borda.
+
+**Mudanças:**
+- `src/lib/documento/fontes.ts` embute a Source Sans 3 (Regular, SemiBold e itálico, subsets de
+  ~48 KB) como base64 no chunk tardio do pdfmake. O `vfs_fonts` do Roboto (~454 KB gzip) saiu do
+  pacote; o orçamento de bundle mede 180.658 de 256.000 bytes.
+- Origem, comando de subsetação e licença SIL OFL em `src/assets/fontes/README.md`.
+- `colunasComparativo` passou a 54/54/54/58/44 pt, com `MARGEM_CELULA.pequena` de 4 para 3 pt:
+  a Rubrica ganha 167,3 pt e as numéricas ficam com 3 pt de folga sobre o pior caso medido.
+- `src/test/documentosLargura.test.ts` deixou de comparar com constantes fixas (medidas em Roboto,
+  que ficaram inválidas) e passou a medir o texto real na fonte embutida com `fontkit`.
+
+**Evidência local:** `npm test` 227 de 228 (a falha restante, `importacao-ui` "cria condomínio…",
+também falha em `main` sem estas mudanças), `npm run typecheck`, `npm run build` e
+`npm run bundle:check` verdes. PDFs gerados pelo app: 6 páginas e 1 página, nenhum texto além da
+margem (maior x final 539,3 com limite 539,3), glifos −, ×, ·, ÷, ç, õ presentes. DOCX de 18.979
+bytes gerado sem erro.
+
+Publicação pendente: SHA e evidência ao vivo serão registrados após o merge.
+
+
 ## Integração do histórico de índices e fechamento protegido — em validação
 
 A implementação local anterior declarava tipos e tabela, mas não integrava a persistência.

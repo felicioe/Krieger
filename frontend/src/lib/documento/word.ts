@@ -1,5 +1,5 @@
 import type { Bloco, Coluna, Documento, LinhaTabela, Texto, Alinhamento } from "./tipos";
-import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA } from "./tipos";
+import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA } from "./tipos";
 import { bytesDe, carregarPng } from "./imagens";
 
 /** Desenha o documento em Word (.docx, biblioteca docx carregada sob demanda). */
@@ -111,7 +111,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
     // tabela pequena (comparativo): mesma margem lateral e mesma largura de texto por coluna que o PDF
     const lado = (o.pequena ? MARGEM_CELULA.pequena : MARGEM_CELULA.normal) * 20;
     const ws = larguras(colunas, o.pequena ? 2 * lado : 0);
-    const tam = o.pequena ? 7.5 : 9.5;
+    const tam = o.pequena ? TAMANHO_TABELA.pequena : TAMANHO_TABELA.normal;
     const total = ws.reduce((s, w) => s + w, 0);
     const rows: InstanceType<typeof TableRow>[] = [];
     if (!o.semCabecalho) {
