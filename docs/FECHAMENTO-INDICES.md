@@ -1,5 +1,18 @@
 # Fechamento de exercícios e histórico de reajustes
 
+## Leitura dos percentuais no PDF
+
+O leitor aceita tanto `% 3,00` quanto `3,00%`, incluindo zero e percentuais negativos.
+A associação entre ano e percentual fica restrita à mesma linha visual, evitando usar
+um valor do ano seguinte quando uma linha está incompleta. A correção foi validada
+localmente com extração pdf.js e reconstrução de layout dos quatro PDFs originais
+fornecidos pelo responsável. Não exige alteração de schema.
+
+Importações anteriores com índices não reconhecidos não são corrigidas retroativamente.
+Reimportar e salvar preenche a prestação; o cadastro recebe a carga inicial somente
+se seu histórico ainda não estiver inicializado. Exclusões e ajustes manuais continuam
+protegidos. A validação local não comprova publicação nem gravação em produção.
+
 ## Histórico por condomínio
 
 O histórico anual é exclusivo de cada condomínio. Não há catálogo compartilhado de IGP-M,
