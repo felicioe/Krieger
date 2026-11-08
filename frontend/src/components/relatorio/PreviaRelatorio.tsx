@@ -13,6 +13,7 @@ import { RolagemTabela } from "@/components/ui/table";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
+import { criteriosDaPrevisao } from "@/domain/previsaoCriterios";
 import type { Condominio, ConfigEscritorio, Exercicio, LinhaValor, PrevisaoSugeridaExercicio } from "@/domain/types";
 import { contagem } from "@/components/app/textos";
 
@@ -120,12 +121,23 @@ export function PreviaRelatorio({
         >
           <p className="mb-3 text-sm">Previsão calculada pelo Krieger. {rel.origemBasePrevisao}</p>
           {rel.avisoRateioAprovado && <p role="alert" className="mb-3 rounded border border-amber-400 bg-amber-50 p-3 text-sm text-amber-950">{rel.avisoRateioAprovado}</p>}
+          {/* Mesmos critérios que a tela de manutenção mostra como parâmetros. */}
+          <dl className="mb-4 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
+            {criteriosDaPrevisao(rel.previsao).map((c) => (
+              <div key={c.rotulo} className="contents">
+                <dt className="text-muted-foreground">{c.rotulo}</dt>
+                <dd>{c.valor}</dd>
+              </div>
+            ))}
+          </dl>
+          <h4 className="mb-1 font-semibold">{rel.previsao.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}</h4>
+          {/* Mesma tabela da tela de Previsão orçamentária: realizado x média prevista mensal. */}
           <RolagemTabela className=""><table className="w-full">
             <thead>
               <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
                 <th className="py-1 text-left font-semibold">{rel.previsao.modo === "detalhado" ? "Rubrica" : "Grupo"}</th>
-                <th className="py-1 text-right font-semibold">Realizado da base</th>
-                <th className="py-1 text-right font-semibold">Previsto</th>
+                <th className="py-1 text-right font-semibold">Realizado</th>
+                <th className="py-1 text-right font-semibold">Média prevista dos grupos</th>
               </tr>
             </thead>
             <tbody>
@@ -137,11 +149,21 @@ export function PreviaRelatorio({
                     {l.deduzida && <span className="text-xs text-muted-foreground"> (com dedução)</span>}
                   </td>
                   <td className="num py-1 text-right text-muted-foreground">{formatBRL(l.realizado)}</td>
-                  <td className="num py-1 text-right">{formatBRL(l.previsto)}</td>
+                  <td className="num py-1 text-right">{formatBRL(l.previsto / rel.previsao.mesesAnalisados)}</td>
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr className="border-t font-semibold">
+                <td className="py-1">Total dos grupos</td>
+                <td className="num py-1 text-right">{formatBRL(rel.previsao.base)}</td>
+                <td className="num py-1 text-right">
+                  {formatBRL(rel.previsao.linhas.reduce((s, l) => s + l.previsto, 0) / rel.previsao.mesesAnalisados)}
+                </td>
+              </tr>
+            </tfoot>
           </table></RolagemTabela>
+          <p className="mt-1 text-xs text-muted-foreground">Valores mensais por grupo; o anual ajustado está no resumo abaixo.</p>
           {rel.previsao.ajustes.length > 0 && (
             <div className="mt-4">
               <h4 className="mb-1 font-semibold">Ajustes</h4>

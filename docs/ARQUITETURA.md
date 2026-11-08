@@ -53,7 +53,7 @@ A montagem de dados/textos no domínio não comprova geração de PDF/Word na UI
 Os testes exercitam TypeScript em Node, sem navegador, extração PDF, PHP ou MySQL.
 
 `domain/*.ts` e `lib/format.ts`/`lib/id.ts` na raiz são a única fonte de verdade
-(testada com Vitest). `frontend/src/domain/*` (20 arquivos) e
+(testada com Vitest). `frontend/src/domain/*` (21 arquivos) e
 `frontend/src/lib/{format.ts,id.ts}` são re-exports de uma linha pra cá (PR #41)
 — nunca duplicam a lógica. Editar só a raiz já atualiza a UI; nunca escrever
 regra de negócio dentro de `frontend/src/domain` ou duplicá-la em componentes.

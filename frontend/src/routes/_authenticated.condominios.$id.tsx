@@ -35,7 +35,8 @@ import { useUsuario } from "@/lib/auth";
 import { validarIndicesCondominio } from "@/domain/indicesCondominio";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
 import { consultarCnpjReceita, divergenciasCnpj, enderecoDaReceita } from "@/lib/receitaCnpj";
-import type { Arredondamento, Condominio, Exercicio, IndiceCorrecao, ModoRegra, UnidadeCondominio, VariacaoMetodo } from "@/domain/types";
+import type { Condominio, Exercicio, IndiceCorrecao, ModoRegra, UnidadeCondominio } from "@/domain/types";
+import { ARREDONDAMENTOS, VARIACAO_METODOS } from "@/domain/previsaoCriterios";
 
 export const Route = createFileRoute("/_authenticated/condominios/$id")({
   head: () => cabecalho("Condomínio", "Cadastro completo do condomínio."),
@@ -72,17 +73,9 @@ function CondominioExistente({ id }: { id: string }) {
   return <FormCondominio inicial={normalizarCondominio(data ?? { id })} historicoIndices={historicoIndices} />;
 }
 
-const ARREDONDAMENTO: { valor: Arredondamento; rotulo: string }[] = [
-  { valor: "truncar", rotulo: "Truncar (sem centavos, para baixo)" },
-  { valor: "arredondar", rotulo: "Arredondar (sem centavos)" },
-  { valor: "centavos", rotulo: "Manter centavos" },
-];
-const VARIACAO: { valor: VariacaoMetodo; rotulo: string }[] = [
-  { valor: "manual", rotulo: "Manual" },
-  { valor: "percentual", rotulo: "Percentual fixo" },
-  { valor: "mediaIndices", rotulo: "Média dos índices" },
-  { valor: "valor", rotulo: "Valor fixo (R$)" },
-];
+// Mesmos rótulos da tela de Previsão orçamentária e do relatório final (domain/previsaoCriterios.ts).
+const ARREDONDAMENTO = ARREDONDAMENTOS;
+const VARIACAO = VARIACAO_METODOS;
 const MODO_REGRA: { valor: ModoRegra; rotulo: string }[] = [
   { valor: "ultimo", rotulo: "Último valor" },
   { valor: "ultimo+12", rotulo: "Último valor × 12" },

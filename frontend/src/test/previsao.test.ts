@@ -152,3 +152,33 @@ describe("exercício", () => {
     expect(validarNovoExercicio("c1", 2025, existentes, "e1").ok).toBe(true);
   });
 });
+
+describe("previsão — critérios que produziram o resultado", () => {
+  // O relatório final repete estes critérios junto dos números (domain/previsaoCriterios.ts);
+  // eles precisam sair do cálculo, não de uma leitura separada dos parâmetros do exercício.
+  it("registra o método, os índices que entraram na média e o arredondamento", () => {
+    const indices = [
+      { ano: 2023, pct: 4 },
+      { ano: 2025, pct: 5 },
+      { ano: 2024, pct: 6 },
+    ];
+    const r = calcularPrevisao(
+      D,
+      params({ variacaoMetodo: "mediaIndices", variacaoParam: 2, indices, arredondamento: "truncar" }),
+      25,
+    );
+    expect(r.variacaoMetodo).toBe("mediaIndices");
+    expect(r.arredondamento).toBe("truncar");
+    expect(r.indicesUsados).toEqual([
+      { ano: 2025, pct: 5 },
+      { ano: 2024, pct: 6 },
+    ]);
+    expect(r.variacaoPct).toBe(5.5);
+  });
+
+  it("nos métodos que não usam média, a lista de índices fica vazia", () => {
+    const r = calcularPrevisao(D, params(), 25);
+    expect(r.variacaoMetodo).toBe("manual");
+    expect(r.indicesUsados).toEqual([]);
+  });
+});

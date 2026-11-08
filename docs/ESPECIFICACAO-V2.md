@@ -49,7 +49,11 @@ Base líquida = base − dedução (fundo de obras). **Anual ajustado = base lí
 ajustes "+" − Σ ajustes "−".** Mensal, índice, fundo de reserva e valor por unidade partem do
 anual ajustado.
 Cada linha de ajuste pode ser criada, editada e excluída e aparece no demonstrativo da previsão e
-no PDF. Sem grupo, vale para o total.
+no PDF. Sem grupo, vale para o total. O relatório final repete, junto dos números, os
+critérios com que a previsão foi calculada — modo, método da variação, índices usados na média,
+variação aplicada e arredondamento — com os mesmos rótulos da tela de manutenção
+(`domain/previsaoCriterios.ts`), e a tabela por grupo é a mesma da tela: realizado × média prevista
+mensal, com o total dos grupos.
 
 O editor também mostra, como referência fixa (não editável), o realizado do exercício anterior e
 a "última previsão aprovada" — o anual ajustado que o PRÓPRIO exercício anterior já calculou, com
