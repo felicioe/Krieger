@@ -129,4 +129,3 @@ As suítes existentes de acessibilidade, UX e gráficos continuam passando.
 **Continua não verificado.** O comportamento com a preferência de movimento ativada num navegador
 real, a leitura por leitor de tela e a inspeção visual das telas autenticadas. Os testes cobrem a
 estrutura e o CSS, não a experiência percebida.
-
