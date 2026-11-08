@@ -24,8 +24,19 @@ conter `prefers-reduced-motion` e `not-sr-only`, que antes não existiam.
 **Sem versão nova.** Pela política de `VERSIONAMENTO.md`, correção de acessibilidade sem mudança de
 fluxo fica no PR e no commit; a 1.06 continua sendo o marco vigente.
 
-**Não verificado.** Comportamento com a preferência de movimento ativada em navegador real, leitura
-por leitor de tela e inspeção visual das telas autenticadas.
+**Publicado.** 08/11/2026, a partir de `main` `93ded90` (PR #250), CI verde nesse SHA; commit de
+publicação `86aef70` em `deploy-hostinger`. O `index.html` servido tem o mesmo SHA-256 do pacote
+(`99ea70c…`), o CSS publicado traz `prefers-reduced-motion` e `not-sr-only`, o chunk da lista de
+modelos contém a coluna Condomínio, o atalho de salto está no HTML, o carregamento anuncia a
+região viva, e o aviso de rateio usa `Alert variant="warning"`. Os 20 assets citados pelo
+`index.html` respondem 200; `auth.php?a=eu` e `api.php` sem sessão respondem 401; 
+`krieger-config.php`, `config.php` e `schema.sql` respondem 404. Nenhum arquivo PHP ou 
+`.htaccess` mudou nesta entrega.
+
+**Não verificado.** Comportamento com a preferência de movimento ativada em navegador real, leitura por
+leitor de tela e inspeção visual das telas autenticadas. A publicação foi conferida por
+transferência HTTP e comparação de hash, não por inspeção das telas autenticadas.
+
 
 ## Modelos de edital por condomínio — 08/11/2026
 
