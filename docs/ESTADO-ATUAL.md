@@ -1,5 +1,33 @@
 # Estado atual e passagem de contexto
 
+## Relatório final: previsão com os critérios dos menus de manutenção — em validação
+
+O relatório final exibia os números da previsão orçamentária, mas não os parâmetros que os
+produziram: quem recebia o PDF não sabia com que método a variação foi calculada, quais índices
+entraram na média nem qual arredondamento foi aplicado ao valor por unidade. A tabela também
+divergia da tela de manutenção — mostrava o previsto anual sem total, enquanto a tela mostra
+realizado × média prevista mensal por grupo, com o total dos grupos no rodapé. O cálculo já era o
+mesmo (`calcularPrevisao`, a partir de `demonstrativoBasePrevisao`); a divergência era de
+apresentação.
+
+**Mudanças:**
+- `domain/previsaoCriterios.ts` (novo) centraliza os rótulos de modo, método da variação e
+  arredondamento, e monta os critérios que vão para o documento. A tela de Previsão orçamentária,
+  o cadastro do condomínio e o relatório final importam daqui — o mesmo parâmetro tem o mesmo nome
+  nos três lugares.
+- `ResultadoPrevisao` passou a carregar com que critérios foi calculado (`variacaoMetodo`,
+  `indicesUsados`, `arredondamento`); `resolverVariacao` devolve os índices que efetivamente
+  entraram na média (os mais recentes, até `variacaoParam`).
+- A seção "Previsão orçamentária" do relatório (PDF, Word e prévia) mostra os critérios antes da
+  tabela e usa a mesma tabela da tela: colunas "Grupo/Rubrica", "Realizado" e "Média prevista dos
+  grupos", com a linha "Total dos grupos".
+- Colunas fixas de 100 pt conferidas na fonte embutida: o cabeçalho mais largo mede 100,6 pt com
+  quebra entre palavras, e o pior valor monetário cabe sem quebrar.
+
+**Evidência local:** testes de domínio e do documento cobrindo índices usados, método valor e a
+linha de total; `npm test` e o `typecheck` da raiz e do frontend verdes. Publicação pendente: SHA e
+evidência ao vivo serão registrados após o merge.
+
 ## Relatório final: tipografia do PDF e colunas do comparativo — em validação
 
 O PDF do relatório final saía em Roboto enquanto a interface usa Source Sans 3, e as colunas

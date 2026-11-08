@@ -1,5 +1,5 @@
 import { centavos, mesesNoPeriodo } from "./demonstrativo";
-import type { AjustePrevisao, Arredondamento, Demonstrativo, Exercicio, IndiceCorrecao } from "./types";
+import type { AjustePrevisao, Arredondamento, Demonstrativo, Exercicio, IndiceCorrecao, VariacaoMetodo } from "./types";
 
 /**
  * Previsão orçamentária do exercício seguinte.
@@ -31,6 +31,17 @@ export interface LinhaPrevisao {
 
 export interface ResultadoPrevisao {
   modo: "tradicional" | "detalhado";
+  /**
+   * Critérios com que o resultado foi calculado. Ficam no resultado (e não só em quem chamou)
+   * porque o relatório final precisa dizer, junto dos números, com que método, índices e
+   * arredondamento a previsão foi feita — do contrário o PDF não pode ser conferido contra a tela
+   * de manutenção que o gerou.
+   */
+  variacaoMetodo: VariacaoMetodo;
+  /** Índices que entraram na média da variação (só no método "mediaIndices"); vazio nos demais. */
+  indicesUsados: { ano: number | null; pct: number }[];
+  /** Regra de arredondamento aplicada ao valor por unidade. */
+  arredondamento: Arredondamento;
   linhas: LinhaPrevisao[];
   ajustes: AjustePrevisao[];
   base: number;
@@ -94,20 +105,21 @@ export function expressaoDeducao(texto: string | null | undefined): RegExp | nul
  */
 export function resolverVariacao(
   p: Pick<ParametrosPrevisao, "variacao" | "variacaoMetodo" | "variacaoParam" | "indices">,
-): { pct: number; valorFixo?: number; aviso?: string } {
-  if (p.variacaoMetodo === "valor") return { pct: 0, valorFixo: p.variacaoParam ?? 0 };
-  if (p.variacaoMetodo === "percentual") return { pct: p.variacaoParam ?? p.variacao ?? 0 };
+): { pct: number; valorFixo?: number; aviso?: string; usados: { ano: number | null; pct: number }[] } {
+  if (p.variacaoMetodo === "valor") return { pct: 0, valorFixo: p.variacaoParam ?? 0, usados: [] };
+  if (p.variacaoMetodo === "percentual") return { pct: p.variacaoParam ?? p.variacao ?? 0, usados: [] };
   if (p.variacaoMetodo === "mediaIndices") {
     const validos = (p.indices ?? [])
       .filter((i): i is { ano: number | null; pct: number } => typeof i.pct === "number" && Number.isFinite(i.pct))
       .sort((a, b) => (b.ano ?? 0) - (a.ano ?? 0));
     const n = p.variacaoParam && p.variacaoParam > 0 ? Math.trunc(p.variacaoParam) : validos.length;
-    const usados = validos.slice(0, n);
-    if (usados.length === 0) return { pct: 0, aviso: "Nenhum índice de correção informado para calcular a média." };
+    const usados = validos.slice(0, n).map((i) => ({ ano: i.ano, pct: i.pct }));
+    if (usados.length === 0)
+      return { pct: 0, usados, aviso: "Nenhum índice de correção informado para calcular a média." };
     const media = usados.reduce((s, i) => s + i.pct, 0) / usados.length;
-    return { pct: Math.round(media * 10000) / 10000 };
+    return { pct: Math.round(media * 10000) / 10000, usados };
   }
-  return { pct: p.variacao ?? 0 };
+  return { pct: p.variacao ?? 0, usados: [] };
 }
 
 export function somarAjustes(ajustes: AjustePrevisao[] | undefined) {
@@ -146,7 +158,7 @@ export function calcularPrevisao(
   const ajustes = parametros.prev?.ajustes ?? [];
   const variacaoDespesas = parametros.prev?.variacaoDespesas;
   const re = expressaoDeducao(parametros.deducaoRegex);
-  const { pct, valorFixo, aviso } = resolverVariacao(parametros);
+  const { pct, valorFixo, aviso, usados } = resolverVariacao(parametros);
   if (aviso) avisos.push(aviso);
   const ehValorFixo = parametros.variacaoMetodo === "valor";
   // Variação fora de uma faixa plausível (ex.: valor em R$ digitado onde se esperava %) produziria
@@ -236,6 +248,9 @@ export function calcularPrevisao(
 
   return {
     modo,
+    variacaoMetodo: parametros.variacaoMetodo,
+    indicesUsados: usados,
+    arredondamento: parametros.arredondamento,
     linhas,
     ajustes,
     base,

@@ -137,6 +137,44 @@ describe("previsão — variação e arredondamento", () => {
   });
 });
 
+describe("previsão — critérios que produziram o resultado", () => {
+  // O relatório final repete estes critérios junto dos números (domain/previsaoCriterios.ts);
+  // eles precisam sair do cálculo, não de uma leitura separada dos parâmetros do exercício.
+  it("registra o método, os índices que entraram na média e o arredondamento", () => {
+    const indices = [
+      { ano: 2023, pct: 4 },
+      { ano: 2025, pct: 5 },
+      { ano: 2024, pct: 6 },
+    ];
+    const r = calcularPrevisao(
+      D,
+      params({ variacaoMetodo: "mediaIndices", variacaoParam: 2, indices, arredondamento: "truncar" }),
+      25,
+    );
+    expect(r.variacaoMetodo).toBe("mediaIndices");
+    expect(r.arredondamento).toBe("truncar");
+    // Os dois mais recentes, na ordem em que entraram na média.
+    expect(r.indicesUsados).toEqual([
+      { ano: 2025, pct: 5 },
+      { ano: 2024, pct: 6 },
+    ]);
+    expect(r.variacaoPct).toBe(5.5);
+  });
+
+  it("nos métodos que não usam média, a lista de índices fica vazia", () => {
+    const r = calcularPrevisao(D, params(), 25);
+    expect(r.variacaoMetodo).toBe("manual");
+    expect(r.indicesUsados).toEqual([]);
+  });
+
+  it("método valor: critérios preservados sem percentual associado", () => {
+    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: 14000 }), 25);
+    expect(r.variacaoMetodo).toBe("valor");
+    expect(r.indicesUsados).toEqual([]);
+    expect(r.variacaoPct).toBe(0);
+  });
+});
+
 describe("calcularDesvioAnoAnterior", () => {
   const atual = (despesas: number) => demo([{ nome: "Despesas", itens: [{ nome: "Total", valor: despesas }] }]);
   const atualComPeriodo = (despesas: number, ini: string, fim: string): Demonstrativo => ({

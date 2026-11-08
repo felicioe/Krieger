@@ -16,17 +16,13 @@ import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
 import { cn, irPara } from "@/lib/utils";
 import type { ResultadoPrevisao } from "@/domain/previsao";
+import { ARREDONDAMENTO_CURTO, ARREDONDAMENTOS, MODOS_PREVISAO } from "@/domain/previsaoCriterios";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
-const MODOS = [
-  { valor: "tradicional" as const, rotulo: "Tradicional (por grupo)" },
-  { valor: "detalhado" as const, rotulo: "Detalhado (por despesa)" },
-];
-export const ARREDONDAMENTO: { valor: Arredondamento; rotulo: string }[] = [
-  { valor: "truncar", rotulo: "Truncar (sem centavos, para baixo)" },
-  { valor: "arredondar", rotulo: "Arredondar (sem centavos)" },
-  { valor: "centavos", rotulo: "Manter centavos" },
-];
+// Rótulos vêm de domain/previsaoCriterios.ts: o mesmo parâmetro precisa ter o mesmo nome aqui,
+// no cadastro do condomínio e no relatório final (que repete os critérios junto dos números).
+const MODOS = MODOS_PREVISAO;
+export const ARREDONDAMENTO = ARREDONDAMENTOS;
 
 const pct = (n: number | null | undefined, sinal = false) =>
   n === null || n === undefined ? "—" : `${sinal && n > 0 ? "+" : ""}${formatNumeroBR(n)}%`;
@@ -284,11 +280,7 @@ function AjusteResumo({ descricao, valor, negativo }: { descricao: string; valor
   );
 }
 
-const ROTULO_ARRED: Record<Arredondamento, string> = {
-  truncar: "truncado, sem centavos",
-  arredondar: "arredondado, sem centavos",
-  centavos: "com centavos",
-};
+const ROTULO_ARRED = ARREDONDAMENTO_CURTO;
 
 function Resumo({
   r,

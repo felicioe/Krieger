@@ -9,6 +9,7 @@ import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type ConsumoServico, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type { ResultadoComparativo, Totais } from "@/domain/previstoRealizado";
 import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
+import { criteriosDaPrevisao } from "@/domain/previsaoCriterios";
 import type { Condominio, ConfigEscritorio, Exercicio, PrevisaoSugeridaExercicio } from "@/domain/types";
 import { blocosDemonstrativo, localEData, timbreDoEscritorio } from "./comum";
 import { contagem } from "@/components/app/textos";
@@ -80,24 +81,42 @@ export async function documentoRelatorioFinal(o: {
     if (d?.periodo.ini && d.periodo.fim) b.push({ tipo: "paragrafo", texto: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.`, suave: true, tamanho: "pequeno" });
     b.push({ tipo: "paragrafo", texto: `Previsão calculada pelo Krieger. ${rel.origemBasePrevisao}` });
     if (rel.avisoRateioAprovado) b.push({ tipo: "paragrafo", texto: rel.avisoRateioAprovado, negrito: true });
+    // Mesmos critérios que a tela de manutenção mostra como parâmetros: sem eles o valor impresso
+    // não pode ser conferido contra o que a tela calcula.
+    b.push({ tipo: "pares", itens: criteriosDaPrevisao(p).map((c) => ({ rotulo: c.rotulo, valor: c.valor })) });
+    b.push({ tipo: "titulo", nivel: 3, texto: p.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo" });
+    // Tabela idêntica à da tela de Previsão orçamentária: realizado x média prevista mensal de
+    // cada grupo, com o total dos grupos no rodapé — os mesmos números que o usuário confere lá.
     b.push({
       tipo: "tabela",
       colunas: [
         { titulo: p.modo === "detalhado" ? "Rubrica" : "Grupo", largura: "*" },
-        { titulo: "Realizado da base", largura: 100, alinhamento: "direita" },
-        { titulo: "Previsto", largura: 100, alinhamento: "direita" },
+        { titulo: "Realizado", largura: 100, alinhamento: "direita" },
+        { titulo: "Média prevista dos grupos", largura: 100, alinhamento: "direita" },
       ],
-      linhas: p.linhas.map((x) => ({
-        celulas: [
-          [
-            { texto: x.nome },
-            ...(p.modo === "detalhado" ? [{ texto: ` · ${x.grupo}`, suave: true }] : []),
-            ...(x.deduzida ? [{ texto: " (com dedução)", suave: true }] : []),
+      linhas: [
+        ...p.linhas.map((x) => ({
+          celulas: [
+            [
+              { texto: x.nome },
+              ...(p.modo === "detalhado" ? [{ texto: ` · ${x.grupo}`, suave: true }] : []),
+              ...(x.deduzida ? [{ texto: " (com dedução)", suave: true }] : []),
+            ],
+            [{ texto: formatBRL(x.realizado), suave: true }],
+            formatBRL(x.previsto / p.mesesAnalisados),
           ],
-          [{ texto: formatBRL(x.realizado), suave: true }],
-          formatBRL(x.previsto),
-        ],
-      })),
+        })),
+        {
+          celulas: ["Total dos grupos", formatBRL(p.base), formatBRL(p.linhas.reduce((s, x) => s + x.previsto, 0) / p.mesesAnalisados)],
+          estilo: "total",
+        },
+      ],
+    });
+    b.push({
+      tipo: "paragrafo",
+      texto: "Valores mensais por grupo; o anual ajustado está no resumo abaixo.",
+      suave: true,
+      tamanho: "pequeno",
     });
     if (p.ajustes.length) {
       b.push({ tipo: "titulo", nivel: 3, texto: "Ajustes" });

@@ -1,5 +1,17 @@
 # Decisões do projeto
 
+## 2026-11-08 — relatório final repete os critérios da previsão, não só os números
+
+O responsável apontou que o relatório final divergia dos menus de manutenção da previsão
+orçamentária. O cálculo já era o mesmo (`calcularPrevisao` sobre `demonstrativoBasePrevisao`); o que
+faltava era o documento dizer com que parâmetros o valor foi obtido. Decidido: o relatório final
+mostra, junto dos números, modo, método da variação, índices usados na média, variação aplicada e
+arredondamento, e usa a mesma tabela da tela (realizado × média prevista mensal por grupo, com total
+dos grupos). Os rótulos ficam em `domain/previsaoCriterios.ts`, fonte única para a tela de Previsão
+orçamentária, o cadastro do condomínio e o relatório — nenhum lugar reescreve o texto por conta
+própria. A previsão sugerida importada do Systemar continua como referência histórica e nunca
+substitui o cálculo do Krieger.
+
 ## 2026-10-22 — Histórico interno e menu do usuário recolhível (#81)
 
 O responsável determinou que o Registro de Alterações fique dentro do sistema,
