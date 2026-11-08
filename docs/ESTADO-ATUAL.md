@@ -1,5 +1,33 @@
 # Estado atual e passagem de contexto
 
+## Auditoria técnica de interface — 08/11/2026
+
+Revisão orientada pelas dimensões das auditorias anteriores do projeto. A skill e o detector
+Impeccable não estão disponíveis nesta máquina; o relatório declara isso em vez de alegar execução
+do playbook original. Base `main` `ce8116e`; produção `deploy-hostinger` `93311b3` (main `05fe887`).
+Ver [relatório](auditorias/IMPECCABLE-2026-11-08.md).
+
+**Achados:** nada de P0/P1 comprovado. Duas pendências P2 — `sheet`/`dialog` animam sem respeitar
+`prefers-reduced-motion` (o CSS compilado não tem a media query) e não existe atalho de teclado para
+saltar o menu lateral (o `<main>` tem `tabIndex=-1` e recebe foco programático, mas não há link de
+salto). Duas P3: `Carregando` sem `role="status"` e cores `amber-*` literais convivendo com os
+tokens de aviso.
+
+**Correções anteriores reconfirmadas no código:** #30 (botão semântico por linha na `DataTable`),
+#31 (dicas, erro e obrigatoriedade ligados ao `Field`), #47 (foco devolvido pelo `MenuMovel`),
+#48 (três variantes de marca distintas), #32/#82 (alvos de 44 px com `pointer-coarse`, media query
+confirmada no CSS compilado), tabelas roláveis com `tabIndex` apenas quando há overflow.
+Nenhuma issue antiga foi reaberta.
+
+**Validação:** orçamento de bundle em produção a 180.557 de 256.000 bytes (70,5%); `CSS`
+publicado com hash idêntico ao build local; 37 testes de acessibilidade/UX passando. ESLint padrão
+falha por formatação/CRLF (27.665 registros), ruído de ambiente, não tratado como defeito visual.
+
+**Não verificado:** navegação autenticada no navegador, viewports e zoom 200%, leitor de tela,
+LCP/INP/CLS. O classificador das ferramentas de navegador ficou indisponível durante a inspeção, e
+a captura obtida não reproduziu qualquer defeito. Esta entrega é só auditoria: nenhuma correção de
+interface foi aplicada.
+
 ## Relatório final: previsão com os critérios dos menus de manutenção — publicado - 08/11/2026
 
 O relatório final exibia os números da previsão orçamentária, mas não os parâmetros que os

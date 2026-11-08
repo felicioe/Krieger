@@ -17,6 +17,7 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Auditoria Impeccable e revisão das pendências](docs/auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md)
 - [Orçamento e medição de JavaScript](docs/PERFORMANCE.md)
 - [Revisão e fechamento dos achados de auditoria](docs/auditorias/FECHAMENTO-ACHADOS-2026-10-22.md)
+- [Auditoria técnica de 08/11/2026](docs/auditorias/IMPECCABLE-2026-11-08.md)
 - [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
