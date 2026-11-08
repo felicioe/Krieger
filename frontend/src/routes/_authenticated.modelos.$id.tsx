@@ -13,12 +13,15 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
-import { Selecao } from "@/components/app/inputs";
+import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { novoBloco, normalizarModelo, prepararModelo, TIPOS_BLOCO, validarModelo, type Bloco } from "@/domain/modelo";
-import type { Assembleia, Modelo } from "@/domain/types";
+import type { Assembleia, Condominio, Modelo } from "@/domain/types";
+
+/** Modelo sem condomínio: serve a todos (padrão dos modelos criados antes desta opção). */
+const GERAL = "__geral";
 
 export const Route = createFileRoute("/_authenticated/modelos/$id")({
   head: () => cabecalho("Modelo de edital", "Blocos de texto e pauta padrão do modelo de edital."),
@@ -26,6 +29,7 @@ export const Route = createFileRoute("/_authenticated/modelos/$id")({
     const [m] = await Promise.all([
       queryClient.ensureQueryData(itemQuery<Modelo>("modelos", params.id)),
       queryClient.ensureQueryData(listaQuery<Assembleia>("assembleias")),
+      queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
     ]);
     if (!m) throw notFound();
     return null;
@@ -51,12 +55,14 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: assembleias } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
+  const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const [m, setM] = useState<Modelo>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [erroNome, setErroNome] = useState<string | null>(null);
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
 
   const usos = assembleias.filter((a) => a.modeloId === m.id).length;
+  const opcoesCondo = [{ valor: GERAL, rotulo: "Geral (todos os condomínios)", busca: "geral todos" }, ...opcoesCondominio(condominios)];
   const sujo = JSON.stringify(m) !== salvoJson;
   const mudar = (parcial: Partial<Modelo>) => setM((x) => ({ ...x, ...parcial }));
 
@@ -133,6 +139,18 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
       <form id="form-modelo" onSubmit={enviar} className="space-y-6" noValidate>
         <SectionCard titulo="Identificação">
           <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
+            <Field
+              rotulo="Condomínio"
+              className="sm:col-span-2"
+              dica="O modelo fica disponível para este condomínio; “Geral” atende qualquer condomínio que não tenha um modelo próprio."
+            >
+              <SelecaoBusca
+                value={m.condoId || GERAL}
+                onChange={(v) => mudar({ condoId: v === GERAL ? "" : v })}
+                opcoes={opcoesCondo}
+                placeholder="Escolha o condomínio"
+              />
+            </Field>
             <Field rotulo="Nome" obrigatorio erro={erroNome}>
               <Input
                 value={m.nome}

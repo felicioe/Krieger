@@ -2,7 +2,13 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.05**.
+Versão atual: **1.06**.
+
+## 1.06 — Modelos de edital por condomínio
+
+- Cada modelo de edital pode pertencer a um condomínio; os modelos sem condomínio continuam valendo para todos.
+- Ao criar um edital ou escolher o modelo, aparecem os modelos do condomínio e os gerais.
+- A lista de modelos mostra o condomínio de cada um e permite filtrar por condomínio.
 
 ## 1.05 — Relatório mensal Orçado × Realizado
 

@@ -1,5 +1,28 @@
 # Estado atual e passagem de contexto
 
+## Modelos de edital por condomínio — 08/11/2026
+
+Até esta entrega todo modelo de edital valia para qualquer condomínio. Quem tinha texto e pauta
+próprios não conseguia guardá-los sem que o modelo aparecesse nos editais dos outros. Decidido
+(ver `DECISOES.md`): o modelo passou a ter `condoId`, e vazio significa **geral** — válido para
+todos, exatamente o comportamento anterior.
+
+**Código.** `Modelo.condoId` em `domain/types.ts`. `normalizarModelo` lê o campo ausente como
+geral, então modelo gravado antes desta entrega não precisa de migração. `modelosDoCondominio()`
+em `domain/modelo.ts` concentra a regra de disponibilidade e é usada pela lista, pelo diálogo de
+novo edital e pelo seletor dentro do edital. A lista ganhou coluna Condomínio e filtro; o diálogo
+de novo modelo e a identificação do modelo permitem escolher condomínio ou Geral.
+
+**Sem migração de banco.** `kr_modelos` guarda o registro inteiro em `dados` (LONGTEXT), então o
+campo novo viaja dentro do JSON e não há `migrations/` a aplicar.
+
+**Semente do modo demonstração.** Além do modelo geral, há um modelo do Solar do Vale, para a
+lista mostrar as duas formas.
+
+**Não verificado.** Comportamento visual das novas seleções no navegador; a suíte do frontend
+não roda inteira nesta máquina (Node 26 sem `localStorage` global) e falha os mesmos 6 arquivos e
+31 testes no commit base `f3abd29`, sem relação com esta mudança.
+
 ## Auditoria técnica de interface — 08/11/2026
 
 Revisão orientada pelas dimensões das auditorias anteriores do projeto. A skill e o detector

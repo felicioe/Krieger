@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
 import { assembleiaPadrao, camposDaModalidade, prepararAssembleia, validarAssembleia } from "@/domain/edital";
-import { modeloPadrao, prepararModelo, validarModelo } from "@/domain/modelo";
+import { modeloPadrao, modelosDoCondominio, normalizarModelo, prepararModelo, validarModelo } from "@/domain/modelo";
 import type { Condominio, Modelo } from "@/domain/types";
 
 const condo: Condominio = {
@@ -19,6 +19,7 @@ const condo: Condominio = {
 
 const modelo: Modelo = {
   id: "m1",
+  condoId: "",
   nome: "Padrão",
   versao: 1,
   pautaOrdinaria: ["Prestação de contas;", "Assuntos gerais."],
@@ -81,6 +82,28 @@ describe("modelos de edital", () => {
     expect(copia.pautaOrdinaria).toEqual(modelo.pautaOrdinaria);
     expect(copia.blocos[0]!.texto).toBe("EDITAL");
     expect(copia.blocos[0]!.id).not.toBe("b1");
+  });
+
+  it("modelo antigo, sem condomínio, é tratado como geral", () => {
+    expect(normalizarModelo({ id: "x" }).condoId).toBe("");
+    expect(normalizarModelo({ id: "x", condoId: " c1 " }).condoId).toBe(" c1 ");
+  });
+
+  it("só oferece os modelos do condomínio e os gerais", () => {
+    const geral = { ...modelo, id: "geral", condoId: "" };
+    const doCondo = { ...modelo, id: "do-condo", condoId: "c1" };
+    const deOutro = { ...modelo, id: "de-outro", condoId: "c2" };
+
+    expect(modelosDoCondominio([geral, doCondo, deOutro], "c1").map((m) => m.id)).toEqual(["geral", "do-condo"]);
+    // Sem condomínio escolhido, só os gerais: não oferecer o modelo de um condomínio para outro.
+    expect(modelosDoCondominio([geral, doCondo, deOutro], "").map((m) => m.id)).toEqual(["geral"]);
+    expect(modelosDoCondominio([geral, doCondo, deOutro], "c3").map((m) => m.id)).toEqual(["geral"]);
+  });
+
+  it("o modelo novo guarda o condomínio escolhido", () => {
+    expect(modeloPadrao("Solar", null, "c2").condoId).toBe("c2");
+    expect(modeloPadrao("Geral").condoId).toBe("");
+    expect(modeloPadrao("Cópia", modelo).condoId).toBe("");
   });
 
   it("ao salvar, descarta blocos sem texto, exceto o bloco da pauta", () => {

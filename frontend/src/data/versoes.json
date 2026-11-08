@@ -1,6 +1,11 @@
 {
-  "versaoAtual": "1.05",
+  "versaoAtual": "1.06",
   "versoes": [
+    {
+      "versao": "1.06",
+      "titulo": "Modelos de edital por condomínio",
+      "alteracoes": ["Cada modelo de edital pode pertencer a um condomínio; os modelos sem condomínio continuam valendo para todos.", "Ao criar um edital ou escolher o modelo, aparecem os modelos do condomínio e os gerais.", "A lista de modelos mostra o condomínio de cada um e permite filtrar por condomínio."]
+    },
     {
       "versao": "1.05",
       "titulo": "Relatório mensal Orçado × Realizado",
