@@ -1,6 +1,6 @@
 # Estado atual e passagem de contexto
 
-## Relatório final: previsão com os critérios dos menus de manutenção — em validação
+## Relatório final: previsão com os critérios dos menus de manutenção — publicado - 08/11/2026
 
 O relatório final exibia os números da previsão orçamentária, mas não os parâmetros que os
 produziram: quem recebia o PDF não sabia com que método a variação foi calculada, quais índices
@@ -24,9 +24,24 @@ apresentação.
 - Colunas fixas de 100 pt conferidas na fonte embutida: o cabeçalho mais largo mede 100,6 pt com
   quebra entre palavras, e o pior valor monetário cabe sem quebrar.
 
+Publicado `main` `05fe887` (PR #243) → `deploy-hostinger` `93311b3`. Nenhum arquivo PHP ou
+`.htaccess` alterado nesta entrega.
+
+**Evidência ao vivo** (`krieger.therafinancial.com.br`): raiz HTTP 200; `index.html` referencia
+`index-CHfZpMJm.js`, cujo hash servido (`812611c4…`) coincide com o do build local; o chunk
+`relatorioFinal-BiLaNzVE.js` responde 200 com hash idêntico ao local (`bc37ae01…`) e contém
+"Índices usados na média" e "Média prevista dos grupos"; o chunk anterior (`3HJ0U0Xk`) responde
+404 e não é referenciado por `index.html`, pelo entry nem pelo chunk novo; amostra de 8 chunks do
+entry e o CSS respondem 200; `auth.php` e `api.php` 401, `krieger-config.php`/`config.php` 404,
+`lib_auth.php` 403, `robots.txt` 200.
+
 **Evidência local:** testes de domínio e do documento cobrindo índices usados, método valor e a
-linha de total; `npm test` e o `typecheck` da raiz e do frontend verdes. Publicação pendente: SHA e
-evidência ao vivo serão registrados após o merge.
+linha de total; `npm test` (33 arquivos, 261 testes) e o `typecheck` da raiz e do frontend verdes;
+`docs:check`, `changelog:check`, `build`, `bundle:check` (180.705 de 256.000 bytes) e
+`package:hostinger` verdes. Na suíte completa do frontend restam falhas de ambiente (`localStorage`
+no Node: `importacao-ui`, `anexo-comparativo`, `anexos-metadados`, `fechamento-indices`), presentes
+igualmente em `main` antes desta entrega; em série sobra só a falha pré-existente de "cria
+condomínio".
 
 ## Relatório final: tipografia do PDF e colunas do comparativo — em validação
 
