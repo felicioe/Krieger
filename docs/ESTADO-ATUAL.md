@@ -1,5 +1,32 @@
 # Estado atual e passagem de contexto
 
+## Correções da auditoria de interface — 08/11/2026
+
+A auditoria de 08/11 registrou quatro achados e não aplicou nenhuma correção. Aplicadas a pedido:
+
+- **Movimento reduzido (P2).** `frontend/src/styles.css` passa a declarar
+  `prefers-reduced-motion: reduce`, encurtando animação e transição para 0.01 ms. A duração não vira
+  `none` de propósito: a gaveta e o diálogo dependem do evento de fim de animação para desmontar a
+  camada e devolver o foco.
+- **Atalho de salto (P2).** `PularParaConteudo` é o primeiro elemento focável do layout autenticado e
+  move o foco ao `main` sem tocar no hash do roteador.
+- **Anúncio de carregamento (P3).** `Carregando` vira região viva educada, com ícone decorativo.
+- **Aviso semântico (P3).** O aviso de rateio da prévia do relatório passa a usar
+  `Alert variant="warning"` em vez de cores `amber-*` literais. As cores do Drive ficaram: lá
+  identificam pasta e categoria, não estado de aviso.
+
+**Validação.** `npm test` (264 testes), `npm run typecheck`, `npx tsc --noEmit` no frontend,
+`npm run docs:check` e `npm run build` passando. Suíte nova
+`frontend/src/test/correcoes-auditoria-2026-11-08.test.tsx` com 9 testes cobrindo os quatro aceites;
+as suítes de acessibilidade, UX, gráficos e roteamento continuam verdes. O CSS compilado passou a
+conter `prefers-reduced-motion` e `not-sr-only`, que antes não existiam.
+
+**Sem versão nova.** Pela política de `VERSIONAMENTO.md`, correção de acessibilidade sem mudança de
+fluxo fica no PR e no commit; a 1.06 continua sendo o marco vigente.
+
+**Não verificado.** Comportamento com a preferência de movimento ativada em navegador real, leitura
+por leitor de tela e inspeção visual das telas autenticadas.
+
 ## Modelos de edital por condomínio — 08/11/2026
 
 Até esta entrega todo modelo de edital valia para qualquer condomínio. Quem tinha texto e pauta

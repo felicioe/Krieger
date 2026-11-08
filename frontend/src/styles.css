@@ -201,6 +201,24 @@
   }
 }
 
+/*
+ * Preferência por movimento reduzido (auditoria Impeccable de 08/11/2026, P2).
+ * Gaveta e diálogo entram e saem com deslocamento e zoom; quem pediu menos movimento no
+ * sistema não deve receber nenhum dos dois. A duração vira 0.01ms em vez de "none" para o
+ * evento de fim de animação continuar existindo — o Radix espera por ele para desmontar
+ * a camada e devolver o foco. Nada aqui esconde conteúdo nem desabilita controle.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* Números tabulares para valores monetários */
 @utility num {
   font-variant-numeric: tabular-nums;

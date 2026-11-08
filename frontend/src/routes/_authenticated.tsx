@@ -4,6 +4,7 @@ import { Marca } from "@/components/app/Marca";
 import { MenuMovel } from "@/components/app/MenuMovel";
 import { Carregando } from "@/components/app/Carregando";
 import { ID_CONTEUDO } from "@/components/app/foco";
+import { PularParaConteudo } from "@/components/app/PularParaConteudo";
 import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
 import { recarregarSessao } from "@/lib/auth";
 import { podeAcessarRota } from '@/lib/permissoes';
@@ -47,9 +48,10 @@ export const Route = createFileRoute("/_authenticated")({
 function LayoutSistema() {
   const caminho = useRouterState({ select: (s) => s.location.pathname });
   const carregando = useRouterState({ select: (s) => s.status === "pending" });
-
   return (
     <ProvedorRegistroAlteracoes>
+      {/* Primeiro elemento focável: salta o menu lateral e leva o foco ao conteúdo da rota. */}
+      <PularParaConteudo />
       <div className="min-h-screen bg-background">
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 md:block">
           <ConteudoMenu />
