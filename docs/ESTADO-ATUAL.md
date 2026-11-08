@@ -19,9 +19,17 @@ campo novo viaja dentro do JSON e não há `migrations/` a aplicar.
 **Semente do modo demonstração.** Além do modelo geral, há um modelo do Solar do Vale, para a
 lista mostrar as duas formas.
 
+**Publicado.** 08/11/2026, a partir de `main` `79835d7` (PR #247), CI verde nesse SHA; commit de
+publicação `7b5ba90` em `deploy-hostinger`. O `index.html` servido tem o mesmo SHA-256 do pacote
+(`2ca2e2a…`), o chunk de versões publicado é idêntico ao do pacote e já traz a 1.06, e o chunk da
+lista de modelos publicada contém a coluna Condomínio. Os 20 assets citados pelo `index.html`
+respondem 200; `auth.php?a=eu` e `api.php` sem sessão respondem 401; `krieger-config.php`,
+`config.php` e `schema.sql` respondem 404. Nenhum arquivo PHP ou `.htaccess` mudou nesta entrega.
+
 **Não verificado.** Comportamento visual das novas seleções no navegador; a suíte do frontend
 não roda inteira nesta máquina (Node 26 sem `localStorage` global) e falha os mesmos 6 arquivos e
-31 testes no commit base `f3abd29`, sem relação com esta mudança.
+31 testes no commit base `f3abd29`, sem relação com esta mudança. A publicação foi conferida por
+transferência HTTP e comparação de hash, não por inspeção das telas autenticadas.
 
 ## Auditoria técnica de interface — 08/11/2026
 
