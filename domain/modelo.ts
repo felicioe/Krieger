@@ -23,9 +23,13 @@ export function novoBloco(tipo: TipoBloco = "texto"): Bloco {
   return { id: novoId(), tipo, texto: "", cond: "" };
 }
 
-/** Modelo novo: em branco ou cópia dos blocos e da pauta de outro modelo (com novos ids de bloco). */
-export function modeloPadrao(nome: string, base?: Modelo | null): Omit<Modelo, "id"> {
+/**
+ * Modelo novo: em branco ou cópia dos blocos e da pauta de outro modelo (com novos ids de bloco).
+ * `condoId` vazio = modelo genérico, oferecido a qualquer condomínio que não tenha o seu.
+ */
+export function modeloPadrao(nome: string, base?: Modelo | null, condoId = ""): Omit<Modelo, "id"> {
   return {
+    condoId: condoId.trim(),
     nome: nome.trim(),
     versao: 1,
     pautaOrdinaria: [...(base?.pautaOrdinaria ?? [])],
@@ -38,6 +42,7 @@ const s = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v
 export function normalizarModelo(raw: Partial<Modelo> & { id: string }): Modelo {
   const m: Modelo = {
     id: raw.id,
+    condoId: s(raw.condoId),
     nome: s(raw.nome),
     versao: typeof raw.versao === "number" || typeof raw.versao === "string" ? raw.versao : 1,
     pautaOrdinaria: Array.isArray(raw.pautaOrdinaria) ? raw.pautaOrdinaria.map(s) : [],
@@ -58,6 +63,7 @@ export function normalizarModelo(raw: Partial<Modelo> & { id: string }): Modelo 
 export function prepararModelo<T extends Omit<Modelo, "id">>(m: T): T {
   return {
     ...m,
+    condoId: m.condoId.trim(),
     nome: m.nome.trim(),
     pautaOrdinaria: m.pautaOrdinaria.map((p) => p.trim()).filter(Boolean),
     blocos: m.blocos
@@ -68,4 +74,15 @@ export function prepararModelo<T extends Omit<Modelo, "id">>(m: T): T {
 
 export function validarModelo(m: Pick<Modelo, "nome">): string | null {
   return m.nome.trim() ? null : "Informe o nome do modelo.";
+}
+
+/**
+ * Modelos que podem ser usados num condomínio: os dele e os genéricos (sem `condoId`).
+ * Sem condomínio escolhido, só os genéricos — evita oferecer o modelo de um condomínio
+ * para um edital de outro.
+ */
+export function modelosDoCondominio<T extends Pick<Modelo, "condoId">>(modelos: T[], condoId: string): T[] {
+  const alvo = condoId.trim();
+  if (!alvo) return modelos.filter((m) => !m.condoId.trim());
+  return modelos.filter((m) => !m.condoId.trim() || m.condoId.trim() === alvo);
 }

@@ -481,6 +481,8 @@ export interface Assembleia extends ComId {
 export type TipoBloco = "titulo" | "subtitulo" | "texto" | "item" | "esquerda" | "pauta";
 
 export interface Modelo extends ComId {
+  /** Condomínio dono do modelo; vazio = modelo genérico, válido para todos. */
+  condoId: string;
   nome: string;
   versao: number | string;
   pautaOrdinaria: string[];

@@ -12,6 +12,7 @@ import { chaves } from "@/lib/queries";
 import { dataParaISO, parseData } from "@/lib/format";
 import { normalizarCondominio } from "@/domain/condominio";
 import { assembleiaPadrao, TIPOS_ASSEMBLEIA, validarAssembleia } from "@/domain/edital";
+import { modelosDoCondominio } from "@/domain/modelo";
 import type { Assembleia, Condominio, ConfigEscritorio, Exercicio, Modelo } from "@/domain/types";
 
 const SEM_MODELO = "__sem";
@@ -45,7 +46,9 @@ export function DialogoNovoEdital({
     if (aberto) {
       setCondoId(condoInicial);
       setTipo("ordinaria");
-      setModeloId(modelos.length === 1 ? (modelos[0] as Modelo).id : SEM_MODELO);
+      // Só os modelos do condomínio escolhido (e os gerais): um único disponível já vem marcado.
+      const iniciais = modelosDoCondominio(modelos, condoInicial);
+      setModeloId(iniciais.length === 1 ? iniciais[0]!.id : SEM_MODELO);
       setData("");
       setErros({});
     }
@@ -83,7 +86,7 @@ export function DialogoNovoEdital({
         condo: normalizarCondominio(condo),
         tipo,
         data: dataParaISO(d),
-        modelo: modelos.find((m) => m.id === modeloId) ?? null,
+        modelo: disponiveis.find((m) => m.id === modeloId) ?? null,
         cidade: escritorio?.cidade ?? "",
         ...(ultimo ? { exercicio: String(ultimo) } : {}),
       }),
@@ -91,6 +94,8 @@ export function DialogoNovoEdital({
   }
 
   const opcoesCondo = opcoesCondominio(condominios);
+  // Trocar o condomínio troca a lista de modelos; a escolha atual só permanece se continuar válida.
+  const disponiveis = modelosDoCondominio(modelos, condoId);
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !criar.isPending && aoMudar(v)}>
@@ -106,6 +111,10 @@ export function DialogoNovoEdital({
               onChange={(v) => {
                 setCondoId(v);
                 setErros((x) => ({ ...(x.data ? { data: x.data } : {}) }));
+                const paraEste = modelosDoCondominio(modelos, v);
+                setModeloId((atual) =>
+                  paraEste.some((m) => m.id === atual) ? atual : paraEste.length === 1 ? paraEste[0]!.id : SEM_MODELO,
+                );
               }}
               opcoes={opcoesCondo}
               placeholder="Escolha o condomínio"
@@ -125,11 +134,11 @@ export function DialogoNovoEdital({
               />
             </Field>
           </div>
-          <Field rotulo="Modelo de edital" dica="A pauta padrão do modelo é carregada no edital.">
+          <Field rotulo="Modelo de edital" dica="Só aparecem os modelos deste condomínio e os gerais. A pauta padrão do modelo é carregada no edital.">
             <Selecao
               value={modeloId}
               onChange={setModeloId}
-              opcoes={[{ valor: SEM_MODELO, rotulo: "Sem modelo" }, ...modelos.map((m) => ({ valor: m.id, rotulo: m.nome }))]}
+              opcoes={[{ valor: SEM_MODELO, rotulo: "Sem modelo" }, ...disponiveis.map((m) => ({ valor: m.id, rotulo: m.nome }))]}
             />
           </Field>
         </form>

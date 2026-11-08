@@ -1,5 +1,24 @@
 # Decisões do projeto
 
+## 2026-11-08 — modelo de edital por condomínio, com modelos gerais
+
+O responsável reuniu modelos reais de ata e edital de um ou dois condomínios e perguntou como
+aproveitá-los sem obrigar todos os clientes a um texto único. Entre uma biblioteca de cláusulas e
+o modelo por condomínio, escolheu o segundo. Decidido que cada modelo pertence a um condomínio e
+que `condoId` vazio significa **geral** — é o que todo modelo gravado antes desta entrega passa a
+ser, sem migração de dados, e é o que atende um condomínio que ainda não tem modelo próprio.
+
+A regra de quais modelos valem num condomínio fica em `modelosDoCondominio()`
+(`domain/modelo.ts`), fonte única usada pela lista, pelo diálogo de novo edital e pelo seletor
+dentro do edital. Sem condomínio escolhido, só os gerais aparecem: nunca oferecer o modelo de um
+condomínio para o edital de outro. Um edital que já aponta para modelo de outro condomínio
+continua exibindo essa escolha com etiqueta, em vez de descartá-la silenciosamente.
+
+Não há migração de banco: `kr_modelos` guarda o registro em `dados` (LONGTEXT), então o campo
+novo viaja no JSON. Uma cláusula compartilhada entre condomínios continua sendo cópia explícita
+de um modelo para outro, não herança — decisão revista se a manutenção de cópias se mostrar
+custosa.
+
 ## 2026-11-08 — relatório final repete os critérios da previsão, não só os números
 
 O responsável apontou que o relatório final divergia dos menus de manutenção da previsão

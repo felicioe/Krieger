@@ -150,7 +150,7 @@ function semente(): Dados {
     exercicios: [exercicioExemplo(condominios[0] as Registro)],
     mensais: mensaisExemplo(condominios[0] as Registro),
     assembleias,
-    modelos: [modeloExemplo()],
+    modelos: [modeloExemplo(), modeloExemploSolar()],
     config: [{ id: "escritorio", nome: "Krieger Assessoria Contábil e Condominial", cidade: "", rodape: "", assinatura: "", logo: "", logoRatio: null }],
     importacoes: [],
     anexos_importacao: [],
@@ -162,7 +162,19 @@ function semente(): Dados {
 
 /** Modelo de edital de exemplo, com variáveis {{...}} e condições no formato de `domain/modeloTexto.ts`. */
 function modeloExemplo(): Registro {
-  return { id: "mod-padrao", nome: "Edital padrão", versao: 2, pautaOrdinaria: PAUTA_EXEMPLO, blocos: blocosExemplo() };
+  return { id: "mod-padrao", condoId: "", nome: "Edital padrão", versao: 2, pautaOrdinaria: PAUTA_EXEMPLO, blocos: blocosExemplo() };
+}
+
+/** Modelo de exemplo de um condomínio específico, para a lista mostrar as duas formas. */
+function modeloExemploSolar(): Registro {
+  return {
+    id: "mod-solar",
+    condoId: "condo-solar",
+    nome: "Edital do Solar do Vale",
+    versao: 1,
+    pautaOrdinaria: [...PAUTA_EXEMPLO, "Aprovação do orçamento de obras da fachada."],
+    blocos: blocosExemplo(),
+  };
 }
 
 const PAUTA_EXEMPLO = [
@@ -422,6 +434,7 @@ function dados(): Dados {
   if (!localStorage.getItem(CHAVE_EXEMPLO_EDITAIS)) {
     localStorage.setItem(CHAVE_EXEMPLO_EDITAIS, "1");
     if (!d.modelos.some((m) => m.id === "mod-padrao")) d.modelos.push(modeloExemplo());
+    if (!d.modelos.some((m) => m.id === "mod-solar")) d.modelos.push(modeloExemploSolar());
     // Completa o edital semente antigo (sem modelo e sem pauta); não mexe em editais editados.
     const i = d.assembleias.findIndex((a) => a.id === "ass-1");
     const antigo = i >= 0 ? (d.assembleias[i] as Registro) : null;
