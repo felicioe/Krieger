@@ -104,3 +104,28 @@ Não verificados: fluxos autenticados no navegador, responsividade efetiva em di
 Os achados antigos das issues 30, 31, 32, 33, 47, 48 e 49 estão fechados. A revisão encontrou suas correções estruturais; não reabriu essas issues nem criou duplicatas. O teste visual das correções continua distinto da inspeção estática.
 
 Prioridade sugerida: preferência por movimento reduzido e atalho de salto. Depois, validar anúncio de carregamento e consolidar os avisos semânticos. Qualquer implementação depende de pedido separado: esta entrega é exclusivamente de auditoria.
+
+## Correções aplicadas em 08/11/2026
+
+Os quatro achados foram corrigidos a pedido do responsável, depois da entrega da auditoria. O
+relatório acima permanece como o retrato do que foi encontrado; esta seção registra o que mudou e
+o que continua sem verificação.
+
+| Achado | Correção | Onde |
+| --- | --- | --- |
+| P2 movimento reduzido | Media query global `prefers-reduced-motion: reduce` que encurta animação e transição para 0.01 ms, mantendo o evento de fim de animação de que a gaveta e o diálogo dependem | `frontend/src/styles.css` |
+| P2 atalho de salto | Link "Pular para o conteúdo", primeiro elemento focável do layout, que move o foco ao `main` com `preventDefault` — não troca o hash do roteador | `frontend/src/components/app/PularParaConteudo.tsx`, usado em `_authenticated.tsx` |
+| P3 carregamento sem anúncio | Região viva educada (`role="status"`, `aria-live="polite"`, `aria-atomic`) e ícone decorativo | `frontend/src/components/app/Carregando.tsx` |
+| P3 cores literais de aviso | Aviso de rateio usa `Alert variant="warning"`, com os tokens `warning`/`warning-foreground` | `frontend/src/components/relatorio/PreviaRelatorio.tsx` |
+
+Cores `amber-*` do Drive foram mantidas: ali identificam pastas e categorias, não estado de aviso.
+
+**Evidência.** A build passa a conter `prefers-reduced-motion` e `not-sr-only` no CSS compilado
+(antes: zero ocorrências de ambos). A suíte nova `correcoes-auditoria-2026-11-08.test.tsx` cobre os
+aceites: primeiro Tab revela o atalho, Enter e clique focam o conteúdo sem mudar o endereço, o
+carregamento expõe região viva com o texto, e a media query encurta animação sem esconder conteúdo.
+As suítes existentes de acessibilidade, UX e gráficos continuam passando.
+
+**Continua não verificado.** O comportamento com a preferência de movimento ativada num navegador
+real, a leitura por leitor de tela e a inspeção visual das telas autenticadas. Os testes cobrem a
+estrutura e o CSS, não a experiência percebida.

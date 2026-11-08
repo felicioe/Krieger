@@ -10,6 +10,7 @@ import { dataParaBR, formatBRL, formatData, formatNumeroBR } from "@/lib/format"
 import { dataVistoria } from "@/domain/painel";
 import { cn } from "@/lib/utils";
 import { RolagemTabela } from "@/components/ui/table";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
@@ -120,7 +121,11 @@ export function PreviaRelatorio({
           {...(d?.periodo.ini && d.periodo.fim ? { sub: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.` } : {})}
         >
           <p className="mb-3 text-sm">Previsão calculada pelo Krieger. {rel.origemBasePrevisao}</p>
-          {rel.avisoRateioAprovado && <p role="alert" className="mb-3 rounded border border-amber-400 bg-amber-50 p-3 text-sm text-amber-950">{rel.avisoRateioAprovado}</p>}
+          {rel.avisoRateioAprovado && (
+            <Alert variant="warning" className="mb-3">
+              <AlertDescription>{rel.avisoRateioAprovado}</AlertDescription>
+            </Alert>
+          )}
           {/* Mesmos critérios que a tela de manutenção mostra como parâmetros. */}
           <dl className="mb-4 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
             {criteriosDaPrevisao(rel.previsao).map((c) => (
