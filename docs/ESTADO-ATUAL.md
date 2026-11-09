@@ -81,6 +81,21 @@ leitor de tela e inspeção visual das telas autenticadas. A publicação foi co
 transferência HTTP e comparação de hash, não por inspeção das telas autenticadas.
 
 
+**Publicado.** 09/11/2026, a partir de `main` `0bc8484` (PR #254), CI verde nesse SHA; commit de
+publicação `042870a` em `deploy-hostinger`. O `index.html` servido tem o mesmo SHA-256 do pacote
+(`1f90913f9abb6401`), os 20 assets citados pelo `index.html` respondem 200, o worker de PDF responde
+com MIME JavaScript, e `auth.php?a=eu` e `api.php?acao=perfis` sem sessão respondem 401.
+`krieger-config.php`, `config.php` e `schema.sql` respondem 404.
+
+**Migration pendente no banco.** A migration `20261108_perfis_tres_niveis.sql`, que cria o perfil
+`adm` e suas permissões, não foi aplicada em produção: o pacote publicado só entrega código. Sem
+ela, contas com perfil `adm` não resolvem permissões e caem no padrão restrito. Precisa ser rodada
+pelo administrador do banco antes de atribuir o perfil ADM a alguém.
+
+**Issues.** Fecha #249 (três níveis de acesso) e #145 (exportações: impressão, PDF, XLSX e CSV).
+O #132 (fração ideal × quantidade de unidades) continua aberto, com a avaliação em
+`docs/AVALIACAO-FRACOES.md` e as perguntas de regra de negócio listadas lá.
+
 ## Modelos de edital por condomínio — 08/11/2026
 
 Até esta entrega todo modelo de edital valia para qualquer condomínio. Quem tinha texto e pauta
