@@ -13,6 +13,7 @@ import type {
   Mensal,
   Store,
   TipoDocumentoConsulta,
+  Perfil,
   Usuario,
   UsuarioAdmin,
   UsuarioSalvar,
@@ -36,6 +37,14 @@ export type MetadadosAnexoImportado = Omit<AnexoImportado, "arquivoDataUrl"> & {
 };
 export type PermissaoCatalogo = { chave: string; modulo: string; tela: string; acao: string; descricao?: string | null; ativo?: boolean };
 export type PermissaoExcecao = { usuarioId: string; permissaoChave: string; efeito: "permitir" | "negar" };
+
+/** Matriz de permissões de um perfil. `fixo` marca o SuperADM, que tem acesso total e não é editável. */
+export type PerfilMatriz = {
+  id: Perfil;
+  nome: string;
+  fixo: boolean;
+  permissoes: { chave: string; permitida: boolean }[];
+};
 
 export type ConfirmarImportacaoPedido = {
   importacaoId: string;
@@ -104,6 +113,8 @@ export interface ApiAdapter {
     usuarioExcluir(id: string): Promise<void>;
     permissoes(): Promise<{ catalogo: PermissaoCatalogo[]; excecoes: PermissaoExcecao[] }>;
     permissaoSalvar(usuarioId: string, chave: string, efeito: "permitir" | "negar" | "remover"): Promise<void>;
+    perfis(): Promise<{ catalogo: PermissaoCatalogo[]; perfis: PerfilMatriz[] }>;
+    perfilPermissaoSalvar(perfil: Perfil, chave: string, permitida: boolean): Promise<void>;
   };
   /** Drive de Documentos e Consulta Inteligente de Documentos. */
   documentos: {

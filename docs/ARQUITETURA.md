@@ -10,7 +10,7 @@ descreve objetivos de produto e deve ser lida junto com este mapa.
 | Regras | `domain/*.ts` | Cálculos, validações, transformação e montagem de conteúdo |
 | Utilitários | `lib/format.ts`, `lib/id.ts` | Formatação e identificadores |
 | API de dados | `api.php` | CRUD por store e importação/exportação de backup |
-| Autenticação | `auth.php`, `lib_auth.php` | Sessão, usuários e conexão PDO |
+| Autenticação | `auth.php`, `lib_auth.php`, `lib_permissoes.php` | Sessão, usuários, resolução de permissões por perfil e exceções |
 | Páginas de acesso (legado) | `login.html`, `usuarios.html`, `auth-guard.js`, `acesso.css` | Frontend HTML/JS estático anterior ao SPA React; não fazem mais parte do pacote publicado (ver README) — o SPA cobre login/usuários como rotas próprias (`#/login`, `#/usuarios`) |
 | Banco | `schema.sql`, `config.example.php` | Schema MySQL e modelo de configuração |
 | PDF | `domain/pdfParser.ts`, `domain/importacao.ts` | Interpretar texto extraído e converter para registros/staging |
@@ -47,10 +47,24 @@ servir o pacote como site puramente estático não basta.
 | `edital`, `modelo`, `modeloTexto`, `ata` | Editais, condições/variáveis e atas |
 | `listaPresenca`, `procuracao`, `layoutTexto` | Conteúdo auxiliar para documentos |
 | `condominio`, `usuario`, `painel`, `backup` | Cadastro, validação e apoio à UI |
+
+### Perfis e permissões
+
+Três níveis: **SuperADM** (`admin`, acesso total), **ADM** (`adm`) e **Usuário**
+(`user`). O rótulo mudou, o valor gravado de `admin` não. `lib_permissoes.php`
+resolve `permissoes_usuario()`: `admin` recebe `['*']` sem consultar tabelas;
+os demais somam `kr_perfil_permissoes` e aplicam `kr_usuario_permissoes`
+(exceção individual, com `negar` prevalecendo). A matriz padrão do ADM e do
+Usuário está em `migrations/20261108_perfis_tres_niveis.sql` e no bloco
+correspondente de `schema.sql`; a tela **Perfis e permissões**, em Usuários,
+grava chave a chave via `auth.php?a=perfil_permissao_salvar` (ação exclusiva do
+SuperADM).
 | `pdfParser`, `importacao` | Leitura de relatórios Systemar e staging |
 
 A montagem de dados/textos no domínio não comprova geração de PDF/Word na UI.
 Os testes exercitam TypeScript em Node, sem navegador, extração PDF, PHP ou MySQL.
+`scripts/test-permissoes.php` roda no MySQL efêmero do CI e cobre o perfil ADM
+(acesso à operação, nenhum acesso às telas de administração).
 
 `domain/*.ts` e `lib/format.ts`/`lib/id.ts` na raiz são a única fonte de verdade
 (testada com Vitest). `frontend/src/domain/*` (21 arquivos) e

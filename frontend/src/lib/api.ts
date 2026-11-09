@@ -3,7 +3,7 @@
  * Em produção usa a API PHP (api.php / auth.php). No preview do Lovable e em
  * localhost usa automaticamente o adaptador mock (localStorage).
  */
-import type { Backup, DocumentoDriveRegistro, Store, TipoDocumentoConsulta, UsuarioSalvar } from "@/domain/types";
+import type { Backup, DocumentoDriveRegistro, Perfil, Store, TipoDocumentoConsulta, UsuarioSalvar } from "@/domain/types";
 import { novoId } from "./id";
 import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoPedido } from "./apiTypes";
 import { realApi } from "./realApi";
@@ -82,6 +82,8 @@ export const api = {
     usuarioExcluir: (id: string) => guarda(() => impl().auth.usuarioExcluir(id)),
     permissoes: () => guarda(() => impl().auth.permissoes()),
     permissaoSalvar: (usuarioId: string, chave: string, efeito: "permitir" | "negar" | "remover") => guarda(() => impl().auth.permissaoSalvar(usuarioId, chave, efeito)),
+    perfis: () => guarda(() => impl().auth.perfis()),
+    perfilPermissaoSalvar: (perfil: Perfil, chave: string, permitida: boolean) => guarda(() => impl().auth.perfilPermissaoSalvar(perfil, chave, permitida)),
   },
   documentos: {
     listar: (condoId: string) => guarda(() => impl().documentos.listar(condoId)),

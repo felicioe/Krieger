@@ -1,5 +1,5 @@
 import type { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
-import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA, type Alinhamento, type Bloco, type Coluna, type Documento, type LinhaTabela, type Texto } from "./tipos";
+import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA, areaPagina, type Alinhamento, type Bloco, type Coluna, type Documento, type LinhaTabela, type Texto } from "./tipos";
 import { carregarPng, paraPng } from "./imagens";
 import { FAMILIA, FONTES, vfsFonte } from "./fontes";
 
@@ -37,14 +37,16 @@ async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
   const img = doc.timbre?.logo ? await carregarPng(doc.timbre.logo.dataUrl) : null;
   const logo = img?.dataUrl ?? null;
   const ratio = img && img.altura ? img.largura / img.altura : 3;
+  const folha = areaPagina(doc.orientacao);
   const conteudo: Content[] = [];
-  for (const b of doc.blocos) conteudo.push(...(await bloco(b)));
+  for (const b of doc.blocos) conteudo.push(...(await bloco(b, folha.util)));
   const timbre = doc.timbre;
   const topo = timbre ? 92 : PAGINA.margem;
   const rodapeTexto = [timbre?.rodape?.trim(), doc.rodape?.trim()].filter(Boolean).join("\n");
 
   return {
     pageSize: "A4",
+    pageOrientation: doc.orientacao === "paisagem" ? "landscape" : "portrait",
     pageMargins: [PAGINA.margem, topo, PAGINA.margem, 64],
     info: { title: doc.titulo, creator: "Sistema Krieger" },
     defaultStyle: { font: FAMILIA, fontSize: 10, lineHeight: 1.25, color: c(COR.texto) },
@@ -70,7 +72,7 @@ async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
             ],
           },
           {
-            canvas: [{ type: "line", x1: 0, y1: 6, x2: PAGINA.util, y2: 6, lineWidth: 0.8, lineColor: c(COR.primaria) }],
+            canvas: [{ type: "line", x1: 0, y1: 6, x2: folha.util, y2: 6, lineWidth: 0.8, lineColor: c(COR.primaria) }],
           },
         ],
       } as Content;
@@ -92,7 +94,7 @@ async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
   };
 }
 
-async function bloco(b: Bloco): Promise<Content[]> {
+async function bloco(b: Bloco, util: number = PAGINA.util): Promise<Content[]> {
   switch (b.tipo) {
     case "titulo": {
       const estilo =
@@ -153,7 +155,7 @@ async function bloco(b: Bloco): Promise<Content[]> {
       return [{ text: "", pageBreak: "after" }];
     case "assinaturas": {
       const n = b.itens.length || 1;
-      const largura = Math.min(220, (PAGINA.util - (n - 1) * 32) / n);
+      const largura = Math.min(220, (util - (n - 1) * 32) / n);
       const colunas = {
         columns: [
           { text: "", width: "*" },

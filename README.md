@@ -14,6 +14,8 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Publicação, validação e rollback](docs/PUBLICACAO.md)
 - [Decisões duráveis](docs/DECISOES.md)
 - [Validação de PDF](docs/VALIDACAO-PDF.md)
+- [Permissões granulares](docs/PERMISSOES-GRANULARES.md)
+- [Avaliação do uso de frações no rateio](docs/AVALIACAO-FRACOES.md)
 - [Auditoria Impeccable e revisão das pendências](docs/auditorias/IMPECCABLE-PRODUCAO-2026-10-21.md)
 - [Orçamento e medição de JavaScript](docs/PERFORMANCE.md)
 - [Revisão e fechamento dos achados de auditoria](docs/auditorias/FECHAMENTO-ACHADOS-2026-10-22.md)
@@ -86,8 +88,9 @@ sem publicar automaticamente.
 4. Crie o primeiro administrador (veja abaixo) e entre pela tela de login do próprio sistema (`/#/login`).
 
 ## Controle de acesso
-- Só entram usuários cadastrados em **Usuários** (menu lateral, visível apenas para administradores).
-- **Administrador**: tudo, inclusive gerenciar usuários e restaurar backup. **Usuário**: usa o sistema.
+- Só entram usuários cadastrados em **Usuários** (menu lateral, visível apenas para o SuperADM).
+- **SuperADM** (valor `admin` no banco): tudo, inclusive gerenciar usuários, perfis e permissões e restaurar backup. **ADM** (`adm`): opera o sistema sem as telas de administração. **Usuário** (`user`): começa como o ADM e é restringido pelo SuperADM.
+- A matriz de cada perfil fica em **Perfis e permissões**, dentro de Usuários; exceções individuais continuam valendo por cima dela.
 - Senhas provisórias obrigam a troca no primeiro acesso; 5 falhas de login bloqueiam por 15 minutos; sessão expira após 8 h sem uso.
 - Primeiro administrador (rode no phpMyAdmin, aba SQL, trocando o hash por um gerado com `password_hash`):
   `INSERT INTO kr_usuarios (id, login, nome, senha_hash, perfil, ativo, trocar_senha, criado_em) VALUES ('adm00001','admin','Administrador','<HASH>','admin',1,1,NOW());`

@@ -1,40 +1,68 @@
 {
-  "versaoAtual": "1.06",
+  "versaoAtual": "1.07",
   "versoes": [
+    {
+      "versao": "1.07",
+      "titulo": "Três níveis de acesso, exportações e avaliação de frações",
+      "alteracoes": [
+        "Os perfis passaram a ser SuperADM, ADM e Usuário. O SuperADM tem acesso total e cria os demais; o ADM opera o sistema sem as telas de administração.",
+        "Nova tela Perfis e permissões, em Usuários, onde o SuperADM liga e desliga cada permissão por perfil. Cada pessoa continua podendo ter exceções próprias.",
+        "As listas e os comparativos de relatórios ganharam exportação em CSV, XLSX e impressão A4 paisagem; o Previsto × Realizado mensal também gera PDF em paisagem.",
+        "Documento de avaliação do uso de frações ideais no rateio, sem alteração de cálculo nesta versão."
+      ]
+    },
     {
       "versao": "1.06",
       "titulo": "Modelos de edital por condomínio",
-      "alteracoes": ["Cada modelo de edital pode pertencer a um condomínio; os modelos sem condomínio continuam valendo para todos.", "Ao criar um edital ou escolher o modelo, aparecem os modelos do condomínio e os gerais.", "A lista de modelos mostra o condomínio de cada um e permite filtrar por condomínio."]
+      "alteracoes": [
+        "Cada modelo de edital pode pertencer a um condomínio; os modelos sem condomínio continuam valendo para todos.",
+        "Ao criar um edital ou escolher o modelo, aparecem os modelos do condomínio e os gerais.",
+        "A lista de modelos mostra o condomínio de cada um e permite filtrar por condomínio."
+      ]
     },
     {
       "versao": "1.05",
       "titulo": "Relatório mensal Orçado × Realizado",
-      "alteracoes": ["Novo relatório no menu Relatórios com período de análise, rolagem, totais por linha e coluna e análises horizontal e vertical opcionais."]
+      "alteracoes": [
+        "Novo relatório no menu Relatórios com período de análise, rolagem, totais por linha e coluna e análises horizontal e vertical opcionais."
+      ]
     },
     {
       "versao": "1.04",
       "titulo": "Precisão das frações importadas",
-      "alteracoes": ["Campos de fração no cadastro exibem e editam as seis casas decimais do relatório do Systemar."]
+      "alteracoes": [
+        "Campos de fração no cadastro exibem e editam as seis casas decimais do relatório do Systemar."
+      ]
     },
     {
       "versao": "1.03",
       "titulo": "Pesquisa de condomínios nas seleções",
-      "alteracoes": ["Seleções de condomínio agora permitem pesquisar por nome, código ou CNPJ, facilitando a escolha em listas extensas."]
+      "alteracoes": [
+        "Seleções de condomínio agora permitem pesquisar por nome, código ou CNPJ, facilitando a escolha em listas extensas."
+      ]
     },
     {
       "versao": "1.02",
       "titulo": "Cadastro de unidades e frações",
-      "alteracoes": ["O cadastro guarda a relação de unidades e frações ideais sem nomes de moradores.", "O Importador reconhece o relatório de fração do Systemar e permite aplicar os dados ao condomínio."]
+      "alteracoes": [
+        "O cadastro guarda a relação de unidades e frações ideais sem nomes de moradores.",
+        "O Importador reconhece o relatório de fração do Systemar e permite aplicar os dados ao condomínio."
+      ]
     },
     {
       "versao": "1.01",
       "titulo": "Permissões de acesso por usuário",
-      "alteracoes": ["Administradores podem definir quais telas e ações cada usuário acessa.", "Menus e links internos respeitam as permissões individuais."]
+      "alteracoes": [
+        "Administradores podem definir quais telas e ações cada usuário acessa.",
+        "Menus e links internos respeitam as permissões individuais."
+      ]
     },
     {
       "versao": "1.0",
       "titulo": "Implantação do sistema",
-      "alteracoes": ["Implantação inicial do Sistema Krieger."]
+      "alteracoes": [
+        "Implantação inicial do Sistema Krieger."
+      ]
     }
   ]
 }

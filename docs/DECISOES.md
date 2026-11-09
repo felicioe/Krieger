@@ -1,5 +1,22 @@
 # Decisões do projeto
 
+## 2026-11-09 — três níveis de acesso, com o SuperADM editando a matriz de perfis
+
+O pedido era separar um nível acima do administrador. Havia dois perfis (`admin` e `user`) e o
+risco de renomear o valor gravado `admin` estava em reescrever a coluna, as guardas do PHP e a
+sessão. Decidido: **o valor gravado continua `admin`** e a interface passa a chamá-lo **SuperADM**;
+o perfil novo é `adm` (**ADM**) e o existente `user` continua **Usuário**. Nenhuma linha de
+`kr_usuarios` muda e nenhum login quebra.
+
+O SuperADM tem acesso total e é o único que administra usuários, perfis e a matriz. O ADM nasce
+com **tudo menos as telas de administração** (`usuarios`, `backup`, `escritorio`); o Usuário
+nasce igual ao ADM e é restringido caso a caso. A matriz fica em `kr_perfil_permissoes`, editada
+na tela **Perfis e permissões** dentro de Usuários, chave por chave. As exceções individuais
+(`kr_usuario_permissoes`) continuam valendo por cima do perfil.
+
+`permissoes_usuario()` segue devolvendo `['*']` para `admin`, o que dispensa consultar a matriz
+no caminho mais comum e mantém o comportamento anterior ao SuperADM.
+
 ## 2026-11-08 — modelo de edital por condomínio, com modelos gerais
 
 O responsável reuniu modelos reais de ata e edital de um ou dois condomínios e perguntou como

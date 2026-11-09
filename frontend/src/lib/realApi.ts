@@ -12,7 +12,7 @@ import type {
   Usuario,
   UsuarioAdmin,
 } from "@/domain/types";
-import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type MetadadosAnexoImportado, type PermissaoCatalogo, type PermissaoExcecao } from "./apiTypes";
+import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type MetadadosAnexoImportado, type PerfilMatriz, type PermissaoCatalogo, type PermissaoExcecao } from "./apiTypes";
 
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
   let resp: Response;
@@ -164,6 +164,13 @@ export const realApi: ApiAdapter = {
     },
     async permissaoSalvar(usuarioId, chave, efeito) {
       await post("auth.php", { a: "permissao_salvar", usuarioId, chave, efeito });
+    },
+    async perfis() {
+      const r = await req<{ catalogo?: PermissaoCatalogo[]; perfis?: PerfilMatriz[] }>("auth.php?a=perfis");
+      return { catalogo: r.catalogo ?? [], perfis: r.perfis ?? [] };
+    },
+    async perfilPermissaoSalvar(perfil, chave, permitida) {
+      await post("auth.php", { a: "perfil_permissao_salvar", perfil, chave, permitida });
     },
   },
   documentos: {

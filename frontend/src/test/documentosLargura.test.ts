@@ -6,6 +6,7 @@ import {
   MARGEM_CELULA,
   PAGINA,
   RECUO_CELULA,
+  areaPagina,
   TAMANHO_TABELA,
   textoPlano,
   type Bloco,
@@ -94,7 +95,10 @@ function estiloDaLinha(l: LinhaTabela, tam: number): { tamanho: number; negrito:
 
 type Tabela = Extract<Bloco, { tipo: "tabela" }>;
 
-function larguraFlexivel(t: Pick<Tabela, "colunas" | "pequena" | "grade">): {
+function larguraFlexivel(
+  t: Pick<Tabela, "colunas" | "pequena" | "grade">,
+  util: number = PAGINA.util,
+): {
   livres: number;
   porColuna: number;
 } {
@@ -102,14 +106,15 @@ function larguraFlexivel(t: Pick<Tabela, "colunas" | "pequena" | "grade">): {
   const grade = t.grade ? (t.colunas.length + 1) * 0.6 : 0;
   const fixas = t.colunas.reduce((s, c) => s + (typeof c.largura === "number" ? c.largura : 0), 0);
   const livres = t.colunas.filter((c) => typeof c.largura !== "number").length;
-  const sobra = PAGINA.util - fixas - margem * t.colunas.length - grade;
+  const sobra = util - fixas - margem * t.colunas.length - grade;
   return { livres, porColuna: livres ? sobra / livres : sobra };
 }
 
 function conferirDocumento(nome: string, doc: Documento) {
+  const util = areaPagina(doc.orientacao).util;
   const tabelas = doc.blocos.filter((b): b is Tabela => b.tipo === "tabela");
   tabelas.forEach((t, i) => {
-    const { livres, porColuna } = larguraFlexivel(t);
+    const { livres, porColuna } = larguraFlexivel(t, util);
     const rotulo = `${nome}, tabela ${i + 1} (${t.colunas.map((c) => c.titulo || "—").join(" | ")})`;
     if (livres)
       expect(
@@ -152,7 +157,7 @@ function conferirDocumento(nome: string, doc: Documento) {
   });
   for (const b of doc.blocos) {
     if (b.tipo === "imagem")
-      expect(b.largura, `${nome}: imagem mais larga que a página`).toBeLessThanOrEqual(PAGINA.util);
+      expect(b.largura, `${nome}: imagem mais larga que a página`).toBeLessThanOrEqual(util);
   }
   return tabelas.length;
 }

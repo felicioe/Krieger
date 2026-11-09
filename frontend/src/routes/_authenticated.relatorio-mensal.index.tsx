@@ -6,6 +6,9 @@ import { FileUp, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
+import { Exportacoes } from "@/components/app/Exportacoes";
+import { baixarCsv, baixarXlsx, type ColunaExportacao } from "@/lib/exportar";
+import { imprimirColunas } from "@/lib/imprimirColunas";
 import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
@@ -72,6 +75,22 @@ function ListaMensais() {
 
   const opcoesCondo = [{ valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" }, ...opcoesCondominio(condominios)];
 
+  const colunasExport: ColunaExportacao<Linha>[] = [
+    { titulo: "Mês", valor: (m) => m.comp, texto: (m) => m.comp },
+    { titulo: "Condomínio", valor: (m) => m.condoNome, texto: (m) => m.condoNome },
+    { titulo: "Receitas", valor: (m) => m.receitas, texto: (m) => formatBRL(m.receitas), alinhamento: "direita" },
+    { titulo: "Despesas", valor: (m) => m.despesas, texto: (m) => formatBRL(m.despesas), alinhamento: "direita" },
+    { titulo: "Saldo atual", valor: (m) => m.saldo, texto: (m) => formatBRL(m.saldo), alinhamento: "direita" },
+    {
+      titulo: "A receber",
+      valor: (m) => m.receber.valor,
+      texto: (m) => (m.receber.valor ? formatBRL(m.receber.valor) : "—"),
+      alinhamento: "direita",
+    },
+    { titulo: "Unidades inadimplentes", valor: (m) => m.receber.unidades, alinhamento: "direita" },
+    { titulo: "Saldo fecha", valor: (m) => (m.naoFecha ? "Não" : "Sim"), texto: (m) => (m.naoFecha ? "Não" : "Sim") },
+  ];
+
   const abrirNovo = (v: boolean) =>
     navigate({ search: (s) => (v ? { ...s, novo: condo === TODOS ? "" : condo } : { ...(s.condo ? { condo: s.condo } : {}) }), replace: true });
 
@@ -82,6 +101,20 @@ function ListaMensais() {
         descricao="Demonstrativo do mês, contas a receber e notas explicativas de cada condomínio."
         acoes={
           <>
+            <Exportacoes
+              acoes={{
+                csv: () => baixarCsv("relatorio-mensal", colunasExport, linhas),
+                xlsx: () => baixarXlsx("relatorio-mensal", "Mensais", colunasExport, linhas),
+                imprimir: () =>
+                  imprimirColunas({
+                    titulo: "Acompanhamento de carga de dados mensais",
+                    subtitulo: condo === TODOS ? "Todos os condomínios" : linhas[0]?.condoNome,
+                    colunas: colunasExport,
+                    linhas,
+                  }),
+              }}
+              bloqueio={linhas.length === 0 ? "Nenhum relatório mensal na seleção." : null}
+            />
             <Button variant="outline" asChild>
               <Link to="/importador">
                 <FileUp /> Importar PDF

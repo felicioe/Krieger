@@ -144,7 +144,8 @@ CREATE TABLE IF NOT EXISTS kr_usuario_permissoes (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 INSERT IGNORE INTO kr_perfis (id,nome,descricao,criado_em) VALUES
-('admin','Administrador','Acesso total ao sistema',NOW()),
+('admin','SuperADM','Acesso total; administra usuários, perfis e permissões',NOW()),
+('adm','ADM','Operação do sistema sem as telas de administração',NOW()),
 ('user','Usuário','Acesso definido por permissões',NOW());
 
 -- Catálogo inicial: preserva o acesso atual dos usuários comuns até o administrador ajustar a matriz.
@@ -180,6 +181,12 @@ INSERT IGNORE INTO kr_permissoes (chave,modulo,tela,acao,descricao,criado_em) VA
 ('escritorio.editar','administracao','escritorio','editar','Editar escritório',NOW());
 INSERT IGNORE INTO kr_perfil_permissoes (perfil_id, permissao_chave)
 SELECT 'user', chave FROM kr_permissoes;
+
+-- ADM: opera o sistema, mas sem as telas de administração (usuários, backup e escritório).
+-- Fica no fim do bloco para alcançar também as permissões de edição criadas acima.
+INSERT IGNORE INTO kr_perfil_permissoes (perfil_id, permissao_chave)
+SELECT 'adm', chave FROM kr_permissoes
+WHERE chave NOT IN ('usuarios.visualizar','backup.visualizar','escritorio.visualizar','escritorio.editar');
 
 -- Atas de assembleia (rascunhos e atas finalizadas).
 CREATE TABLE IF NOT EXISTS kr_atas (

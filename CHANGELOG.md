@@ -2,7 +2,14 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.06**.
+Versão atual: **1.07**.
+
+## 1.07 — Três níveis de acesso, exportações e avaliação de frações
+
+- Os perfis passaram a ser SuperADM, ADM e Usuário. O SuperADM tem acesso total e cria os demais; o ADM opera o sistema sem as telas de administração.
+- Nova tela Perfis e permissões, em Usuários, onde o SuperADM liga e desliga cada permissão por perfil. Cada pessoa continua podendo ter exceções próprias.
+- As listas e os comparativos de relatórios ganharam exportação em CSV, XLSX e impressão A4 paisagem; o Previsto × Realizado mensal também gera PDF em paisagem.
+- Documento de avaliação do uso de frações ideais no rateio, sem alteração de cálculo nesta versão.
 
 ## 1.06 — Modelos de edital por condomínio
 

@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/app/PageHeader";
+import { Exportacoes } from "@/components/app/Exportacoes";
+import { baixarCsv, baixarXlsx, type ColunaExportacao } from "@/lib/exportar";
+import { imprimirColunas } from "@/lib/imprimirColunas";
 import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { Field } from "@/components/app/Field";
@@ -77,6 +80,29 @@ function ListaExercicios() {
       .sort((a, b) => Number(b.ano) - Number(a.ano) || a.condoNome.localeCompare(b.condoNome, "pt-BR"));
   }, [exercicios, condominios, busca]);
 
+  const colunasExport: ColunaExportacao<Linha>[] = [
+    { titulo: "Exercício", valor: (e) => e.ano, texto: (e) => String(e.ano) },
+    { titulo: "Condomínio", valor: (e) => e.condoNome, texto: (e) => e.condoNome },
+    { titulo: "Despesas realizadas", valor: (e) => e.despesas, texto: (e) => formatBRL(e.despesas), alinhamento: "direita" },
+    {
+      titulo: "Previsto por unidade",
+      valor: (e) => e.previsto,
+      texto: (e) => (e.previsto === null ? "—" : formatBRL(e.previsto)),
+      alinhamento: "direita",
+    },
+    {
+      titulo: "Rateio aprovado",
+      valor: (e) => e.rateioAprovado,
+      texto: (e) => (e.rateioAprovado === null || e.rateioAprovado === undefined ? "—" : formatBRL(e.rateioAprovado)),
+      alinhamento: "direita",
+    },
+    {
+      titulo: "Divergência em conferência",
+      valor: (e) => (e.emConferencia ? "Sim" : "Não"),
+      texto: (e) => (e.emConferencia ? "Sim" : "Não"),
+    },
+  ];
+
   return (
     <>
       <PageHeader
@@ -89,6 +115,20 @@ function ListaExercicios() {
                 <CircleHelp />
               </Link>
             </Button>
+            <Exportacoes
+              acoes={{
+                csv: () => baixarCsv("prestacoes-de-contas", colunasExport, linhas),
+                xlsx: () => baixarXlsx("prestacoes-de-contas", "Prestações", colunasExport, linhas),
+                imprimir: () =>
+                  imprimirColunas({
+                    titulo: "Prestações de contas",
+                    subtitulo: busca.trim() ? `Busca: ${busca.trim()}` : "Todas as prestações",
+                    colunas: colunasExport,
+                    linhas,
+                  }),
+              }}
+              bloqueio={linhas.length === 0 ? "Nenhuma prestação na seleção." : null}
+            />
             <Button variant="outline" asChild>
               <Link to="/importador">
                 <FileUp /> Importar PDF

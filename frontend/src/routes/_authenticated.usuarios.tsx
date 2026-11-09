@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState, type FormEvent } from "react";
-import { Loader2, Pencil, Plus, Shield, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Plus, Shield, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
+import { DialogoPerfis } from "@/components/usuarios/DialogoPerfis";
 import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
 import { api, mensagemErro } from "@/lib/api";
@@ -27,7 +28,7 @@ import { chaves, usuariosQuery } from "@/lib/queries";
 import { useUsuario } from "@/lib/auth";
 import { formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
-import { PERFIL_ROTULO, SENHA_MINIMA, validarLogin, validarNovaSenha } from "@/domain/usuario";
+import { PERFIL_ROTULO, PERFIS_ATRIBUIVEIS, SENHA_MINIMA, validarLogin, validarNovaSenha } from "@/domain/usuario";
 import type { Perfil, UsuarioAdmin } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
@@ -46,6 +47,7 @@ function Usuarios() {
   const [editando, setEditando] = useState<UsuarioAdmin | "novo" | null>(null);
   const [excluindo, setExcluindo] = useState<UsuarioAdmin | null>(null);
   const [permissoesUsuario, setPermissoesUsuario] = useState<UsuarioAdmin | null>(null);
+  const [perfisAberto, setPerfisAberto] = useState(false);
 
   const excluir = useMutation({
     mutationFn: (id: string) => api.auth.usuarioExcluir(id),
@@ -63,9 +65,14 @@ function Usuarios() {
         titulo="Usuários"
         descricao="Quem pode acessar o Sistema Krieger."
         acoes={
-          <Button onClick={() => setEditando("novo")}>
-            <Plus /> Novo usuário
-          </Button>
+          <>
+            <Button variant="outline" onClick={() => setPerfisAberto(true)}>
+              <ShieldCheck /> Perfis e permissões
+            </Button>
+            <Button onClick={() => setEditando("novo")}>
+              <Plus /> Novo usuário
+            </Button>
+          </>
         }
       />
       <DataTable
@@ -149,6 +156,7 @@ function Usuarios() {
       {permissoesUsuario && (
         <DialogPermissoes usuario={permissoesUsuario} aoFechar={() => setPermissoesUsuario(null)} />
       )}
+      {perfisAberto && <DialogoPerfis aoFechar={() => setPerfisAberto(false)} />}
 
       <ConfirmDialog
         aberto={!!excluindo}
@@ -211,7 +219,7 @@ function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFech
         <DialogHeader>
           <DialogTitle>Permissões de {usuario.nome}</DialogTitle>
           <DialogDescription>
-            {usuario.perfil === 'admin' ? 'Administradores possuem acesso total. Altere o perfil para Usuário para restringir acessos.' : 'Defina exceções individuais. Sem exceção, vale o perfil do usuário.'}
+            {usuario.perfil === 'admin' ? 'O SuperADM tem acesso total e não pode ser restringido. Altere o perfil para ADM ou Usuário para limitar acessos.' : 'Defina exceções individuais. Sem exceção, vale o que o perfil ' + PERFIL_ROTULO[usuario.perfil] + ' tiver marcado em Perfis e permissões.'}
           </DialogDescription>
         </DialogHeader>
         {carregando ? (
@@ -371,10 +379,7 @@ function DialogUsuario({
               <Selecao<Perfil>
                 value={perfil}
                 onChange={setPerfil}
-                opcoes={[
-                  { valor: "user", rotulo: PERFIL_ROTULO.user },
-                  { valor: "admin", rotulo: PERFIL_ROTULO.admin },
-                ]}
+                opcoes={PERFIS_ATRIBUIVEIS.map((p) => ({ valor: p, rotulo: PERFIL_ROTULO[p] }))}
               />
             </Field>
             <div className="flex h-9 items-center gap-2 max-md:h-11 max-md:gap-3 pointer-coarse:h-11 pointer-coarse:gap-3">
