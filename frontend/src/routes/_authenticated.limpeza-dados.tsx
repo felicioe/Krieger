@@ -176,7 +176,7 @@ function PaginaLimpezaDados() {
           <ShieldAlert />
           <AlertTitle>Acesso restrito a administradores</AlertTitle>
           <AlertDescription>
-            Somente usuários com perfil Administrador têm permissão para visualizar ou executar a limpeza de cadastros.
+            Somente usuários com perfil SuperADM têm permissão para visualizar ou executar a limpeza de cadastros.
           </AlertDescription>
         </Alert>
       </>

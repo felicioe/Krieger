@@ -8,6 +8,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/app/PageHeader";
+import { Exportacoes } from "@/components/app/Exportacoes";
+import { baixarCsv, baixarXlsx } from "@/lib/exportar";
+import { imprimirColunas } from "@/lib/imprimirColunas";
+import { colunasComparativoExport, linhasComparativoExport } from "@/lib/colunasRelatorios";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { PercentualInput, Selecao } from "@/components/app/inputs";
@@ -119,6 +123,10 @@ function PaginaComparativo() {
   const ate = r.mesAte.rotulo;
   const mesesTexto = r.mesAte.posicao === 1 ? "1 mês" : `${r.mesAte.posicao} meses`;
   const semDados = semRealizado(r);
+  const nomeCondo = condo?.nome || exercicio?.condoNome || "Condomínio";
+  const colunasExport = colunasComparativoExport();
+  const linhasExport = linhasComparativoExport(r, mostrarAnaliticas);
+  const arquivoSaida = `previsto-realizado ${nomeCondo} ${String(exercicio?.ano ?? "")}`;
 
   return (
     <>
@@ -126,10 +134,26 @@ function PaginaComparativo() {
         titulo="Previsto × Realizado"
         descricao="Previsão orçamentária do exercício (já com os ajustes) comparada ao realizado acumulado nos relatórios mensais do exercício seguinte."
         acoes={
-          <BotaoDocumento
-            rotulo="Gerar comparativo"
-            gerar={() => documentoPrevistoRealizado({ comparativo: r, exercicio, condominio: condo ?? null, escritorio })}
-          />
+          <>
+            <Exportacoes
+              acoes={{
+                csv: () => baixarCsv(arquivoSaida, colunasExport, linhasExport),
+                xlsx: () => baixarXlsx(arquivoSaida, "Comparativo", colunasExport, linhasExport),
+                imprimir: () =>
+                  imprimirColunas({
+                    titulo: "Previsto × Realizado",
+                    subtitulo: `${nomeCondo} · acumulado até ${ate}`,
+                    colunas: colunasExport,
+                    linhas: linhasExport,
+                  }),
+              }}
+              bloqueio={semDados ? "Sem relatório mensal no período: o realizado não existe." : null}
+            />
+            <BotaoDocumento
+              rotulo="Gerar comparativo"
+              gerar={() => documentoPrevistoRealizado({ comparativo: r, exercicio, condominio: condo ?? null, escritorio })}
+            />
+          </>
         }
       />
 

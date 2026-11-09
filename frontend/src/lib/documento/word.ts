@@ -1,5 +1,5 @@
 import type { Bloco, Coluna, Documento, LinhaTabela, Texto, Alinhamento } from "./tipos";
-import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA } from "./tipos";
+import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA, areaPagina } from "./tipos";
 import { bytesDe, carregarPng } from "./imagens";
 
 /** Desenha o documento em Word (.docx, biblioteca docx carregada sob demanda). */
@@ -31,7 +31,8 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   const tw = (pt: number) => Math.round(pt * 20);
   const meio = (pt: number) => Math.round(pt * 2);
   const px = (pt: number) => Math.round((pt * 96) / 72);
-  const UTIL = tw(PAGINA.util);
+  const folha = areaPagina(doc.orientacao);
+  const UTIL = tw(folha.util);
   const ALINHA = {
     esquerda: AlignmentType.LEFT,
     centro: AlignmentType.CENTER,
@@ -267,8 +268,8 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
       case "assinaturas": {
         const n = b.itens.length || 1;
         const vao = 32;
-        const larg = Math.min(220, (PAGINA.util - (n - 1) * vao) / n);
-        const lado = (PAGINA.util - n * larg - (n - 1) * vao) / 2;
+        const larg = Math.min(220, (folha.util - (n - 1) * vao) / n);
+        const lado = (folha.util - n * larg - (n - 1) * vao) / 2;
         const ws = [tw(lado), ...b.itens.flatMap((_, i) => (i > 0 ? [tw(vao), tw(larg)] : [tw(larg)])), tw(lado)];
         const assinatura = (linhas: string[], w: number) =>
           new TableCell({
@@ -410,7 +411,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
         properties: {
           titlePage: capaSemTimbre,
           page: {
-            size: { width: tw(PAGINA.largura), height: tw(PAGINA.altura) },
+            size: { width: tw(folha.largura), height: tw(folha.altura) },
             margin: { top: tw(timbre ? 92 : PAGINA.margem), bottom: tw(64), left: tw(PAGINA.margem), right: tw(PAGINA.margem), header: tw(28), footer: tw(24) },
           },
         },

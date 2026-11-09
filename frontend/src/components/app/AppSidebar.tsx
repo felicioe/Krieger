@@ -1,4 +1,5 @@
 import { Link } from "@/components/app/LinkPermitido";
+import { PERFIL_ROTULO } from "@/domain/usuario";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   Briefcase,
@@ -206,7 +207,7 @@ export function ConteudoMenu({
             <span className="sr-only">Conta: </span>
             <span className="block text-sm font-medium wrap-anywhere">{usuario?.nome || usuario?.login}</span>
             <span className="block text-xs text-sidebar-muted">
-              {usuario?.perfil === "admin" ? "Administrador" : "Usuário"}
+              {PERFIL_ROTULO[usuario?.perfil ?? "user"] ?? "Usuário"}
             </span>
           </span>
           <ChevronDown

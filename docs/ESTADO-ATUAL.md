@@ -1,5 +1,48 @@
 # Estado atual e passagem de contexto
 
+## Três perfis, matriz de permissões e exportações — 09/11/2026
+
+O pedido foi separar um nível acima do administrador e, na mesma leva, entregar as exportações
+dos relatórios. Ver `DECISOES.md` para o porquê das escolhas.
+
+**Perfis.** `Perfil` passou a ser `"admin" | "adm" | "user"` (`domain/types.ts`), com rótulos
+SuperADM/ADM/Usuário em `domain/usuario.ts` (`PERFIL_ROTULO`, `PERFIS_ATRIBUIVEIS`,
+`perfilAdministra`). O valor gravado de `admin` **não** mudou: renomeá-lo exigiria migrar a
+coluna, reescrever as guardas do PHP e reabrir risco de login. `auth.php` aceita `adm` na
+gravação de usuário e ganhou `perfis` e `perfil_permissao_salvar`, ambos atrás de
+`exigir_login($pdo, true)`. `migrations/20261108_perfis_tres_niveis.sql` cria o perfil ADM e a
+matriz padrão (tudo menos `usuarios`, `backup` e `escritorio`), de forma idempotente; o mesmo
+bloco entrou no `schema.sql` para instalação nova.
+
+**Matriz na tela.** `frontend/src/components/usuarios/DialogoPerfis.tsx`, aberto pelo botão
+"Perfis e permissões" em Usuários, mostra uma aba por perfil, agrupa as chaves por módulo e grava
+cada mudança na hora (`api.auth.perfilPermissaoSalvar`), com atualização otimista e reversão em
+erro. A aba do SuperADM é só leitura e marcada com `fixo`. As exceções por usuário continuam no
+diálogo existente e prevalecem sobre o perfil.
+
+**Contrato e adaptadores.** `PerfilMatriz` em `apiTypes.ts`; `realApi.ts` mapeia para as novas
+ações do `auth.php`; `api.ts` expõe `perfis`/`perfilPermissaoSalvar`; `mockApi.ts` espelha a
+mesma matriz em `localStorage` e semeia o usuário `admin` como "SuperADM".
+
+**Exportações (#145, parcial).** `lib/exportar.ts` (CSV com BOM/`;`/CRLF, XLSX por import
+dinâmico), `lib/colunasRelatorios.ts` (colunas e linhas dos dois comparativos, com as colunas
+opcionais do mensal), `lib/imprimirColunas.ts` (impressão A4 paisagem a partir das mesmas
+colunas) e `components/app/Exportacoes.tsx` (menu único). O modelo de documento passou a aceitar
+`orientacao: "paisagem"` (`areaPagina()` em `lib/documento/tipos.ts`, usada pelo PDF e pelo
+Word), e `documentos/previstoRealizadoMensal.ts` gera o PDF em paisagem. As quatro telas
+(mensais, Previsto × Realizado anual e mensal, prestações) têm o menu. **PDF com timbre para as
+demais telas e as colunas opcionais da tela mensal no Excel ficam para a próxima etapa** — ver
+as issues abertas a partir do #146.
+
+**Frações (#132).** `docs/AVALIACAO-FRACOES.md` mapeia cada cálculo que usa contagem de unidades
+e propõe a regra de distribuição por fração, com fallback e arredondamento. Nenhum cálculo
+mudou nesta versão.
+
+**Validação.** `npm test` (raiz) e `npx tsc --noEmit` verdes nos dois projetos; `php -l` limpo em
+`auth.php`/`api.php`/`lib_permissoes.php`; `scripts/test-permissoes.php` cobre o perfil ADM. A
+suíte do frontend tem falhas pré-existentes de `localStorage` no Node 26 (jsdom), medidas contra a
+base antes deste trabalho.
+
 ## Correções da auditoria de interface — 08/11/2026
 
 A auditoria de 08/11 registrou quatro achados e não aplicou nenhuma correção. Aplicadas a pedido:

@@ -77,9 +77,14 @@ export interface Timbre {
   rodape: string;
 }
 
+/** Retrato é o padrão; paisagem serve às tabelas largas (comparativos mês a mês). */
+export type Orientacao = "retrato" | "paisagem";
+
 export interface Documento {
   /** Título interno do arquivo. */
   titulo: string;
+  /** Padrão `retrato`. Em paisagem a página A4 é girada e a área útil cresce em largura. */
+  orientacao?: Orientacao;
   /** Nome do arquivo, sem extensão. */
   arquivo: string;
   /** Papel timbrado (cabeçalho com logo/nome e rodapé do escritório). */
@@ -103,8 +108,15 @@ export const COR = {
   grupo: "E9EEF4",
 } as const;
 
-/** Área útil da página A4 com margens de 56 pt. */
+/** Área útil da página A4 retrato, com margens de 56 pt. */
 export const PAGINA = { largura: 595.28, altura: 841.89, margem: 56, util: 595.28 - 2 * 56 } as const;
+
+/** Medidas da página para a orientação pedida. Fonte única do PDF, do Word e dos testes de largura. */
+export function areaPagina(orientacao: Orientacao = "retrato") {
+  const largura = orientacao === "paisagem" ? PAGINA.altura : PAGINA.largura;
+  const altura = orientacao === "paisagem" ? PAGINA.largura : PAGINA.altura;
+  return { largura, altura, util: largura - 2 * PAGINA.margem };
+}
 
 /**
  * Margem interna lateral de cada célula de tabela (pt, de cada lado), igual no PDF e no Word.

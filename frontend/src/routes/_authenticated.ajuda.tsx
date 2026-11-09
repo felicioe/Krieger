@@ -178,6 +178,13 @@ function Ajuda() {
                 Reúne o demonstrativo do mês, inadimplência e notas explicativas num documento pronto para PDF/Word — o relatório de rotina,
                 separado do relatório final (que é o fechamento do exercício inteiro).
               </p>
+              <p>
+                Esta lista, o <strong>Previsto × Realizado</strong> (anual e mensal) e as <strong>prestações de contas</strong>{" "}
+                exportam em <strong>CSV</strong> (abre no Excel pt-BR com vírgula decimal) e <strong>XLSX</strong>, e imprimem em{" "}
+                <strong>A4 paisagem</strong>. A tela, a planilha e o papel saem das mesmas colunas, inclusive as colunas opcionais
+                marcadas na tela do mensal. O Previsto × Realizado mensal também gera <strong>PDF</strong> em paisagem, com o
+                timbre do escritório e os totais por linha e por coluna.
+              </p>
             </Texto>
           </SectionCard>
 
@@ -204,9 +211,19 @@ function Ajuda() {
             <Texto>
               <p>
                 <strong>Escritório</strong> guarda os dados usados em relatórios e editais (nome, cidade, rodapé, assinatura, logo).{" "}
-                <strong>Usuários</strong> (visível só para administradores) controla quem acessa o sistema e o que cada um pode fazer — telas
-                e ações são liberadas por permissão individual. <strong>Backup</strong> exporta ou restaura todos os dados; só administrador
-                restaura.
+                <strong>Usuários</strong> (visível só para o SuperADM) controla quem acessa o sistema e o que cada um pode fazer.{" "}
+                <strong>Backup</strong> exporta ou restaura todos os dados; só o SuperADM restaura.
+              </p>
+              <p>
+                Há três perfis. O <strong>SuperADM</strong> tem acesso total, cria os demais usuários e é o único que administra
+                perfis, backup e escritório. O <strong>ADM</strong> opera o sistema inteiro sem essas telas de administração. O{" "}
+                <strong>Usuário</strong> começa com o mesmo conjunto do ADM e é restringido pelo SuperADM.
+              </p>
+              <p>
+                Em <strong>Perfis e permissões</strong>, dentro de Usuários, o SuperADM liga e desliga cada permissão do ADM e do
+                Usuário; a mudança é gravada na hora. O perfil define o padrão da pessoa, e as <strong>exceções
+                individuais</strong> (o botão de escudo na lista de usuários) valem por cima dele — negar sempre ganha de
+                permitir.
               </p>
             </Texto>
           </SectionCard>

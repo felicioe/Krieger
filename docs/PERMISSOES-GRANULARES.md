@@ -25,11 +25,25 @@ Exemplos:
 
 ## Resolução
 
-1. O perfil `admin` mantém acesso total para compatibilidade.
-2. Para usuários comuns, uma permissão explícita de usuário prevalece sobre a permissão do perfil.
-3. Uma regra `negar` prevalece sobre `permitir`.
-4. Sem regra permitida, a tela/ação fica bloqueada.
-5. O frontend esconde o item; o backend responde 403 se houver tentativa direta.
+1. O perfil `admin` (**SuperADM**) mantém acesso total e nem consulta a matriz: `permissoes_usuario()` devolve `['*']`.
+2. Os demais perfis leem a matriz de `kr_perfil_permissoes`; sem linha para a chave, negam.
+3. Uma permissão explícita de usuário (`kr_usuario_permissoes`) prevalece sobre a do perfil.
+4. Uma regra `negar` prevalece sobre `permitir`.
+5. Sem regra permitida, a tela/ação fica bloqueada.
+6. O frontend esconde o item; o backend responde 403 se houver tentativa direta.
+
+## Três níveis
+
+| Perfil | Valor gravado | Acesso |
+| --- | --- | --- |
+| SuperADM | `admin` | Total; administra usuários, perfis e a matriz; restaura backup |
+| ADM | `adm` | Tudo menos as telas de administração (`usuarios`, `backup`, `escritorio`) |
+| Usuário | `user` | Começa como o ADM; o SuperADM restringe na matriz ou por exceção individual |
+
+O rótulo da interface é novo, o valor gravado de `admin` não mudou: nenhuma linha de
+`kr_usuarios` foi reescrita e nenhum login quebrou. O ADM e o Usuário nascem do padrão de
+`migrations/20261108_perfis_tres_niveis.sql`, e o SuperADM edita a matriz em **Perfis e
+permissões** (tela de Usuários), chave por chave, com gravação imediata.
 
 ## Navegação
 

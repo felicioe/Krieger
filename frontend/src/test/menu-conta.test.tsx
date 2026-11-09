@@ -30,7 +30,7 @@ function montar({
   nome = "Maria Souza",
   movel = false,
   comProvedor = true,
-}: { perfil?: "admin" | "usuario"; nome?: string; movel?: boolean; comProvedor?: boolean } = {}) {
+}: { perfil?: Usuario["perfil"]; nome?: string; movel?: boolean; comProvedor?: boolean } = {}) {
   definirUsuario({ id: "u-teste", login: "maria", nome, perfil, trocarSenha: false } as Usuario);
   const Menu = movel ? (
     <MenuMovel destinoFoco={() => document.getElementById("conteudo")}>
@@ -93,7 +93,7 @@ describe("bloco da conta no menu lateral", () => {
     await screen.findByLabelText("Observação");
     const conta = botaoConta();
     expect(conta).toHaveAttribute("aria-expanded", "false");
-    expect(conta).toHaveAccessibleName(/Administrador/);
+    expect(conta).toHaveAccessibleName(/SuperADM/);
     for (const nome of ["Usuários", "Minha senha"]) expect(screen.queryByRole("link", { name: nome })).toBeNull();
     for (const nome of ["Registro de Alterações", "Sair"]) expect(screen.queryByRole("button", { name: nome })).toBeNull();
     const principal = screen.getByRole("navigation", { name: "Menu principal" });
@@ -120,7 +120,7 @@ describe("bloco da conta no menu lateral", () => {
   });
 
   it("administrador vê Usuários e Limpeza de Dados; usuário comum não", async () => {
-    const { user, pronto } = montar({ perfil: "usuario", nome: "João" });
+    const { user, pronto } = montar({ perfil: "user", nome: "João" });
     await pronto();
     expect(screen.queryByRole("link", { name: "Limpeza de Dados" })).toBeNull();
     await user.click(botaoConta("João"));

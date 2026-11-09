@@ -1,4 +1,5 @@
 /** Regras de usuário e senha (funções puras). */
+import type { Perfil } from "./types";
 
 export const LOGIN_REGEX = /^[a-z0-9._-]{3,40}$/;
 export const SENHA_MINIMA = 8;
@@ -16,4 +17,11 @@ export function validarNovaSenha(nova: string, confirmacao?: string): string | n
   return null;
 }
 
-export const PERFIL_ROTULO = { admin: "Administrador", user: "Usuário" } as const;
+/** Rótulo de cada perfil na interface. O valor gravado de `admin` continua "admin" (ver `Perfil`). */
+export const PERFIL_ROTULO: Record<Perfil, string> = { admin: "SuperADM", adm: "ADM", user: "Usuário" };
+
+/** Perfis que o SuperADM pode atribuir ao criar ou editar usuários. */
+export const PERFIS_ATRIBUIVEIS: Perfil[] = ["adm", "user", "admin"];
+
+/** Só o SuperADM administra usuários, perfis e a matriz de permissões. */
+export const perfilAdministra = (perfil: Perfil | null | undefined): boolean => perfil === "admin";

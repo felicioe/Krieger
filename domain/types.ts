@@ -703,7 +703,14 @@ export interface ConsultaHistoricoItem {
 
 // ---------- Usuários ----------
 
-export type Perfil = "admin" | "user";
+/**
+ * Perfis de acesso. `admin` = SuperADM (acesso total, cria ADM e Usuário);
+ * `adm` = ADM (opera o sistema; não mexe em usuários nem em permissões);
+ * `user` = Usuário (acesso definido pelas permissões do perfil e exceções).
+ * O valor gravado de `admin` continua "admin" de propósito: mudar o valor exigiria migração de
+ * banco e reabriria o risco de login. A troca para "SuperADM" é só de rótulo na interface.
+ */
+export type Perfil = "admin" | "adm" | "user";
 
 export interface Usuario {
   id: string;

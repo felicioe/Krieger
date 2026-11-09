@@ -3,13 +3,13 @@
  * Guarda tudo no localStorage e imita as regras e mensagens da API PHP.
  * Usuário semente: admin / admin123 (perfil admin).
  */
-import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type ConsultaHistoricoItem, type DocumentoDrive, type DocumentoDriveConteudo, type DocumentoDriveRegistro, type Importacao, type Mensal, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
+import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type ConsultaHistoricoItem, type DocumentoDrive, type DocumentoDriveConteudo, type DocumentoDriveRegistro, type Importacao, type Mensal, type Perfil, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
 import { condominioPadrao, normalizarCondominio } from "@/domain/condominio";
 import { inicializarIndicesImportados, validarIndicesCondominio } from "@/domain/indicesCondominio";
 import type { Exercicio, ConfigEscritorio } from "@/domain/types";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
-import { validarLogin, validarNovaSenha } from "@/domain/usuario";
+import { PERFIL_ROTULO, validarLogin, validarNovaSenha } from "@/domain/usuario";
 import { novaAtaDeAssembleia } from "@/domain/ata";
 import { normalizarAssembleia } from "@/domain/edital";
 import { dataParaBR, dataParaISO } from "./format";
@@ -20,7 +20,25 @@ import { rotasPermissoes } from './permissoes';
 import type { PermissaoExcecao, PermissaoCatalogo } from './apiTypes';
 
 const CHAVE_PERMISSOES = 'krieger-mock-permissoes-v1';
+/** Matriz de permissões por perfil (SuperADM), separada das exceções por usuário. */
+const CHAVE_MATRIZ_PERFIS = 'krieger-mock-matriz-perfis-v1';
 const MODULOS_EDITAVEIS = ['condominios', 'prestacao_contas', 'previsao_orcamentaria', 'relatorio_mensal', 'importador', 'editais', 'atas', 'modelos', 'drive_documentos', 'escritorio'];
+/** Telas de administração: só o SuperADM (admin) alcança, qualquer que seja a matriz. */
+const MODULOS_ADMINISTRACAO = ['usuarios', 'backup', 'escritorio'];
+/** Permissões padrão de cada perfil, espelhando migrations/20261108_perfis_tres_niveis.sql. */
+function permissoesPadraoDoPerfil(perfil: Perfil): string[] {
+  if (perfil === 'admin') return ['*'];
+  const todas = catalogoPermissoes().map((p) => p.chave);
+  // ADM e Usuário começam iguais: tudo menos as telas de administração.
+  return todas.filter((chave) => !MODULOS_ADMINISTRACAO.includes(chave.split('.')[0] ?? ''));
+}
+
+/** Matriz vigente: o que o SuperADM gravou para o perfil, ou o padrão quando ainda não mexeu. */
+function permissoesDoPerfil(perfil: Perfil): string[] {
+  if (perfil === 'admin') return ['*'];
+  const gravada = ler<Record<string, string[]>>(CHAVE_MATRIZ_PERFIS, () => ({}))[perfil];
+  return Array.isArray(gravada) ? gravada : permissoesPadraoDoPerfil(perfil);
+}
 function catalogoPermissoes(): PermissaoCatalogo[] {
   const modulos = [...new Set(rotasPermissoes.map(([, m]) => m))];
   return modulos.flatMap((m) => ['visualizar', ...(MODULOS_EDITAVEIS.includes(m) ? ['editar'] : [])].map((acao) => ({ chave: m + '.' + acao, modulo: m, tela: m, acao })));
@@ -375,7 +393,7 @@ function usuariosSemente(): UsuarioMock[] {
     {
       id: "u-admin",
       login: "admin",
-      nome: "Administrador",
+      nome: "SuperADM",
       perfil: "admin",
       permissoes: ['*'],
       ativo: true,
@@ -516,8 +534,10 @@ function sessao(): Usuario {
   if (!u) throw new ApiError("Sessão expirada. Entre novamente.", 401);
   const { id: uid, login, nome, perfil, trocarSenha } = u;
   const excecoes = ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []).filter((p) => p.usuarioId === uid);
-  const permissoes = catalogoPermissoes().map((p) => p.chave).filter((chave) => !excecoes.some((p) => p.permissaoChave === chave && p.efeito === 'negar'));
-  return { id: uid, login, nome, perfil, trocarSenha, permissoes: perfil === 'admin' ? ['*'] : permissoes };
+  const doPerfil = permissoesDoPerfil(perfil);
+  const permitidas = doPerfil.filter((chave) => !excecoes.some((p) => p.permissaoChave === chave && p.efeito === 'negar'));
+  const concedidas = excecoes.filter((p) => p.efeito === 'permitir').map((p) => p.permissaoChave);
+  return { id: uid, login, nome, perfil, trocarSenha, permissoes: perfil === 'admin' ? ['*'] : [...new Set([...permitidas, ...concedidas])] };
 }
 function exigirAdmin() {
   const u = sessao();
@@ -915,7 +935,7 @@ export const mockApi: ApiAdapter = {
           login,
           nome,
           perfil: dadosU.perfil,
-          permissoes: ['*'],
+          permissoes: permissoesDoPerfil(dadosU.perfil),
           ativo: dadosU.ativo,
           trocarSenha: true,
           criadoEm: new Date().toISOString(),
@@ -960,6 +980,32 @@ export const mockApi: ApiAdapter = {
       await espera();
       exigirAdmin();
       return { catalogo: catalogoPermissoes(), excecoes: ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []) };
+    },
+    async perfis() {
+      await espera();
+      exigirAdmin();
+      return {
+        catalogo: catalogoPermissoes(),
+        perfis: (['admin', 'adm', 'user'] as Perfil[]).map((id) => {
+          const vigentes = new Set(permissoesDoPerfil(id));
+          return {
+            id,
+            nome: PERFIL_ROTULO[id],
+            permissoes: catalogoPermissoes().map((p) => ({ chave: p.chave, permitida: id === 'admin' || vigentes.has(p.chave) })),
+            fixo: id === 'admin',
+          };
+        }),
+      };
+    },
+    async perfilPermissaoSalvar(perfil, chave, permitida) {
+      await espera();
+      exigirAdmin();
+      if (perfil === 'admin') throw new ApiError('O SuperADM tem acesso total e não pode ser restringido.', 400);
+      if (!catalogoPermissoes().some((p) => p.chave === chave)) throw new ApiError('Permissão não encontrada.', 404);
+      const atual = ler<Record<string, string[]>>(CHAVE_MATRIZ_PERFIS, () => ({}));
+      const atualDoPerfil = new Set(permissoesDoPerfil(perfil));
+      if (permitida) atualDoPerfil.add(chave); else atualDoPerfil.delete(chave);
+      localStorage.setItem(CHAVE_MATRIZ_PERFIS, JSON.stringify({ ...atual, [perfil]: [...atualDoPerfil] }));
     },
     async permissaoSalvar(usuarioId, chave, efeito) {
       await espera();

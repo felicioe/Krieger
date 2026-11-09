@@ -118,7 +118,7 @@ try {
       $ativo = !empty($c['ativo']);
       $senha = is_string($c['senha'] ?? null) ? $c['senha'] : '';
       if ($nome === '') json_erro('Informe o nome.');
-      if (!in_array($perfil, ['admin', 'user'], true)) json_erro('Perfil inválido.');
+      if (!in_array($perfil, ['admin', 'adm', 'user'], true)) json_erro('Perfil inválido.');
 
       if ($id === '') { // criação
         if (!preg_match('/^[a-z0-9._-]{3,40}$/', $login)) json_erro('Login: 3 a 40 caracteres (letras, números, ponto, hífen ou sublinhado).');
@@ -196,6 +196,51 @@ try {
         $pdo->prepare('REPLACE INTO kr_usuario_permissoes (usuario_id, permissao_chave, efeito) VALUES (?, ?, ?)')->execute([$usuarioId, $chave, $efeito]);
       }
       json_ok(['ok' => true, 'usuarioId' => $usuarioId, 'chave' => $chave, 'efeito' => $efeito]);
+    }
+
+    case 'perfis': {
+      exigir_login($pdo, true);
+      $chaves = $pdo->query('SELECT chave, modulo, tela, acao, descricao, ativo FROM kr_permissoes WHERE ativo = 1 ORDER BY modulo, tela, acao')->fetchAll();
+      $perfis = $pdo->query("SELECT id, nome FROM kr_perfis ORDER BY FIELD(id, 'admin', 'adm', 'user'), nome")->fetchAll();
+      $concedidas = $pdo->query('SELECT perfil_id, permissao_chave FROM kr_perfil_permissoes')->fetchAll();
+      $mapa = [];
+      foreach ($concedidas as $linha) $mapa[(string) $linha['perfil_id']][(string) $linha['permissao_chave']] = true;
+      $saida = [];
+      foreach ($perfis as $p) {
+        $id = (string) $p['id'];
+        $saida[] = [
+          'id' => $id,
+          'nome' => (string) $p['nome'],
+          'fixo' => $id === 'admin',
+          'permissoes' => array_map(static fn(array $ch): array => [
+            'chave' => (string) $ch['chave'],
+            'permitida' => $id === 'admin' || isset($mapa[$id][(string) $ch['chave']]),
+          ], $chaves),
+        ];
+      }
+      json_ok(['catalogo' => $chaves, 'perfis' => $saida]);
+    }
+
+    case 'perfil_permissao_salvar': {
+      exigir_login($pdo, true);
+      $perfil = $txt('perfil', 32);
+      $chave = $txt('chave', 120);
+      if ($perfil === '') json_erro('Informe o perfil.');
+      if (!in_array($perfil, ['adm', 'user'], true))
+        json_erro('O SuperADM tem acesso total e não pode ser restringido.');
+      $st = $pdo->prepare('SELECT id FROM kr_perfis WHERE id = ?');
+      $st->execute([$perfil]);
+      if (!$st->fetchColumn()) json_erro('Perfil não encontrado.', 404);
+      $st = $pdo->prepare('SELECT chave FROM kr_permissoes WHERE chave = ? AND ativo = 1');
+      $st->execute([$chave]);
+      if (!$st->fetchColumn()) json_erro('Permissão não encontrada.', 404);
+      $permitida = !empty($c['permitida']);
+      if ($permitida) {
+        $pdo->prepare('REPLACE INTO kr_perfil_permissoes (perfil_id, permissao_chave) VALUES (?, ?)')->execute([$perfil, $chave]);
+      } else {
+        $pdo->prepare('DELETE FROM kr_perfil_permissoes WHERE perfil_id = ? AND permissao_chave = ?')->execute([$perfil, $chave]);
+      }
+      json_ok(['ok' => true, 'perfil' => $perfil, 'chave' => $chave, 'permitida' => $permitida]);
     }
 
     default:
