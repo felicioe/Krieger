@@ -3,12 +3,66 @@ import { nomeDeArquivo } from "@/lib/documento/baixar";
 import type { Bloco, Documento } from "@/lib/documento/tipos";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { percentualQuorum } from "@/domain/ata";
+import { dataPorExtenso } from "@/domain/notificacao";
 import { renderizarTextoModeloAta } from "@/domain/modeloAta";
 import { rotuloModalidade, rotuloTipo } from "@/domain/edital";
 import type { Ata, Condominio, ConfigEscritorio } from "@/domain/types";
 import { localEData, paragrafos, timbreDoEscritorio } from "./comum";
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
+/** Converte o texto do modelo em blocos visuais: títulos (#, ##, ###), listas (- item) e parágrafos. */
+function blocosDoModelo(texto: string): Bloco[] {
+  const linhas = texto.split(/\r?\n/);
+  const blocos: Bloco[] = [];
+  let buffer: string[] = [];
+
+  const flush = () => {
+    if (!buffer.length) return;
+    const p = buffer.join(" ").trim();
+    if (p) blocos.push({ tipo: "paragrafo", texto: p, alinhamento: "justificado" });
+    buffer = [];
+  };
+
+  for (const linha of linhas) {
+    const t = linha.trimEnd();
+    const titulo3 = t.match(/^###\s+(.+)$/);
+    const titulo2 = !titulo3 && t.match(/^##\s+(.+)$/);
+    const titulo1 = !titulo3 && !titulo2 && t.match(/^#\s+(.+)$/);
+    const lista = !titulo3 && !titulo2 && !titulo1 && t.match(/^[-•]\s+(.+)$/);
+
+    if (titulo1 || titulo2 || titulo3 || lista || t.trim() === "") {
+      flush();
+    }
+
+    if (titulo1) {
+      blocos.push({ tipo: "titulo", nivel: 1, texto: titulo1[1].trim() });
+    } else if (titulo2) {
+      blocos.push({ tipo: "titulo", nivel: 2, texto: titulo2[1].trim() });
+    } else if (titulo3) {
+      blocos.push({ tipo: "titulo", nivel: 3, texto: titulo3[1].trim() });
+    } else if (lista) {
+      blocos.push({ tipo: "lista", itens: [lista[1].trim()] });
+    } else if (t.trim() === "") {
+      // quebra de parágrafo já foi tratada pelo flush acima
+    } else {
+      buffer.push(t.trim());
+    }
+  }
+  flush();
+
+  // Junta listas consecutivas em um único bloco de lista.
+  const consolidado: Bloco[] = [];
+  for (const b of blocos) {
+    const anterior = consolidado[consolidado.length - 1];
+    if (b.tipo === "lista" && anterior?.tipo === "lista") {
+      anterior.itens = [...anterior.itens, ...b.itens];
+    } else {
+      consolidado.push(b);
+    }
+  }
+  return consolidado;
+}
 
 /** Ata da assembleia, em papel timbrado do escritório; rascunho sai com marca d'água. */
 export function documentoAta(o: {
@@ -28,15 +82,37 @@ export function documentoAta(o: {
   // Quando há modelo de ata escolhido, o corpo do documento vem do texto do modelo com variáveis substituídas;
   // o layout padrão (blocos fixos) só é usado como fallback.
   if (modelo?.texto?.trim()) {
+    const unidadesPresentes = presentes.map((p) => p.unidade.trim() || p.nome.trim()).filter(Boolean);
+    const itensPauta = a.itens.map((item) => item.titulo.trim()).filter(Boolean);
+    const dataExtenso = a.data ? dataPorExtenso(formatData(a.data)) : "";
+    const quorumTexto = a.quorum.totalUnidades
+      ? `${plural(a.quorum.unidadesPresentes, "unidade presente", "unidades presentes")} de ${plural(a.quorum.totalUnidades, "unidade", "unidades")}${pct === null ? "" : ` (${formatNumeroBR(pct, 2)}%)`}`
+      : plural(a.quorum.unidadesPresentes, "unidade presente", "unidades presentes");
+    /** Itens da pauta com discussão/deliberação, numerados e separados por linha em branco (viram parágrafos). */
+    const itensTexto = a.itens
+      .map((item, i) => {
+        const linhas = [`${i + 1} — ${item.titulo.trim() || "Item da pauta"}.`];
+        if (item.discussao.trim()) linhas.push(`Discussão: ${item.discussao.trim()}`);
+        if (item.deliberacao.trim()) linhas.push(`Deliberação: ${item.deliberacao.trim()}`);
+        return linhas.join("\n");
+      })
+      .filter(Boolean)
+      .join("\n\n");
     const ctx: Record<string, unknown> = {
       ata: {
         tipo,
         data,
+        dataExtenso,
         hora: a.hora || "",
         local: a.local || "",
         modalidade: rotuloModalidade(a.modalidade),
         mesa: a.mesa,
         quorum: a.quorum,
+        quorumTexto,
+        percentualQuorum: pct === null ? "" : formatNumeroBR(pct, 2),
+        unidades: unidadesPresentes,
+        itens: itensPauta,
+        itensTexto,
         encerramento: a.encerramento || "",
         observacoes: a.observacoes || "",
       },
@@ -45,11 +121,7 @@ export function documentoAta(o: {
       cidade,
     };
     const textoRenderizado = renderizarTextoModeloAta(modelo.texto, ctx);
-    const blocosModelo: Bloco[] = textoRenderizado
-      .split(/\n\n+/)
-      .map((p) => p.trim())
-      .filter(Boolean)
-      .map((p) => ({ tipo: "paragrafo" as const, texto: p, alinhamento: "justificado" as const }));
+    const blocosModelo = blocosDoModelo(textoRenderizado);
     return {
       titulo: `Ata da assembleia ${tipo.toLowerCase()} — ${nome}`,
       arquivo: nomeDeArquivo("ata", condominio?.codigo || nome, a.data),
