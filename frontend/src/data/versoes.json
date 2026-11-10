@@ -1,6 +1,16 @@
 {
-  "versaoAtual": "1.07",
+  "versaoAtual": "1.08",
   "versoes": [
+    {
+      "versao": "1.08",
+      "titulo": "Modelos de ata por cartório/cidade",
+      "alteracoes": [
+        "Nova store modelos_ata com cidade e cartório (texto livre) para layouts de ata específicos por cartório.",
+        "Telas de lista e editor em /modelos-ata; seleção do modelo na tela de ata.",
+        "Builder de ata usa o texto do modelo quando disponível, com fallback para layout padrão.",
+        "Migration 20261109_modelos_ata.sql para instalações existentes."
+      ]
+    },
     {
       "versao": "1.07",
       "titulo": "Três níveis de acesso, exportações e avaliação de frações",
