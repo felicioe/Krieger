@@ -9,14 +9,74 @@ import { localEData, paragrafos, timbreDoEscritorio } from "./comum";
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
 
+function resolverCaminho(ctx: Record<string, unknown>, caminho: string): unknown {
+ const partes = caminho.split(".");
+ let atual: unknown = ctx;
+ for (const p of partes) {
+ if (atual === null || atual === undefined) return undefined;
+ if (typeof atual !== "object") return undefined;
+ atual = (atual as Record<string, unknown>)[p];
+ }
+ return atual;
+}
+
 /** Ata da assembleia, em papel timbrado do escritório; rascunho sai com marca d'água. */
-export function documentoAta(o: { ata: Ata; condominio: Condominio | null; cidade: string; escritorio: ConfigEscritorio | null }): Documento {
-  const { ata: a, condominio, cidade } = o;
+export function documentoAta(o: {
+  ata: Ata;
+  condominio: Condominio | null;
+  cidade: string;
+  escritorio: ConfigEscritorio | null;
+  modelo?: { texto: string } | null;
+}): Documento {
+  const { ata: a, condominio, cidade, modelo } = o;
   const nome = condominio ? nomeParaRelatorio(condominio) : "";
   const tipo = rotuloTipo(a.tipo);
   const data = a.data ? formatData(a.data) : "";
   const pct = percentualQuorum(a.quorum);
   const presentes = a.presentes.filter((p) => p.unidade.trim() || p.nome.trim());
+
+  // Quando há modelo de ata escolhido, o corpo do documento vem do texto do modelo com variáveis substituídas;
+  // o layout padrão (blocos fixos) só é usado como fallback.
+  if (modelo?.texto?.trim()) {
+    const ctx: Record<string, unknown> = {
+      ata: {
+        tipo,
+        data,
+        hora: a.hora || "",
+        local: a.local || "",
+        modalidade: rotuloModalidade(a.modalidade),
+        mesa: a.mesa,
+        quorum: a.quorum,
+        encerramento: a.encerramento || "",
+        observacoes: a.observacoes || "",
+      },
+      condominio: condominio ?? {},
+      escritorio: o.escritorio ?? {},
+      cidade,
+    };
+    const textoRenderizado = modelo.texto.replace(/\{\{([^}]+)\}\}/g, (_, chave) => {
+      const caminho = String(chave).trim();
+      const valor = resolverCaminho(ctx, caminho);
+      if (valor === undefined || valor === null) return "";
+      if (typeof valor === "string") return valor;
+      if (typeof valor === "number") return String(valor);
+      if (Array.isArray(valor)) return valor.join(", ");
+      return String(valor);
+    });
+    const blocosModelo: Bloco[] = textoRenderizado
+      .split(/\n\n+/)
+      .map((p) => p.trim())
+      .filter(Boolean)
+      .map((p) => ({ tipo: "paragrafo" as const, texto: p, alinhamento: "justificado" as const }));
+    return {
+      titulo: `Ata da assembleia ${tipo.toLowerCase()} — ${nome}`,
+      arquivo: nomeDeArquivo("ata", condominio?.codigo || nome, a.data),
+      timbre: timbreDoEscritorio(o.escritorio),
+      ...(a.status !== "finalizada" ? { marcaDagua: "RASCUNHO" } : {}),
+      rodape: [nome, data && `Assembleia de ${data}`].filter(Boolean).join(" · "),
+      blocos: blocosModelo.length ? blocosModelo : [{ tipo: "paragrafo", texto: "Modelo de ata sem conteúdo.", suave: true }],
+    };
+  }
 
   const blocos: Bloco[] = [
     { tipo: "titulo", nivel: 1, alinhamento: "centro", texto: `ATA DA ASSEMBLEIA GERAL ${tipo.toUpperCase()}` },

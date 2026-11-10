@@ -34,6 +34,8 @@ import { Route as AuthenticatedEditaisIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedEditaisIdRouteImport } from './routes/_authenticated.editais.$id'
 import { Route as AuthenticatedImportacoesIndexRouteImport } from './routes/_authenticated.importacoes.index'
 import { Route as AuthenticatedImportacoesIdRouteImport } from './routes/_authenticated.importacoes.$id'
+import { Route as AuthenticatedModelosAtaIndexRouteImport } from './routes/_authenticated.modelos-ata.index'
+import { Route as AuthenticatedModelosAtaIdRouteImport } from './routes/_authenticated.modelos-ata.$id'
 import { Route as AuthenticatedModelosIndexRouteImport } from './routes/_authenticated.modelos.index'
 import { Route as AuthenticatedModelosIdRouteImport } from './routes/_authenticated.modelos.$id'
 import { Route as AuthenticatedPrestacaoContasIndexRouteImport } from './routes/_authenticated.prestacao-contas.index'
@@ -178,6 +180,18 @@ const AuthenticatedImportacoesIdRoute =
     path: '/importacoes/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedModelosAtaIndexRoute =
+  AuthenticatedModelosAtaIndexRouteImport.update({
+    id: '/modelos-ata/',
+    path: '/modelos-ata/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedModelosAtaIdRoute =
+  AuthenticatedModelosAtaIdRouteImport.update({
+    id: '/modelos-ata/$id',
+    path: '/modelos-ata/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedModelosIndexRoute =
   AuthenticatedModelosIndexRouteImport.update({
     id: '/modelos/',
@@ -247,6 +261,7 @@ export interface FileRoutesByFullPath {
   '/condominios/$id': typeof AuthenticatedCondominiosIdRoute
   '/editais/$id': typeof AuthenticatedEditaisIdRoute
   '/importacoes/$id': typeof AuthenticatedImportacoesIdRoute
+  '/modelos-ata/$id': typeof AuthenticatedModelosAtaIdRoute
   '/modelos/$id': typeof AuthenticatedModelosIdRoute
   '/prestacao-contas/$id': typeof AuthenticatedPrestacaoContasIdRoute
   '/relatorio-final/$id': typeof AuthenticatedRelatorioFinalIdRoute
@@ -256,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/condominios/': typeof AuthenticatedCondominiosIndexRoute
   '/editais/': typeof AuthenticatedEditaisIndexRoute
   '/importacoes/': typeof AuthenticatedImportacoesIndexRoute
+  '/modelos-ata/': typeof AuthenticatedModelosAtaIndexRoute
   '/modelos/': typeof AuthenticatedModelosIndexRoute
   '/prestacao-contas/': typeof AuthenticatedPrestacaoContasIndexRoute
   '/relatorio-mensal/': typeof AuthenticatedRelatorioMensalIndexRoute
@@ -281,6 +297,7 @@ export interface FileRoutesByTo {
   '/condominios/$id': typeof AuthenticatedCondominiosIdRoute
   '/editais/$id': typeof AuthenticatedEditaisIdRoute
   '/importacoes/$id': typeof AuthenticatedImportacoesIdRoute
+  '/modelos-ata/$id': typeof AuthenticatedModelosAtaIdRoute
   '/modelos/$id': typeof AuthenticatedModelosIdRoute
   '/prestacao-contas/$id': typeof AuthenticatedPrestacaoContasIdRoute
   '/relatorio-final/$id': typeof AuthenticatedRelatorioFinalIdRoute
@@ -290,6 +307,7 @@ export interface FileRoutesByTo {
   '/condominios': typeof AuthenticatedCondominiosIndexRoute
   '/editais': typeof AuthenticatedEditaisIndexRoute
   '/importacoes': typeof AuthenticatedImportacoesIndexRoute
+  '/modelos-ata': typeof AuthenticatedModelosAtaIndexRoute
   '/modelos': typeof AuthenticatedModelosIndexRoute
   '/prestacao-contas': typeof AuthenticatedPrestacaoContasIndexRoute
   '/relatorio-mensal': typeof AuthenticatedRelatorioMensalIndexRoute
@@ -317,6 +335,7 @@ export interface FileRoutesById {
   '/_authenticated/condominios/$id': typeof AuthenticatedCondominiosIdRoute
   '/_authenticated/editais/$id': typeof AuthenticatedEditaisIdRoute
   '/_authenticated/importacoes/$id': typeof AuthenticatedImportacoesIdRoute
+  '/_authenticated/modelos-ata/$id': typeof AuthenticatedModelosAtaIdRoute
   '/_authenticated/modelos/$id': typeof AuthenticatedModelosIdRoute
   '/_authenticated/prestacao-contas/$id': typeof AuthenticatedPrestacaoContasIdRoute
   '/_authenticated/relatorio-final/$id': typeof AuthenticatedRelatorioFinalIdRoute
@@ -326,6 +345,7 @@ export interface FileRoutesById {
   '/_authenticated/condominios/': typeof AuthenticatedCondominiosIndexRoute
   '/_authenticated/editais/': typeof AuthenticatedEditaisIndexRoute
   '/_authenticated/importacoes/': typeof AuthenticatedImportacoesIndexRoute
+  '/_authenticated/modelos-ata/': typeof AuthenticatedModelosAtaIndexRoute
   '/_authenticated/modelos/': typeof AuthenticatedModelosIndexRoute
   '/_authenticated/prestacao-contas/': typeof AuthenticatedPrestacaoContasIndexRoute
   '/_authenticated/relatorio-mensal/': typeof AuthenticatedRelatorioMensalIndexRoute
@@ -353,6 +373,7 @@ export interface FileRouteTypes {
     | '/condominios/$id'
     | '/editais/$id'
     | '/importacoes/$id'
+    | '/modelos-ata/$id'
     | '/modelos/$id'
     | '/prestacao-contas/$id'
     | '/relatorio-final/$id'
@@ -362,6 +383,7 @@ export interface FileRouteTypes {
     | '/condominios/'
     | '/editais/'
     | '/importacoes/'
+    | '/modelos-ata/'
     | '/modelos/'
     | '/prestacao-contas/'
     | '/relatorio-mensal/'
@@ -387,6 +409,7 @@ export interface FileRouteTypes {
     | '/condominios/$id'
     | '/editais/$id'
     | '/importacoes/$id'
+    | '/modelos-ata/$id'
     | '/modelos/$id'
     | '/prestacao-contas/$id'
     | '/relatorio-final/$id'
@@ -396,6 +419,7 @@ export interface FileRouteTypes {
     | '/condominios'
     | '/editais'
     | '/importacoes'
+    | '/modelos-ata'
     | '/modelos'
     | '/prestacao-contas'
     | '/relatorio-mensal'
@@ -422,6 +446,7 @@ export interface FileRouteTypes {
     | '/_authenticated/condominios/$id'
     | '/_authenticated/editais/$id'
     | '/_authenticated/importacoes/$id'
+    | '/_authenticated/modelos-ata/$id'
     | '/_authenticated/modelos/$id'
     | '/_authenticated/prestacao-contas/$id'
     | '/_authenticated/relatorio-final/$id'
@@ -431,6 +456,7 @@ export interface FileRouteTypes {
     | '/_authenticated/condominios/'
     | '/_authenticated/editais/'
     | '/_authenticated/importacoes/'
+    | '/_authenticated/modelos-ata/'
     | '/_authenticated/modelos/'
     | '/_authenticated/prestacao-contas/'
     | '/_authenticated/relatorio-mensal/'
@@ -620,6 +646,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedImportacoesIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/modelos-ata/': {
+      id: '/_authenticated/modelos-ata/'
+      path: '/modelos-ata'
+      fullPath: '/modelos-ata/'
+      preLoaderRoute: typeof AuthenticatedModelosAtaIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/modelos-ata/$id': {
+      id: '/_authenticated/modelos-ata/$id'
+      path: '/modelos-ata/$id'
+      fullPath: '/modelos-ata/$id'
+      preLoaderRoute: typeof AuthenticatedModelosAtaIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/modelos/': {
       id: '/_authenticated/modelos/'
       path: '/modelos'
@@ -697,6 +737,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCondominiosIdRoute: typeof AuthenticatedCondominiosIdRoute
   AuthenticatedEditaisIdRoute: typeof AuthenticatedEditaisIdRoute
   AuthenticatedImportacoesIdRoute: typeof AuthenticatedImportacoesIdRoute
+  AuthenticatedModelosAtaIdRoute: typeof AuthenticatedModelosAtaIdRoute
   AuthenticatedModelosIdRoute: typeof AuthenticatedModelosIdRoute
   AuthenticatedPrestacaoContasIdRoute: typeof AuthenticatedPrestacaoContasIdRoute
   AuthenticatedRelatorioFinalIdRoute: typeof AuthenticatedRelatorioFinalIdRoute
@@ -706,6 +747,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCondominiosIndexRoute: typeof AuthenticatedCondominiosIndexRoute
   AuthenticatedEditaisIndexRoute: typeof AuthenticatedEditaisIndexRoute
   AuthenticatedImportacoesIndexRoute: typeof AuthenticatedImportacoesIndexRoute
+  AuthenticatedModelosAtaIndexRoute: typeof AuthenticatedModelosAtaIndexRoute
   AuthenticatedModelosIndexRoute: typeof AuthenticatedModelosIndexRoute
   AuthenticatedPrestacaoContasIndexRoute: typeof AuthenticatedPrestacaoContasIndexRoute
   AuthenticatedRelatorioMensalIndexRoute: typeof AuthenticatedRelatorioMensalIndexRoute
@@ -731,6 +773,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCondominiosIdRoute: AuthenticatedCondominiosIdRoute,
   AuthenticatedEditaisIdRoute: AuthenticatedEditaisIdRoute,
   AuthenticatedImportacoesIdRoute: AuthenticatedImportacoesIdRoute,
+  AuthenticatedModelosAtaIdRoute: AuthenticatedModelosAtaIdRoute,
   AuthenticatedModelosIdRoute: AuthenticatedModelosIdRoute,
   AuthenticatedPrestacaoContasIdRoute: AuthenticatedPrestacaoContasIdRoute,
   AuthenticatedRelatorioFinalIdRoute: AuthenticatedRelatorioFinalIdRoute,
@@ -741,6 +784,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCondominiosIndexRoute: AuthenticatedCondominiosIndexRoute,
   AuthenticatedEditaisIndexRoute: AuthenticatedEditaisIndexRoute,
   AuthenticatedImportacoesIndexRoute: AuthenticatedImportacoesIndexRoute,
+  AuthenticatedModelosAtaIndexRoute: AuthenticatedModelosAtaIndexRoute,
   AuthenticatedModelosIndexRoute: AuthenticatedModelosIndexRoute,
   AuthenticatedPrestacaoContasIndexRoute:
     AuthenticatedPrestacaoContasIndexRoute,

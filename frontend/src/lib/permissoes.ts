@@ -14,6 +14,7 @@ export const rotasPermissoes: Array<[string, string]> = [
   ["/editais", "editais"],
   ["/atas", "atas"],
   ["/modelos", "modelos"],
+  ["/modelos-ata", "modelos_ata"],
   ["/drive-documentos", "drive_documentos"],
   ["/consulta-documentos", "consulta_documentos"],
   ["/escritorio", "escritorio"],

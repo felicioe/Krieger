@@ -152,6 +152,8 @@ INSERT IGNORE INTO kr_perfis (id,nome,descricao,criado_em) VALUES
 INSERT IGNORE INTO kr_permissoes (chave,modulo,tela,acao,descricao,criado_em) VALUES
 ('painel.visualizar','geral','painel','visualizar','Visualizar painel',NOW()),
 ('condominios.visualizar','cadastros','condominios','visualizar','Visualizar condomínios',NOW()),
+('modelos_ata.visualizar','assembleias','modelos_ata','visualizar','Visualizar modelos de ata',1,NOW()),
+('modelos_ata.editar','assembleias','modelos_ata','editar','Editar modelos de ata',1,NOW()),
 ('prestacao_contas.visualizar','financeiro','prestacao_contas','visualizar','Visualizar prestação de contas',NOW()),
 ('previsao_orcamentaria.visualizar','financeiro','previsao_orcamentaria','visualizar','Visualizar previsão orçamentária',NOW()),
 ('previsto_realizado.visualizar','financeiro','previsto_realizado','visualizar','Visualizar previsto e realizado',NOW()),
@@ -190,6 +192,16 @@ WHERE chave NOT IN ('usuarios.visualizar','backup.visualizar','escritorio.visual
 
 -- Atas de assembleia (rascunhos e atas finalizadas).
 CREATE TABLE IF NOT EXISTS kr_atas (
+  id VARCHAR(64) PRIMARY KEY,
+  dados LONGTEXT NOT NULL,
+  atualizado_em DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Modelos de ata por cartório/cidade (issue #256).
+-- Store independente de `kr_modelos` (editais): cada registro guarda um layout de ata
+-- (texto corrido, variáveis {{ata.*}}, opções de logo/borda) vinculado a cidade+cartório.
+-- Modelo sem cidade = geral; sem cartório = vale para qualquer cartório da cidade.
+CREATE TABLE IF NOT EXISTS kr_modelos_ata (
   id VARCHAR(64) PRIMARY KEY,
   dados LONGTEXT NOT NULL,
   atualizado_em DATETIME NOT NULL

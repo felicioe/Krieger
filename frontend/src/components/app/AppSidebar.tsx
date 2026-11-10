@@ -70,6 +70,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
       { titulo: "Editais", to: "/editais", icone: Megaphone, permissao: "editais.visualizar" },
       { titulo: "Atas", to: "/atas", icone: ScrollText, permissao: "atas.visualizar" },
       { titulo: "Modelos de edital", to: "/modelos", icone: FileText, permissao: "modelos.visualizar" },
+      { titulo: "Modelos de ata", to: "/modelos-ata", icone: ScrollText, permissao: "modelos_ata.visualizar" },
       { titulo: "Drive de Documentos", to: "/drive-documentos", icone: FolderOpen, permissao: "drive_documentos.visualizar" },
       { titulo: "Consulta Inteligente", to: "/consulta-documentos", icone: FileSearch, permissao: "consulta_documentos.visualizar" },
     ],
