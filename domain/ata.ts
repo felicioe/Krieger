@@ -88,10 +88,12 @@ const s = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v
 const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
 export function normalizarAta(raw: Partial<Ata> & { id: string }): Ata {
+  const modeloAtaId = typeof raw.modeloAtaId === "string" && raw.modeloAtaId.trim() ? raw.modeloAtaId : null;
   return {
     id: raw.id,
     condoId: s(raw.condoId),
     assembleiaId: s(raw.assembleiaId),
+    ...(modeloAtaId ? { modeloAtaId } : {}),
     tipo: s(raw.tipo) || "ordinaria",
     data: s(raw.data),
     hora: s(raw.hora),

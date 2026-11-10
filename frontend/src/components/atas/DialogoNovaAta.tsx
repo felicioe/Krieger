@@ -14,7 +14,8 @@ import { formatData } from "@/lib/format";
 import { normalizarCondominio } from "@/domain/condominio";
 import { normalizarAssembleia, rotuloTipo } from "@/domain/edital";
 import { ataDoEdital, ataEmBranco, novaAtaDeAssembleia, validarNovaAta } from "@/domain/ata";
-import type { Assembleia, Ata, Condominio } from "@/domain/types";
+import { escolherModeloAta } from "@/domain/modeloAta";
+import type { Assembleia, Ata, Condominio, ModeloAta } from "@/domain/types";
 
 const SEM_EDITAL = "__sem";
 
@@ -24,6 +25,7 @@ export function DialogoNovaAta({
   condominios,
   assembleias,
   atas,
+  modelosAta = [],
   condoInicial = "",
 }: {
   aberto: boolean;
@@ -31,6 +33,8 @@ export function DialogoNovaAta({
   condominios: Condominio[];
   assembleias: Assembleia[];
   atas: Ata[];
+  /** Modelos de ata por cartório/cidade: o mais específico para a cidade do edital já vem escolhido. */
+  modelosAta?: ModeloAta[];
   condoInicial?: string;
 }) {
   const navigate = useNavigate();
@@ -81,7 +85,10 @@ export function DialogoNovaAta({
     }
     setErro(null);
     const c = normalizarCondominio(condo);
-    criar.mutate(edital ? novaAtaDeAssembleia(normalizarAssembleia(edital), c) : ataEmBranco(c));
+    const base = edital ? novaAtaDeAssembleia(normalizarAssembleia(edital), c) : ataEmBranco(c);
+    // O cartório não é campo do edital: fica vazio e o modelo por cidade (ou o geral) responde.
+    const modelo = escolherModeloAta(modelosAta, edital?.cidade ?? "", "");
+    criar.mutate(modelo ? { ...base, modeloAtaId: modelo.id } : base);
   }
 
   const opcoesCondo = opcoesCondominio(condominios);

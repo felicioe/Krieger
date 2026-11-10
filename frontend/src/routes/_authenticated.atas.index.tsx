@@ -13,7 +13,7 @@ import { formatData } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarAta, rotuloStatus } from "@/domain/ata";
 import { rotuloModalidade, rotuloTipo } from "@/domain/edital";
-import type { Assembleia, Ata, Condominio } from "@/domain/types";
+import type { Assembleia, Ata, Condominio, ModeloAta } from "@/domain/types";
 
 type Busca = { condo?: string; status?: string; novo?: string };
 
@@ -34,6 +34,7 @@ export const Route = createFileRoute("/_authenticated/atas/")({
       queryClient.ensureQueryData(listaQuery<Ata>("atas")),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Assembleia>("assembleias")),
+      queryClient.ensureQueryData(listaQuery<ModeloAta>("modelos_ata")),
     ]),
   component: ListaAtas,
 });
@@ -48,6 +49,7 @@ function ListaAtas() {
   const { data: atas } = useSuspenseQuery(listaQuery<Ata>("atas"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: assembleias } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
+  const { data: modelosAta } = useSuspenseQuery(listaQuery<ModeloAta>("modelos_ata"));
   const condo = busca.condo ?? TODOS;
   const status = busca.status ?? TODOS;
   const novoAberto = busca.novo !== undefined;
@@ -169,6 +171,7 @@ function ListaAtas() {
         condominios={condominios}
         assembleias={assembleias}
         atas={normalizadas}
+        modelosAta={modelosAta}
         condoInicial={busca.novo ?? ""}
       />
     </>

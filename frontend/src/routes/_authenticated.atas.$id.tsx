@@ -163,7 +163,9 @@ function FormAta({ inicial }: { inicial: Ata }) {
       condominio: condo ? normalizarCondominio(condo) : null,
       cidade,
       escritorio,
-      modelo: modeloAtaSelecionado ? { texto: modeloAtaSelecionado.texto } : null,
+      modelo: modeloAtaSelecionado
+        ? { texto: modeloAtaSelecionado.texto, logoEscritorio: modeloAtaSelecionado.logoEscritorio, bordaPagina: modeloAtaSelecionado.bordaPagina }
+        : null,
     });
 
   const opcoesModeloAta = [

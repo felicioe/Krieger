@@ -3,22 +3,12 @@ import { nomeDeArquivo } from "@/lib/documento/baixar";
 import type { Bloco, Documento } from "@/lib/documento/tipos";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { percentualQuorum } from "@/domain/ata";
+import { renderizarTextoModeloAta } from "@/domain/modeloAta";
 import { rotuloModalidade, rotuloTipo } from "@/domain/edital";
 import type { Ata, Condominio, ConfigEscritorio } from "@/domain/types";
 import { localEData, paragrafos, timbreDoEscritorio } from "./comum";
 
 const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
-
-function resolverCaminho(ctx: Record<string, unknown>, caminho: string): unknown {
- const partes = caminho.split(".");
- let atual: unknown = ctx;
- for (const p of partes) {
- if (atual === null || atual === undefined) return undefined;
- if (typeof atual !== "object") return undefined;
- atual = (atual as Record<string, unknown>)[p];
- }
- return atual;
-}
 
 /** Ata da assembleia, em papel timbrado do escritório; rascunho sai com marca d'água. */
 export function documentoAta(o: {
@@ -26,7 +16,7 @@ export function documentoAta(o: {
   condominio: Condominio | null;
   cidade: string;
   escritorio: ConfigEscritorio | null;
-  modelo?: { texto: string } | null;
+  modelo?: { texto: string; logoEscritorio?: boolean; bordaPagina?: boolean } | null;
 }): Documento {
   const { ata: a, condominio, cidade, modelo } = o;
   const nome = condominio ? nomeParaRelatorio(condominio) : "";
@@ -54,15 +44,7 @@ export function documentoAta(o: {
       escritorio: o.escritorio ?? {},
       cidade,
     };
-    const textoRenderizado = modelo.texto.replace(/\{\{([^}]+)\}\}/g, (_, chave) => {
-      const caminho = String(chave).trim();
-      const valor = resolverCaminho(ctx, caminho);
-      if (valor === undefined || valor === null) return "";
-      if (typeof valor === "string") return valor;
-      if (typeof valor === "number") return String(valor);
-      if (Array.isArray(valor)) return valor.join(", ");
-      return String(valor);
-    });
+    const textoRenderizado = renderizarTextoModeloAta(modelo.texto, ctx);
     const blocosModelo: Bloco[] = textoRenderizado
       .split(/\n\n+/)
       .map((p) => p.trim())
@@ -71,7 +53,8 @@ export function documentoAta(o: {
     return {
       titulo: `Ata da assembleia ${tipo.toLowerCase()} — ${nome}`,
       arquivo: nomeDeArquivo("ata", condominio?.codigo || nome, a.data),
-      timbre: timbreDoEscritorio(o.escritorio),
+      timbre: modelo.logoEscritorio === false ? null : timbreDoEscritorio(o.escritorio),
+      ...(modelo.bordaPagina ? { bordaPagina: true } : {}),
       ...(a.status !== "finalizada" ? { marcaDagua: "RASCUNHO" } : {}),
       rodape: [nome, data && `Assembleia de ${data}`].filter(Boolean).join(" · "),
       blocos: blocosModelo.length ? blocosModelo : [{ tipo: "paragrafo", texto: "Modelo de ata sem conteúdo.", suave: true }],

@@ -152,8 +152,8 @@ INSERT IGNORE INTO kr_perfis (id,nome,descricao,criado_em) VALUES
 INSERT IGNORE INTO kr_permissoes (chave,modulo,tela,acao,descricao,criado_em) VALUES
 ('painel.visualizar','geral','painel','visualizar','Visualizar painel',NOW()),
 ('condominios.visualizar','cadastros','condominios','visualizar','Visualizar condomínios',NOW()),
-('modelos_ata.visualizar','assembleias','modelos_ata','visualizar','Visualizar modelos de ata',1,NOW()),
-('modelos_ata.editar','assembleias','modelos_ata','editar','Editar modelos de ata',1,NOW()),
+('modelos_ata.visualizar','assembleias','modelos_ata','visualizar','Visualizar modelos de ata',NOW()),
+('modelos_ata.editar','assembleias','modelos_ata','editar','Editar modelos de ata',NOW()),
 ('prestacao_contas.visualizar','financeiro','prestacao_contas','visualizar','Visualizar prestação de contas',NOW()),
 ('previsao_orcamentaria.visualizar','financeiro','previsao_orcamentaria','visualizar','Visualizar previsão orçamentária',NOW()),
 ('previsto_realizado.visualizar','financeiro','previsto_realizado','visualizar','Visualizar previsto e realizado',NOW()),

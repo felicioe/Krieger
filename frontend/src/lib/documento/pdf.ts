@@ -33,6 +33,24 @@ function texto(t: Texto, tamanho = 10): string | Content[] {
   }));
 }
 
+/** Moldura na página inteira, desenhada no fundo (modelos de ata de cartório). */
+function moldura(folha: { largura: number; altura: number }): Content {
+  const m = PAGINA.margem / 2;
+  return {
+    canvas: [
+      {
+        type: "rect",
+        x: m,
+        y: m,
+        w: folha.largura - 2 * m,
+        h: folha.altura - 2 * m,
+        lineWidth: 0.8,
+        lineColor: c(COR.primaria),
+      },
+    ],
+  } as Content;
+}
+
 async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
   const img = doc.timbre?.logo ? await carregarPng(doc.timbre.logo.dataUrl) : null;
   const logo = img?.dataUrl ?? null;
@@ -48,6 +66,7 @@ async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
     pageSize: "A4",
     pageOrientation: doc.orientacao === "paisagem" ? "landscape" : "portrait",
     pageMargins: [PAGINA.margem, topo, PAGINA.margem, 64],
+    ...(doc.bordaPagina ? { background: () => moldura(folha) } : {}),
     info: { title: doc.titulo, creator: "Sistema Krieger" },
     defaultStyle: { font: FAMILIA, fontSize: 10, lineHeight: 1.25, color: c(COR.texto) },
     ...(doc.marcaDagua ? { watermark: { text: doc.marcaDagua, color: c(COR.primaria), opacity: 0.07, bold: true } } : {}),
