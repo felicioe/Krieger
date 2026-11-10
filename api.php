@@ -65,6 +65,7 @@ $ALVOS_LIMPEZA = [
   'assembleias' => ['kr_assembleias'],
   'atas' => ['kr_atas'],
   'modelos' => ['kr_modelos'],
+  'modelos_ata' => ['kr_modelos_ata'],
   'importacoes' => ['kr_importacoes'],
   'anexos_importacao' => ['kr_anexos_importacao'],
   'decisoes_previsao' => ['kr_decisoes_previsao'],
@@ -81,7 +82,7 @@ function contar_tabela_seguro(PDO $pdo, string $tb): int {
   }
 }
 
-$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao'];
+$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'modelos_ata', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao'];
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try { $pdo = conectar(); }
@@ -104,6 +105,7 @@ $permissaoStore = [
   'assembleias' => 'editais',
   'atas' => 'atas',
   'modelos' => 'modelos',
+  'modelos_ata' => 'modelos_ata',
   'importacoes' => 'importador',
   'anexos_importacao' => 'prestacao_contas',
   'decisoes_previsao' => 'previsao_orcamentaria',
@@ -120,7 +122,7 @@ if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permi
     'mensais' => ['prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
     'assembleias' => ['painel', 'atas'],
     'modelos' => ['editais'],
-    'config' => ['painel', 'prestacao_contas', 'relatorio_mensal', 'editais', 'atas', 'drive_documentos', 'consulta_documentos'],
+    'config' => ['painel', 'prestacao_contas', 'relatorio_mensal', 'editais', 'atas', 'modelos_ata', 'drive_documentos', 'consulta_documentos'],
     'decisoes_previsao' => ['prestacao_contas'],
     'decisoes_importacao' => ['prestacao_contas', 'relatorio_mensal'],
   ];

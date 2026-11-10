@@ -38,7 +38,7 @@ import {
 import { rotuloTipo } from "@/domain/edital";
 import { normalizarCondominio } from "@/domain/condominio";
 import { documentoAta } from "@/documentos/ata";
-import type { Assembleia, Ata, Condominio, ConfigEscritorio } from "@/domain/types";
+import type { Assembleia, Ata, Condominio, ConfigEscritorio, ModeloAta } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/atas/$id")({
   head: () => cabecalho("Ata", "Ata da assembleia: mesa, presentes, itens da pauta e deliberações."),
@@ -87,6 +87,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: assembleias } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
   const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
+  const { data: modelosAta } = useSuspenseQuery(listaQuery<ModeloAta>("modelos_ata"));
   const [a, setA] = useState<Ata>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [erros, setErros] = useState<ErrosAta>({});
@@ -155,8 +156,20 @@ function FormAta({ inicial }: { inicial: Ata }) {
     if (p) salvar.mutate({ ata: p, mensagem: "Ata salva." });
   }
 
+  const modeloAtaSelecionado = modelosAta?.find((m) => m.id === a.modeloAtaId) ?? null;
   const gerarDocumento = () =>
-    documentoAta({ ata: paraGravar(a), condominio: condo ? normalizarCondominio(condo) : null, cidade, escritorio });
+    documentoAta({
+      ata: paraGravar(a),
+      condominio: condo ? normalizarCondominio(condo) : null,
+      cidade,
+      escritorio,
+      modelo: modeloAtaSelecionado ? { texto: modeloAtaSelecionado.texto } : null,
+    });
+
+  const opcoesModeloAta = [
+    { valor: "", rotulo: "Layout padrão" },
+    ...(modelosAta ?? []).map((m) => ({ valor: m.id, rotulo: m.nome || "(sem nome)" })),
+  ];
 
   const titulo = `Ata · Assembleia ${rotuloTipo(a.tipo)}`;
   const descricao = [condo?.nome, cidade, parseData(a.data) ? formatData(a.data) : null].filter(Boolean).join(" · ");
@@ -239,6 +252,11 @@ function FormAta({ inicial }: { inicial: Ata }) {
                 <dd className="mt-1">{edital ? `${formatData(edital.data)} · ${rotuloTipo(edital.tipo)}` : <span className="text-muted-foreground">Sem edital vinculado</span>}</dd>
               </div>
             </dl>
+            <div className="mt-4 max-w-xs">
+              <Field rotulo="Modelo de ata" dica="Escolha um layout por cartório/cidade ou use o padrão.">
+                <Selecao value={a.modeloAtaId ?? ""} onChange={(v) => mudar({ modeloAtaId: v || null })} opcoes={opcoesModeloAta} />
+              </Field>
+            </div>
           </SectionCard>
 
           <SectionCard titulo="Reunião">

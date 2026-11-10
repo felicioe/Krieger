@@ -1,5 +1,31 @@
 # Estado atual e passagem de contexto
 
+## Modelos de ata por cartório/cidade — 09/11/2026
+
+A issue #256 pediu layouts de ata específicos por cartório. Foi criada a store `modelos_ata`
+(`domain/modeloAta.ts`, tabela `kr_modelos_ata`) com campos `cidade` e `cartorio` (texto livre),
+além de opções visuais (`logoEscritorio`, `bordaPagina`). Modelo sem cidade = geral; sem cartório
+= vale para qualquer cartório da cidade. A função `escolherModeloAta` prioriza: cidade+cartório
+exato > só cidade > geral.
+
+**Telas.** Lista em `/modelos-ata` e editor em `/modelos-ata/$id` com campos nome, cidade,
+cartório, texto (variáveis `{{ata.*}}`, `{{condominio.*}}`, `{{escritorio.*}}`) e toggles de
+logo/borda. O diálogo de criação pede apenas o nome; os demais campos são ajustados no editor.
+
+**Integração com ata.** A tela de ata ganhou um campo de seleção de modelo (`modeloAtaId`); o
+builder `documentoAta` usa o texto do modelo quando disponível, substituindo variáveis pelo
+contexto da ata/condomínio/escritório. Sem modelo escolhido, mantém o layout padrão fixo.
+
+**Backend/Mock.** Store registrada em `api.php` (`$STORES`, `$permissaoStore`, `$ALVOS_LIMPEZA`,
+consumidores de backup), `mockApi.ts` (semente, contagens, limpeza), `schema.sql` e migration
+`20261109_modelos_ata.sql`. Permissões `modelos_ata.visualizar` e `modelos_ata.editar` adicionadas
+ao catálogo e à matriz padrão do ADM.
+
+**Versão.** 1.08 registrada em `frontend/src/data/versoes.json`; CHANGELOG gerado via
+`npm run changelog:gerar`. Branch `feat/modelo-ata-por-cartorio` pronta para PR.
+
+---
+
 ## Três perfis, matriz de permissões e exportações — 09/11/2026
 
 O pedido foi separar um nível acima do administrador e, na mesma leva, entregar as exportações

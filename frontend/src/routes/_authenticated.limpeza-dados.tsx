@@ -69,6 +69,13 @@ const ITENS_INDIVIDUAIS: ItemLimpeza[] = [
     rotuloBotao: "Apagar atas",
   },
   {
+    alvo: "modelos_ata",
+    titulo: "Modelos de ata",
+    tabela: "kr_modelos_ata",
+    descricao: "Apaga os modelos de texto configurados para geração de atas.",
+    rotuloBotao: "Apagar modelos de ata",
+  },
+  {
     alvo: "modelos",
     titulo: "Modelos de edital",
     tabela: "kr_modelos",

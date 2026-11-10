@@ -23,6 +23,7 @@ export const ROTULO_STORE: Record<Store, string> = {
   config: "Configurações",
   importacoes: "Importações",
   atas: "Atas",
+  modelos_ata: "Modelos de ata",
   anexos_importacao: "Anexos de importação",
   decisoes_previsao: "Divergências aceitas na previsão",
   decisoes_importacao: "Conflitos decididos na importação",

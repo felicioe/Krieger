@@ -12,6 +12,7 @@ export type Store =
   | "mensais"
   | "assembleias"
   | "modelos"
+  | "modelos_ata"
   | "config"
   | "importacoes"
   | "atas"
@@ -25,6 +26,7 @@ export const STORES: Store[] = [
   "mensais",
   "assembleias",
   "modelos",
+  "modelos_ata",
   "config",
   "importacoes",
   "atas",
@@ -490,11 +492,33 @@ export interface Modelo extends ComId {
   historico?: unknown[];
 }
 
+/**
+ * Modelo de ata por cartório/cidade (issue #256).
+ * - `cidade`: opcional; sem cidade = modelo geral.
+ * - `cartorio`: opcional; sem cartório = vale para qualquer cartório da cidade.
+ * - `texto`: corpo da ata com variáveis {{ata.*}} / {{condominio.*}} / {{escritorio.*}}.
+ * - `logoEscritorio` / `bordaPagina`: opções visuais do documento gerado.
+ */
+export interface ModeloAta extends ComId {
+  id: string;
+  nome: string;
+  cidade?: string | null;
+  cartorio?: string | null;
+  texto: string;
+  logoEscritorio: boolean;
+  bordaPagina: boolean;
+  ativo: boolean;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
 // ---------- Ata ----------
 
 export interface Ata extends ComId {
   condoId: string;
   assembleiaId: string;
+  /** Modelo de ata escolhido (store `modelos_ata`); vazio = layout padrão fixo. */
+  modeloAtaId?: string | null;
   tipo: string;
   data: string;
   hora: string;

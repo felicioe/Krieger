@@ -2,7 +2,14 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.07**.
+Versão atual: **1.08**.
+
+## 1.08 — Modelos de ata por cartório/cidade
+
+- Nova store modelos_ata com cidade e cartório (texto livre) para layouts de ata específicos por cartório.
+- Telas de lista e editor em /modelos-ata; seleção do modelo na tela de ata.
+- Builder de ata usa o texto do modelo quando disponível, com fallback para layout padrão.
+- Migration 20261109_modelos_ata.sql para instalações existentes.
 
 ## 1.07 — Três níveis de acesso, exportações e avaliação de frações
 

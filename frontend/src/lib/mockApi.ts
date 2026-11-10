@@ -173,6 +173,21 @@ function semente(): Dados {
     importacoes: [],
     anexos_importacao: [],
     atas: [ataExemplo(assembleias[0] as Registro, condominios[0] as Registro)],
+    modelos_ata: [
+      {
+        id: "mod-ata-geral",
+        nome: "Ata padrão (cartório livre)",
+        cidade: "",
+        cartorio: "",
+        texto:
+          "ATA DA ASSEMBLEIA GERAL {{ata.tipo}}\n\nAos {{ata.data}}, às {{ata.hora}}, em {{ata.local}}, reuniram-se os condôminos do {{condominio.nomeRelatorio}}.\n\nPresidente: {{ata.mesa.presidente}}; Secretário: {{ata.mesa.secretario}}.\n\nQuorum: {{ata.quorum.unidadesPresentes}} de {{ata.quorum.totalUnidades}} unidades.\n\nEncerramento: {{ata.encerramento}}.",
+        logoEscritorio: true,
+        bordaPagina: false,
+        ativo: true,
+        criadoEm: new Date().toISOString(),
+        atualizadoEm: new Date().toISOString(),
+      },
+    ],
     decisoes_previsao: [],
     decisoes_importacao: [],
   };
@@ -802,6 +817,7 @@ export const mockApi: ApiAdapter = {
         assembleias: d.assembleias.length,
         atas: d.atas.length,
         modelos: d.modelos.length,
+        modelos_ata: d.modelos_ata.length,
         importacoes: d.importacoes.length,
         anexos_importacao: d.anexos_importacao.length,
         decisoes_previsao: d.decisoes_previsao.length,
@@ -822,6 +838,7 @@ export const mockApi: ApiAdapter = {
         "assembleias",
         "atas",
         "modelos",
+        "modelos_ata",
         "importacoes",
         "anexos_importacao",
         "decisoes_previsao",

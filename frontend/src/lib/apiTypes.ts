@@ -70,6 +70,7 @@ export type AlvoLimpeza =
   | "assembleias"
   | "atas"
   | "modelos"
+  | "modelos_ata"
   | "importacoes"
   | "anexos_importacao"
   | "decisoes_previsao"
