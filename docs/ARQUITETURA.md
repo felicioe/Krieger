@@ -21,8 +21,8 @@ descreve objetivos de produto e deve ser lida junto com este mapa.
 ## Dados e autenticação
 
 As stores são `condominios`, `exercicios`, `mensais`, `assembleias`, `modelos`,
-`config`, `importacoes`, `atas`, `anexos_importacao`, `decisoes_previsao` e
-`decisoes_importacao`. Os registros usam `id` e
+`modelos_ata`, `config`, `importacoes`, `atas`, `anexos_importacao`,
+`decisoes_previsao` e `decisoes_importacao`. Os registros usam `id` e
 JSON em tabelas `kr_<store>`. `domain/types.ts` descreve o contrato TypeScript.
 As tabelas de usuários e tentativas de login têm estrutura própria em `schema.sql`.
 

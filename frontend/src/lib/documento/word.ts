@@ -32,6 +32,13 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   const meio = (pt: number) => Math.round(pt * 2);
   const px = (pt: number) => Math.round((pt * 96) / 72);
   const folha = areaPagina(doc.orientacao);
+  /** Moldura na página inteira (modelos de ata de cartório). */
+  const moldura = () => ({
+    pageBorderTop: { style: BorderStyle.SINGLE, size: 6, space: 12, color: COR.primaria },
+    pageBorderRight: { style: BorderStyle.SINGLE, size: 6, space: 12, color: COR.primaria },
+    pageBorderBottom: { style: BorderStyle.SINGLE, size: 6, space: 12, color: COR.primaria },
+    pageBorderLeft: { style: BorderStyle.SINGLE, size: 6, space: 12, color: COR.primaria },
+  });
   const UTIL = tw(folha.util);
   const ALINHA = {
     esquerda: AlignmentType.LEFT,
@@ -413,6 +420,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
           page: {
             size: { width: tw(folha.largura), height: tw(folha.altura) },
             margin: { top: tw(timbre ? 92 : PAGINA.margem), bottom: tw(64), left: tw(PAGINA.margem), right: tw(PAGINA.margem), header: tw(28), footer: tw(24) },
+            ...(doc.bordaPagina ? { borders: moldura() } : {}),
           },
         },
         headers: { default: cabecalho(), ...(capaSemTimbre ? { first: new Header({ children: aviso }) } : {}) },

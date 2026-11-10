@@ -21,8 +21,24 @@ consumidores de backup), `mockApi.ts` (semente, contagens, limpeza), `schema.sql
 `20261109_modelos_ata.sql`. Permissões `modelos_ata.visualizar` e `modelos_ata.editar` adicionadas
 ao catálogo e à matriz padrão do ADM.
 
+**Logo e borda.** `logoEscritorio` e `bordaPagina` são consumidos de verdade: com o logo desligado
+o documento sai sem timbre, e a borda vira `bordaPagina` no `Documento`, desenhada como moldura no
+`pdf.ts` (canvas sobre a página) e como `pageBorder*` no `word.ts`. O duplicado local de
+`resolverCaminho` em `frontend/src/documentos/ata.ts` saiu; a renderização chama
+`renderizarTextoModeloAta`.
+
+**Modelo na criação.** Ao criar a ata, `DialogoNovaAta` chama `escolherModeloAta` com a cidade do
+edital e já grava o `modeloAtaId`. O cartório não é campo do edital, então um modelo específico de
+cartório só é aplicado quando a tela da ata passa o cartório — hoje ela lista todos os modelos e a
+escolha manual continua valendo.
+
+**Correção.** `normalizarAta` reconstruía a ata campo a campo e descartava `modeloAtaId`; o modelo
+escolhido desaparecia a cada salvamento. Corrigido em `domain/ata.ts`, com teste de regressão em
+`domain/ata.test.ts`.
+
 **Versão.** 1.08 registrada em `frontend/src/data/versoes.json`; CHANGELOG gerado via
-`npm run changelog:gerar`. Branch `feat/modelo-ata-por-cartorio` pronta para PR.
+`npm run changelog:gerar`. Publicado em produção em 10/11/2026 (as duas migrations
+`20261108_perfis_tres_niveis.sql` e `20261109_modelos_ata.sql` foram aplicadas antes).
 
 ---
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
 import { assembleiaPadrao } from "@/domain/edital";
-import { ataEmBranco, contarUnidadesPresentes, novaAtaDeAssembleia, prepararAta, validarAta, validarNovaAta, novoItemAta } from "@/domain/ata";
+import { ataEmBranco, contarUnidadesPresentes, normalizarAta, novaAtaDeAssembleia, prepararAta, validarAta, validarNovaAta, novoItemAta } from "@/domain/ata";
 import type { Assembleia, Condominio } from "@/domain/types";
 
 const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias", unidades: 48 };
@@ -81,6 +81,14 @@ describe("atas", () => {
     });
     expect(ata.presentes).toEqual([{ unidade: "101", nome: "Ana", procurador: false }]);
     expect(ata.itens).toHaveLength(1);
+  });
+
+  it("normalizarAta preserva o modelo de ata escolhido (regressão issue #256)", () => {
+    const base = { ...novaAtaDeAssembleia(edital, condo), id: "a1" };
+    expect(normalizarAta({ ...base, modeloAtaId: "m1" }).modeloAtaId).toBe("m1");
+    // vazio ou inválido vira ausente, sem gravar lixo
+    expect("modeloAtaId" in normalizarAta({ ...base, modeloAtaId: "  " })).toBe(false);
+    expect("modeloAtaId" in normalizarAta(base)).toBe(false);
   });
 
   it("exige condomínio e data válida; horário, se informado, em hh:mm", () => {

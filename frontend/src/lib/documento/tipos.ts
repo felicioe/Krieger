@@ -95,6 +95,8 @@ export interface Documento {
   marcaDagua?: string;
   /** Identificação curta no rodapé, ao lado do número da página. */
   rodape?: string;
+  /** Moldura na página inteira (layout de cartório). Desenhada no PDF e no Word. */
+  bordaPagina?: boolean;
   blocos: Bloco[];
 }
 
