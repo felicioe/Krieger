@@ -38,7 +38,7 @@ export function useHotkey(
       }
     };
 
-    target.addEventListener("keydown", handler);
-    return () => target.removeEventListener("keydown", handler);
+    target.addEventListener("keydown", handler as EventListener);
+    return () => target.removeEventListener("keydown", handler as EventListener);
   }, [keys, callback, target]);
 }

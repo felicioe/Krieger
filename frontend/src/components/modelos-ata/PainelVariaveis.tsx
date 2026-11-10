@@ -72,7 +72,7 @@ export function PainelVariaveis() {
     );
   });
 
-  const agrupar = agruparPorCategoria(variaveisFiltradas);
+  const agrupar = agruparPorCategoria(variaveisFiltradas) ?? {};
 
   useHotkey(["Control", "/"], (e) => {
     e.preventDefault();
