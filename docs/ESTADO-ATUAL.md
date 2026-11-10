@@ -36,9 +36,26 @@ escolha manual continua valendo.
 escolhido desaparecia a cada salvamento. Corrigido em `domain/ata.ts`, com teste de regressão em
 `domain/ata.test.ts`.
 
+**Parser de blocos.** O texto do modelo agora suporta títulos (`#`, `##`, `###`), listas (`- item`)
+e parágrafos separados por linha em branco, convertidos em blocos visuais pelo `blocosDoModelo()`
+em `frontend/src/documentos/ata.ts`. Variáveis novas: `{{ata.dataExtenso}}` (data por extenso),
+`{{ata.quorumTexto}}` (frase pronta do quórum), `{{ata.itensTexto}}` (itens numerados com
+discussão/deliberação), `{{ata.unidades}}` (lista de unidades presentes), `{{ata.percentualQuorum}}`.
+
+**Painel de variáveis.** O editor de modelos de ata ganhou um botão "Variáveis (Ctrl+/)" que abre
+um dialog com as 27 variáveis disponíveis, agrupadas por categoria (Ata, Condomínio, Escritório,
+Global), com busca e cópia para a área de transferência. Atalho global `Ctrl+/` via hook
+`useHotkey`. Componente em `frontend/src/components/modelos-ata/PainelVariaveis.tsx`.
+
+**Modelos Lago Negro.** Dois modelos prontos (AGO e AGE) documentados em
+`docs/MODELOS-ATA-LAGO-NEGRO.md`, extraídos por OCR das atas reais do Condomínio Rural Lago Negro
+(Rancho Queimado/SC). Usam as variáveis novas e o parser de blocos; servem como referência para
+cadastro na tela de modelos.
+
 **Versão.** 1.08 registrada em `frontend/src/data/versoes.json`; CHANGELOG gerado via
 `npm run changelog:gerar`. Publicado em produção em 10/11/2026 (as duas migrations
-`20261108_perfis_tres_niveis.sql` e `20261109_modelos_ata.sql` foram aplicadas antes).
+`20261108_perfis_tres_niveis.sql` e `20261109_modelos_ata.sql` foram aplicadas antes). Painel de
+variáveis e modelos Lago Negro publicados em 10/11/2026 via `deploy-hostinger` (commit `1e2ba09`).
 
 ---
 
