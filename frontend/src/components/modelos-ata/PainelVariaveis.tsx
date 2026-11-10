@@ -50,11 +50,12 @@ const VARIAVEIS: Variavel[] = [
 type Agrupadas = Record<string, Variavel[]>;
 
 function agruparPorCategoria(variaveis: Variavel[]): Agrupadas {
-  return variaveis.reduce((acc, v) => {
-    if (!acc[v.categoria]) acc[v.categoria] = [];
-    acc[v.categoria].push(v);
-    return acc;
-  }, {} as Agrupadas);
+  const acc: Agrupadas = {};
+  for (const v of variaveis) {
+    const lista = acc[v.categoria] ?? (acc[v.categoria] = []);
+    lista.push(v);
+  }
+  return acc;
 }
 
 const CATEGORIAS_ORDEM = ["Ata", "Condomínio", "Escritório", "Global"];
