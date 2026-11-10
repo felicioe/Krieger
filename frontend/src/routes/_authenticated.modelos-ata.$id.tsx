@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 import { chaves } from "@/lib/queries";
 import { normalizarModeloAta, validarModeloAta } from "@/domain/modeloAta";
 import type { ModeloAta } from "@/domain/types";
+import { PainelVariaveis } from "@/components/modelos-ata/PainelVariaveis";
 
 export const Route = createFileRoute("/_authenticated/modelos-ata/$id")({
   loader: ({ context: { queryClient }, params: { id } }) =>
@@ -111,12 +112,17 @@ function RouteComponent() {
         <Field rotulo="Cartório (opcional)" dica="Deixe em branco para valer em qualquer cartório da cidade.">
           <Input value={form.cartorio ?? ""} onChange={(e) => setForm({ ...form, cartorio: e.target.value })} placeholder="Ex.: 1º Ofício" />
         </Field>
-        <Field rotulo="Texto da ata" dica="Use variáveis como {{ata.tipo}}, {{ata.data}}, {{condominio.nomeRelatorio}}." obrigatorio>
-          <textarea
-            className="min-h-[320px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            value={form.texto ?? ""}
-            onChange={(e) => setForm({ ...form, texto: e.target.value })}
-          />
+        <Field rotulo="Texto da ata" dica="Use variáveis como {{ata.tipo}}, {{ata.data}}, {{condominio.nomeRelatorio}}. Pressione Ctrl+/ para ver todas." obrigatorio>
+          <div className="relative">
+            <textarea
+              className="min-h-[320px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring pr-24"
+              value={form.texto ?? ""}
+              onChange={(e) => setForm({ ...form, texto: e.target.value })}
+            />
+            <div className="absolute right-2 top-2">
+              <PainelVariaveis />
+            </div>
+          </div>
         </Field>
         <div className="flex flex-wrap gap-6">
           <label className="flex items-center gap-2 text-sm">
