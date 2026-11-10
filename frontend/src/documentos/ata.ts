@@ -35,13 +35,13 @@ function blocosDoModelo(texto: string): Bloco[] {
       flush();
     }
 
-    if (titulo1) {
+    if (titulo1 && titulo1[1]) {
       blocos.push({ tipo: "titulo", nivel: 1, texto: titulo1[1].trim() });
-    } else if (titulo2) {
+    } else if (titulo2 && titulo2[1]) {
       blocos.push({ tipo: "titulo", nivel: 2, texto: titulo2[1].trim() });
-    } else if (titulo3) {
+    } else if (titulo3 && titulo3[1]) {
       blocos.push({ tipo: "titulo", nivel: 3, texto: titulo3[1].trim() });
-    } else if (lista) {
+    } else if (lista && lista[1]) {
       blocos.push({ tipo: "lista", itens: [lista[1].trim()] });
     } else if (t.trim() === "") {
       // quebra de parágrafo já foi tratada pelo flush acima
