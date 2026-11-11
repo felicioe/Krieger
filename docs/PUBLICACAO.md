@@ -20,11 +20,11 @@ confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
 Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
 `deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
-publicação: `deploy-hostinger` `a603045`, com o artefato `krieger-hostinger` do CI
-no commit `c3b75df` (main). Os 176 arquivos da branch foram conferidos byte a
-byte contra o artefato, e o runtime `index-KDwbFQQd.js` no ar coincide com o
-`index.html` publicado. Isso não é atestado criptográfico do artefato nem
-comprova todos os fluxos da aplicação.
+publicação: `deploy-hostinger` `3fec48f`, com o artefato `krieger-hostinger` do CI
+no commit `bbdd720` (main); o runtime `index-DkxdpG1f.js` no ar coincide com o
+`index.html` publicado. A publicação anterior, `a603045` (main `c3b75df`), teve os
+176 arquivos da branch conferidos byte a byte contra o artefato. Isso não é
+atestado criptográfico do artefato nem comprova todos os fluxos da aplicação.
 
 O CI instala/compila frontend antes do pacote desde o PR #51. Não há workflow
 de deploy neste repositório. Preservar configuração fora da pasta publicada e
