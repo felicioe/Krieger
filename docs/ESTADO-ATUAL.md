@@ -15,9 +15,18 @@ e `tools` no frontmatter; os de leitura e revisão têm ferramenta de escrita fo
 **Mudança de infraestrutura.** `.gitignore` passou a ignorar `.claude/*` em vez de `.claude/`,
 liberando `.claude/agents/` para versionamento. `.claude/settings.local.json` continua ignorado.
 
-**Não verificado:** se a versão instalada do Claude Code aplica `effort` do frontmatter em todos os
-casos; se um campo for ignorado, o agente roda no esforço padrão do modelo, sem quebrar. Nenhum
-agente foi executado nesta entrega.
+**Verificado em execução (10/11/2026).** O campo `tools` do frontmatter é honrado: um subagente com
+`Bash` declarado executou `gh issue view 257` e devolveu `{"number":257,"state":"OPEN"}`. O campo
+`effort` não foi observado diretamente; se for ignorado, o agente roda no esforço padrão do modelo.
+
+**Definições valem a partir de sessão nova.** O teste de fumaça do `triagem-krieger` revelou que as
+definições são registradas na inicialização da sessão: alterar `.claude/agents/*.md` em disco não
+altera um agente já carregado. A primeira versão do `triagem-krieger` nasceu sem `Bash`, não
+conseguia ler a issue e deduzia o escopo pelo título; corrigido no PR #261 (`tools` com `Bash` e
+leitura explícita por `gh issue view`). O reteste na mesma sessão continuou sem `Bash`, o que levou
+à hipótese errada de que o campo não era aplicado — o teste de controle com `explorador-krieger`,
+que já nasceu com `Bash`, descartou isso. Depois de editar um agente, abra sessão nova antes de
+concluir que a mudança não funcionou.
 
 ## Modelos de ata por cartório/cidade — 09/11/2026
 
