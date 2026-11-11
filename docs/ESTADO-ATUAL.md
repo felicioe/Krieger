@@ -33,7 +33,13 @@ valida ids, cidade, tipo, borda, ausência de logo e idempotência.
 
 **Versão.** 1.10 em `frontend/src/data/versoes.json`; CHANGELOG regenerado.
 
-**Não verificado:** a migration não foi aplicada no banco de produção; depende da publicação.
+**Carga em produção e publicação.** A migration `20261111_modelos_ata_por_cidade.sql` foi aplicada
+no MySQL de produção em 11/11/2026, sem erro. Foi publicado o artefato `krieger-hostinger` do CI no
+commit `c3b75df` de `main`, pela branch `deploy-hostinger` `a603045`: os 176 arquivos da branch foram
+conferidos byte a byte contra o artefato, o runtime no ar é `index-KDwbFQQd.js` (o mesmo `index.html`
+do pacote) e o chunk da API serve os oito ids dos modelos. `krieger-config.php` fica fora de
+`public_html` e não foi tocado. **Não verificado:** a geração de ata e o download de PDF/Word com
+cada um dos oito modelos no navegador autenticado.
 
 ## Modelos de ata prontos e escolha pela cidade do condomínio — 10/11/2026
 
@@ -68,8 +74,9 @@ efêmero e valida ids, cidade, tipo, texto e idempotência; há um passo novo no
 
 **Versão.** 1.09 em `frontend/src/data/versoes.json`; CHANGELOG regenerado.
 
-**Não verificado:** a migration ainda não foi aplicada no MySQL de produção (ação pendente de
-publicação, como as anteriores).
+**Aplicação posterior.** A migration desta entrega foi superada pela de 11/11/2026
+(`20261111_modelos_ata_por_cidade.sql`), que reescreve os dois ids do Lago Negro sem logo e com
+borda e acrescenta os seis novos; ela foi aplicada no MySQL de produção em 11/11/2026.
 
 ## Plano de desenvolvimento por etapa e modelo — 10/11/2026
 
