@@ -1,7 +1,0 @@
-function e(e){let t={"&":`&amp;`,"<":`&lt;`,">":`&gt;`,'"':`&quot;`,"'":`&#39;`};return e.replace(/[&<>"']/g,e=>t[e])}function t(t){let n=(t,n=`td`)=>`<tr>${t.map(t=>`<${n}>${e(t)}</${n}>`).join(``)}</tr>`;return`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${e(t.titulo)}</title><style>
-    body{font:14px Arial,sans-serif;color:#123b60;margin:24px}h1{font-size:20px}p{line-height:1.45}
-    table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{border:1px solid #ccd6df;padding:8px;text-align:right}
-    th:first-child,td:first-child,td:nth-child(2){text-align:left}thead,tfoot{background:#edf2f6}thead{display:table-header-group}tr{break-inside:avoid}
-    @page{size:A4 landscape;margin:14mm}@media print{body{margin:0}}
-    </style></head><body><h1>${e(t.titulo)}</h1>${t.subtitulo?`<p>${e(t.subtitulo)}</p>`:``}
-    <table><thead>${n(t.cabecalhos,`th`)}</thead><tbody>${t.linhas.map(e=>n(e)).join(``)}</tbody><tfoot>${n(t.totais,`th`)}</tfoot></table></body></html>`}function n(e){let n=window.open(``,`_blank`,`width=1100,height=800`);if(!n)return!1;try{return n.opener=null,n.document.open(),n.addEventListener(`load`,()=>{n.focus(),n.print()},{once:!0}),n.document.write(t(e)),n.document.close(),!0}catch(e){throw n.close(),e}}export{n as t};
