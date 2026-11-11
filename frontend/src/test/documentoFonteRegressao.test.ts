@@ -40,7 +40,7 @@ describe("edital e relatórios mantêm a tipografia da interface", () => {
     const { montarDefinicao } = await import("@/lib/documento/pdf");
     const { tipografia } = await import("@/lib/documento/tipografia");
 
-    const assembleia = assembleiaPadrao({ condo, tipo: "ordinaria", data: "2026-11-10", modelo: modeloEdital });
+    const assembleia = { id: "a-edital", ...assembleiaPadrao({ condo, tipo: "ordinaria", data: "2026-11-10", modelo: modeloEdital }) };
     const doc = documentoEdital({ assembleia, condominio: condo, modelo: modeloEdital, escritorio: null });
 
     expect(doc.fonte).toBeUndefined();
@@ -64,7 +64,7 @@ describe("edital e relatórios mantêm a tipografia da interface", () => {
     const { documentoRelatorioFinal } = await import("@/documentos/relatorioFinal");
     const { montarDefinicao } = await import("@/lib/documento/pdf");
 
-    const e = exercicioPadrao(condo, 2025, "Rancho Queimado");
+    const e = { id: "e1", ...exercicioPadrao(condo, 2025, "Rancho Queimado") };
     e.relatorioFinal = { ...e.relatorioFinal, secoes: {} };
     const rel = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
     const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio: null });
