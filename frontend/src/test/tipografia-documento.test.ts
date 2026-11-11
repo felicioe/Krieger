@@ -85,4 +85,40 @@ describe("documento da ata com modelo", () => {
     expect(t.familiaPdf).toBe("LiberationSans");
     expect(t.corpo).toBe(12);
   });
+
+  it("sem logo do escritório, a definição do PDF não traz texto de rodapé nem timbre, mas numera as páginas", async () => {
+    const { documentoAta } = await import("@/documentos/ata");
+    const { montarDefinicao } = await import("@/lib/documento/pdf");
+    // Escritório COM rodapé configurado: o teste prova que ele não vaza para a ata.
+    const escritorio = {
+      id: "escritorio" as const,
+      nome: "Krieger",
+      cidade: "Rancho Queimado",
+      rodape: "Escritório Krieger · CNPJ 00.000.000/0001-00",
+      assinatura: "",
+      logo: "data:image/png;base64,AA",
+      logoRatio: 3,
+    };
+    const doc = documentoAta({ ata, condominio: condo, cidade: "Rancho Queimado", escritorio, modelo: { texto: "# ATA\n\nCorpo.", logoEscritorio: false, bordaPagina: true } });
+
+    const definicao = await montarDefinicao(doc);
+    const texto = JSON.stringify(definicao);
+
+    expect(doc.timbre).toBeNull();
+    expect(texto).not.toContain("Escritório Krieger");
+    expect(texto).not.toContain("CNPJ 00.000.000/0001-00");
+
+    // A numeração de páginas é do documento e continua existindo (o footer é função,
+    // por isso não aparece no JSON: chamamos como o pdfmake chama).
+    const rodape = definicao.footer as (pagina: number, total: number) => { columns: { text: string }[] };
+    const primeiro = rodape(1, 3).columns.map((c) => c.text);
+    expect(primeiro.some((t) => t.includes("Página 1 de 3"))).toBe(true);
+    expect(primeiro.join(" ")).not.toContain("Escritório Krieger");
+    // A borda de página continua sendo desenhada (background é função também).
+    expect(typeof (definicao as { background?: unknown }).background).toBe("function");
+
+    const estilo = definicao.defaultStyle as { font?: string; fontSize?: number };
+    expect(estilo.font).toBe("LiberationSans");
+    expect(estilo.fontSize).toBe(12);
+  });
 });

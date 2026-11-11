@@ -58,7 +58,11 @@ function moldura(folha: { largura: number; altura: number }): Content {
   } as Content;
 }
 
-async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
+/**
+ * Monta a definição que vai para o pdfmake. Exportada para os testes conferirem corpo,
+ * família e rodapé sem depender de gerar o binário do PDF.
+ */
+export async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
   const t = tipografia(doc);
   const img = doc.timbre?.logo ? await carregarPng(doc.timbre.logo.dataUrl) : null;
   const logo = img?.dataUrl ?? null;
