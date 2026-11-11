@@ -20,11 +20,19 @@ confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
 Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
 `deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
-publicação: `deploy-hostinger` `3fec48f`, com o artefato `krieger-hostinger` do CI
-no commit `bbdd720` (main); o runtime `index-DkxdpG1f.js` no ar coincide com o
-`index.html` publicado. A publicação anterior, `a603045` (main `c3b75df`), teve os
-176 arquivos da branch conferidos byte a byte contra o artefato. Isso não é
-atestado criptográfico do artefato nem comprova todos os fluxos da aplicação.
+publicação: `deploy-hostinger` `c2eb968`, com o artefato `krieger-hostinger` do CI
+no commit `92f853b` (main, versão 1.11); o runtime `index-DFi-oqfk.js` no ar
+coincide com o `index.html` publicado. A publicação anterior, `3fec48f` (main
+`bbdd720`), teve os arquivos da branch conferidos contra o artefato. As
+publicações `a603045` e `3fec48f` saíram nos minutos seguintes uma da outra
+porque outro trabalho foi mesclado em main no intervalo: vale sempre conferir o
+SHA de main antes e depois de publicar. Isso não é atestado criptográfico do
+artefato nem comprova todos os fluxos da aplicação.
+
+Publicar não aplica migração: em 11/11/2026 o pacote com os modelos de edital por
+cidade entrou no ar com `migrations/20261111_modelos_edital_por_cidade.sql` ainda
+pendente no banco. Conferir migrations novas a cada publicação e registrar o que
+ficou de fora.
 
 O CI instala/compila frontend antes do pacote desde o PR #51. Não há workflow
 de deploy neste repositório. Preservar configuração fora da pasta publicada e

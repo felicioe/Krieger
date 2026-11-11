@@ -24,7 +24,13 @@ dois); a lista ganhou as colunas Cidade e Tipo.
 **Carga.** `migrations/20261111_modelos_edital_por_cidade.sql` (REPLACE INTO idempotente) e o bloco
 equivalente em `schema.sql`, conferidos por `domain/modelosEditalSeed.test.ts`.
 
-**Não verificado:** a migration não foi aplicada em produção; depende da publicação.
+**Publicado.** O pacote com este código está no ar desde 11/11/2026 (`deploy-hostinger`
+`c2eb968`, main `92f853b`); o chunk `api-BSL7pr3q.js` servido em produção já traz os quatro ids
+`mod-edital-*`.
+
+**Pendente:** a migration **não** foi aplicada no banco de produção. Enquanto não for, os quatro
+modelos existem no código mas não chegam à tela; a escolha automática continua funcionando com o que
+houver cadastrado, caindo no primeiro modelo disponível quando a cidade não tem modelo próprio.
 
 ## Modelos de ata por cidade com o layout real das atas — 11/11/2026
 
