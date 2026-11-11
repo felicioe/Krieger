@@ -1,6 +1,7 @@
 config.php
 config.local.php
-.claude/
+.claude/*
+!.claude/agents/
 node_modules/
 dist/
 resultado-build.log

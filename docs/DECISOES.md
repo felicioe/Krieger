@@ -1,5 +1,22 @@
 # Decisões do projeto
 
+## 2026-11-10 — plano de desenvolvimento por etapa, com modelo e esforço próprios
+
+O responsável perguntou se dava para usar um tipo diferente de modelo em cada etapa do trabalho.
+Decidido: sim, mas por risco, não por variedade. Etapa que decide o sistema (regra de negócio,
+contrato de dados, backend, publicação) roda em Opus 5.5 com esforço alto; o projeto técnico roda
+uma vez em Fable 5.1; etapa de leitura ampla (triagem, investigação) e de acabamento (documentação)
+roda em Haiku 5.5 com esforço baixo; interface e validação rodam em Sonnet 5.5.
+
+Cada etapa vira um arquivo em `.claude/agents/`, com `model`, `effort` e `tools` no frontmatter.
+Por isso `.gitignore` deixou de ignorar `.claude/` inteiro e passa a ignorar só `.claude/*`,
+liberando `.claude/agents/`: a definição só vale para os dois agentes (Claude e Codex) se estiver
+versionada. `.claude/settings.local.json` continua ignorado.
+
+A matriz completa, o contrato de passagem entre etapas e a regra de quando subir de nível ficam em
+[PLANO-ETAPAS-MODELOS.md](PLANO-ETAPAS-MODELOS.md). Nenhum agente publica: deploy é irreversível e
+fica na sessão principal, com o responsável presente e registro na issue.
+
 ## 2026-11-09 — três níveis de acesso, com o SuperADM editando a matriz de perfis
 
 O pedido era separar um nível acima do administrador. Havia dois perfis (`admin` e `user`) e o

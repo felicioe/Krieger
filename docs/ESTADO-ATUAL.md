@@ -1,5 +1,24 @@
 # Estado atual e passagem de contexto
 
+## Plano de desenvolvimento por etapa e modelo — 10/11/2026
+
+Criado `docs/PLANO-ETAPAS-MODELOS.md`, que distribui o trabalho em 11 etapas com modelo e esforço
+próprios: triagem e investigação em Haiku 5.5 com esforço baixo, projeto técnico em Fable 5.1,
+regra de negócio e backend em Opus 5.5, interface e validação em Sonnet 5.5, revisão em Opus 5.5
+com esforço `xhigh`, documentação em Haiku 5.5 e publicação na sessão principal.
+
+**Definições versionadas.** Oito arquivos novos em `.claude/agents/`: `triagem-krieger`,
+`explorador-krieger`, `implementador-domain`, `implementador-frontend`, `implementador-php`,
+`validador-krieger`, `revisor-krieger` e `documentador-krieger`. Cada um declara `model`, `effort`
+e `tools` no frontmatter; os de leitura e revisão têm ferramenta de escrita fora da lista.
+
+**Mudança de infraestrutura.** `.gitignore` passou a ignorar `.claude/*` em vez de `.claude/`,
+liberando `.claude/agents/` para versionamento. `.claude/settings.local.json` continua ignorado.
+
+**Não verificado:** se a versão instalada do Claude Code aplica `effort` do frontmatter em todos os
+casos; se um campo for ignorado, o agente roda no esforço padrão do modelo, sem quebrar. Nenhum
+agente foi executado nesta entrega.
+
 ## Modelos de ata por cartório/cidade — 09/11/2026
 
 A issue #256 pediu layouts de ata específicos por cartório. Foi criada a store `modelos_ata`
