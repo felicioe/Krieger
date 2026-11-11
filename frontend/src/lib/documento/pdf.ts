@@ -1,7 +1,8 @@
 import type { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
 import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA, areaPagina, type Alinhamento, type Bloco, type Coluna, type Documento, type LinhaTabela, type Texto } from "./tipos";
 import { carregarPng, paraPng } from "./imagens";
-import { FAMILIA, FONTES, vfsFonte } from "./fontes";
+import { FONTES, FONTES_DOCUMENTO, vfsFonte, vfsFonteDocumento } from "./fontes";
+import { tipografia, type Tipografia } from "./tipografia";
 
 /** Desenha o documento em PDF (pdfmake, carregado sob demanda). */
 export async function gerarPdf(doc: Documento): Promise<Blob> {
@@ -9,6 +10,12 @@ export async function gerarPdf(doc: Documento): Promise<Blob> {
   // Fonte embutida no próprio chunk (base64): sem VFS do Roboto e sem requisição de rede.
   pdfMake.addVirtualFileSystem(vfsFonte());
   pdfMake.addFonts(FONTES);
+  // A família de documento (Liberation Sans) só entra quando o documento a pede: edital e
+  // relatórios não pagam esses bytes. O registro é idempotente (`pack` sobrescreve a chave).
+  if (doc.fonte === "documento") {
+    pdfMake.addVirtualFileSystem(await vfsFonteDocumento());
+    pdfMake.addFonts(FONTES_DOCUMENTO);
+  }
   const definicao = await montarDefinicao(doc);
   return pdfMake.createPdf(definicao).getBlob();
 }
@@ -22,7 +29,7 @@ const ALINHA: Record<Alinhamento, "left" | "center" | "right" | "justify"> = {
 };
 const ALINHA_COL = { esquerda: "left", centro: "center", direita: "right" } as const;
 
-function texto(t: Texto, tamanho = 10): string | Content[] {
+function texto(t: Texto, tamanho: number): string | Content[] {
   if (typeof t === "string") return t;
   return t.map((x) => ({
     text: x.texto,
@@ -52,15 +59,19 @@ function moldura(folha: { largura: number; altura: number }): Content {
 }
 
 async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
+  const t = tipografia(doc);
   const img = doc.timbre?.logo ? await carregarPng(doc.timbre.logo.dataUrl) : null;
   const logo = img?.dataUrl ?? null;
   const ratio = img && img.altura ? img.largura / img.altura : 3;
   const folha = areaPagina(doc.orientacao);
   const conteudo: Content[] = [];
-  for (const b of doc.blocos) conteudo.push(...(await bloco(b, folha.util)));
+  for (const b of doc.blocos) conteudo.push(...(await bloco(b, t, folha.util)));
   const timbre = doc.timbre;
   const topo = timbre ? 92 : PAGINA.margem;
-  const rodapeTexto = [timbre?.rodape?.trim(), doc.rodape?.trim()].filter(Boolean).join("\n");
+  // Decisão: o texto do rodapé identifica o escritório. Ata de modelo sem logo do escritório
+  // (`timbre: null`) não o carrega; a numeração "Página X de Y" continua, porque é referência
+  // do documento, não do escritório. Ver `rodapeEscritorio` em tipografia.ts.
+  const rodapeTexto = t.rodapeEscritorio ? [timbre?.rodape?.trim(), doc.rodape?.trim()].filter(Boolean).join("\n") : "";
 
   return {
     pageSize: "A4",
@@ -68,7 +79,7 @@ async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
     pageMargins: [PAGINA.margem, topo, PAGINA.margem, 64],
     ...(doc.bordaPagina ? { background: () => moldura(folha) } : {}),
     info: { title: doc.titulo, creator: "Sistema Krieger" },
-    defaultStyle: { font: FAMILIA, fontSize: 10, lineHeight: 1.25, color: c(COR.texto) },
+    defaultStyle: { font: t.familiaPdf, fontSize: t.corpo, lineHeight: 1.25, color: c(COR.texto) },
     ...(doc.marcaDagua ? { watermark: { text: doc.marcaDagua, color: c(COR.primaria), opacity: 0.07, bold: true } } : {}),
     header: (pagina: number) => {
       if (!timbre || (doc.semTimbreNaCapa && pagina === 1)) return null;
@@ -113,15 +124,15 @@ async function montarDefinicao(doc: Documento): Promise<TDocumentDefinitions> {
   };
 }
 
-async function bloco(b: Bloco, util: number = PAGINA.util): Promise<Content[]> {
+async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promise<Content[]> {
   switch (b.tipo) {
     case "titulo": {
       const estilo =
         b.nivel === 1
-          ? { fontSize: 15, margin: [0, 0, 0, 8] as [number, number, number, number] }
+          ? { fontSize: t.titulo[1], margin: [0, 0, 0, 8] as [number, number, number, number] }
           : b.nivel === 2
-            ? { fontSize: 12, margin: [0, 16, 0, 6] as [number, number, number, number] }
-            : { fontSize: 10.5, margin: [0, 10, 0, 3] as [number, number, number, number] };
+            ? { fontSize: t.titulo[2], margin: [0, 16, 0, 6] as [number, number, number, number] }
+            : { fontSize: t.titulo[3], margin: [0, 10, 0, 3] as [number, number, number, number] };
       return [
         {
           text: b.texto,
@@ -133,19 +144,21 @@ async function bloco(b: Bloco, util: number = PAGINA.util): Promise<Content[]> {
         } as Content,
       ];
     }
-    case "paragrafo":
+    case "paragrafo": {
+      const corpo = t.paragrafo[b.tamanho ?? "normal"];
       return [
         {
-          text: texto(b.texto, b.tamanho === "pequeno" ? 8.5 : b.tamanho === "grande" ? 13 : 10),
+          text: texto(b.texto, corpo),
           alignment: ALINHA[b.alinhamento ?? "esquerda"],
-          fontSize: b.tamanho === "pequeno" ? 8.5 : b.tamanho === "grande" ? 13 : 10,
+          fontSize: corpo,
           margin: [b.recuo ? 16 : 0, 0, 0, 6],
           ...(b.suave ? { color: c(COR.suave) } : {}),
           ...(b.negrito ? { bold: true } : {}),
         } as Content,
       ];
+    }
     case "lista": {
-      const itens = b.itens.map((i) => ({ text: texto(i), margin: [0, 0, 0, 3] }) as Content);
+      const itens = b.itens.map((i) => ({ text: texto(i, t.corpo), margin: [0, 0, 0, 3] }) as Content);
       return [b.numerada ? ({ ol: itens, margin: [12, 0, 0, 8] } as Content) : ({ ul: itens, margin: [12, 0, 0, 8] } as Content)];
     }
     case "pares":
@@ -155,7 +168,7 @@ async function bloco(b: Bloco, util: number = PAGINA.util): Promise<Content[]> {
             widths: [150, "*"],
             body: b.itens.map((p) => [
               { text: p.rotulo, color: c(COR.suave) },
-              { text: texto(p.valor), ...(b.alinhamento === "direita" ? { alignment: "right" } : {}) },
+              { text: texto(p.valor, t.corpo), ...(b.alinhamento === "direita" ? { alignment: "right" } : {}) },
             ]),
           },
           layout: { defaultBorder: false, paddingLeft: () => 0, paddingRight: () => 8, paddingTop: () => 1.5, paddingBottom: () => 1.5 },
@@ -184,7 +197,7 @@ async function bloco(b: Bloco, util: number = PAGINA.util): Promise<Content[]> {
               width: largura,
               stack: [
                 { canvas: [{ type: "line", x1: 0, y1: 0, x2: largura, y2: 0, lineWidth: 0.7, lineColor: c(COR.texto) }] },
-                ...linhas.map((l, k) => ({ text: l, alignment: "center", margin: [0, k === 0 ? 4 : 0, 0, 0], ...(k > 0 ? { fontSize: 9, color: c(COR.suave) } : {}) })),
+                ...linhas.map((l, k) => ({ text: l, alignment: "center", margin: [0, k === 0 ? 4 : 0, 0, 0], ...(k > 0 ? { fontSize: t.corpo - 1, color: c(COR.suave) } : {}) })),
               ],
             },
           ]),

@@ -127,6 +127,12 @@ export function documentoAta(o: {
       arquivo: nomeDeArquivo("ata", condominio?.codigo || nome, a.data),
       timbre: modelo.logoEscritorio === false ? null : timbreDoEscritorio(o.escritorio),
       ...(modelo.bordaPagina ? { bordaPagina: true } : {}),
+      // Decisão (docs/DECISOES.md): ata de cartório não leva identificação do escritório no
+      // rodapé. Só a ata desliga o texto — o edital com "Papel timbrado" desmarcado continua
+      // mostrando o rodapé de identificação do condomínio, como sempre mostrou.
+      ...(modelo.logoEscritorio === false ? { rodapeEscritorio: false } : {}),
+      fonte: "documento" as const,
+      tamanhoCorpo: 12,
       ...(a.status !== "finalizada" ? { marcaDagua: "RASCUNHO" } : {}),
       rodape: [nome, data && `Assembleia de ${data}`].filter(Boolean).join(" · "),
       blocos: blocosModelo.length ? blocosModelo : [{ tipo: "paragrafo", texto: "Modelo de ata sem conteúdo.", suave: true }],
@@ -215,6 +221,8 @@ export function documentoAta(o: {
     titulo: `Ata da assembleia ${tipo.toLowerCase()} — ${nome}`,
     arquivo: nomeDeArquivo("ata", condominio?.codigo || nome, a.data),
     timbre: timbreDoEscritorio(o.escritorio),
+    fonte: "documento" as const,
+    tamanhoCorpo: 12,
     ...(a.status !== "finalizada" ? { marcaDagua: "RASCUNHO" } : {}),
     rodape: [nome, data && `Assembleia de ${data}`].filter(Boolean).join(" · "),
     blocos,
