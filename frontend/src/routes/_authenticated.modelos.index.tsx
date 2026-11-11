@@ -10,6 +10,7 @@ import { DialogoNovoModelo } from "@/components/modelos/DialogoNovoModelo";
 import { listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { normalizarModelo } from "@/domain/modelo";
+import { rotuloTipo } from "@/domain/edital";
 import type { Assembleia, Condominio, Modelo } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/modelos/")({
@@ -97,6 +98,17 @@ function ListaModelos() {
             render: (m) => (
               <span className={m.condoId ? "" : "text-muted-foreground"}>{m.condoNome}</span>
             ),
+          },
+          {
+            chave: "cidade",
+            titulo: "Cidade",
+            render: (m) => (m.cidade ? m.cidade : <span className="text-muted-foreground">—</span>),
+          },
+          {
+            chave: "tipo",
+            titulo: "Tipo",
+            render: (m) =>
+              m.tipo ? rotuloTipo(m.tipo) : <span className="text-muted-foreground">Ambos</span>,
           },
           {
             chave: "versao",

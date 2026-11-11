@@ -29,6 +29,7 @@ import { PERFIL_ROTULO, validarLogin, validarNovaSenha } from "@/domain/usuario"
 import { novaAtaDeAssembleia } from "@/domain/ata";
 import { normalizarAssembleia } from "@/domain/edital";
 import { modelosAtaSemente } from "@/domain/modelosAtaSeed";
+import { modelosEditalSemente } from "@/domain/modelosEditalSeed";
 import { dataParaBR, dataParaISO } from "./format";
 import { novoId } from "./id";
 import { bytesDoDataUrl } from "./arquivo";
@@ -233,7 +234,11 @@ function semente(): Dados {
     exercicios: [exercicioExemplo(condominios[0] as Registro)],
     mensais: mensaisExemplo(condominios[0] as Registro),
     assembleias,
-    modelos: [modeloExemplo(), modeloExemploSolar()],
+    modelos: [
+      modeloExemplo(),
+      modeloExemploSolar(),
+      ...(modelosEditalSemente() as unknown as Registro[]),
+    ],
     config: [
       {
         id: "escritorio",
@@ -759,7 +764,6 @@ function normalizarDocMock(
 const semDados = ({ dados: _dados, ...r }: BackupRegistroMock): BackupRegistro => r;
 
 function publico(u: UsuarioMock): UsuarioAdmin {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { senha, ...resto } = u;
   return resto;
 }
