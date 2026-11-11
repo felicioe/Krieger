@@ -1,5 +1,15 @@
 # Decisões do projeto
 
+## 2026-11-11 — cartório exato volta a vir antes da cidade na escolha do modelo de ata
+
+O PR #263 (modelos de ata prontos) inverteu a regra da #256: o campo `tipo` passou a desempatar
+antes do cartório, então `escolherModeloAta` escolhia `cidade+tipo` mesmo quando havia
+`cidade+cartório` com o mesmo tipo. O cartório perdia para a cidade, contra o texto da issue.
+
+Decidido: a prioridade volta a ser `cidade+cartório > cidade > geral`, e o `tipo` desempata
+dentro de cada nível, nunca por cima do cartório exato. Dois testes cobrem o caso, que nenhum
+deles alcançava antes. Corrigido na sessão de 11/11/2026 antes de a #256 ser encerrada.
+
 ## 2026-11-10 — modelo de ata escolhido pela cidade do condomínio e pelo tipo da assembleia
 
 A #256 criou a store `modelos_ata`, mas a escolha automática comparava o campo `cidade` do modelo

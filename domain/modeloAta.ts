@@ -86,8 +86,9 @@ function serveAoTipo(m: ModeloAta, tipo: string): boolean {
 
 /**
  * Escolhe o modelo mais específico disponível para a cidade/cartório/tipo informados.
- * Prioridade: cidade+cartório+mesmo tipo > cidade+mesmo tipo > cidade+cartório > cidade >
- * geral+mesmo tipo > geral. Um modelo com `tipo` de assembleia diferente é ignorado.
+ * Prioridade: cidade+cartório > cidade > geral. O tipo entra como desempate dentro
+ * de cada nível: o modelo que declara o tipo certo vence o que não declara, e
+ * modelo com `tipo` de assembleia diferente é descartado.
  * Retorna `null` quando não há nenhum modelo ativo.
  */
 export function escolherModeloAta(
@@ -105,20 +106,22 @@ export function escolherModeloAta(
   const semCartorio = (m: ModeloAta) => !m.cartorio?.trim();
   const comTipo = (m: ModeloAta) => Boolean(m.tipo?.trim());
 
-  // 1. cidade + cartório, e o tipo declarado (mais específico que um modelo só da cidade).
+  // 1. cidade + cartório, com o tipo declarado.
   if (ct) {
     const exatoComTipo = ativos.find((m) => daCidade(m) && doCartorio(m) && comTipo(m));
     if (exatoComTipo) return exatoComTipo;
   }
-  // 2. cidade, sem cartório, com tipo — o caso dos dois modelos Lago Negro (ordinária/extraordinária).
-  if (c) {
-    const cidadeComTipo = ativos.find((m) => daCidade(m) && semCartorio(m) && comTipo(m));
-    if (cidadeComTipo) return cidadeComTipo;
-  }
-  // 3. cidade + cartório, sem tipo declarado.
+  // 2. cidade + cartório, sem tipo declarado. O cartório exato vem antes da
+  //    cidade: é a regra da #256, e a assinatura do cartório não pode perder
+  //    para um modelo só da cidade.
   if (ct) {
     const exato = ativos.find((m) => daCidade(m) && doCartorio(m));
     if (exato) return exato;
+  }
+  // 3. cidade, sem cartório, com tipo — o caso dos dois modelos Lago Negro.
+  if (c) {
+    const cidadeComTipo = ativos.find((m) => daCidade(m) && semCartorio(m) && comTipo(m));
+    if (cidadeComTipo) return cidadeComTipo;
   }
   // 4. cidade, sem cartório.
   if (c) {
