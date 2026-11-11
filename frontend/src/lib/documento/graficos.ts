@@ -123,7 +123,9 @@ function legendaSeries(series: Serie[], x0: number, partes: string[]) {
   let lx = x0;
   for (const s of series) {
     partes.push(`<rect x="${lx}" y="7" width="11" height="11" fill="${s.cor}" rx="2"/>`);
-    partes.push(`<text x="${lx + 15}" y="16.5" font-size="10" fill="#1f2933">${esc(s.nome)}</text>`);
+    partes.push(
+      `<text x="${lx + 15}" y="16.5" font-size="10" fill="#1f2933">${esc(s.nome)}</text>`,
+    );
     lx += 15 + larguraTexto(s.nome, 10) + 18;
   }
 }
@@ -141,7 +143,8 @@ export function barrasSvg(categorias: string[], series: Serie[], largura = 480):
   const FONTE_VALOR = 7.5;
   const colRotulo = 150;
   const todos = series.flatMap((s) => s.valores);
-  const colValor = Math.ceil(Math.max(0, ...todos.map((v) => larguraTexto(valorCurto(v), FONTE_VALOR)))) + 6;
+  const colValor =
+    Math.ceil(Math.max(0, ...todos.map((v) => larguraTexto(valorCurto(v), FONTE_VALOR)))) + 6;
   const m = { esq: colRotulo + 8, dir: Math.max(14, colValor + 4), topo: 30, base: 22 };
   const w = largura - m.esq - m.dir;
   const barra = 10;
@@ -275,7 +278,12 @@ export function pizzaSvg(fatias: { nome: string; valor: number }[], largura = 48
  * quebra linha dentro da largura fixa do gráfico e cortaria um nome de categoria longo sem deixar
  * como recuperar o texto depois de rasterizado.
  */
-export function linhaSvg(categorias: string[], series: Serie[], largura = 480, semLegenda = false): Grafico {
+export function linhaSvg(
+  categorias: string[],
+  series: Serie[],
+  largura = 480,
+  semLegenda = false,
+): Grafico {
   const FONTE_EIXO = 8;
   const todos = series.flatMap((s) => s.valores);
   const n = categorias.length;

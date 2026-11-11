@@ -30,7 +30,12 @@ const APOLICE = [
   "   Vendaval / Ciclone / Tornado / Granizo R$      45.000,00  R$      600,00   20        2.000,00",
 ].join("\n");
 
-const CONSUMO_VAZIO: ConsumoServico = { valor: 0, manual: false, rubricas: [], automatico: { valor: 0, rubricas: [] } };
+const CONSUMO_VAZIO: ConsumoServico = {
+  valor: 0,
+  manual: false,
+  rubricas: [],
+  automatico: { valor: 0, rubricas: [] },
+};
 
 function renderEditor() {
   const consid = considDoCondominio({ ...condominioPadrao(), id: "c1" });
@@ -113,7 +118,9 @@ describe("EditorConsideracoes — importar apólice (PDF)", () => {
     const entrada = screen.getByLabelText("Arquivo PDF da apólice de seguro");
     await userEvent.upload(entrada, arquivo);
 
-    await waitFor(() => expect(screen.getByRole("button", { name: /importar apólice/i })).not.toBeDisabled());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /importar apólice/i })).not.toBeDisabled(),
+    );
     expect(onChange).not.toHaveBeenCalled();
   });
 });

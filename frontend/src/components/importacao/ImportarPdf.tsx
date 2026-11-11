@@ -5,12 +5,23 @@ import { FileUp, Loader2, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
 import { InteiroInput } from "@/components/app/inputs";
 import { ResumoImportacao } from "./ResumoImportacao";
 import { SugestaoParecidos } from "./SugestaoParecidos";
-import { ConflitoImportacaoDialog, useConflitoImportacao, type DecisaoConflitoPendente } from "./ConflitoImportacao";
+import {
+  ConflitoImportacaoDialog,
+  useConflitoImportacao,
+  type DecisaoConflitoPendente,
+} from "./ConflitoImportacao";
 import { marcarCriadoPorPdf } from "./criadoPorPdf";
 import { focarConteudoApos } from "@/components/app/foco";
 import { api, mensagemErro } from "@/lib/api";
@@ -39,7 +50,15 @@ import {
 import { normalizarMensal, validarMensal } from "@/domain/mensal";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
 import { validarNovoExercicio } from "@/domain/exercicio";
-import type { Condominio, ConfigEscritorio, Demonstrativo, DestinoImportacao, Exercicio, Importacao, Mensal } from "@/domain/types";
+import type {
+  Condominio,
+  ConfigEscritorio,
+  Demonstrativo,
+  DestinoImportacao,
+  Exercicio,
+  Importacao,
+  Mensal,
+} from "@/domain/types";
 
 export type ImportacaoAplicada = {
   demonstrativo: Demonstrativo;
@@ -107,10 +126,15 @@ export function ImportarPdf(props: Props) {
     try {
       const { extrairTextoPdf } = await import("@/lib/pdfTexto");
       const texto = await extrairTextoPdf(arquivo);
-      if (!texto.trim()) throw new Error("O PDF não tem texto legível (pode ser uma imagem digitalizada).");
+      if (!texto.trim())
+        throw new Error("O PDF não tem texto legível (pode ser uma imagem digitalizada).");
       const relatorio = lerRelatorio(texto, arquivo.name);
-      const temSecoes = relatorio.saldoAnterior || relatorio.receitas || relatorio.despesas || relatorio.saldoAtual;
-      if (!temSecoes) throw new Error("Não encontrei saldo anterior, receitas, despesas nem saldo atual neste PDF. Confira se é um relatório do Systemar.");
+      const temSecoes =
+        relatorio.saldoAnterior || relatorio.receitas || relatorio.despesas || relatorio.saldoAtual;
+      if (!temSecoes)
+        throw new Error(
+          "Não encontrei saldo anterior, receitas, despesas nem saldo atual neste PDF. Confira se é um relatório do Systemar.",
+        );
       setLido({
         arquivo: arquivo.name,
         relatorio,
@@ -119,7 +143,11 @@ export function ImportarPdf(props: Props) {
       });
       setColuna(colunaPadrao(relatorio, props.destino));
     } catch (e) {
-      setErro(e instanceof Error && /password|Invalid PDF/i.test(e.message) ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)." : mensagemErro(e));
+      setErro(
+        e instanceof Error && /password|Invalid PDF/i.test(e.message)
+          ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)."
+          : mensagemErro(e),
+      );
     } finally {
       setLendo(false);
       if (entrada.current) entrada.current.value = "";
@@ -155,7 +183,9 @@ export function ImportarPdf(props: Props) {
         >
           <DialogHeader>
             <DialogTitle>Importar PDF do Systemar</DialogTitle>
-            <DialogDescription>Confira o que foi lido antes de usar. Você ainda poderá corrigir tudo no editor.</DialogDescription>
+            <DialogDescription>
+              Confira o que foi lido antes de usar. Você ainda poderá corrigir tudo no editor.
+            </DialogDescription>
           </DialogHeader>
           {lendo ? (
             <p className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
@@ -174,7 +204,13 @@ export function ImportarPdf(props: Props) {
             </>
           ) : lido ? (
             props.modo === "editor" ? (
-              <PassoEditor {...props} lido={lido} coluna={coluna} setColuna={setColuna} fechar={() => setAberto(false)} />
+              <PassoEditor
+                {...props}
+                lido={lido}
+                coluna={coluna}
+                setColuna={setColuna}
+                fechar={() => setAberto(false)}
+              />
             ) : (
               <PassoNovo
                 {...props}
@@ -194,7 +230,12 @@ export function ImportarPdf(props: Props) {
   );
 }
 
-type Passo = { lido: Lido; coluna: string | null; setColuna: (c: string) => void; fechar: () => void };
+type Passo = {
+  lido: Lido;
+  coluna: string | null;
+  setColuna: (c: string) => void;
+  fechar: () => void;
+};
 
 function PassoEditor({
   destino,
@@ -307,8 +348,14 @@ function PassoNovo({
 }: Extract<Props, { modo: "novo" }> & Passo & { antesDeNavegar: () => void }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { data: mensais = [] } = useQuery({ ...listaQuery<Mensal>("mensais"), enabled: destino === "mensais" });
-  const { data: exercicios = [] } = useQuery({ ...listaQuery<Exercicio>("exercicios"), enabled: destino === "exercicios" });
+  const { data: mensais = [] } = useQuery({
+    ...listaQuery<Mensal>("mensais"),
+    enabled: destino === "mensais",
+  });
+  const { data: exercicios = [] } = useQuery({
+    ...listaQuery<Exercicio>("exercicios"),
+    enabled: destino === "exercicios",
+  });
   const { data: escritorio } = useQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
   const [ano, setAno] = useState<number | null>(() => anoDoRelatorio(lido.relatorio, coluna));
   const exato = encontrarCondominio(condominios, lido.relatorio.condominio);
@@ -318,7 +365,10 @@ function PassoNovo({
     () => (exato ? [] : condominiosParecidos(condominios, lido.relatorio.condominio)),
     [exato, condominios, lido.relatorio.condominio],
   );
-  const escolhido = !exato && escolhidoId ? (parecidos.find((x) => x.condominio.id === escolhidoId)?.condominio ?? null) : null;
+  const escolhido =
+    !exato && escolhidoId
+      ? (parecidos.find((x) => x.condominio.id === escolhidoId)?.condominio ?? null)
+      : null;
   const existente = exato ?? escolhido;
   const condo = existente ? normalizarCondominio(existente) : null;
   const refCadastro = useRef<HTMLDivElement>(null);
@@ -328,32 +378,55 @@ function PassoNovo({
     // O botão clicado some; o foco vai para o bloco que o substitui.
     requestAnimationFrame(() => (id ? refCadastro : refSugestao).current?.focus());
   };
-  const demonstrativo = useMemo(() => demonstrativoDoRelatorio(lido.relatorio, coluna, condo?.nome ?? ""), [lido, coluna, condo?.nome]);
+  const demonstrativo = useMemo(
+    () => demonstrativoDoRelatorio(lido.relatorio, coluna, condo?.nome ?? ""),
+    [lido, coluna, condo?.nome],
+  );
   const rotulo = destino === "mensais" ? "relatório mensal" : "prestação de contas";
 
   const criar = useMutation({
     mutationFn: async () => {
       if (!condo) throw new Error("Condomínio não encontrado.");
       if (destino === "mensais") {
-        const { registro, competencia } = mensalImportado(condo, lido.relatorio, coluna, lido.arquivo);
-        const v = validarMensal(condo.id, competencia, mensais.map((m) => normalizarMensal(m)));
+        const { registro, competencia } = mensalImportado(
+          condo,
+          lido.relatorio,
+          coluna,
+          lido.arquivo,
+        );
+        const v = validarMensal(
+          condo.id,
+          competencia,
+          mensais.map((m) => normalizarMensal(m)),
+        );
         if (!v.ok) throw new Error(v.erro);
         return api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", registro);
       }
       const v = validarNovoExercicio(condo.id, ano, exercicios);
       if (!v.ok || !ano) throw new Error(v.ok ? "Informe o ano do exercício." : v.erro);
-      const base = exercicioImportado(condo, ano, escritorio?.cidade ?? "", lido.relatorio, coluna, lido.arquivo);
+      const base = exercicioImportado(
+        condo,
+        ano,
+        escritorio?.cidade ?? "",
+        lido.relatorio,
+        coluna,
+        lido.arquivo,
+      );
       const registro = {
         ...base,
         consid: aplicarConsideracoesAoExercicio(base.consid, lido.consideracoes),
-        previsaoSugerida: lido.previsaoSugerida ? previsaoSugeridaDoPdf(lido.previsaoSugerida) : null,
+        previsaoSugerida: lido.previsaoSugerida
+          ? previsaoSugeridaDoPdf(lido.previsaoSugerida)
+          : null,
       };
       return api.salvar<Omit<Exercicio, "id"> & { id?: string }>("exercicios", registro);
     },
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store(destino) });
       queryClient.setQueryData(chaves.item(destino, salvo.id), salvo);
-      toast.success(`${destino === "mensais" ? "Relatório mensal criado" : "Prestação de contas criada"} a partir do PDF. Revise e salve as correções.`);
+      toast.success(
+        `${destino === "mensais" ? "Relatório mensal criado" : "Prestação de contas criada"} a partir do PDF. Revise e salve as correções.`,
+      );
       marcarCriadoPorPdf(destino, salvo.id);
       antesDeNavegar();
       fechar();
@@ -366,7 +439,17 @@ function PassoNovo({
   });
 
   const conferir = useMutation({
-    mutationFn: () => api.salvar<Omit<Importacao, "id"> & { id?: string }>("importacoes", novaImportacao(lido.relatorio, lido.arquivo, destino, lido.consideracoes, lido.previsaoSugerida)),
+    mutationFn: () =>
+      api.salvar<Omit<Importacao, "id"> & { id?: string }>(
+        "importacoes",
+        novaImportacao(
+          lido.relatorio,
+          lido.arquivo,
+          destino,
+          lido.consideracoes,
+          lido.previsaoSugerida,
+        ),
+      ),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("importacoes") });
       antesDeNavegar();
@@ -390,14 +473,27 @@ function PassoNovo({
         previsaoSugerida={lido.previsaoSugerida}
       />
       {condo ? (
-        <div ref={refCadastro} tabIndex={-1} className="grid gap-3 rounded-md border p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <div
+          ref={refCadastro}
+          tabIndex={-1}
+          className="grid gap-3 rounded-md border p-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <p>
-            Condomínio cadastrado: <span className="font-medium">{condo.codigo ? `${condo.codigo} · ` : ""}{condo.nome}</span>
+            Condomínio cadastrado:{" "}
+            <span className="font-medium">
+              {condo.codigo ? `${condo.codigo} · ` : ""}
+              {condo.nome}
+            </span>
           </p>
           {escolhido && (
             <p className="text-xs text-muted-foreground">
               Escolhido pela semelhança do nome; o cadastro do condomínio não é alterado.{" "}
-              <Button variant="link" className="h-auto p-0 text-xs" onClick={() => escolher(null)} disabled={ocupado}>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-xs"
+                onClick={() => escolher(null)}
+                disabled={ocupado}
+              >
                 Não é este, é um condomínio novo
               </Button>
             </p>

@@ -38,7 +38,12 @@ function ComBotaoLateral({
 }: PropsControle & { controle: ReactElement<PropsControle>; botao: ReactNode }) {
   return (
     <div className="flex gap-2">
-      {cloneElement(controle, { id, "aria-describedby": ariaDescribedBy, "aria-invalid": ariaInvalid, "aria-required": ariaRequired })}
+      {cloneElement(controle, {
+        id,
+        "aria-describedby": ariaDescribedBy,
+        "aria-invalid": ariaInvalid,
+        "aria-required": ariaRequired,
+      })}
       {botao}
     </div>
   );
@@ -83,7 +88,9 @@ export function EditorConsideracoes({
       const texto = await extrairTextoPdf(arquivo);
       const lido = lerApoliceSeguro(texto);
       if (!lido) {
-        toast.error("PDF não reconhecido como apólice de seguro. Confira se é o documento original da seguradora ou preencha os campos manualmente.");
+        toast.error(
+          "PDF não reconhecido como apólice de seguro. Confira se é o documento original da seguradora ou preencha os campos manualmente.",
+        );
         return;
       }
       const atual = cRef.current;
@@ -96,9 +103,15 @@ export function EditorConsideracoes({
           coberturas: lido.coberturas,
         },
       });
-      toast.success(`Apólice importada: ${lido.coberturas.length} coberturas, vigência até ${lido.vigenciaFim}. Revise e salve.`);
+      toast.success(
+        `Apólice importada: ${lido.coberturas.length} coberturas, vigência até ${lido.vigenciaFim}. Revise e salve.`,
+      );
     } catch (e) {
-      toast.error(e instanceof Error && /password|Invalid PDF/i.test(e.message) ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)." : mensagemErro(e));
+      toast.error(
+        e instanceof Error && /password|Invalid PDF/i.test(e.message)
+          ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)."
+          : mensagemErro(e),
+      );
     } finally {
       setImportandoApolice(false);
       if (entradaApolice.current) entradaApolice.current.value = "";
@@ -109,7 +122,12 @@ export function EditorConsideracoes({
     <div className="space-y-6">
       {condominio && (
         <div className="flex justify-end">
-          <Button type="button" variant="outline" size="sm" onClick={() => setConfirmarRecarga(true)}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setConfirmarRecarga(true)}
+          >
             <RefreshCw /> Recarregar do cadastro do condomínio
           </Button>
         </div>
@@ -125,11 +143,27 @@ export function EditorConsideracoes({
           rotuloAdicionar="Adicionar membro"
           render={(m, up) => (
             <>
-              <Input aria-label="Cargo" value={m.cargo} onChange={(e) => up({ cargo: e.target.value })} />
-              <Input aria-label="Nome" value={m.nome} onChange={(e) => up({ nome: e.target.value })} />
-              <MesAnoInput aria-label="Fim do mandato" value={m.mandatoFim ?? ""} onChange={(v) => up({ mandatoFim: v })} />
+              <Input
+                aria-label="Cargo"
+                value={m.cargo}
+                onChange={(e) => up({ cargo: e.target.value })}
+              />
+              <Input
+                aria-label="Nome"
+                value={m.nome}
+                onChange={(e) => up({ nome: e.target.value })}
+              />
+              <MesAnoInput
+                aria-label="Fim do mandato"
+                value={m.mandatoFim ?? ""}
+                onChange={(v) => up({ mandatoFim: v })}
+              />
               <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                <Switch checked={m.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                <Switch
+                  checked={m.noRelatorio !== false}
+                  onCheckedChange={(v) => up({ noRelatorio: v })}
+                  aria-label="Incluir no relatório"
+                />
                 <span className="@2xl:hidden">Incluir nas Considerações finais</span>
               </label>
             </>
@@ -142,7 +176,13 @@ export function EditorConsideracoes({
         descricao="Preencha manualmente ou importe o PDF original da seguradora."
         acoes={
           <>
-            <Button type="button" variant="outline" size="sm" onClick={() => entradaApolice.current?.click()} disabled={importandoApolice}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => entradaApolice.current?.click()}
+              disabled={importandoApolice}
+            >
               {importandoApolice ? <Loader2 className="animate-spin" /> : <FileUp />}
               Importar apólice (PDF)
             </Button>
@@ -165,7 +205,10 @@ export function EditorConsideracoes({
             <DataInput value={c.vigenciaSeguro} onChange={(v) => set("vigenciaSeguro", v)} />
           </Field>
           <Field rotulo="Risco absoluto">
-            <DinheiroInput value={c.seguro.riscoAbsoluto} onChange={(v) => set("seguro", { ...c.seguro, riscoAbsoluto: v })} />
+            <DinheiroInput
+              value={c.seguro.riscoAbsoluto}
+              onChange={(v) => set("seguro", { ...c.seguro, riscoAbsoluto: v })}
+            />
           </Field>
         </div>
         <div className="mt-4">
@@ -179,10 +222,22 @@ export function EditorConsideracoes({
             vazio="Nenhuma cobertura."
             render={(cb, up) => (
               <>
-                <Input aria-label="Cobertura" value={cb.desc} onChange={(e) => up({ desc: e.target.value })} />
-                <DinheiroInput aria-label="Valor da cobertura" value={cb.valor} onChange={(v) => up({ valor: v })} />
+                <Input
+                  aria-label="Cobertura"
+                  value={cb.desc}
+                  onChange={(e) => up({ desc: e.target.value })}
+                />
+                <DinheiroInput
+                  aria-label="Valor da cobertura"
+                  value={cb.valor}
+                  onChange={(v) => up({ valor: v })}
+                />
                 <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                  <Switch checked={cb.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <Switch
+                    checked={cb.noRelatorio !== false}
+                    onCheckedChange={(v) => up({ noRelatorio: v })}
+                    aria-label="Incluir no relatório"
+                  />
                   <span className="@2xl:hidden">Incluir nas Considerações finais</span>
                 </label>
               </>
@@ -194,7 +249,10 @@ export function EditorConsideracoes({
       <SectionCard titulo="Manutenções e vistorias">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Field rotulo="Recarga dos extintores até">
-            <DataInput value={c.vigenciaExtintores} onChange={(v) => set("vigenciaExtintores", v)} />
+            <DataInput
+              value={c.vigenciaExtintores}
+              onChange={(v) => set("vigenciaExtintores", v)}
+            />
           </Field>
           <Field rotulo="Última limpeza da caixa de gordura">
             <DataInput value={c.ultGordura} onChange={(v) => set("ultGordura", v)} />
@@ -206,10 +264,17 @@ export function EditorConsideracoes({
             <DataInput value={c.ultCaixaDagua} onChange={(v) => set("ultCaixaDagua", v)} />
           </Field>
           <Field rotulo="Ano da vistoria técnica">
-            <InteiroInput value={c.vistoriaAno} onChange={(v) => set("vistoriaAno", v)} maxLength={4} />
+            <InteiroInput
+              value={c.vistoriaAno}
+              onChange={(v) => set("vistoriaAno", v)}
+              maxLength={4}
+            />
           </Field>
           <Field rotulo="Intervalo (anos)">
-            <InteiroInput value={c.vistoriaIntervalo} onChange={(v) => set("vistoriaIntervalo", v ?? 0)} />
+            <InteiroInput
+              value={c.vistoriaIntervalo}
+              onChange={(v) => set("vistoriaIntervalo", v ?? 0)}
+            />
           </Field>
           <Field rotulo="Lei da vistoria" className="sm:col-span-2">
             <Input value={c.vistoriaLei} onChange={(e) => set("vistoriaLei", e.target.value)} />
@@ -224,14 +289,25 @@ export function EditorConsideracoes({
         <RepeatableList
           itens={c.documentosObrigatorios}
           onChange={(v) => set("documentosObrigatorios", v)}
-          novo={() => ({ nome: "", status: "pendente" as const, informacao: "", observacao: "", noRelatorio: true })}
+          novo={() => ({
+            nome: "",
+            status: "pendente" as const,
+            informacao: "",
+            observacao: "",
+            noRelatorio: true,
+          })}
           colunas="grid-cols-[minmax(0,1fr)_7rem] @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
           cabecalhos={["Item", "Status", "Vencimento / informação", "No relatório", "Observação"]}
           rotuloAdicionar="Adicionar item"
           vazio="Nenhum item cadastrado."
           render={(d, up) => (
             <>
-              <Input aria-label="Item" placeholder="Nome do item" value={d.nome} onChange={(e) => up({ nome: e.target.value })} />
+              <Input
+                aria-label="Item"
+                placeholder="Nome do item"
+                value={d.nome}
+                onChange={(e) => up({ nome: e.target.value })}
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -255,7 +331,11 @@ export function EditorConsideracoes({
                 onChange={(e) => up({ informacao: e.target.value })}
               />
               <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground @2xl:col-span-1 @2xl:justify-self-center">
-                <Switch checked={d.noRelatorio} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                <Switch
+                  checked={d.noRelatorio}
+                  onCheckedChange={(v) => up({ noRelatorio: v })}
+                  aria-label="Incluir no relatório"
+                />
                 <span className="@2xl:hidden">Incluir nas Considerações finais</span>
               </label>
               <Textarea
@@ -270,7 +350,13 @@ export function EditorConsideracoes({
           )}
         />
         {c.documentosObrigatorios.length === 0 && (
-          <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => set("documentosObrigatorios", documentosObrigatoriosPadrao())}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => set("documentosObrigatorios", documentosObrigatoriosPadrao())}
+          >
             Usar checklist padrão
           </Button>
         )}
@@ -280,14 +366,27 @@ export function EditorConsideracoes({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field
             rotulo="Contas a receber"
-            {...(receberMensais?.valor != null ? { dica: `Relatório de ${receberMensais.mes}: ${formatBRL(receberMensais.valor)}.` } : {})}
+            {...(receberMensais?.valor != null
+              ? { dica: `Relatório de ${receberMensais.mes}: ${formatBRL(receberMensais.valor)}.` }
+              : {})}
           >
             <ComBotaoLateral
-              controle={<DinheiroInput value={num(c.contasReceber)} onChange={(v) => set("contasReceber", v)} />}
+              controle={
+                <DinheiroInput
+                  value={num(c.contasReceber)}
+                  onChange={(v) => set("contasReceber", v)}
+                />
+              }
               botao={
                 receberMensais?.valor != null &&
                 num(c.contasReceber) !== receberMensais.valor && (
-                  <Button type="button" variant="outline" size="sm" className="shrink-0" onClick={() => set("contasReceber", receberMensais.valor)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => set("contasReceber", receberMensais.valor)}
+                  >
                     Usar do mensal
                   </Button>
                 )
@@ -333,15 +432,24 @@ export function EditorConsideracoes({
             onManualChange={(v) => set("consumoElevadorManual", v)}
           >
             <Field rotulo="Fornecedor" dica="Texto livre, impresso junto da linha Elevadores.">
-              <Input value={c.elevadorFornecedor} onChange={(e) => set("elevadorFornecedor", e.target.value)} />
+              <Input
+                value={c.elevadorFornecedor}
+                onChange={(e) => set("elevadorFornecedor", e.target.value)}
+              />
             </Field>
           </BlocoConsumoServico>
         </div>
       </SectionCard>
 
-      <SectionCard titulo="Outras considerações" descricao="Texto livre. Cada linha vira um parágrafo, com o título em destaque (opcional).">
+      <SectionCard
+        titulo="Outras considerações"
+        descricao="Texto livre. Cada linha vira um parágrafo, com o título em destaque (opcional)."
+      >
         <RepeatableList
-          itens={c.extras.map((x) => ({ rotulo: String(x.rotulo ?? ""), valor: String(x.valor ?? "") }))}
+          itens={c.extras.map((x) => ({
+            rotulo: String(x.rotulo ?? ""),
+            valor: String(x.valor ?? ""),
+          }))}
           onChange={(v) => set("extras", v)}
           novo={() => ({ rotulo: "", valor: "" })}
           colunas="grid-cols-1 @2xl:grid-cols-[12rem_minmax(0,1fr)]"
@@ -350,8 +458,17 @@ export function EditorConsideracoes({
           vazio="Nenhuma consideração adicional."
           render={(x, up) => (
             <>
-              <Input aria-label="Título da consideração" value={x.rotulo} onChange={(e) => up({ rotulo: e.target.value })} />
-              <Textarea aria-label="Texto da consideração" value={x.valor} onChange={(e) => up({ valor: e.target.value })} rows={2} />
+              <Input
+                aria-label="Título da consideração"
+                value={x.rotulo}
+                onChange={(e) => up({ rotulo: e.target.value })}
+              />
+              <Textarea
+                aria-label="Texto da consideração"
+                value={x.valor}
+                onChange={(e) => up({ valor: e.target.value })}
+                rows={2}
+              />
             </>
           )}
         />
@@ -409,16 +526,27 @@ function BlocoConsumoServico({
   return (
     <div className="min-w-0 rounded-md border p-4">
       <h4 className="mb-3 text-sm font-semibold text-foreground">{rotulo}</h4>
-      <CampoRubrica rotulo="Palavras-chave" placeholder={placeholder} value={rubrica} onChange={onRubricaChange} />
+      <CampoRubrica
+        rotulo="Palavras-chave"
+        placeholder={placeholder}
+        value={rubrica}
+        onChange={onRubricaChange}
+      />
       <div className="mt-3 rounded-sm bg-muted/40 px-3 py-2">
         <p className="text-xs text-muted-foreground">
           Calculado automaticamente{calculado.manual && " (o relatório usa o valor manual abaixo)"}
         </p>
-        <p className="num text-base font-semibold text-foreground">{formatBRL(calculado.automatico.valor)}</p>
+        <p className="num text-base font-semibold text-foreground">
+          {formatBRL(calculado.automatico.valor)}
+        </p>
         {calculado.automatico.rubricas.length > 0 ? (
-          <p className="mt-0.5 break-words text-xs text-muted-foreground">{calculado.automatico.rubricas.join(", ")}</p>
+          <p className="mt-0.5 break-words text-xs text-muted-foreground">
+            {calculado.automatico.rubricas.join(", ")}
+          </p>
         ) : (
-          <p className="mt-0.5 text-xs text-muted-foreground">Nenhuma despesa do demonstrativo casa com essas palavras.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Nenhuma despesa do demonstrativo casa com essas palavras.
+          </p>
         )}
       </div>
       {manualAberto ? (

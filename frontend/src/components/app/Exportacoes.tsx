@@ -54,14 +54,21 @@ export function Exportacoes({
     if (!acoes.imprimir) return;
     const abriu = acoes.imprimir();
     if (abriu === false) {
-      toast.error("O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente novamente.");
+      toast.error(
+        "O navegador bloqueou a janela de impressão. Permita pop-ups para este site e tente novamente.",
+      );
     }
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" type="button" disabled={!!bloqueio || ocupado !== null} title={bloqueio ?? undefined}>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={!!bloqueio || ocupado !== null}
+          title={bloqueio ?? undefined}
+        >
           {ocupado ? <Loader2 className="animate-spin" /> : <Download />}
           {rotulo}
           <ChevronDown className="opacity-60" />
@@ -70,14 +77,20 @@ export function Exportacoes({
       <DropdownMenuContent align="end">
         {acoes.documento && (
           <>
-            <DropdownMenuItem disabled={!!ocupado} onSelect={() => void executar("documento", acoes.documento!)}>
+            <DropdownMenuItem
+              disabled={!!ocupado}
+              onSelect={() => void executar("documento", acoes.documento!)}
+            >
               <FileText /> {acoes.rotuloDocumento ?? "PDF / Word"}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
         {acoes.xlsx && (
-          <DropdownMenuItem disabled={!!ocupado} onSelect={() => void executar("xlsx", acoes.xlsx!)}>
+          <DropdownMenuItem
+            disabled={!!ocupado}
+            onSelect={() => void executar("xlsx", acoes.xlsx!)}
+          >
             <FileSpreadsheet /> Planilha (XLSX)
           </DropdownMenuItem>
         )}

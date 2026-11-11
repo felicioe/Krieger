@@ -8,12 +8,19 @@ type TabelaImpressao = {
 
 /** Dados do cadastro permanecem texto mesmo quando contêm marcação HTML. */
 function textoHtml(texto: string): string {
-  const entidades: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+  const entidades: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  };
   return texto.replace(/[&<>"']/g, (caractere) => entidades[caractere]!);
 }
 
 export function htmlTabelaImpressao(tabela: TabelaImpressao): string {
-  const linha = (valores: string[], tag = "td") => `<tr>${valores.map((valor) => `<${tag}>${textoHtml(valor)}</${tag}>`).join("")}</tr>`;
+  const linha = (valores: string[], tag = "td") =>
+    `<tr>${valores.map((valor) => `<${tag}>${textoHtml(valor)}</${tag}>`).join("")}</tr>`;
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${textoHtml(tabela.titulo)}</title><style>
     body{font:14px Arial,sans-serif;color:#123b60;margin:24px}h1{font-size:20px}p{line-height:1.45}
     table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}th,td{border:1px solid #ccd6df;padding:8px;text-align:right}
@@ -34,10 +41,14 @@ export function imprimirTabela(tabela: TabelaImpressao): boolean {
     janela.document.open();
     // Registrar DEPOIS de document.open(): abrir o documento descarta os listeners anteriores da
     // janela, e o de load se perderia — o relatório abriria sem nunca chamar print().
-    janela.addEventListener("load", () => {
-      janela.focus();
-      janela.print();
-    }, { once: true });
+    janela.addEventListener(
+      "load",
+      () => {
+        janela.focus();
+        janela.print();
+      },
+      { once: true },
+    );
     janela.document.write(htmlTabelaImpressao(tabela));
     janela.document.close();
     return true;

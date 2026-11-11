@@ -8,7 +8,13 @@ import { api, mensagemErro } from "@/lib/api";
 import { SENHA_MINIMA, validarNovaSenha } from "@/domain/usuario";
 
 /** Formulário de troca de senha (senha atual, nova e confirmação). */
-export function FormSenha({ aoConcluir, rotulo = "Alterar senha" }: { aoConcluir: () => void | Promise<void>; rotulo?: string }) {
+export function FormSenha({
+  aoConcluir,
+  rotulo = "Alterar senha",
+}: {
+  aoConcluir: () => void | Promise<void>;
+  rotulo?: string;
+}) {
   const [atual, setAtual] = useState("");
   const [nova, setNova] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
@@ -43,13 +49,28 @@ export function FormSenha({ aoConcluir, rotulo = "Alterar senha" }: { aoConcluir
         </Alert>
       )}
       <Field rotulo="Senha atual" obrigatorio>
-        <Input type="password" autoComplete="current-password" value={atual} onChange={(e) => setAtual(e.target.value)} />
+        <Input
+          type="password"
+          autoComplete="current-password"
+          value={atual}
+          onChange={(e) => setAtual(e.target.value)}
+        />
       </Field>
       <Field rotulo="Nova senha" obrigatorio dica={`Mínimo de ${SENHA_MINIMA} caracteres.`}>
-        <Input type="password" autoComplete="new-password" value={nova} onChange={(e) => setNova(e.target.value)} />
+        <Input
+          type="password"
+          autoComplete="new-password"
+          value={nova}
+          onChange={(e) => setNova(e.target.value)}
+        />
       </Field>
       <Field rotulo="Confirme a nova senha" obrigatorio>
-        <Input type="password" autoComplete="new-password" value={confirmacao} onChange={(e) => setConfirmacao(e.target.value)} />
+        <Input
+          type="password"
+          autoComplete="new-password"
+          value={confirmacao}
+          onChange={(e) => setConfirmacao(e.target.value)}
+        />
       </Field>
       <div>
         <Button type="submit" disabled={ocupado}>

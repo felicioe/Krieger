@@ -1,7 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RouterProvider, createMemoryHistory, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
+import {
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from "@tanstack/react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AnexarComparativo, ERRO_NAO_COMPARATIVO } from "@/components/importacao/AnexarComparativo";
 import { ERRO_PDF_GRANDE, excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
@@ -12,7 +18,9 @@ import type { AnexoImportado, Condominio, Exercicio, Mensal } from "@/domain/typ
 const leitura = vi.hoisted(() => ({ texto: "" }));
 vi.mock("@/lib/pdfTexto", () => ({ extrairTextoPdf: async () => leitura.texto }));
 
-const receita = vi.hoisted(() => ({ dados: null as null | import("@/lib/receitaCnpj").DadosCnpjReceita }));
+const receita = vi.hoisted(() => ({
+  dados: null as null | import("@/lib/receitaCnpj").DadosCnpjReceita,
+}));
 vi.mock("@/lib/receitaCnpj", async () => {
   const real = await vi.importActual<typeof import("@/lib/receitaCnpj")>("@/lib/receitaCnpj");
   return { ...real, consultarCnpjReceita: async () => receita.dados };
@@ -70,8 +78,16 @@ async function montar() {
     path: "/",
     component: () => <AnexarComparativo condominios={condominios} />,
   });
-  const prestacao = createRoute({ getParentRoute: () => raiz, path: "/prestacao-contas/$id", component: () => <h1>Prestação</h1> });
-  const lista = createRoute({ getParentRoute: () => raiz, path: "/prestacao-contas", component: () => <h1>Lista</h1> });
+  const prestacao = createRoute({
+    getParentRoute: () => raiz,
+    path: "/prestacao-contas/$id",
+    component: () => <h1>Prestação</h1>,
+  });
+  const lista = createRoute({
+    getParentRoute: () => raiz,
+    path: "/prestacao-contas",
+    component: () => <h1>Lista</h1>,
+  });
   const router = createRouter({
     routeTree: raiz.addChildren([inicio, prestacao, lista]),
     history: createMemoryHistory({ initialEntries: ["/"] }),
@@ -109,8 +125,13 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     });
     const u = userEvent.setup();
     await montar();
-    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Anexar e importar os meses" })).toBeEnabled());
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"),
+      pdf("Comparativo 001.pdf"),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Anexar e importar os meses" })).toBeEnabled(),
+    );
     const anexar = screen.getByRole("button", { name: "Anexar e importar os meses" });
 
     // Primeira tentativa: os dois meses são gravados, mas o anexo falha (erro simulado) — o
@@ -118,23 +139,40 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     // invalidada ainda.
     await u.click(anexar);
     await waitFor(() => expect(falhouUmaVez).toBe(true));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Anexar e importar os meses" })).toBeEnabled());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Anexar e importar os meses" })).toBeEnabled(),
+    );
     let mensais = await mockApi.listar<Mensal>("mensais");
-    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"))).toHaveLength(2);
+    expect(
+      mensais.filter(
+        (m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"),
+      ),
+    ).toHaveLength(2);
 
     await u.click(screen.getByRole("button", { name: "Anexar e importar os meses" }));
-    await waitFor(async () => expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(1));
+    await waitFor(async () =>
+      expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(1),
+    );
     mensais = await mockApi.listar<Mensal>("mensais");
-    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"))).toHaveLength(2);
+    expect(
+      mensais.filter(
+        (m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"),
+      ),
+    ).toHaveLength(2);
   });
 
   it("PDF que não é comparativo mostra o erro pedido e não grava nada", async () => {
     leitura.texto = PERIODO_UNICO;
     const u = userEvent.setup();
     await montar();
-    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("demonstrativo.pdf"));
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"),
+      pdf("demonstrativo.pdf"),
+    );
     expect(await screen.findByText(ERRO_NAO_COMPARATIVO)).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Anexar à prestação de contas" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Anexar à prestação de contas" }),
+    ).not.toBeInTheDocument();
     expect(await mockApi.listar("anexos_importacao")).toEqual([]);
   });
 
@@ -142,7 +180,10 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     leitura.texto = COMPARATIVO;
     const u = userEvent.setup();
     const router = await montar();
-    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"),
+      pdf("Comparativo 001.pdf"),
+    );
     // A leitura do PDF é assíncrona (import dinâmico + extração de texto): espera o passo
     // seguinte renderizar, não só o upload disparar o onChange.
     const [condo, exercicio] = await screen.findAllByRole("combobox");
@@ -156,7 +197,9 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     const anexar = await screen.findByRole("button", { name: "Anexar e importar os meses" });
 
     await u.click(anexar);
-    await waitFor(() => expect(router.state.location.pathname).toBe("/prestacao-contas/exe-acacias-2025"));
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/prestacao-contas/exe-acacias-2025"),
+    );
     const gravados = await mockApi.listar<AnexoImportado>("anexos_importacao");
     expect(gravados).toHaveLength(1);
     expect(gravados[0]).toMatchObject({
@@ -168,17 +211,27 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     expect(gravados[0]!.arquivoDataUrl).toMatch(/^data:application\/pdf;base64,/);
 
     const mensais = await mockApi.listar<Mensal>("mensais");
-    const doComparativo = mensais.filter((m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"));
+    const doComparativo = mensais.filter(
+      (m) => m.condoId === "condo-acacias" && m.origem.includes("Comparativo 001.pdf"),
+    );
     expect(doComparativo).toHaveLength(2);
     const jan = doComparativo.find((m) => m.demonstrativo?.periodo.ini === "01/01/2025")!;
-    expect(jan.demonstrativo!.totais).toEqual({ saldoAnterior: 1000, receitas: 10000, despesas: 9000, saldoAtual: 2000 });
+    expect(jan.demonstrativo!.totais).toEqual({
+      saldoAnterior: 1000,
+      receitas: 10000,
+      despesas: 9000,
+      saldoAtual: 2000,
+    });
   });
 
   it("mês com relatório mensal já existente vem desmarcado; desmarcado não sobrescreve, marcado sobrescreve o mesmo registro", async () => {
     const existente = await mockApi.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", {
       condoId: "condo-acacias",
       condoNome: "Residencial Jardim das Acácias",
-      demonstrativo: { ...demonstrativoVazio(""), periodo: { ini: "01/01/2025", fim: "31/01/2025" } },
+      demonstrativo: {
+        ...demonstrativoVazio(""),
+        periodo: { ini: "01/01/2025", fim: "31/01/2025" },
+      },
       origem: ["original.pdf"],
       receber: { unidades: 3, valor: 999 },
       notas: [],
@@ -187,7 +240,10 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     leitura.texto = COMPARATIVO;
     const u = userEvent.setup();
     const router = await montar();
-    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 001.pdf"));
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"),
+      pdf("Comparativo 001.pdf"),
+    );
     // Espera a lista refletir o relatório mensal já existente (useQuery), não só o primeiro
     // render (que começa com a lista vazia, antes da consulta resolver).
     await screen.findByText(/já existe um relatório mensal/);
@@ -198,24 +254,44 @@ describe("Importador: anexar Comparativo Financeiro", () => {
 
     // Deixa 01/2025 desmarcado (não sobrescreve) e envia só o 02/2025 novo.
     await u.click(await screen.findByRole("button", { name: "Anexar e importar os meses" }));
-    await waitFor(async () => expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(1));
+    await waitFor(async () =>
+      expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(1),
+    );
     let mensais = await mockApi.listar<Mensal>("mensais");
-    expect(mensais.find((m) => m.id === existente.id)?.receber).toEqual({ unidades: 3, valor: 999 });
-    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.demonstrativo?.periodo.ini === "01/02/2025")).toHaveLength(1);
+    expect(mensais.find((m) => m.id === existente.id)?.receber).toEqual({
+      unidades: 3,
+      valor: 999,
+    });
+    expect(
+      mensais.filter(
+        (m) => m.condoId === "condo-acacias" && m.demonstrativo?.periodo.ini === "01/02/2025",
+      ),
+    ).toHaveLength(1);
 
     // O primeiro anexar navega pra prestação de contas (igual em produção); volta pro Importador
     // antes de reabrir o diálogo pra anexar o segundo comparativo.
-    await waitFor(() => expect(router.state.location.pathname).toBe("/prestacao-contas/exe-acacias-2025"));
+    await waitFor(() =>
+      expect(router.state.location.pathname).toBe("/prestacao-contas/exe-acacias-2025"),
+    );
     await router.navigate({ to: "/" });
     await screen.findByRole("button", { name: "Importar comparativo financeiro" });
 
     // Reabre e agora marca 01/2025: sobrescreve o mesmo id, não duplica.
-    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo 002.pdf"));
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"),
+      pdf("Comparativo 002.pdf"),
+    );
     await u.click(await screen.findByRole("checkbox", { name: /01\/2025/ }));
     await u.click(await screen.findByRole("button", { name: "Anexar e importar os meses" }));
-    await waitFor(async () => expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(2));
+    await waitFor(async () =>
+      expect(await mockApi.listar<AnexoImportado>("anexos_importacao")).toHaveLength(2),
+    );
     mensais = await mockApi.listar<Mensal>("mensais");
-    expect(mensais.filter((m) => m.condoId === "condo-acacias" && m.demonstrativo?.periodo.ini === "01/01/2025")).toHaveLength(1);
+    expect(
+      mensais.filter(
+        (m) => m.condoId === "condo-acacias" && m.demonstrativo?.periodo.ini === "01/01/2025",
+      ),
+    ).toHaveLength(1);
     const jan = mensais.find((m) => m.id === existente.id)!;
     expect(jan.demonstrativo!.totais.receitas).toBe(10000);
     expect(jan.receber).toEqual({ unidades: null, valor: null });
@@ -241,7 +317,9 @@ describe("Importador: anexar Comparativo Financeiro", () => {
     const limite = pdf("limite.pdf");
     Object.defineProperty(limite, "size", { value: 10 * 1024 * 1024 });
     await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), limite);
-    expect(await screen.findByRole("button", { name: "Anexar e importar os meses" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: "Anexar e importar os meses" }),
+    ).toBeInTheDocument();
     expect(screen.queryByText(ERRO_PDF_GRANDE)).not.toBeInTheDocument();
   });
 });
@@ -253,10 +331,28 @@ describe("Excluir prestação de contas leva os anexos junto", () => {
   });
 
   it("apaga só os anexos daquela prestação e depois a prestação", async () => {
-    const base = { tipo: "comparativo_financeiro" as const, arquivo: "c.pdf", arquivoDataUrl: "data:application/pdf;base64,", importadoEm: "2026-01-01T00:00:00.000Z", relatorio: {} as AnexoImportado["relatorio"] };
-    await mockApi.salvar("anexos_importacao", { ...base, id: "a1", exercicioId: "exe-acacias-2025" });
-    await mockApi.salvar("anexos_importacao", { ...base, id: "a2", exercicioId: "exe-acacias-2025" });
-    await mockApi.salvar("anexos_importacao", { ...base, id: "a3", exercicioId: "outra-prestacao" });
+    const base = {
+      tipo: "comparativo_financeiro" as const,
+      arquivo: "c.pdf",
+      arquivoDataUrl: "data:application/pdf;base64,",
+      importadoEm: "2026-01-01T00:00:00.000Z",
+      relatorio: {} as AnexoImportado["relatorio"],
+    };
+    await mockApi.salvar("anexos_importacao", {
+      ...base,
+      id: "a1",
+      exercicioId: "exe-acacias-2025",
+    });
+    await mockApi.salvar("anexos_importacao", {
+      ...base,
+      id: "a2",
+      exercicioId: "exe-acacias-2025",
+    });
+    await mockApi.salvar("anexos_importacao", {
+      ...base,
+      id: "a3",
+      exercicioId: "outra-prestacao",
+    });
 
     expect(await excluirPrestacaoComAnexos("exe-acacias-2025")).toBe(2);
 
@@ -289,7 +385,10 @@ describe("Pré-cadastro de condomínio a partir do comparativo", () => {
     leitura.texto = COMPARATIVO_NOVO;
     const u = userEvent.setup();
     await montar();
-    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo Novo.pdf"));
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"),
+      pdf("Comparativo Novo.pdf"),
+    );
     const botao = await screen.findByRole("button", { name: "Cadastrar como novo condomínio" });
 
     await u.click(botao);
@@ -315,7 +414,10 @@ describe("Pré-cadastro de condomínio a partir do comparativo", () => {
     leitura.texto = COMPARATIVO_NOVO;
     const u = userEvent.setup();
     await montar();
-    await u.upload(screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"), pdf("Comparativo Novo.pdf"));
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do Comparativo Financeiro"),
+      pdf("Comparativo Novo.pdf"),
+    );
     const botao = await screen.findByRole("button", { name: "Cadastrar como novo condomínio" });
 
     await u.click(botao);

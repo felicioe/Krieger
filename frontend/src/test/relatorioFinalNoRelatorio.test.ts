@@ -31,17 +31,30 @@ describe("Considerações finais: item com noRelatorio=false fica fora do relat�
         { cargo: "Síndico", nome: "Visível", mandatoFim: "", noRelatorio: true },
         { cargo: "Subsíndico", nome: "Oculto", mandatoFim: "", noRelatorio: false },
       ],
-      seguro: { riscoAbsoluto: null, coberturas: [
-        { desc: "Incêndio", valor: 1000, noRelatorio: true },
-        { desc: "Roubo", valor: 500, noRelatorio: false },
-      ] },
+      seguro: {
+        riscoAbsoluto: null,
+        coberturas: [
+          { desc: "Incêndio", valor: 1000, noRelatorio: true },
+          { desc: "Roubo", valor: 500, noRelatorio: false },
+        ],
+      },
       indices: [
         { ano: 2024, pct: 5, noRelatorio: true },
         { ano: 2023, pct: 4, noRelatorio: false },
       ],
     };
-    const rel = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
-    const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio: null });
+    const rel = montarRelatorioFinal({
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+      mensais: [],
+    });
+    const doc = await documentoRelatorioFinal({
+      rel,
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+    });
 
     expect(rotulosDoGrupo(doc.blocos, "Administração")).toEqual(["Síndico"]);
     expect(rotulosDoGrupo(doc.blocos, "Seguro")).toContain("Incêndio");
@@ -59,8 +72,18 @@ describe("Considerações finais: item com noRelatorio=false fica fora do relat�
       seguro: { riscoAbsoluto: null, coberturas: [{ desc: "Incêndio", valor: 1000 }] },
       indices: [{ ano: 2024, pct: 5 }],
     };
-    const rel = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
-    const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio: null });
+    const rel = montarRelatorioFinal({
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+      mensais: [],
+    });
+    const doc = await documentoRelatorioFinal({
+      rel,
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+    });
 
     expect(rotulosDoGrupo(doc.blocos, "Administração")).toEqual(["Síndico"]);
     expect(rotulosDoGrupo(doc.blocos, "Seguro")).toContain("Incêndio");

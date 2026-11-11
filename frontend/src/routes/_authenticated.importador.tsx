@@ -1,7 +1,15 @@
 import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Building2, CalendarRange, CircleHelp, FileClock, FileSpreadsheet, FileUp, GitCompareArrows } from "lucide-react";
+import {
+  Building2,
+  CalendarRange,
+  CircleHelp,
+  FileClock,
+  FileSpreadsheet,
+  FileUp,
+  GitCompareArrows,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
@@ -16,8 +24,13 @@ import { cabecalho } from "@/lib/head";
 import type { Condominio } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/importador")({
-  head: () => cabecalho("Importador", "Ponto único para importar os PDFs do Systemar: relatório mensal, prestação de contas e comparativo financeiro."),
-  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
+  head: () =>
+    cabecalho(
+      "Importador",
+      "Ponto único para importar os PDFs do Systemar: relatório mensal, prestação de contas e comparativo financeiro.",
+    ),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
   component: Importador,
 });
 
@@ -55,7 +68,11 @@ function Importador() {
         acoes={
           <>
             <Button variant="ghost" size="icon" asChild title="Ajuda sobre esta tela">
-              <Link to="/ajuda" search={{ secao: "importador" }} aria-label="Ajuda sobre o importador">
+              <Link
+                to="/ajuda"
+                search={{ secao: "importador" }}
+                aria-label="Ajuda sobre o importador"
+              >
                 <CircleHelp />
               </Link>
             </Button>
@@ -72,9 +89,19 @@ function Importador() {
         <CartaoImportacao
           icone={CalendarRange}
           titulo="Relatório mensal"
-          acao={<ImportarPdf modo="novo" destino="mensais" condominios={condominios} rotulo="Importar relatório mensal" />}
+          acao={
+            <ImportarPdf
+              modo="novo"
+              destino="mensais"
+              condominios={condominios}
+              rotulo="Importar relatório mensal"
+            />
+          }
         >
-          <p>Demonstrativo do mês e contas a receber. Cria um relatório mensal novo no condomínio do PDF.</p>
+          <p>
+            Demonstrativo do mês e contas a receber. Cria um relatório mensal novo no condomínio do
+            PDF.
+          </p>
           <p>Para preencher um relatório mensal que já existe, use “Importar PDF” dentro dele.</p>
         </CartaoImportacao>
         <CartaoImportacao
@@ -90,19 +117,34 @@ function Importador() {
           titulo="Apólice de seguro"
           acao={<ImportarApolice condominios={condominios} />}
         >
-          <p>Reconhece a apólice original da seguradora e aplica seguradora, vigência, risco absoluto e coberturas ao cadastro escolhido.</p>
-          <p>O PDF é apenas lido no navegador; nada é alterado até você clicar em “Aplicar ao cadastro”.</p>
+          <p>
+            Reconhece a apólice original da seguradora e aplica seguradora, vigência, risco absoluto
+            e coberturas ao cadastro escolhido.
+          </p>
+          <p>
+            O PDF é apenas lido no navegador; nada é alterado até você clicar em “Aplicar ao
+            cadastro”.
+          </p>
         </CartaoImportacao>
         <CartaoImportacao
           icone={FileSpreadsheet}
           titulo="Prestação de contas"
-          acao={<ImportarPdf modo="novo" destino="exercicios" condominios={condominios} rotulo="Importar prestação de contas" />}
+          acao={
+            <ImportarPdf
+              modo="novo"
+              destino="exercicios"
+              condominios={condominios}
+              rotulo="Importar prestação de contas"
+            />
+          }
         >
           <p>
-            Demonstrativo do exercício, Considerações finais e Previsão orçamentária sugerida, quando o PDF trouxer essas folhas.
-            Cria uma prestação de contas nova.
+            Demonstrativo do exercício, Considerações finais e Previsão orçamentária sugerida,
+            quando o PDF trouxer essas folhas. Cria uma prestação de contas nova.
           </p>
-          <p>Para preencher uma prestação de contas que já existe, use “Importar PDF” dentro dela.</p>
+          <p>
+            Para preencher uma prestação de contas que já existe, use “Importar PDF” dentro dela.
+          </p>
         </CartaoImportacao>
         <CartaoImportacao
           icone={GitCompareArrows}
@@ -110,9 +152,10 @@ function Importador() {
           acao={<AnexarComparativo condominios={condominios} />}
         >
           <p>
-            Guarda o PDF do Comparativo Financeiro na prestação de contas e importa os meses selecionados como relatórios mensais,
-            criando os novos ou atualizando os existentes após sua revisão. Esses meses alimentam os relatórios do sistema.
-            O demonstrativo da prestação escolhida é preservado.
+            Guarda o PDF do Comparativo Financeiro na prestação de contas e importa os meses
+            selecionados como relatórios mensais, criando os novos ou atualizando os existentes após
+            sua revisão. Esses meses alimentam os relatórios do sistema. O demonstrativo da
+            prestação escolhida é preservado.
           </p>
           <p>PDF de até 10 MB. Os anexos aparecem no fim da tela da prestação de contas.</p>
         </CartaoImportacao>
@@ -128,9 +171,9 @@ function Importador() {
           }
         >
           <p>
-            Relatório único com todos os condomínios do escritório: código, nome, CNPJ, endereço, área total e administração
-            (síndico, subsíndico, conselheiros). Cadastra os novos e atualiza só os campos que mudaram nos já existentes — com
-            prévia antes de confirmar.
+            Relatório único com todos os condomínios do escritório: código, nome, CNPJ, endereço,
+            área total e administração (síndico, subsíndico, conselheiros). Cadastra os novos e
+            atualiza só os campos que mudaram nos já existentes — com prévia antes de confirmar.
           </p>
         </CartaoImportacao>
       </div>

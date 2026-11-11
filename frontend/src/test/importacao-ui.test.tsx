@@ -284,31 +284,55 @@ describe("confirmar importação numa chamada só (#69)", () => {
   });
 
   it("condomínio existente: camposComplementares só preenche o que está em branco, nunca sobrescreve", async () => {
-    await mockApi.salvar("condominios", { id: "cond-existente", codigo: "", nome: "Já Cadastrado", cnpj: "" });
+    await mockApi.salvar("condominios", {
+      id: "cond-existente",
+      codigo: "",
+      nome: "Já Cadastrado",
+      cnpj: "",
+    });
     await pendente("imp-4");
     const r = await mockApi.confirmarImportacao({
       ...pedido("imp-4", {
         id: "cond-existente",
-        camposComplementares: { codigo: "123", nome: "Outro Nome (não deve substituir)", cnpj: "12.345.678/0001-90" },
+        camposComplementares: {
+          codigo: "123",
+          nome: "Outro Nome (não deve substituir)",
+          cnpj: "12.345.678/0001-90",
+        },
       }),
       registro: { id: "reg-4", condoId: "cond-existente", condoNome: "Já Cadastrado" } as never,
     });
     expect(r).toMatchObject({ criouCondominio: false, atualizouCadastro: true });
-    const salvo = (await mockApi.listar<{ id: string; codigo: string; nome: string; cnpj: string }>("condominios")).find((c) => c.id === "cond-existente")!;
+    const salvo = (
+      await mockApi.listar<{ id: string; codigo: string; nome: string; cnpj: string }>(
+        "condominios",
+      )
+    ).find((c) => c.id === "cond-existente")!;
     expect(salvo.nome).toBe("Já Cadastrado");
     expect(salvo.codigo).toBe("123");
     expect(salvo.cnpj).toBe("12.345.678/0001-90");
   });
 
   it("condomínio existente sem camposComplementares: não mexe no cadastro", async () => {
-    await mockApi.salvar("condominios", { id: "cond-existente-2", codigo: "", nome: "Outro Já Cadastrado", cnpj: "" });
+    await mockApi.salvar("condominios", {
+      id: "cond-existente-2",
+      codigo: "",
+      nome: "Outro Já Cadastrado",
+      cnpj: "",
+    });
     await pendente("imp-5");
     const r = await mockApi.confirmarImportacao({
       ...pedido("imp-5", { id: "cond-existente-2" }),
-      registro: { id: "reg-5", condoId: "cond-existente-2", condoNome: "Outro Já Cadastrado" } as never,
+      registro: {
+        id: "reg-5",
+        condoId: "cond-existente-2",
+        condoNome: "Outro Já Cadastrado",
+      } as never,
     });
     expect(r).toMatchObject({ criouCondominio: false, atualizouCadastro: false });
-    const salvo = (await mockApi.listar<{ id: string; codigo: string }>("condominios")).find((c) => c.id === "cond-existente-2")!;
+    const salvo = (await mockApi.listar<{ id: string; codigo: string }>("condominios")).find(
+      (c) => c.id === "cond-existente-2",
+    )!;
     expect(salvo.codigo).toBe("");
   });
 
@@ -317,11 +341,18 @@ describe("confirmar importação numa chamada só (#69)", () => {
     await mockApi.salvar("condominios", { id: "cond-sem-campos", nome: "Sem Campos" } as never);
     await pendente("imp-6");
     const r = await mockApi.confirmarImportacao({
-      ...pedido("imp-6", { id: "cond-sem-campos", camposComplementares: { codigo: "456", nome: null, cnpj: "99.999.999/0001-99" } }),
+      ...pedido("imp-6", {
+        id: "cond-sem-campos",
+        camposComplementares: { codigo: "456", nome: null, cnpj: "99.999.999/0001-99" },
+      }),
       registro: { id: "reg-6", condoId: "cond-sem-campos", condoNome: "Sem Campos" } as never,
     });
     expect(r).toMatchObject({ criouCondominio: false, atualizouCadastro: true });
-    const salvo = (await mockApi.listar<{ id: string; codigo: string; nome: string; cnpj: string }>("condominios")).find((c) => c.id === "cond-sem-campos")!;
+    const salvo = (
+      await mockApi.listar<{ id: string; codigo: string; nome: string; cnpj: string }>(
+        "condominios",
+      )
+    ).find((c) => c.id === "cond-sem-campos")!;
     expect(salvo.nome).toBe("Sem Campos");
     expect(salvo.codigo).toBe("456");
     expect(salvo.cnpj).toBe("99.999.999/0001-99");
@@ -341,9 +372,9 @@ describe("confirmar importação numa chamada só (#69)", () => {
       cnpj: "00.356.681/0001-25",
     });
     expect(res2.id).toBe("cond-notre-dame-1");
-    const lista = (await mockApi.listar<{ id: string; codigo: string; nome: string }>("condominios")).filter(
-      (c) => c.codigo === "006" || c.codigo === "6",
-    );
+    const lista = (
+      await mockApi.listar<{ id: string; codigo: string; nome: string }>("condominios")
+    ).filter((c) => c.codigo === "006" || c.codigo === "6");
     expect(lista).toHaveLength(1);
     expect(lista[0]!.id).toBe("cond-notre-dame-1");
     expect(lista[0]!.nome).toBe("CONDOMINIO RESIDENCIAL NOTRE DAME");
@@ -465,7 +496,14 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let aplicado: Demonstrativo | null = null;
     let decisaoRecebida: DecisaoConflitoImportacao["itens"] | undefined;
-    const atual = { ...demonstrativoVazio("Estrelas"), receitas: { itens: [{ nome: "Taxa condominial", valor: 15000 }], subtotal: 15000, totalComSaldo: 15000 } };
+    const atual = {
+      ...demonstrativoVazio("Estrelas"),
+      receitas: {
+        itens: [{ nome: "Taxa condominial", valor: 15000 }],
+        subtotal: 15000,
+        totalComSaldo: 15000,
+      },
+    };
 
     render(
       <QueryClientProvider client={qc}>
@@ -485,7 +523,10 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
       </QueryClientProvider>,
     );
     await u.click(screen.getByRole("button", { name: "Importar PDF" }));
-    await u.upload(screen.getByLabelText("Arquivo PDF do relatório"), new File(["%PDF"], "relatorio.pdf", { type: "application/pdf" }));
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do relatório"),
+      new File(["%PDF"], "relatorio.pdf", { type: "application/pdf" }),
+    );
     await u.click(await screen.findByRole("button", { name: "Preencher demonstrativo" }));
 
     await screen.findByText("Valores divergentes na reimportação");
@@ -498,7 +539,16 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
 
     await waitFor(() => expect(aplicado).not.toBeNull());
     expect(aplicado!.receitas.itens).toEqual([{ nome: "Taxa condominial", valor: 15000 }]);
-    expect(decisaoRecebida).toEqual([{ secao: "receitas", nome: "Taxa condominial", ocorrencia: 0, valorAtual: 15000, valorNovo: 20000, escolha: "manter" }]);
+    expect(decisaoRecebida).toEqual([
+      {
+        secao: "receitas",
+        nome: "Taxa condominial",
+        ocorrencia: 0,
+        valorAtual: 15000,
+        valorNovo: 20000,
+        escolha: "manter",
+      },
+    ]);
 
     // O diálogo só devolve a decisão — não grava nada sozinho (isso é feito só quando o registro é
     // efetivamente salvo, ver `persistirDecisaoConflito`), então nada aparece no histórico ainda.
@@ -510,7 +560,14 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
     const u = userEvent.setup();
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let aplicado: Demonstrativo | null = null;
-    const atual = { ...demonstrativoVazio("Estrelas"), receitas: { itens: [{ nome: "Taxa condominial", valor: 15000 }], subtotal: 15000, totalComSaldo: 15000 } };
+    const atual = {
+      ...demonstrativoVazio("Estrelas"),
+      receitas: {
+        itens: [{ nome: "Taxa condominial", valor: 15000 }],
+        subtotal: 15000,
+        totalComSaldo: 15000,
+      },
+    };
 
     render(
       <QueryClientProvider client={qc}>
@@ -529,12 +586,17 @@ describe("conflito de importação ao reimportar relatório com dados já gravad
       </QueryClientProvider>,
     );
     await u.click(screen.getByRole("button", { name: "Importar PDF" }));
-    await u.upload(screen.getByLabelText("Arquivo PDF do relatório"), new File(["%PDF"], "relatorio.pdf", { type: "application/pdf" }));
+    await u.upload(
+      screen.getByLabelText("Arquivo PDF do relatório"),
+      new File(["%PDF"], "relatorio.pdf", { type: "application/pdf" }),
+    );
     await u.click(await screen.findByRole("button", { name: "Preencher demonstrativo" }));
     await screen.findByText("Valores divergentes na reimportação");
 
     await u.click(screen.getByRole("button", { name: "Cancelar importação" }));
-    await waitFor(() => expect(screen.queryByText("Valores divergentes na reimportação")).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText("Valores divergentes na reimportação")).not.toBeInTheDocument(),
+    );
     expect(aplicado).toBeNull();
     expect(await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao")).toHaveLength(0);
   });
@@ -553,7 +615,16 @@ describe("persistirDecisaoConflito", () => {
       registroId: "m-1",
       competencia: "08/2026",
       arquivo: "relatorio.pdf",
-      itens: [{ secao: "receitas", nome: "Taxa condominial", ocorrencia: 0, valorAtual: 15000, valorNovo: 20000, escolha: "manter" }],
+      itens: [
+        {
+          secao: "receitas",
+          nome: "Taxa condominial",
+          ocorrencia: 0,
+          valorAtual: 15000,
+          valorNovo: 20000,
+          escolha: "manter",
+        },
+      ],
     });
     const [decisao] = await mockApi.listar<DecisaoConflitoImportacao>("decisoes_importacao");
     expect(decisao!.registroId).toBe("m-1");

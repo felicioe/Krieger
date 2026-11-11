@@ -5,7 +5,14 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
@@ -60,11 +67,17 @@ export function DialogoNovaAta({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [aberto, condoInicial]);
 
-  const livres = useMemo(() => (condoId ? editaisLivres(condoId) : []), [condoId, assembleias, atas]); // eslint-disable-line react-hooks/exhaustive-deps
-  const comAta = condoId ? assembleias.filter((a) => a.condoId === condoId).length - livres.length : 0;
+  const livres = useMemo(
+    () => (condoId ? editaisLivres(condoId) : []),
+    [condoId, assembleias, atas],
+  ); // eslint-disable-line react-hooks/exhaustive-deps
+  const comAta = condoId
+    ? assembleias.filter((a) => a.condoId === condoId).length - livres.length
+    : 0;
 
   const criar = useMutation({
-    mutationFn: (dados: Omit<Ata, "id">) => api.salvar<Omit<Ata, "id"> & { id?: string }>("atas", dados),
+    mutationFn: (dados: Omit<Ata, "id">) =>
+      api.salvar<Omit<Ata, "id"> & { id?: string }>("atas", dados),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("atas") });
       queryClient.setQueryData(chaves.item("atas", salvo.id), salvo);
@@ -88,13 +101,21 @@ export function DialogoNovaAta({
     const base = edital ? novaAtaDeAssembleia(normalizarAssembleia(edital), c) : ataEmBranco(c);
     // A cidade sai do endereço do condomínio (não da cidade de assinatura do escritório) e o tipo
     // separa ordinária de extraordinária. O cartório não é campo do edital: fica vazio.
-    const modelo = escolherModeloAta(modelosAta, cidadeDoCondominio(c.enderecoEdital), "", base.tipo);
+    const modelo = escolherModeloAta(
+      modelosAta,
+      cidadeDoCondominio(c.enderecoEdital),
+      "",
+      base.tipo,
+    );
     criar.mutate(modelo ? { ...base, modeloAtaId: modelo.id } : base);
   }
 
   const opcoesCondo = opcoesCondominio(condominios);
   const opcoesEdital = [
-    ...livres.map((a) => ({ valor: a.id, rotulo: `${formatData(a.data)} · ${rotuloTipo(a.tipo)}` })),
+    ...livres.map((a) => ({
+      valor: a.id,
+      rotulo: `${formatData(a.data)} · ${rotuloTipo(a.tipo)}`,
+    })),
     { valor: SEM_EDITAL, rotulo: "Sem edital" },
   ];
 
@@ -103,7 +124,9 @@ export function DialogoNovaAta({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Nova ata</DialogTitle>
-          <DialogDescription>Com um edital, a ata já vem com data, horário, local e um item para cada linha da pauta.</DialogDescription>
+          <DialogDescription>
+            Com um edital, a ata já vem com data, horário, local e um item para cada linha da pauta.
+          </DialogDescription>
         </DialogHeader>
         <form id="form-nova-ata" onSubmit={enviar} className="grid gap-4" noValidate>
           {erro && (
@@ -112,19 +135,33 @@ export function DialogoNovaAta({
             </Alert>
           )}
           <Field rotulo="Condomínio" obrigatorio>
-            <SelecaoBusca value={condoId} onChange={escolherCondo} opcoes={opcoesCondo} placeholder="Escolha o condomínio" />
+            <SelecaoBusca
+              value={condoId}
+              onChange={escolherCondo}
+              opcoes={opcoesCondo}
+              placeholder="Escolha o condomínio"
+            />
           </Field>
           {condoId && (
             <Field
               rotulo="Edital"
-              {...(comAta > 0 ? { dica: `${comAta} ${comAta === 1 ? "edital deste condomínio já tem ata" : "editais deste condomínio já têm ata"} e não aparece${comAta === 1 ? "" : "m"} aqui.` } : {})}
+              {...(comAta > 0
+                ? {
+                    dica: `${comAta} ${comAta === 1 ? "edital deste condomínio já tem ata" : "editais deste condomínio já têm ata"} e não aparece${comAta === 1 ? "" : "m"} aqui.`,
+                  }
+                : {})}
             >
               <Selecao value={editalId} onChange={setEditalId} opcoes={opcoesEdital} />
             </Field>
           )}
         </form>
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => aoMudar(false)} disabled={criar.isPending}>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => aoMudar(false)}
+            disabled={criar.isPending}
+          >
             Cancelar
           </Button>
           <Button type="submit" form="form-nova-ata" disabled={criar.isPending}>

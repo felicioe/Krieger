@@ -8,23 +8,41 @@ import { demonstrativoVazio } from "@/domain/demonstrativo";
 import type { ResultadoMensalDetalhado, CelulaMensal } from "@/domain/previstoRealizadoMensal";
 
 vi.mock("@/components/app/LinkPermitido", () => ({
-  Link: ({ to, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }) => <a href={to} {...props} />,
+  Link: ({ to, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { to: string }) => (
+    <a href={to} {...props} />
+  ),
 }));
 
 function celula(previsto: number, realizado: number): CelulaMensal {
-  return { previsto, realizado, diferenca: realizado - previsto, horizontal: previsto ? (realizado - previsto) / previsto * 100 : null, verticalPrevisto: 100, verticalRealizado: realizado ? 100 : null };
+  return {
+    previsto,
+    realizado,
+    diferenca: realizado - previsto,
+    horizontal: previsto ? ((realizado - previsto) / previsto) * 100 : null,
+    verticalPrevisto: 100,
+    verticalRealizado: realizado ? 100 : null,
+  };
 }
 function resultado(carga: number[]): ResultadoMensalDetalhado {
   const mensal = carga.map(() => celula(100, 0));
   const total = celula(100 * carga.length, 0);
-  return { meses: carga.map((relatorios, i) => ({ posicao: i + 1, rotulo: `0${i + 1}/2025`, relatorios })), linhas: [{ grupo: "Pessoal", mensal, total }], total, avisos: [], relatoriosUsados: carga.reduce((soma, n) => soma + n, 0) };
+  return {
+    meses: carga.map((relatorios, i) => ({ posicao: i + 1, rotulo: `0${i + 1}/2025`, relatorios })),
+    linhas: [{ grupo: "Pessoal", mensal, total }],
+    total,
+    avisos: [],
+    relatoriosUsados: carga.reduce((soma, n) => soma + n, 0),
+  };
 }
 
 describe("#229 cobertura do relatório mensal", () => {
   it("sem nenhuma carga mostra o próximo passo, sem tabela ou variação artificial", () => {
     render(<TabelaMensal resultado={resultado([0, 0])} orcado horizontal vertical={false} />);
     expect(screen.getByRole("heading", { name: "Sem realizado no período" })).toBeVisible();
-    expect(screen.getByRole("link", { name: "Ir ao Importador" })).toHaveAttribute("href", "/importador");
+    expect(screen.getByRole("link", { name: "Ir ao Importador" })).toHaveAttribute(
+      "href",
+      "/importador",
+    );
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
     expect(screen.queryByText(/100,00%/)).not.toBeInTheDocument();
   });
@@ -52,9 +70,31 @@ describe("#229 reconciliação da previsão", () => {
     const demonstrativo = {
       ...demonstrativoVazio("Demonstração"),
       periodo: { ini: "01/01/2025", fim: "31/12/2025" },
-      despesas: { grupos: [{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 1200 }] }, { nome: "Obras", itens: [{ nome: "Pintura", valor: 240 }] }], subtotal: 1440, saldoRestante: 0 },
+      despesas: {
+        grupos: [
+          { nome: "Pessoal", itens: [{ nome: "Salários", valor: 1200 }] },
+          { nome: "Obras", itens: [{ nome: "Pintura", valor: 240 }] },
+        ],
+        subtotal: 1440,
+        saldoRestante: 0,
+      },
     };
-    const r = calcularPrevisao(demonstrativo, { variacao: 0, variacaoMetodo: "percentual", variacaoParam: 0, deducaoRegex: "Pintura", arredondamento: "centavos", rateioAtual: null, prev: { modo: "tradicional", ajustes: [{ id: "a1", descricao: "Contrato novo", sinal: "+", valor: 120 }] } }, 10);
+    const r = calcularPrevisao(
+      demonstrativo,
+      {
+        variacao: 0,
+        variacaoMetodo: "percentual",
+        variacaoParam: 0,
+        deducaoRegex: "Pintura",
+        arredondamento: "centavos",
+        rateioAtual: null,
+        prev: {
+          modo: "tradicional",
+          ajustes: [{ id: "a1", descricao: "Contrato novo", sinal: "+", valor: 120 }],
+        },
+      },
+      10,
+    );
     render(<TabelaLinhas r={r} />);
     const total = screen.getByText("Total dos grupos").closest("tr")!;
     expect(within(total).getByText("R$ 1.440,00")).toBeVisible();

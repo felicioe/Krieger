@@ -44,7 +44,10 @@ export function DialogoRegistroAlteracoes({
           ev.preventDefault();
           const o = origem.current;
           origem.current = null;
-          const visivel = o instanceof HTMLElement && o.isConnected && !o.closest("[hidden],[inert],[aria-hidden='true']");
+          const visivel =
+            o instanceof HTMLElement &&
+            o.isConnected &&
+            !o.closest("[hidden],[inert],[aria-hidden='true']");
           if (visivel && o !== document.body) o.focus();
           else document.getElementById(ID_CONTEUDO)?.focus({ preventScroll: true });
         }}

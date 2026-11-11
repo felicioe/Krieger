@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { calcularPrevisaoSugerida, calcularPrevisaoSugeridaPorUnidade, previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
+import {
+  calcularPrevisaoSugerida,
+  calcularPrevisaoSugeridaPorUnidade,
+  previsaoSugeridaDoPdf,
+} from "@/domain/previsaoSugerida";
 import type { PrevisaoSugeridaLida } from "@/domain/pdfParser";
 
 const lida: PrevisaoSugeridaLida = {
@@ -21,7 +25,9 @@ const lida: PrevisaoSugeridaLida = {
 describe("previsão orçamentária sugerida", () => {
   it("a dedução do PDF vira a linha editável “Parte água e gás” com sinal −", () => {
     const p = previsaoSugeridaDoPdf(lida);
-    expect(p.deducoes).toEqual([{ id: "ded-agua-gas", descricao: "Parte água e gás", sinal: "-", valor: 12000 }]);
+    expect(p.deducoes).toEqual([
+      { id: "ded-agua-gas", descricao: "Parte água e gás", sinal: "-", valor: 12000 },
+    ]);
     expect(p.variacao).toEqual({ sinal: "+", valor: 6000 });
   });
 

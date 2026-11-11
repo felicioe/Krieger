@@ -12,7 +12,17 @@ import type {
   Usuario,
   UsuarioAdmin,
 } from "@/domain/types";
-import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type MetadadosAnexoImportado, type PerfilMatriz, type PermissaoCatalogo, type PermissaoExcecao } from "./apiTypes";
+import {
+  ApiError,
+  type AlvoLimpeza,
+  type ApiAdapter,
+  type ConfirmarImportacaoResposta,
+  type ContagensLimpeza,
+  type MetadadosAnexoImportado,
+  type PerfilMatriz,
+  type PermissaoCatalogo,
+  type PermissaoExcecao,
+} from "./apiTypes";
 
 async function req<T>(url: string, init?: RequestInit): Promise<T> {
   let resp: Response;
@@ -42,7 +52,8 @@ async function req<T>(url: string, init?: RequestInit): Promise<T> {
   return corpo as T;
 }
 
-const post = <T>(url: string, body: unknown) => req<T>(url, { method: "POST", body: JSON.stringify(body) });
+const post = <T>(url: string, body: unknown) =>
+  req<T>(url, { method: "POST", body: JSON.stringify(body) });
 
 function lista<T>(r: unknown): T[] {
   if (Array.isArray(r)) return r as T[];
@@ -69,7 +80,11 @@ export const realApi: ApiAdapter = {
   },
   anexos: {
     async listar(exercicioId: string) {
-      return lista<MetadadosAnexoImportado>(await req(`api.php?a=listar&s=anexos_importacao&metadados=1&exercicioId=${enc(exercicioId)}`));
+      return lista<MetadadosAnexoImportado>(
+        await req(
+          `api.php?a=listar&s=anexos_importacao&metadados=1&exercicioId=${enc(exercicioId)}`,
+        ),
+      );
     },
   },
   async listar<T>(store: Store) {
@@ -97,8 +112,11 @@ export const realApi: ApiAdapter = {
     return post("api.php?a=importar", { dados, substituir });
   },
   async confirmarImportacao(pedido) {
-    const r = objeto<ConfirmarImportacaoResposta>(await post("api.php?a=confirmar_importacao", pedido));
-    if (!r?.registro?.id) throw new ApiError("Resposta inválida do servidor ao confirmar a importação.", 500);
+    const r = objeto<ConfirmarImportacaoResposta>(
+      await post("api.php?a=confirmar_importacao", pedido),
+    );
+    if (!r?.registro?.id)
+      throw new ApiError("Resposta inválida do servidor ao confirmar a importação.", 500);
     return r;
   },
   backup: {
@@ -159,14 +177,18 @@ export const realApi: ApiAdapter = {
       await post("auth.php", { a: "usuario_excluir", id });
     },
     async permissoes() {
-      const r = await req<{ catalogo?: PermissaoCatalogo[]; excecoes?: PermissaoExcecao[] }>("auth.php?a=permissoes");
+      const r = await req<{ catalogo?: PermissaoCatalogo[]; excecoes?: PermissaoExcecao[] }>(
+        "auth.php?a=permissoes",
+      );
       return { catalogo: r.catalogo ?? [], excecoes: r.excecoes ?? [] };
     },
     async permissaoSalvar(usuarioId, chave, efeito) {
       await post("auth.php", { a: "permissao_salvar", usuarioId, chave, efeito });
     },
     async perfis() {
-      const r = await req<{ catalogo?: PermissaoCatalogo[]; perfis?: PerfilMatriz[] }>("auth.php?a=perfis");
+      const r = await req<{ catalogo?: PermissaoCatalogo[]; perfis?: PerfilMatriz[] }>(
+        "auth.php?a=perfis",
+      );
       return { catalogo: r.catalogo ?? [], perfis: r.perfis ?? [] };
     },
     async perfilPermissaoSalvar(perfil, chave, permitida) {
@@ -175,7 +197,9 @@ export const realApi: ApiAdapter = {
   },
   documentos: {
     async listar(condoId: string) {
-      return lista<DocumentoDrive>(await req(`api_documentos.php?a=documentos_listar&condoId=${enc(condoId)}`));
+      return lista<DocumentoDrive>(
+        await req(`api_documentos.php?a=documentos_listar&condoId=${enc(condoId)}`),
+      );
     },
     async resumo() {
       return (await req<Record<string, number>>("api_documentos.php?a=documentos_resumo")) ?? {};
@@ -189,7 +213,13 @@ export const realApi: ApiAdapter = {
     async conteudo(id: string) {
       return req<DocumentoDriveConteudo>(`api_documentos.php?a=documento_conteudo&id=${enc(id)}`);
     },
-    async atualizar(dados: { id: string; nomeArquivo?: string; tipo?: TipoDocumentoConsulta; caminhoRelativo?: string; dataDocumento?: string }) {
+    async atualizar(dados: {
+      id: string;
+      nomeArquivo?: string;
+      tipo?: TipoDocumentoConsulta;
+      caminhoRelativo?: string;
+      dataDocumento?: string;
+    }) {
       return post<{ ok: true; id: string; nomeArquivo: string; tipo: TipoDocumentoConsulta }>(
         "api_documentos.php?a=documento_atualizar",
         dados,
@@ -206,7 +236,9 @@ export const realApi: ApiAdapter = {
       });
     },
     async historico(condoId: string) {
-      return lista<ConsultaHistoricoItem>(await req(`api_documentos.php?a=consulta_historico&condoId=${enc(condoId)}`));
+      return lista<ConsultaHistoricoItem>(
+        await req(`api_documentos.php?a=consulta_historico&condoId=${enc(condoId)}`),
+      );
     },
   },
 };

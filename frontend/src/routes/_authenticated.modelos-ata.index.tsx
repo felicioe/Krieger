@@ -12,7 +12,8 @@ import { normalizarModeloAta } from "@/domain/modeloAta";
 import type { ModeloAta } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/modelos-ata/")({
-  head: () => cabecalho("Modelos de ata", "Layouts de ata por cartório/cidade para geração de PDF/Word."),
+  head: () =>
+    cabecalho("Modelos de ata", "Layouts de ata por cartório/cidade para geração de PDF/Word."),
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(listaQuery<ModeloAta>("modelos_ata")),
   component: PaginaModelosAta,
@@ -47,7 +48,11 @@ function PaginaModelosAta() {
             chave: "tipo",
             titulo: "Tipo",
             render: (m) =>
-              m.tipo === "ordinaria" ? "Ordinária" : m.tipo === "extraordinaria" ? "Extraordinária" : "Os dois",
+              m.tipo === "ordinaria"
+                ? "Ordinária"
+                : m.tipo === "extraordinaria"
+                  ? "Extraordinária"
+                  : "Os dois",
           },
           {
             chave: "ativo",

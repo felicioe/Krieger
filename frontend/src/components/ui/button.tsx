@@ -3,7 +3,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
-import { temPermissao, useUsuario } from '@/lib/auth';
+import { temPermissao, useUsuario } from "@/lib/auth";
 
 const buttonVariants = cva(
   // #82: abaixo de sm (celular, e também quando o texto do navegador está ampliado, pois os pontos de quebra

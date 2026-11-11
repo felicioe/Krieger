@@ -14,7 +14,8 @@ export function AvisoImportacoesPendentes() {
     <Alert variant="warning" className="mb-4">
       <FileClock />
       <AlertDescription>
-        {n === 1 ? "Há 1 importação de PDF aguardando" : `Há ${n} importações de PDF aguardando`} a conferência do cadastro do condomínio.{" "}
+        {n === 1 ? "Há 1 importação de PDF aguardando" : `Há ${n} importações de PDF aguardando`} a
+        conferência do cadastro do condomínio.{" "}
         <Link to="/importacoes" className="font-medium underline">
           Ver importações
         </Link>

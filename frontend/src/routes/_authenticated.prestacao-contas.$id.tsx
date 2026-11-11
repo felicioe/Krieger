@@ -2,7 +2,16 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, Calculator, FileText, Loader2, RefreshCw, Save, Trash2, TriangleAlert } from "lucide-react";
+import {
+  ArrowLeft,
+  Calculator,
+  FileText,
+  Loader2,
+  RefreshCw,
+  Save,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +26,10 @@ import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrat
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
 import { HistoricoConflitosImportacao } from "@/components/importacao/HistoricoConflitosImportacao";
-import { persistirDecisaoConflito, type DecisaoConflitoPendente } from "@/components/importacao/ConflitoImportacao";
+import {
+  persistirDecisaoConflito,
+  type DecisaoConflitoPendente,
+} from "@/components/importacao/ConflitoImportacao";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { AnexosPrestacao, anexosQuery } from "@/components/importacao/AnexosPrestacao";
 import { excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
@@ -67,7 +79,11 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
-  const { data: mensais, refetch: atualizarMensais, isFetching: atualizandoMensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
+  const {
+    data: mensais,
+    refetch: atualizarMensais,
+    isFetching: atualizandoMensais,
+  } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
@@ -82,11 +98,18 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
 
   const condo = condominios.find((c) => c.id === e.condoId);
   const demonstrativoSalvo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
-  const demonstrativo = useMemo(() => e.fechado ? demonstrativoSalvo : demonstrativoDoPeriodo(demonstrativoSalvo, mensais, e.condoId), [demonstrativoSalvo, mensais, e.condoId, e.fechado]);
+  const demonstrativo = useMemo(
+    () =>
+      e.fechado
+        ? demonstrativoSalvo
+        : demonstrativoDoPeriodo(demonstrativoSalvo, mensais, e.condoId),
+    [demonstrativoSalvo, mensais, e.condoId, e.fechado],
+  );
   const sujo = JSON.stringify(e) !== salvoJson;
   const mesesPeriodo = mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim);
 
-  const mudar = (parcial: Partial<Exercicio>) => setE((x) => x.fechado ? x : ({ ...x, ...parcial }));
+  const mudar = (parcial: Partial<Exercicio>) =>
+    setE((x) => (x.fechado ? x : { ...x, ...parcial }));
 
   // Avisa antes de sair com alterações não salvas (refs para ler o estado mais recente).
   const sujoRef = useRef(sujo);
@@ -117,13 +140,20 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   });
 
   const fechamento = useMutation({
-    mutationFn: () => api.fechamentoExercicio(e.id, !e.fechado, motivoReabertura, e.atualizadoEm ?? null),
+    mutationFn: () =>
+      api.fechamentoExercicio(e.id, !e.fechado, motivoReabertura, e.atualizadoEm ?? null),
     onSuccess: (salvo) => {
       const n = normalizarExercicio(salvo);
-      setE(n); setSalvoJson(JSON.stringify(n)); setMotivoReabertura("");
+      setE(n);
+      setSalvoJson(JSON.stringify(n));
+      setMotivoReabertura("");
       queryClient.invalidateQueries({ queryKey: chaves.store("exercicios") });
       queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
-      toast.success(salvo.fechado ? "Exercício fechado e salvo. Dados consolidados protegidos." : "Exercício reaberto. Motivo registrado no histórico.");
+      toast.success(
+        salvo.fechado
+          ? "Exercício fechado e salvo. Dados consolidados protegidos."
+          : "Exercício reaberto. Motivo registrado no histórico.",
+      );
     },
   });
 
@@ -137,7 +167,11 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
     onSuccess: (n) => {
       liberado.current = true;
       queryClient.invalidateQueries({ queryKey: chaves.store("exercicios") });
-      toast.success(n > 0 ? `Prestação de contas e ${n === 1 ? "1 anexo excluídos" : `${n} anexos excluídos`}.` : "Prestação de contas excluída.");
+      toast.success(
+        n > 0
+          ? `Prestação de contas e ${n === 1 ? "1 anexo excluídos" : `${n} anexos excluídos`}.`
+          : "Prestação de contas excluída.",
+      );
       navigate({ to: "/prestacao-contas" });
     },
   });
@@ -152,7 +186,9 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       return;
     }
     setErroAno(null);
-    trava.salvar(demonstrativo, () => salvar.mutateAsync(prepararExercicio({ ...e, demonstrativo })));
+    trava.salvar(demonstrativo, () =>
+      salvar.mutateAsync(prepararExercicio({ ...e, demonstrativo })),
+    );
   }
 
   return (
@@ -171,29 +207,43 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           <>
             {e.fechado && <Badge variant="success">Exercício fechado</Badge>}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <Button variant="outline" type="button" onClick={() => void atualizarMensais().then(() => toast.success("Dados mensais atualizados."))} disabled={atualizandoMensais || e.fechado} title="Ler novamente os relatórios mensais e recalcular esta prestação">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() =>
+                void atualizarMensais().then(() => toast.success("Dados mensais atualizados."))
+              }
+              disabled={atualizandoMensais || e.fechado}
+              title="Ler novamente os relatórios mensais e recalcular esta prestação"
+            >
               {atualizandoMensais ? <Loader2 className="animate-spin" /> : <RefreshCw />}
               Atualizar dados
             </Button>
-            {!e.fechado && <ImportarPdf
-              modo="editor"
-              destino="exercicios"
-              condominio={condo}
-              nomeCondominio={e.condoNome || condo?.nome || ""}
-              demonstrativoAtual={e.demonstrativo ?? null}
-              registroId={e.id}
-              competencia={String(e.ano)}
-              aoAplicar={(r) => {
-                mudar({
-                  demonstrativo: r.demonstrativo,
-                  origem: origemComArquivo(e.origem, r.arquivo),
-                  ...(r.consideracoes ? { consid: aplicarConsideracoesAoExercicio(e.consid, r.consideracoes) } : {}),
-                  ...(r.previsaoSugerida ? { previsaoSugerida: previsaoSugeridaDoPdf(r.previsaoSugerida) } : {}),
-                });
-                trava.marcarImportado(r.demonstrativo);
-                setDecisaoPendente(r.decisaoConflito ?? null);
-              }}
-            />}
+            {!e.fechado && (
+              <ImportarPdf
+                modo="editor"
+                destino="exercicios"
+                condominio={condo}
+                nomeCondominio={e.condoNome || condo?.nome || ""}
+                demonstrativoAtual={e.demonstrativo ?? null}
+                registroId={e.id}
+                competencia={String(e.ano)}
+                aoAplicar={(r) => {
+                  mudar({
+                    demonstrativo: r.demonstrativo,
+                    origem: origemComArquivo(e.origem, r.arquivo),
+                    ...(r.consideracoes
+                      ? { consid: aplicarConsideracoesAoExercicio(e.consid, r.consideracoes) }
+                      : {}),
+                    ...(r.previsaoSugerida
+                      ? { previsaoSugerida: previsaoSugeridaDoPdf(r.previsaoSugerida) }
+                      : {}),
+                  });
+                  trava.marcarImportado(r.demonstrativo);
+                  setDecisaoPendente(r.decisaoConflito ?? null);
+                }}
+              />
+            )}
             <Button variant="outline" asChild>
               <Link to="/previsao-orcamentaria" search={{ exercicio: e.id }}>
                 <Calculator /> Previsão orçamentária
@@ -209,16 +259,37 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                 <FileText /> Relatório final
               </Link>
             </Button>
-            <Button permissao="prestacao_contas.editar" variant="outline" type="button"
-              disabled={salvar.isPending || fechamento.isPending || sujo || (!e.fechado && JSON.stringify(demonstrativo) !== JSON.stringify(demonstrativoSalvo))}
+            <Button
+              permissao="prestacao_contas.editar"
+              variant="outline"
+              type="button"
+              disabled={
+                salvar.isPending ||
+                fechamento.isPending ||
+                sujo ||
+                (!e.fechado && JSON.stringify(demonstrativo) !== JSON.stringify(demonstrativoSalvo))
+              }
               title="Salve os dados e a previsão antes de fechar o exercício."
-              onClick={() => setConfirmarFechamento(true)}>
+              onClick={() => setConfirmarFechamento(true)}
+            >
               {e.fechado ? "Reabrir exercício" : "Fechar exercício"}
             </Button>
-            <Button permissao="prestacao_contas.editar" variant="outline" type="button" disabled={e.fechado} onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button
+              permissao="prestacao_contas.editar"
+              variant="outline"
+              type="button"
+              disabled={e.fechado}
+              onClick={() => setConfirmarExclusao(true)}
+              className="text-destructive hover:text-destructive"
+            >
               <Trash2 /> Excluir
             </Button>
-            <Button permissao="prestacao_contas.editar" type="submit" form="form-exercicio" disabled={salvar.isPending || e.fechado}>
+            <Button
+              permissao="prestacao_contas.editar"
+              type="submit"
+              form="form-exercicio"
+              disabled={salvar.isPending || e.fechado}
+            >
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
@@ -226,58 +297,96 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         }
       />
 
-      {e.fechado && <Alert className="mb-4"><AlertDescription>Exercício fechado: números e fontes do relatório estão preservados. Para corrigir, use Reabrir exercício e informe o motivo.</AlertDescription></Alert>}
-      <ConfirmDialog aberto={confirmarFechamento} aoMudar={setConfirmarFechamento}
+      {e.fechado && (
+        <Alert className="mb-4">
+          <AlertDescription>
+            Exercício fechado: números e fontes do relatório estão preservados. Para corrigir, use
+            Reabrir exercício e informe o motivo.
+          </AlertDescription>
+        </Alert>
+      )}
+      <ConfirmDialog
+        aberto={confirmarFechamento}
+        aoMudar={setConfirmarFechamento}
         titulo={e.fechado ? "Reabrir exercício?" : "Fechar exercício?"}
-        descricao={<div className="space-y-3"><p>{e.fechado ? "A reabertura libera a edição e fica registrada." : "Os dados salvos, o percentual e as fontes usadas no relatório serão preservados. Salve também a previsão antes de confirmar."}</p>
-          {e.fechado && <Field rotulo="Motivo da reabertura"><Input value={motivoReabertura} onChange={(ev) => setMotivoReabertura(ev.target.value)} /></Field>}</div>}
-        rotuloConfirmar={e.fechado ? "Reabrir e salvar" : "Fechar e salvar"} aoConfirmar={() => fechamento.mutateAsync()} />
+        descricao={
+          <div className="space-y-3">
+            <p>
+              {e.fechado
+                ? "A reabertura libera a edição e fica registrada."
+                : "Os dados salvos, o percentual e as fontes usadas no relatório serão preservados. Salve também a previsão antes de confirmar."}
+            </p>
+            {e.fechado && (
+              <Field rotulo="Motivo da reabertura">
+                <Input
+                  value={motivoReabertura}
+                  onChange={(ev) => setMotivoReabertura(ev.target.value)}
+                />
+              </Field>
+            )}
+          </div>
+        }
+        rotuloConfirmar={e.fechado ? "Reabrir e salvar" : "Fechar e salvar"}
+        aoConfirmar={() => fechamento.mutateAsync()}
+      />
       <form id="form-exercicio" onSubmit={enviar} className="space-y-6" noValidate>
         <fieldset disabled={e.fechado} className="min-w-0 space-y-6">
-        <SectionCard titulo="Dados do exercício">
-          <div className="grid gap-4 sm:grid-cols-6">
-            <Field rotulo="Ano" erro={erroAno} className="sm:col-span-1">
-              <InteiroInput
-                value={Number(e.ano) || null}
-                onChange={(v) => {
-                  mudar({ ano: v ?? "" });
-                  if (erroAno) setErroAno(null);
-                }}
-                maxLength={4}
-              />
-            </Field>
-            <Field rotulo="Cidade" className="sm:col-span-3">
-              <Input value={e.cidade} onChange={(ev) => mudar({ cidade: ev.target.value })} />
-            </Field>
-            <Field rotulo="Data de emissão" className="sm:col-span-2">
-              <DataInput value={e.dataEmissao} onChange={(v) => mudar({ dataEmissao: v })} />
-            </Field>
-            <Field rotulo="Rateio atual (por unidade)" className="sm:col-span-3">
-              <DinheiroInput value={e.rateioAtual} onChange={(v) => mudar({ rateioAtual: v })} disabled={e.fechado} />
-            </Field>
-            <Field rotulo="Rateio aprovado" dica="Valor aprovado em assembleia." className="sm:col-span-3">
-              <DinheiroInput value={e.rateioAprovado} onChange={(v) => mudar({ rateioAprovado: v })} disabled={e.fechado} />
-            </Field>
-          </div>
-        </SectionCard>
+          <SectionCard titulo="Dados do exercício">
+            <div className="grid gap-4 sm:grid-cols-6">
+              <Field rotulo="Ano" erro={erroAno} className="sm:col-span-1">
+                <InteiroInput
+                  value={Number(e.ano) || null}
+                  onChange={(v) => {
+                    mudar({ ano: v ?? "" });
+                    if (erroAno) setErroAno(null);
+                  }}
+                  maxLength={4}
+                />
+              </Field>
+              <Field rotulo="Cidade" className="sm:col-span-3">
+                <Input value={e.cidade} onChange={(ev) => mudar({ cidade: ev.target.value })} />
+              </Field>
+              <Field rotulo="Data de emissão" className="sm:col-span-2">
+                <DataInput value={e.dataEmissao} onChange={(v) => mudar({ dataEmissao: v })} />
+              </Field>
+              <Field rotulo="Rateio atual (por unidade)" className="sm:col-span-3">
+                <DinheiroInput
+                  value={e.rateioAtual}
+                  onChange={(v) => mudar({ rateioAtual: v })}
+                  disabled={e.fechado}
+                />
+              </Field>
+              <Field
+                rotulo="Rateio aprovado"
+                dica="Valor aprovado em assembleia."
+                className="sm:col-span-3"
+              >
+                <DinheiroInput
+                  value={e.rateioAprovado}
+                  onChange={(v) => mudar({ rateioAprovado: v })}
+                  disabled={e.fechado}
+                />
+              </Field>
+            </div>
+          </SectionCard>
 
-        <EditorDemonstrativo
-          valor={demonstrativo}
-          onChange={(d) => mudar({ demonstrativo: d })}
-          descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão calculada pelo demonstrativo."
-          bloqueado={e.fechado === true}
-          avisoPeriodo={
-            mesesPeriodo !== null && mesesPeriodo > 12 ? (
-              <Alert variant="warning" className="mt-3">
-                <TriangleAlert />
-                <AlertDescription>
-                  Esse período tem {mesesPeriodo} meses — a prestação de contas normalmente cobre até 12. Confira as datas de início e
-                  fim antes de salvar.
-                </AlertDescription>
-              </Alert>
-            ) : null
-          }
-        />
+          <EditorDemonstrativo
+            valor={demonstrativo}
+            onChange={(d) => mudar({ demonstrativo: d })}
+            descricaoDespesas="Organize as despesas por grupo (Pessoal, Consumo, Manutenção…). São a base da previsão calculada pelo demonstrativo."
+            bloqueado={e.fechado === true}
+            avisoPeriodo={
+              mesesPeriodo !== null && mesesPeriodo > 12 ? (
+                <Alert variant="warning" className="mt-3">
+                  <TriangleAlert />
+                  <AlertDescription>
+                    Esse período tem {mesesPeriodo} meses — a prestação de contas normalmente cobre
+                    até 12. Confira as datas de início e fim antes de salvar.
+                  </AlertDescription>
+                </Alert>
+              ) : null
+            }
+          />
         </fieldset>
       </form>
 
@@ -286,7 +395,18 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         <AnexosPrestacao exercicioId={e.id} bloqueado={e.fechado === true} />
       </div>
 
-      {e.historicoFechamento?.length ? <SectionCard titulo="Histórico de fechamento" className="mt-6"><ul className="space-y-2 text-sm">{e.historicoFechamento.map((h, i) => <li key={i}>{h.acao === "fechar" ? "Fechado" : "Reaberto"} · {h.em} · {h.por}{h.motivo ? ` · ${h.motivo}` : ""}</li>)}</ul></SectionCard> : null}
+      {e.historicoFechamento?.length ? (
+        <SectionCard titulo="Histórico de fechamento" className="mt-6">
+          <ul className="space-y-2 text-sm">
+            {e.historicoFechamento.map((h, i) => (
+              <li key={i}>
+                {h.acao === "fechar" ? "Fechado" : "Reaberto"} · {h.em} · {h.por}
+                {h.motivo ? ` · ${h.motivo}` : ""}
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+      ) : null}
       <HistoricoConflitosImportacao registroId={e.id} />
 
       <DialogoDivergencia
@@ -301,7 +421,9 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         aoMudar={setConfirmarExclusao}
         titulo="Excluir prestação de contas?"
         descricao={`O exercício ${e.ano} de ${e.condoNome} será excluído${
-          qtdAnexos > 0 ? `, junto com ${qtdAnexos === 1 ? "o anexo de referência" : `os ${qtdAnexos} anexos de referência`} desta prestação` : ""
+          qtdAnexos > 0
+            ? `, junto com ${qtdAnexos === 1 ? "o anexo de referência" : `os ${qtdAnexos} anexos de referência`} desta prestação`
+            : ""
         }. Esta ação não pode ser desfeita.`}
         rotuloConfirmar="Excluir"
         destrutivo

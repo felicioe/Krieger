@@ -34,7 +34,9 @@ function montar({
   definirUsuario({ id: "u-teste", login: "maria", nome, perfil, trocarSenha: false } as Usuario);
   const Menu = movel ? (
     <MenuMovel destinoFoco={() => document.getElementById("conteudo")}>
-      {(aoNavegar, depoisDeFechar) => <ConteudoMenu aoNavegar={aoNavegar} depoisDeFechar={depoisDeFechar} />}
+      {(aoNavegar, depoisDeFechar) => (
+        <ConteudoMenu aoNavegar={aoNavegar} depoisDeFechar={depoisDeFechar} />
+      )}
     </MenuMovel>
   ) : (
     <aside>
@@ -50,7 +52,8 @@ function montar({
     </>
   );
   const raiz = createRootRoute({
-    component: () => (comProvedor ? <ProvedorRegistroAlteracoes>{corpo}</ProvedorRegistroAlteracoes> : corpo),
+    component: () =>
+      comProvedor ? <ProvedorRegistroAlteracoes>{corpo}</ProvedorRegistroAlteracoes> : corpo,
   });
   const pagina = (caminho: string, titulo: string) =>
     createRoute({ getParentRoute: () => raiz, path: caminho, component: () => <h1>{titulo}</h1> });
@@ -81,7 +84,8 @@ function montar({
   return { router, user: userEvent.setup(), pronto: () => screen.findByLabelText("Observação") };
 }
 
-const botaoConta = (nome = "Maria Souza") => screen.getByRole("button", { name: new RegExp(`Conta: ${nome}`) });
+const botaoConta = (nome = "Maria Souza") =>
+  screen.getByRole("button", { name: new RegExp(`Conta: ${nome}`) });
 
 beforeEach(() => {
   sair.mockClear();
@@ -94,10 +98,16 @@ describe("bloco da conta no menu lateral", () => {
     const conta = botaoConta();
     expect(conta).toHaveAttribute("aria-expanded", "false");
     expect(conta).toHaveAccessibleName(/SuperADM/);
-    for (const nome of ["Usuários", "Minha senha"]) expect(screen.queryByRole("link", { name: nome })).toBeNull();
-    for (const nome of ["Registro de Alterações", "Sair"]) expect(screen.queryByRole("button", { name: nome })).toBeNull();
+    for (const nome of ["Usuários", "Minha senha"])
+      expect(screen.queryByRole("link", { name: nome })).toBeNull();
+    for (const nome of ["Registro de Alterações", "Sair"])
+      expect(screen.queryByRole("button", { name: nome })).toBeNull();
     const principal = screen.getByRole("navigation", { name: "Menu principal" });
-    expect(within(principal).getAllByRole("link").map((l) => l.textContent)).toEqual(ITENS_MENU.map((i) => i.titulo));
+    expect(
+      within(principal)
+        .getAllByRole("link")
+        .map((l) => l.textContent),
+    ).toEqual(ITENS_MENU.map((i) => i.titulo));
   });
 
   it("expande e recolhe pelo teclado sem sair nem trocar de página", async () => {
@@ -153,7 +163,11 @@ describe("bloco da conta no menu lateral", () => {
     const abrir = screen.getByRole("button", { name: "Registro de Alterações" });
     await user.click(abrir);
     const janela = await screen.findByRole("dialog", { name: "Registro de Alterações" });
-    expect(within(janela).getByText(new RegExp(`Versão atual: ${dados.versaoAtual.replace(".", "\\.")}\\.`))).toBeInTheDocument();
+    expect(
+      within(janela).getByText(
+        new RegExp(`Versão atual: ${dados.versaoAtual.replace(".", "\\.")}\\.`),
+      ),
+    ).toBeInTheDocument();
     expect(within(janela).getByText("Implantação inicial do Sistema Krieger.")).toBeInTheDocument();
 
     await user.keyboard("{Escape}");

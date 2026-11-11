@@ -2,7 +2,10 @@
 export function lerComoDataUrl(arquivo: File): Promise<string> {
   return new Promise((ok, falha) => {
     const leitor = new FileReader();
-    leitor.onload = () => (typeof leitor.result === "string" ? ok(leitor.result) : falha(new Error("Não foi possível ler o arquivo.")));
+    leitor.onload = () =>
+      typeof leitor.result === "string"
+        ? ok(leitor.result)
+        : falha(new Error("Não foi possível ler o arquivo."));
     leitor.onerror = () => falha(new Error("Não foi possível ler o arquivo."));
     leitor.readAsDataURL(arquivo);
   });

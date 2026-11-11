@@ -18,7 +18,7 @@ export function GraficoPizza({ dados }: { dados: { nome: string; valor: number }
   const total = dados.reduce((s, d) => s + d.valor, 0);
   const pct = (v: number) => `${total ? formatNumeroBR((v / total) * 100, 1) : "0"}%`;
   const config = Object.fromEntries(
-    dados.map((d, i) => [d.nome, { label: d.nome, color: corDoGrafico(i) }]),
+    dados.map((d, i) => [`categoria-${i}`, { label: d.nome, color: corDoGrafico(i) }]),
   ) satisfies ChartConfig;
   return (
     <div className="@container">
@@ -39,18 +39,36 @@ export function GraficoPizza({ dados }: { dados: { nome: string; valor: number }
               />
             }
           />
-          <Pie data={dados} dataKey="valor" nameKey="nome" innerRadius={50} outerRadius={100} strokeWidth={2}>
+          <Pie
+            data={dados}
+            dataKey="valor"
+            nameKey="nome"
+            innerRadius={50}
+            outerRadius={100}
+            strokeWidth={2}
+          >
             {dados.map((d, i) => (
               // Cada fatia é exposta como imagem: o nome e o valor dão a ela um nome acessível.
-              <Cell key={d.nome} fill={corDoGrafico(i)} aria-label={`${d.nome}: ${formatBRL(d.valor)} (${pct(d.valor)})`} />
+              <Cell
+                key={d.nome}
+                fill={corDoGrafico(i)}
+                aria-label={`${d.nome}: ${formatBRL(d.valor)} (${pct(d.valor)})`}
+              />
             ))}
           </Pie>
         </PieChart>
       </ChartContainer>
-      <ul className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1.5 text-xs @lg:grid-cols-2" aria-label="Legenda: despesas por grupo">
+      <ul
+        className="mt-3 grid grid-cols-1 gap-x-6 gap-y-1.5 text-xs @lg:grid-cols-2"
+        aria-label="Legenda: despesas por grupo"
+      >
         {dados.map((d, i) => (
           <li key={d.nome} className="flex items-start gap-2">
-            <span aria-hidden className="mt-0.5 size-3 shrink-0 rounded-[3px]" style={{ backgroundColor: corDoGrafico(i) }} />
+            <span
+              aria-hidden
+              className="mt-0.5 size-3 shrink-0 rounded-[3px]"
+              style={{ backgroundColor: corDoGrafico(i) }}
+            />
             <span className="min-w-0 flex-1 break-words text-foreground">{d.nome}</span>
             <span className="num shrink-0 text-right text-muted-foreground">
               {formatBRL(d.valor)} · {pct(d.valor)}

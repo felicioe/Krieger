@@ -11,8 +11,13 @@ import { ROTULO_STATUS } from "@/components/importacao/status";
 import type { Importacao } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/importacoes/")({
-  head: () => cabecalho("Importações de PDF", "PDFs do Systemar de condomínios ainda não cadastrados, aguardando conferência."),
-  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(listaQuery<Importacao>("importacoes")),
+  head: () =>
+    cabecalho(
+      "Importações de PDF",
+      "PDFs do Systemar de condomínios ainda não cadastrados, aguardando conferência.",
+    ),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(listaQuery<Importacao>("importacoes")),
   component: ListaImportacoes,
 });
 
@@ -24,7 +29,9 @@ function ListaImportacoes() {
   const linhas = useMemo(
     () =>
       [...data].sort(
-        (a, b) => (ordem[a.status] ?? 9) - (ordem[b.status] ?? 9) || String(b.importadoEm).localeCompare(String(a.importadoEm)),
+        (a, b) =>
+          (ordem[a.status] ?? 9) - (ordem[b.status] ?? 9) ||
+          String(b.importadoEm).localeCompare(String(a.importadoEm)),
       ),
     [data],
   );
@@ -37,10 +44,30 @@ function ListaImportacoes() {
       />
       <DataTable<Importacao>
         colunas={[
-          { chave: "importadoEm", titulo: "Importado em", className: "num whitespace-nowrap w-40", render: (i) => formatDataHora(i.importadoEm) },
-          { chave: "arquivo", titulo: "Arquivo", render: (i) => <span className="font-medium text-foreground break-all">{i.arquivo}</span> },
-          { chave: "condominio", titulo: "Condomínio no PDF", render: (i) => i.cadastro?.nome || "—" },
-          { chave: "destino", titulo: "Destino", render: (i) => (i.destino === "exercicios" ? "Prestação de contas" : "Relatório mensal") },
+          {
+            chave: "importadoEm",
+            titulo: "Importado em",
+            className: "num whitespace-nowrap w-40",
+            render: (i) => formatDataHora(i.importadoEm),
+          },
+          {
+            chave: "arquivo",
+            titulo: "Arquivo",
+            render: (i) => (
+              <span className="font-medium text-foreground break-all">{i.arquivo}</span>
+            ),
+          },
+          {
+            chave: "condominio",
+            titulo: "Condomínio no PDF",
+            render: (i) => i.cadastro?.nome || "—",
+          },
+          {
+            chave: "destino",
+            titulo: "Destino",
+            render: (i) =>
+              i.destino === "exercicios" ? "Prestação de contas" : "Relatório mensal",
+          },
           {
             chave: "status",
             titulo: "Situação",

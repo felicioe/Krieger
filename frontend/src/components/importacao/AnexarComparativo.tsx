@@ -8,12 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { focarConteudoApos } from "@/components/app/foco";
 import { ERRO_PDF_GRANDE, LIMITE_PDF_ANEXO, textoCondominioLido, textoPeriodo } from "./anexos";
-import { ConflitoImportacaoDialog, persistirDecisaoConflito, useConflitoImportacao, type DecisaoConflitoPendente } from "./ConflitoImportacao";
+import {
+  ConflitoImportacaoDialog,
+  persistirDecisaoConflito,
+  useConflitoImportacao,
+  type DecisaoConflitoPendente,
+} from "./ConflitoImportacao";
 import { api, mensagemErro } from "@/lib/api";
 import { novoId } from "@/lib/id";
 import { lerComoDataUrl } from "@/lib/arquivo";
@@ -36,7 +48,8 @@ import { consultarCnpjReceita, enderecoDaReceita } from "@/lib/receitaCnpj";
 import type { AnexoImportado, Condominio, Demonstrativo, Exercicio, Mensal } from "@/domain/types";
 
 /** Mensagem pedida para PDFs que não são o Comparativo Financeiro. */
-export const ERRO_NAO_COMPARATIVO = "Este PDF não parece ser um Comparativo Financeiro; verifique se é o relatório certo.";
+export const ERRO_NAO_COMPARATIVO =
+  "Este PDF não parece ser um Comparativo Financeiro; verifique se é o relatório certo.";
 
 type Lido = { arquivo: string; tamanho: number; dataUrl: string; relatorio: RelatorioLido };
 
@@ -44,7 +57,13 @@ type Lido = { arquivo: string; tamanho: number; dataUrl: string; relatorio: Rela
  * Card "Comparativo Financeiro" do Importador: lê o PDF, confere que é o layout comparativo e
  * o anexa a uma prestação existente e importa os meses selecionados como relatórios mensais, sem alterar o demonstrativo da prestação.
  */
-export function AnexarComparativo({ condominios, rotulo = "Importar comparativo financeiro" }: { condominios: Condominio[]; rotulo?: string }) {
+export function AnexarComparativo({
+  condominios,
+  rotulo = "Importar comparativo financeiro",
+}: {
+  condominios: Condominio[];
+  rotulo?: string;
+}) {
   const entrada = useRef<HTMLInputElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
   const vaiNavegar = useRef(false);
@@ -68,13 +87,18 @@ export function AnexarComparativo({ condominios, rotulo = "Importar comparativo 
     try {
       const { extrairTextoPdf } = await import("@/lib/pdfTexto");
       const texto = await extrairTextoPdf(arquivo);
-      if (!texto.trim()) throw new Error("O PDF não tem texto legível (pode ser uma imagem digitalizada).");
+      if (!texto.trim())
+        throw new Error("O PDF não tem texto legível (pode ser uma imagem digitalizada).");
       const relatorio = lerRelatorio(texto, arquivo.name);
       if (relatorio.layout !== "comparativo") throw new Error(ERRO_NAO_COMPARATIVO);
       const dataUrl = await lerComoDataUrl(arquivo);
       setLido({ arquivo: arquivo.name, tamanho: arquivo.size, dataUrl, relatorio });
     } catch (e) {
-      setErro(e instanceof Error && /password|Invalid PDF/i.test(e.message) ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)." : mensagemErro(e));
+      setErro(
+        e instanceof Error && /password|Invalid PDF/i.test(e.message)
+          ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)."
+          : mensagemErro(e),
+      );
     } finally {
       setLendo(false);
       if (entrada.current) entrada.current.value = "";
@@ -110,7 +134,9 @@ export function AnexarComparativo({ condominios, rotulo = "Importar comparativo 
           <DialogHeader>
             <DialogTitle>Importar Comparativo Financeiro</DialogTitle>
             <DialogDescription>
-              O PDF fica guardado na prestação para consulta e download. Os meses marcados criam ou atualizam relatórios mensais e alimentam as comparações do sistema. Revise a seleção antes de confirmar; o demonstrativo da prestação é preservado.
+              O PDF fica guardado na prestação para consulta e download. Os meses marcados criam ou
+              atualizam relatórios mensais e alimentam as comparações do sistema. Revise a seleção
+              antes de confirmar; o demonstrativo da prestação é preservado.
             </DialogDescription>
           </DialogHeader>
           {lendo ? (
@@ -158,7 +184,9 @@ function PassoAnexar({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const usuario = useUsuario();
-  const { data: exercicios = [], isPending: carregando } = useQuery(listaQuery<Exercicio>("exercicios"));
+  const { data: exercicios = [], isPending: carregando } = useQuery(
+    listaQuery<Exercicio>("exercicios"),
+  );
   const {
     data: mensaisExistentes = [],
     isPending: carregandoMensais,
@@ -174,7 +202,10 @@ function PassoAnexar({
   const [selecionados, setSelecionados] = useState<Record<string, boolean>>({});
 
   const doCondo = useMemo(
-    () => exercicios.filter((x) => x.condoId === condoId).sort((a, b) => (Number(b.ano) || 0) - (Number(a.ano) || 0)),
+    () =>
+      exercicios
+        .filter((x) => x.condoId === condoId)
+        .sort((a, b) => (Number(b.ano) || 0) - (Number(a.ano) || 0)),
     [exercicios, condoId],
   );
   const [escolhido, setEscolhido] = useState<string | null>(null);
@@ -187,13 +218,17 @@ function PassoAnexar({
     mutationFn: async () => {
       const base = condominioDoCadastro(rel.condominio);
       const cnpjDigitos = (rel.condominio.cnpj ?? "").replace(/\D/g, "");
-      const dadosReceita = cnpjDigitos.length === 14 ? await consultarCnpjReceita(cnpjDigitos) : null;
+      const dadosReceita =
+        cnpjDigitos.length === 14 ? await consultarCnpjReceita(cnpjDigitos) : null;
       const preparado = prepararCondominio({
         ...base,
         enderecoEdital: dadosReceita ? enderecoDaReceita(dadosReceita) : base.enderecoEdital,
       });
       if (!preparado.ok) throw new Error(preparado.erro);
-      const condo = await api.salvar<Condominio>("condominios", { ...preparado.valor, id: novoId() });
+      const condo = await api.salvar<Condominio>("condominios", {
+        ...preparado.valor,
+        id: novoId(),
+      });
       return { condo, semEndereco: cnpjDigitos.length === 14 && !dadosReceita };
     },
     onSuccess: ({ condo, semEndereco }) => {
@@ -201,7 +236,9 @@ function PassoAnexar({
       setCondoId(condo.id);
       toast.success(
         "Condomínio pré-cadastrado a partir do PDF." +
-          (semEndereco ? " Não foi possível buscar o endereço na Receita Federal — complete manualmente." : ""),
+          (semEndereco
+            ? " Não foi possível buscar o endereço na Receita Federal — complete manualmente."
+            : ""),
       );
     },
     onError: (e) => toast.error(mensagemErro(e)),
@@ -251,7 +288,8 @@ function PassoAnexar({
       decisoes: DecisaoConflitoPendente[];
     }) => {
       if (!exercicio) throw new Error("Escolha a prestação de contas.");
-      if (!confereConflitos) throw new Error("Aguarde o carregamento dos relatórios mensais antes de confirmar.");
+      if (!confereConflitos)
+        throw new Error("Aguarde o carregamento dos relatórios mensais antes de confirmar.");
       await Promise.all(
         mesesSelecionados.map((m) =>
           api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", {
@@ -262,7 +300,13 @@ function PassoAnexar({
         ),
       );
       await api.salvar<AnexoImportado>("anexos_importacao", {
-        ...novoAnexoImportado(exercicio.id, "comparativo_financeiro", rel, lido.arquivo, lido.dataUrl),
+        ...novoAnexoImportado(
+          exercicio.id,
+          "comparativo_financeiro",
+          rel,
+          lido.arquivo,
+          lido.dataUrl,
+        ),
         id: idAnexo.current,
       });
       // Só registra as decisões de conflito depois que os relatórios mensais foram mesmo salvos —
@@ -275,11 +319,14 @@ function PassoAnexar({
       if (qtdMeses) queryClient.invalidateQueries({ queryKey: chaves.store("mensais") });
       toast.success(
         `Comparativo anexado à prestação de contas ${exercicio?.ano ?? ""}` +
-          (qtdMeses ? ` e ${qtdMeses} relatório${qtdMeses > 1 ? "s" : ""} mensa${qtdMeses > 1 ? "is" : "l"} importado${qtdMeses > 1 ? "s" : ""}.` : "."),
+          (qtdMeses
+            ? ` e ${qtdMeses} relatório${qtdMeses > 1 ? "s" : ""} mensa${qtdMeses > 1 ? "is" : "l"} importado${qtdMeses > 1 ? "s" : ""}.`
+            : "."),
       );
       antesDeNavegar();
       fechar();
-      if (exercicio) focarConteudoApos(navigate({ to: "/prestacao-contas/$id", params: { id: exercicio.id } }));
+      if (exercicio)
+        focarConteudoApos(navigate({ to: "/prestacao-contas/$id", params: { id: exercicio.id } }));
     },
   });
 
@@ -319,7 +366,8 @@ function PassoAnexar({
       <dl className="grid gap-x-4 gap-y-1.5 rounded-md border p-3 text-sm sm:grid-cols-[auto_minmax(0,1fr)]">
         <dt className="text-muted-foreground">Arquivo</dt>
         <dd className="min-w-0 break-words font-medium">
-          {lido.arquivo} <span className="font-normal text-muted-foreground">({formatBytes(lido.tamanho)})</span>
+          {lido.arquivo}{" "}
+          <span className="font-normal text-muted-foreground">({formatBytes(lido.tamanho)})</span>
         </dd>
         <dt className="text-muted-foreground">Condomínio no PDF</dt>
         <dd className="min-w-0 break-words">{textoCondominioLido(rel)}</dd>
@@ -348,7 +396,9 @@ function PassoAnexar({
         <Field
           rotulo="Prestação de contas"
           obrigatorio
-          {...(!escolhido && exercicio && Number(exercicio.ano) === anoSugerido ? { dica: "Sugerida pelo ano do PDF." } : {})}
+          {...(!escolhido && exercicio && Number(exercicio.ano) === anoSugerido
+            ? { dica: "Sugerida pelo ano do PDF." }
+            : {})}
         >
           <Selecao
             value={exercicioId}
@@ -364,7 +414,10 @@ function PassoAnexar({
         <Alert variant="warning">
           <TriangleAlert />
           <AlertDescription>
-            <p>Não achei no cadastro o condomínio deste PDF. Escolha um já cadastrado, ou pré-cadastre com os dados do PDF.</p>
+            <p>
+              Não achei no cadastro o condomínio deste PDF. Escolha um já cadastrado, ou
+              pré-cadastre com os dados do PDF.
+            </p>
             {!!rel.condominio.nome && (
               <Button
                 type="button"
@@ -384,14 +437,17 @@ function PassoAnexar({
       {outro && (
         <Alert variant="warning">
           <TriangleAlert />
-          <AlertDescription>Este PDF parece ser de outro condomínio (código/CNPJ diferentes de {condo?.nome}).</AlertDescription>
+          <AlertDescription>
+            Este PDF parece ser de outro condomínio (código/CNPJ diferentes de {condo?.nome}).
+          </AlertDescription>
         </Alert>
       )}
       {condoId && !carregando && doCondo.length === 0 && (
         <Alert variant="warning">
           <TriangleAlert />
           <AlertDescription>
-            {condo?.nome ?? "Este condomínio"} ainda não tem prestação de contas. Crie a prestação em{" "}
+            {condo?.nome ?? "Este condomínio"} ainda não tem prestação de contas. Crie a prestação
+            em{" "}
             <Link to="/prestacao-contas" className="font-medium underline">
               Prestação de contas
             </Link>{" "}
@@ -404,25 +460,39 @@ function PassoAnexar({
         <div className="grid gap-2 rounded-md border p-3 text-sm">
           <p className="font-medium">Relatórios mensais deste comparativo</p>
           <p className="text-xs text-muted-foreground">
-            O comparativo é um balancete mês a mês; cada mês marcado vira (ou atualiza) um relatório mensal de verdade,
-            usado no Previsto × Realizado, na inadimplência e nos gráficos — não depende da prestação de contas escolhida acima.
+            O comparativo é um balancete mês a mês; cada mês marcado vira (ou atualiza) um relatório
+            mensal de verdade, usado no Previsto × Realizado, na inadimplência e nos gráficos — não
+            depende da prestação de contas escolhida acima.
           </p>
           <ul className="grid gap-1.5">
             {mesesComparativo.map((m) => {
               const id = `mes-comparativo-${m.mes.replace("/", "-")}`;
               const t = m.registro.demonstrativo?.totais;
               return (
-                <li key={m.mes} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 max-md:min-h-11 pointer-coarse:min-h-11">
-                  <Checkbox id={id} checked={estaSelecionado(m)} onCheckedChange={(v) => selecionarMes(m.mes, v === true)} />
+                <li
+                  key={m.mes}
+                  className="flex flex-wrap items-center gap-x-2 gap-y-0.5 max-md:min-h-11 pointer-coarse:min-h-11"
+                >
+                  <Checkbox
+                    id={id}
+                    checked={estaSelecionado(m)}
+                    onCheckedChange={(v) => selecionarMes(m.mes, v === true)}
+                  />
                   <Label htmlFor={id} className="min-w-0 break-words font-normal">
                     <span className="num font-medium">{m.mes}</span>
                     {t && (
                       <span className="text-muted-foreground">
                         {" "}
-                        — receitas {formatBRL(t.receitas)} · despesas {formatBRL(t.despesas)} · saldo {formatBRL(t.saldoAtual)}
+                        — receitas {formatBRL(t.receitas)} · despesas {formatBRL(t.despesas)} ·
+                        saldo {formatBRL(t.saldoAtual)}
                       </span>
                     )}
-                    {m.existente && <span className="text-warning-foreground"> (já existe um relatório mensal — marque para sobrescrever)</span>}
+                    {m.existente && (
+                      <span className="text-warning-foreground">
+                        {" "}
+                        (já existe um relatório mensal — marque para sobrescrever)
+                      </span>
+                    )}
                   </Label>
                 </li>
               );
@@ -449,7 +519,9 @@ function PassoAnexar({
           disabled={!exercicio || anexar.isPending || resolvendo || (!!condo && !confereConflitos)}
         >
           {(anexar.isPending || resolvendo) && <Loader2 className="animate-spin" />}
-          {mesesSelecionados.length > 0 ? "Anexar e importar os meses" : "Anexar à prestação de contas"}
+          {mesesSelecionados.length > 0
+            ? "Anexar e importar os meses"
+            : "Anexar à prestação de contas"}
         </Button>
       </DialogFooter>
       <ConflitoImportacaoDialog {...conflito.dialogo} />

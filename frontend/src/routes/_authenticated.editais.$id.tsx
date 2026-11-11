@@ -2,7 +2,15 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, ClipboardList, ClipboardPlus, ListRestart, Loader2, Save, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ClipboardList,
+  ClipboardPlus,
+  ListRestart,
+  Loader2,
+  Save,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +23,14 @@ import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { MenuDocumentos } from "@/components/documentos/MenuDocumentos";
-import { DataInput, HoraInput, InteiroInput, Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import {
+  DataInput,
+  HoraInput,
+  InteiroInput,
+  Selecao,
+  SelecaoBusca,
+  opcoesCondominio,
+} from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { dataParaBR, dataParaISO, formatData, parseData } from "@/lib/format";
@@ -83,7 +98,9 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
   const { data: modelosRaw } = useSuspenseQuery(listaQuery<Modelo>("modelos"));
   const modelos = modelosRaw.map((m) => normalizarModelo(m));
   const { data: atas } = useSuspenseQuery(listaQuery<Ata>("atas"));
-  const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
+  const { data: escritorio } = useSuspenseQuery(
+    itemQuery<ConfigEscritorio>("config", "escritorio"),
+  );
   const [a, setA] = useState<Assembleia>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [erros, setErros] = useState<ErrosAssembleia>({});
@@ -98,7 +115,9 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
     setA((x) => ({ ...x, ...parcial }));
     const chavesMudadas = Object.keys(parcial);
     if (chavesMudadas.some((k) => k in erros)) {
-      setErros((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !chavesMudadas.includes(k))));
+      setErros((e) =>
+        Object.fromEntries(Object.entries(e).filter(([k]) => !chavesMudadas.includes(k))),
+      );
     }
   };
 
@@ -107,7 +126,9 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
   const liberado = useRef(false);
   useBlocker({
     shouldBlockFn: () =>
-      !liberado.current && sujoRef.current && !window.confirm("Há alterações não salvas neste edital. Sair mesmo assim?"),
+      !liberado.current &&
+      sujoRef.current &&
+      !window.confirm("Há alterações não salvas neste edital. Sair mesmo assim?"),
     enableBeforeUnload: () => !liberado.current && sujoRef.current,
   });
 
@@ -125,7 +146,8 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
 
   const ata = ataDoEdital(a.id, atas);
   const criarAta = useMutation({
-    mutationFn: (dados: Omit<Ata, "id">) => api.salvar<Omit<Ata, "id"> & { id?: string }>("atas", dados),
+    mutationFn: (dados: Omit<Ata, "id">) =>
+      api.salvar<Omit<Ata, "id"> & { id?: string }>("atas", dados),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("atas") });
       queryClient.setQueryData(chaves.item("atas", salvo.id), salvo);
@@ -136,7 +158,9 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
   function novaAta() {
     const d = parseData(a.data);
     if (!condo || !d) return;
-    criarAta.mutate(novaAtaDeAssembleia({ ...a, data: dataParaISO(d) }, normalizarCondominio(condo)));
+    criarAta.mutate(
+      novaAtaDeAssembleia({ ...a, data: dataParaISO(d) }, normalizarCondominio(condo)),
+    );
   }
 
   const excluir = useMutation({
@@ -166,7 +190,8 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
     const novo = id === SEM_MODELO ? "" : id;
     const m = modelos.find((x) => x.id === novo);
     // Pauta vazia: já carrega a do modelo escolhido; senão, o usuário decide pelo botão.
-    if (m && a.pauta.every((p) => !p.trim())) mudar({ modeloId: novo, pauta: [...m.pautaOrdinaria] });
+    if (m && a.pauta.every((p) => !p.trim()))
+      mudar({ modeloId: novo, pauta: [...m.pautaOrdinaria] });
     else mudar({ modeloId: novo });
   }
 
@@ -179,14 +204,27 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
     { valor: SEM_MODELO, rotulo: "Sem modelo" },
     ...disponiveis.map((m) => ({ valor: m.id, rotulo: m.nome })),
     ...(a.modeloId && !disponiveis.some((m) => m.id === a.modeloId)
-      ? [{ valor: a.modeloId, rotulo: modelo ? `${modelo.nome} (de outro condomínio)` : "(modelo excluído)" }]
+      ? [
+          {
+            valor: a.modeloId,
+            rotulo: modelo ? `${modelo.nome} (de outro condomínio)` : "(modelo excluído)",
+          },
+        ]
       : []),
   ];
 
-  const bloqueioDocumentos = sujo ? "Salve o edital antes de gerar os documentos." : !condo ? "Escolha o condomínio." : null;
+  const bloqueioDocumentos = sujo
+    ? "Salve o edital antes de gerar os documentos."
+    : !condo
+      ? "Escolha o condomínio."
+      : null;
   const entradaDocumento = () => {
     const d = parseData(a.data);
-    return { assembleia: { ...a, data: d ? dataParaISO(d) : a.data }, condominio: normalizarCondominio(condo!), escritorio };
+    return {
+      assembleia: { ...a, data: d ? dataParaISO(d) : a.data },
+      condominio: normalizarCondominio(condo!),
+      escritorio,
+    };
   };
   const documentos = [
     {
@@ -199,7 +237,9 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
   ];
 
   const titulo = `Edital · Assembleia ${rotuloTipo(a.tipo)}`;
-  const descricao = [condo?.nome, parseData(a.data) ? formatData(a.data) : null].filter(Boolean).join(" · ");
+  const descricao = [condo?.nome, parseData(a.data) ? formatData(a.data) : null]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <>
@@ -216,7 +256,11 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <MenuDocumentos documentos={documentos} bloqueio={bloqueioDocumentos} rotulo="Gerar documentos" />
+            <MenuDocumentos
+              documentos={documentos}
+              bloqueio={bloqueioDocumentos}
+              rotulo="Gerar documentos"
+            />
             {ata ? (
               <Button variant="outline" asChild>
                 <Link to="/atas/$id" params={{ id: ata.id }}>
@@ -236,10 +280,21 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
                 Criar ata
               </Button>
             )}
-            <Button permissao="editais.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button
+              permissao="editais.editar"
+              variant="outline"
+              type="button"
+              onClick={() => setConfirmarExclusao(true)}
+              className="text-destructive hover:text-destructive"
+            >
               <Trash2 /> Excluir
             </Button>
-            <Button permissao="editais.editar" type="submit" form="form-edital" disabled={salvar.isPending}>
+            <Button
+              permissao="editais.editar"
+              type="submit"
+              form="form-edital"
+              disabled={salvar.isPending}
+            >
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
@@ -250,20 +305,49 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
       <form id="form-edital" onSubmit={enviar} className="space-y-6" noValidate>
         <SectionCard titulo="Assembleia">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Field rotulo="Condomínio" obrigatorio erro={erros.condoId ?? null} className="sm:col-span-2">
-              <SelecaoBusca value={a.condoId} onChange={(v) => mudar({ condoId: v })} opcoes={opcoesCondo} placeholder="Escolha o condomínio" />
+            <Field
+              rotulo="Condomínio"
+              obrigatorio
+              erro={erros.condoId ?? null}
+              className="sm:col-span-2"
+            >
+              <SelecaoBusca
+                value={a.condoId}
+                onChange={(v) => mudar({ condoId: v })}
+                opcoes={opcoesCondo}
+                placeholder="Escolha o condomínio"
+              />
             </Field>
             <Field rotulo="Tipo">
-              <Selecao value={a.tipo} onChange={(v) => mudar({ tipo: v })} opcoes={TIPOS_ASSEMBLEIA} />
+              <Selecao
+                value={a.tipo}
+                onChange={(v) => mudar({ tipo: v })}
+                opcoes={TIPOS_ASSEMBLEIA}
+              />
             </Field>
-            <Field rotulo="Modalidade" dica={campos.zoom ? (campos.local ? "Local físico e Zoom." : "Somente Zoom.") : "Somente local físico."}>
-              <Selecao value={a.modalidade} onChange={(v) => mudar({ modalidade: v })} opcoes={MODALIDADES} />
+            <Field
+              rotulo="Modalidade"
+              dica={
+                campos.zoom
+                  ? campos.local
+                    ? "Local físico e Zoom."
+                    : "Somente Zoom."
+                  : "Somente local físico."
+              }
+            >
+              <Selecao
+                value={a.modalidade}
+                onChange={(v) => mudar({ modalidade: v })}
+                opcoes={MODALIDADES}
+              />
             </Field>
             <Field
               rotulo="Data"
               obrigatorio
               erro={erros.data ?? null}
-              {...(condo?.prazoConvocacao ? { dica: `Prazo de convocação do condomínio: ${condo.prazoConvocacao} dias.` } : {})}
+              {...(condo?.prazoConvocacao
+                ? { dica: `Prazo de convocação do condomínio: ${condo.prazoConvocacao} dias.` }
+                : {})}
             >
               <DataInput value={a.data} onChange={(v) => mudar({ data: v })} />
             </Field>
@@ -274,34 +358,68 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
               <HoraInput value={a.hora2} onChange={(v) => mudar({ hora2: v })} />
             </Field>
             <Field rotulo="Modelo de edital">
-              <Selecao value={a.modeloId || SEM_MODELO} onChange={escolherModelo} opcoes={opcoesModelo} />
+              <Selecao
+                value={a.modeloId || SEM_MODELO}
+                onChange={escolherModelo}
+                opcoes={opcoesModelo}
+              />
             </Field>
-            <Field rotulo="Quórum" className="sm:col-span-2 lg:col-span-4" dica="Texto que aparece no edital.">
-              <Input value={a.quorum} onChange={(e) => mudar({ quorum: e.target.value })} placeholder="Ex.: maioria simples dos presentes" />
+            <Field
+              rotulo="Quórum"
+              className="sm:col-span-2 lg:col-span-4"
+              dica="Texto que aparece no edital."
+            >
+              <Input
+                value={a.quorum}
+                onChange={(e) => mudar({ quorum: e.target.value })}
+                placeholder="Ex.: maioria simples dos presentes"
+              />
             </Field>
           </div>
         </SectionCard>
 
         <SectionCard
-          titulo={campos.zoom && campos.local ? "Local e videoconferência" : campos.zoom ? "Videoconferência" : "Local"}
+          titulo={
+            campos.zoom && campos.local
+              ? "Local e videoconferência"
+              : campos.zoom
+                ? "Videoconferência"
+                : "Local"
+          }
           descricao="Os campos mudam conforme a modalidade escolhida."
         >
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {campos.local && (
               <Field rotulo="Local" className="sm:col-span-3">
-                <Input value={a.local} onChange={(e) => mudar({ local: e.target.value })} placeholder="Ex.: Salão de festas do condomínio" />
+                <Input
+                  value={a.local}
+                  onChange={(e) => mudar({ local: e.target.value })}
+                  placeholder="Ex.: Salão de festas do condomínio"
+                />
               </Field>
             )}
             {campos.zoom && (
               <>
                 <Field rotulo="Link do Zoom" className="sm:col-span-3">
-                  <Input value={a.zoomLink} onChange={(e) => mudar({ zoomLink: e.target.value })} placeholder="https://zoom.us/j/..." inputMode="url" />
+                  <Input
+                    value={a.zoomLink}
+                    onChange={(e) => mudar({ zoomLink: e.target.value })}
+                    placeholder="https://zoom.us/j/..."
+                    inputMode="url"
+                  />
                 </Field>
                 <Field rotulo="ID da reunião">
-                  <Input value={a.zoomId} onChange={(e) => mudar({ zoomId: e.target.value })} className="num" />
+                  <Input
+                    value={a.zoomId}
+                    onChange={(e) => mudar({ zoomId: e.target.value })}
+                    className="num"
+                  />
                 </Field>
                 <Field rotulo="Senha">
-                  <Input value={a.zoomSenha} onChange={(e) => mudar({ zoomSenha: e.target.value })} />
+                  <Input
+                    value={a.zoomSenha}
+                    onChange={(e) => mudar({ zoomSenha: e.target.value })}
+                  />
                 </Field>
               </>
             )}
@@ -310,14 +428,22 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
 
         <SectionCard
           titulo="Pauta"
-          descricao={modelo ? `Pauta padrão carregada de “${modelo.nome}”. Edite, reordene ou acrescente itens.` : "Itens da ordem do dia."}
+          descricao={
+            modelo
+              ? `Pauta padrão carregada de “${modelo.nome}”. Edite, reordene ou acrescente itens.`
+              : "Itens da ordem do dia."
+          }
           acoes={
             modelo ? (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => (a.pauta.some((p) => p.trim()) ? setConfirmarPauta(true) : mudar({ pauta: [...modelo.pautaOrdinaria] }))}
+                onClick={() =>
+                  a.pauta.some((p) => p.trim())
+                    ? setConfirmarPauta(true)
+                    : mudar({ pauta: [...modelo.pautaOrdinaria] })
+                }
                 disabled={modelo.pautaOrdinaria.length === 0}
               >
                 <ListRestart /> Recarregar pauta do modelo
@@ -334,8 +460,14 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
             vazio="Nenhum item na pauta."
             render={(item, up, i) => (
               <>
-                <span className="num flex h-9 items-center justify-end text-sm text-muted-foreground">{i + 1}.</span>
-                <Input aria-label={`Item ${i + 1} da pauta`} value={item.texto} onChange={(e) => up({ texto: e.target.value })} />
+                <span className="num flex h-9 items-center justify-end text-sm text-muted-foreground">
+                  {i + 1}.
+                </span>
+                <Input
+                  aria-label={`Item ${i + 1} da pauta`}
+                  value={item.texto}
+                  onChange={(e) => up({ texto: e.target.value })}
+                />
               </>
             )}
           />
@@ -345,10 +477,20 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
           <SectionCard titulo="Prestação de contas">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field rotulo="Exercício" dica="Ano das contas apresentadas.">
-                <Input value={a.exercicio} onChange={(e) => mudar({ exercicio: e.target.value })} className="num" inputMode="numeric" placeholder="aaaa" />
+                <Input
+                  value={a.exercicio}
+                  onChange={(e) => mudar({ exercicio: e.target.value })}
+                  className="num"
+                  inputMode="numeric"
+                  placeholder="aaaa"
+                />
               </Field>
               <Field rotulo="Entrega das contas">
-                <Selecao value={a.entregaContas} onChange={(v) => mudar({ entregaContas: v })} opcoes={ENTREGAS_CONTAS} />
+                <Selecao
+                  value={a.entregaContas}
+                  onChange={(v) => mudar({ entregaContas: v })}
+                  opcoes={ENTREGAS_CONTAS}
+                />
               </Field>
             </div>
           </SectionCard>
@@ -365,13 +507,26 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
                 <Input value={a.assinante} onChange={(e) => mudar({ assinante: e.target.value })} />
               </Field>
               <Field rotulo="Cargo">
-                <Input value={a.cargo} onChange={(e) => mudar({ cargo: e.target.value })} placeholder="Ex.: Síndico" />
+                <Input
+                  value={a.cargo}
+                  onChange={(e) => mudar({ cargo: e.target.value })}
+                  placeholder="Ex.: Síndico"
+                />
               </Field>
-              <Field rotulo="Linhas da lista de presença" {...(condo?.unidades ? { dica: `O condomínio tem ${condo.unidades} unidades.` } : {})}>
+              <Field
+                rotulo="Linhas da lista de presença"
+                {...(condo?.unidades
+                  ? { dica: `O condomínio tem ${condo.unidades} unidades.` }
+                  : {})}
+              >
                 <InteiroInput value={a.linhasLista} onChange={(v) => mudar({ linhasLista: v })} />
               </Field>
               <div className="flex items-center gap-3 self-end pb-2">
-                <Switch id="timbrado" checked={a.timbrado} onCheckedChange={(v) => mudar({ timbrado: v })} />
+                <Switch
+                  id="timbrado"
+                  checked={a.timbrado}
+                  onCheckedChange={(v) => mudar({ timbrado: v })}
+                />
                 <Label htmlFor="timbrado" className="min-w-0 break-words text-sm font-normal">
                   Papel timbrado
                 </Label>

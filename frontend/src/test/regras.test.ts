@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { formatNumeroBR, parseData, parseNumeroBR } from "@/lib/format";
-import { backupAtrasado, calcularVencimentos, dataVistoria, proximasAssembleias } from "@/domain/painel";
+import {
+  backupAtrasado,
+  calcularVencimentos,
+  dataVistoria,
+  proximasAssembleias,
+} from "@/domain/painel";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
 import { validarLogin, validarNovaSenha } from "@/domain/usuario";
 import { nomeArquivoBackup } from "@/domain/backup";
@@ -46,7 +51,10 @@ describe("painel — vencimentos em até 90 dias", () => {
     expect(dataVistoria({ vistoriaAno: 2023, vistoriaIntervalo: 3 })?.getFullYear()).toBe(2026);
   });
   it("considera o fim do mandato da administração (mm/aaaa)", () => {
-    const v = calcularVencimentos([condo({ administracao: [{ cargo: "Síndico", nome: "X", mandatoFim: "12/2026" }] })], hoje);
+    const v = calcularVencimentos(
+      [condo({ administracao: [{ cargo: "Síndico", nome: "X", mandatoFim: "12/2026" }] })],
+      hoje,
+    );
     expect(v.map((x) => x.tipo)).toContain("mandato");
   });
 });
@@ -62,7 +70,15 @@ describe("painel — backup", () => {
 describe("painel — próximas assembleias", () => {
   it("mostra só datas a partir de hoje, no máximo 5", () => {
     const a = (data: string) => ({ id: data, data, hora1: "" }) as Assembleia;
-    const lista = ["2026-10-18", "2026-10-19", "2026-11-01", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05"].map(a);
+    const lista = [
+      "2026-10-18",
+      "2026-10-19",
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05",
+    ].map(a);
     const r = proximasAssembleias(lista, hoje);
     expect(r).toHaveLength(5);
     expect(r[0]?.data).toBe("2026-10-19");

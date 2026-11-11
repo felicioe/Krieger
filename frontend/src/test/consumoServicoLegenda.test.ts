@@ -23,7 +23,7 @@ function textoDaTabela(b: Bloco): string {
     .join(" ");
 }
 
-describe("\"Consumo de serviços\" nunca mostra a expressão técnica da rubrica", () => {
+describe('"Consumo de serviços" nunca mostra a expressão técnica da rubrica', () => {
   it("mostra as despesas do demonstrativo que bateram, não a regex", async () => {
     const { documentoRelatorioFinal } = await import("@/documentos/relatorioFinal");
     const e = { id: "e1", ...exercicioPadrao(condo, 2025, "Florianópolis") } as Exercicio;
@@ -32,11 +32,27 @@ describe("\"Consumo de serviços\" nunca mostra a expressão técnica da rubrica
     e.demonstrativo = recalcularDemonstrativo({
       ...e.demonstrativo!,
       periodo: { ini: "01/01/2025", fim: "31/12/2025" },
-      despesas: { grupos: [{ nome: "Manutenção", itens: [{ nome: "Manutenção de elevadores", valor: 27784.81 }] }], subtotal: 0, saldoRestante: 0 },
+      despesas: {
+        grupos: [
+          { nome: "Manutenção", itens: [{ nome: "Manutenção de elevadores", valor: 27784.81 }] },
+        ],
+        subtotal: 0,
+        saldoRestante: 0,
+      },
     });
 
-    const rel = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
-    const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio: null });
+    const rel = montarRelatorioFinal({
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+      mensais: [],
+    });
+    const doc = await documentoRelatorioFinal({
+      rel,
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+    });
 
     const i = doc.blocos.findIndex((b) => b.tipo === "titulo" && b.texto === "Consumo de serviços");
     expect(i).toBeGreaterThan(-1);

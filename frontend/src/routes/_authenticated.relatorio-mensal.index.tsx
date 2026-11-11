@@ -16,13 +16,22 @@ import { DialogoNovoMensal } from "@/components/mensal/DialogoNovoMensal";
 import { listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
-import { competenciaMensal, normalizarMensal, ordemCompetencia, rotuloCompetencia } from "@/domain/mensal";
+import {
+  competenciaMensal,
+  normalizarMensal,
+  ordemCompetencia,
+  rotuloCompetencia,
+} from "@/domain/mensal";
 import type { Condominio, Mensal } from "@/domain/types";
 
 type Busca = { condo?: string; novo?: string };
 
 export const Route = createFileRoute("/_authenticated/relatorio-mensal/")({
-  head: () => cabecalho("Acompanhamento de carga de dados mensais", "Conferência dos dados mensais carregados dos condomínios."),
+  head: () =>
+    cabecalho(
+      "Acompanhamento de carga de dados mensais",
+      "Conferência dos dados mensais carregados dos condomínios.",
+    ),
   validateSearch: (s: Record<string, unknown>): Busca => {
     const condo = s["condo"];
     const novo = s["novo"];
@@ -41,7 +50,14 @@ export const Route = createFileRoute("/_authenticated/relatorio-mensal/")({
 
 const TODOS = "__todos";
 
-type Linha = Mensal & { comp: string; ordem: number; receitas: number; despesas: number; saldo: number; naoFecha: boolean };
+type Linha = Mensal & {
+  comp: string;
+  ordem: number;
+  receitas: number;
+  despesas: number;
+  saldo: number;
+  naoFecha: boolean;
+};
 
 function ListaMensais() {
   const busca = Route.useSearch();
@@ -73,14 +89,32 @@ function ListaMensais() {
       .sort((a, b) => b.ordem - a.ordem || a.condoNome.localeCompare(b.condoNome, "pt-BR"));
   }, [mensais, condominios, condo]);
 
-  const opcoesCondo = [{ valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" }, ...opcoesCondominio(condominios)];
+  const opcoesCondo = [
+    { valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" },
+    ...opcoesCondominio(condominios),
+  ];
 
   const colunasExport: ColunaExportacao<Linha>[] = [
     { titulo: "Mês", valor: (m) => m.comp, texto: (m) => m.comp },
     { titulo: "Condomínio", valor: (m) => m.condoNome, texto: (m) => m.condoNome },
-    { titulo: "Receitas", valor: (m) => m.receitas, texto: (m) => formatBRL(m.receitas), alinhamento: "direita" },
-    { titulo: "Despesas", valor: (m) => m.despesas, texto: (m) => formatBRL(m.despesas), alinhamento: "direita" },
-    { titulo: "Saldo atual", valor: (m) => m.saldo, texto: (m) => formatBRL(m.saldo), alinhamento: "direita" },
+    {
+      titulo: "Receitas",
+      valor: (m) => m.receitas,
+      texto: (m) => formatBRL(m.receitas),
+      alinhamento: "direita",
+    },
+    {
+      titulo: "Despesas",
+      valor: (m) => m.despesas,
+      texto: (m) => formatBRL(m.despesas),
+      alinhamento: "direita",
+    },
+    {
+      titulo: "Saldo atual",
+      valor: (m) => m.saldo,
+      texto: (m) => formatBRL(m.saldo),
+      alinhamento: "direita",
+    },
     {
       titulo: "A receber",
       valor: (m) => m.receber.valor,
@@ -88,11 +122,21 @@ function ListaMensais() {
       alinhamento: "direita",
     },
     { titulo: "Unidades inadimplentes", valor: (m) => m.receber.unidades, alinhamento: "direita" },
-    { titulo: "Saldo fecha", valor: (m) => (m.naoFecha ? "Não" : "Sim"), texto: (m) => (m.naoFecha ? "Não" : "Sim") },
+    {
+      titulo: "Saldo fecha",
+      valor: (m) => (m.naoFecha ? "Não" : "Sim"),
+      texto: (m) => (m.naoFecha ? "Não" : "Sim"),
+    },
   ];
 
   const abrirNovo = (v: boolean) =>
-    navigate({ search: (s) => (v ? { ...s, novo: condo === TODOS ? "" : condo } : { ...(s.condo ? { condo: s.condo } : {}) }), replace: true });
+    navigate({
+      search: (s) =>
+        v
+          ? { ...s, novo: condo === TODOS ? "" : condo }
+          : { ...(s.condo ? { condo: s.condo } : {}) },
+      replace: true,
+    });
 
   return (
     <>
@@ -120,7 +164,11 @@ function ListaMensais() {
                 <FileUp /> Importar PDF
               </Link>
             </Button>
-            <Button permissao="relatorio_mensal.editar" onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
+            <Button
+              permissao="relatorio_mensal.editar"
+              onClick={() => abrirNovo(true)}
+              disabled={condominios.length === 0}
+            >
               <Plus /> Novo relatório mensal
             </Button>
           </>
@@ -157,9 +205,27 @@ function ListaMensais() {
               </span>
             ),
           },
-          { chave: "receitas", titulo: "Receitas", alinhar: "direita", className: "num whitespace-nowrap", render: (m) => formatBRL(m.receitas) },
-          { chave: "despesas", titulo: "Despesas", alinhar: "direita", className: "num whitespace-nowrap", render: (m) => formatBRL(m.despesas) },
-          { chave: "saldo", titulo: "Saldo atual", alinhar: "direita", className: "num whitespace-nowrap", render: (m) => formatBRL(m.saldo) },
+          {
+            chave: "receitas",
+            titulo: "Receitas",
+            alinhar: "direita",
+            className: "num whitespace-nowrap",
+            render: (m) => formatBRL(m.receitas),
+          },
+          {
+            chave: "despesas",
+            titulo: "Despesas",
+            alinhar: "direita",
+            className: "num whitespace-nowrap",
+            render: (m) => formatBRL(m.despesas),
+          },
+          {
+            chave: "saldo",
+            titulo: "Saldo atual",
+            alinhar: "direita",
+            className: "num whitespace-nowrap",
+            render: (m) => formatBRL(m.saldo),
+          },
           {
             chave: "receber",
             titulo: "A receber",
@@ -169,7 +235,11 @@ function ListaMensais() {
               m.receber.unidades || m.receber.valor ? (
                 <span>
                   {formatBRL(m.receber.valor)}
-                  {m.receber.unidades ? <span className="ml-1 text-xs text-muted-foreground">({m.receber.unidades} un.)</span> : null}
+                  {m.receber.unidades ? (
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      ({m.receber.unidades} un.)
+                    </span>
+                  ) : null}
                 </span>
               ) : (
                 "—"
@@ -180,7 +250,9 @@ function ListaMensais() {
         chaveLinha={(m) => m.id}
         aoClicar={(m) => navigate({ to: "/relatorio-mensal/$id", params: { id: m.id } })}
         colunaAcao="condoNome"
-        rotuloAcao={(m) => `Abrir relatório mensal de ${m.condoNome}${m.naoFecha ? " (saldo não fecha)" : ""}, ${m.comp}`}
+        rotuloAcao={(m) =>
+          `Abrir relatório mensal de ${m.condoNome}${m.naoFecha ? " (saldo não fecha)" : ""}, ${m.comp}`
+        }
         vazio={
           condominios.length === 0
             ? "Cadastre um condomínio antes de criar relatórios mensais."

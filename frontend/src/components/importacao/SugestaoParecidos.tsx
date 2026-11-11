@@ -26,7 +26,10 @@ export function SugestaoParecidos({
   if (!primeiro) return null;
   const p = primeiro.condominio;
   return (
-    <section aria-labelledby="titulo-parecidos" className="grid gap-3 rounded-md border bg-muted/40 p-3 text-sm">
+    <section
+      aria-labelledby="titulo-parecidos"
+      className="grid gap-3 rounded-md border bg-muted/40 p-3 text-sm"
+    >
       <div className="flex items-start gap-2">
         <Building2 aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
         <div className="min-w-0">
@@ -42,9 +45,16 @@ export function SugestaoParecidos({
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-md border bg-card px-3 py-2">
         <div className="min-w-0">
           <div className="break-words font-medium">{p.nome}</div>
-          {identificacao(p) && <div className="text-xs text-muted-foreground">{identificacao(p)}</div>}
+          {identificacao(p) && (
+            <div className="text-xs text-muted-foreground">{identificacao(p)}</div>
+          )}
         </div>
-        <Button size="sm" onClick={() => aoEscolher(p)} disabled={desabilitado} aria-label={`Usar o cadastro ${p.nome}`}>
+        <Button
+          size="sm"
+          onClick={() => aoEscolher(p)}
+          disabled={desabilitado}
+          aria-label={`Usar o cadastro ${p.nome}`}
+        >
           Usar este cadastro
         </Button>
       </div>
@@ -53,12 +63,23 @@ export function SugestaoParecidos({
           <p className="mb-1 text-xs font-medium text-muted-foreground">Outros parecidos</p>
           <ul className="divide-y rounded-md border bg-card">
             {outros.map(({ condominio: c }) => (
-              <li key={c.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-1.5">
+              <li
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-1.5"
+              >
                 <span className="min-w-0 break-words">
                   {c.nome}
-                  {identificacao(c) && <span className="text-xs text-muted-foreground"> · {identificacao(c)}</span>}
+                  {identificacao(c) && (
+                    <span className="text-xs text-muted-foreground"> · {identificacao(c)}</span>
+                  )}
                 </span>
-                <Button size="sm" variant="outline" onClick={() => aoEscolher(c)} disabled={desabilitado} aria-label={`Usar o cadastro ${c.nome}`}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => aoEscolher(c)}
+                  disabled={desabilitado}
+                  aria-label={`Usar o cadastro ${c.nome}`}
+                >
                   Usar este cadastro
                 </Button>
               </li>

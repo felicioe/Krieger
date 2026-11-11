@@ -25,7 +25,14 @@ export interface Tipografia {
 }
 
 /** Tamanhos de referência do layout da interface, para o corpo de 10 pt. */
-const BASE = { corpo: 10, titulo1: 15, titulo2: 12, titulo3: 10.5, pequeno: 8.5, grande: 13 } as const;
+const BASE = {
+  corpo: 10,
+  titulo1: 15,
+  titulo2: 12,
+  titulo3: 10.5,
+  pequeno: 8.5,
+  grande: 13,
+} as const;
 
 const pt = (valor: number) => Math.round(valor * 10) / 10;
 
@@ -37,8 +44,16 @@ export function tipografia(doc: Documento): Tipografia {
     familiaPdf: documento ? FAMILIA_DOCUMENTO : FAMILIA,
     familiaWord: documento ? "Arial" : "Calibri",
     corpo,
-    titulo: { 1: pt(BASE.titulo1 * escala), 2: pt(BASE.titulo2 * escala), 3: pt(BASE.titulo3 * escala) },
-    paragrafo: { normal: pt(corpo), pequeno: pt(BASE.pequeno * escala), grande: pt(BASE.grande * escala) },
+    titulo: {
+      1: pt(BASE.titulo1 * escala),
+      2: pt(BASE.titulo2 * escala),
+      3: pt(BASE.titulo3 * escala),
+    },
+    paragrafo: {
+      normal: pt(corpo),
+      pequeno: pt(BASE.pequeno * escala),
+      grande: pt(BASE.grande * escala),
+    },
     rodapeEscritorio: doc.rodapeEscritorio !== false,
   };
 }

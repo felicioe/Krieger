@@ -1,20 +1,39 @@
 import { describe, expect, it } from "vitest";
-import { arredondarValor, calcularPrevisao, resolverVariacao, type ParametrosPrevisao } from "@/domain/previsao";
+import {
+  arredondarValor,
+  calcularPrevisao,
+  resolverVariacao,
+  type ParametrosPrevisao,
+} from "@/domain/previsao";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
 import { validarNovoExercicio } from "@/domain/exercicio";
 import type { AjustePrevisao, Demonstrativo } from "@/domain/types";
 
 function demo(grupos: Demonstrativo["despesas"]["grupos"]): Demonstrativo {
-  return recalcularDemonstrativo({ ...demonstrativoVazio("Teste"), despesas: { grupos, subtotal: 0, saldoRestante: 0 } });
+  return recalcularDemonstrativo({
+    ...demonstrativoVazio("Teste"),
+    despesas: { grupos, subtotal: 0, saldoRestante: 0 },
+  });
 }
 
 // base 120.000 = 108.000 de despesas comuns + 12.000 de "Fundo de caixa p/ obras" (deduzido)
 const D = demo([
   { nome: "Pessoal", itens: [{ nome: "Salários", valor: 60000 }] },
-  { nome: "Manutenção", itens: [{ nome: "Elevadores", valor: 48000 }, { nome: "Fundo de caixa p/ obras", valor: 12000 }] },
+  {
+    nome: "Manutenção",
+    itens: [
+      { nome: "Elevadores", valor: 48000 },
+      { nome: "Fundo de caixa p/ obras", valor: 12000 },
+    ],
+  },
 ]);
 
-const ajuste = (sinal: "+" | "-", valor: number): AjustePrevisao => ({ id: sinal + valor, descricao: "x", sinal, valor });
+const ajuste = (sinal: "+" | "-", valor: number): AjustePrevisao => ({
+  id: sinal + valor,
+  descricao: "x",
+  sinal,
+  valor,
+});
 
 function params(p: Partial<ParametrosPrevisao> = {}): ParametrosPrevisao {
   return {
@@ -24,7 +43,11 @@ function params(p: Partial<ParametrosPrevisao> = {}): ParametrosPrevisao {
     arredondamento: "centavos",
     deducaoRegex: "fundo de caixa p/ obras",
     rateioAtual: null,
-    prev: { modo: "tradicional", ajustes: [ajuste("+", 5000), ajuste("-", 2000)], fundoReservaPct: 10 },
+    prev: {
+      modo: "tradicional",
+      ajustes: [ajuste("+", 5000), ajuste("-", 2000)],
+      fundoReservaPct: 10,
+    },
     ...p,
   };
 }
@@ -41,7 +64,11 @@ describe("previsão — anual ajustado", () => {
   });
 
   it("ajuste com sinal − sempre reduz, mesmo digitado como negativo", () => {
-    const r = calcularPrevisao(D, params({ prev: { modo: "tradicional", ajustes: [ajuste("-", -3000)] } }), 25);
+    const r = calcularPrevisao(
+      D,
+      params({ prev: { modo: "tradicional", ajustes: [ajuste("-", -3000)] } }),
+      25,
+    );
     expect(r.totalAnual).toBe(120000 - 12000 + 10800 - 3000);
   });
 
@@ -58,25 +85,39 @@ describe("previsão — anual ajustado", () => {
 
 describe("previsão — variação em valor fixo (R$)", () => {
   it("+14.000 é somado à base líquida sem multiplicar e sem percentual", () => {
-    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: 14000, prev: { modo: "tradicional" } }), 25);
+    const r = calcularPrevisao(
+      D,
+      params({ variacaoMetodo: "valor", variacaoParam: 14000, prev: { modo: "tradicional" } }),
+      25,
+    );
     expect(r.variacaoPct).toBe(0);
     expect(r.variacaoValor).toBe(14000);
     expect(r.totalAnual).toBe(108000 + 14000);
   });
 
   it("−5.000 reduz a base líquida", () => {
-    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: -5000, prev: { modo: "tradicional" } }), 25);
+    const r = calcularPrevisao(
+      D,
+      params({ variacaoMetodo: "valor", variacaoParam: -5000, prev: { modo: "tradicional" } }),
+      25,
+    );
     expect(r.variacaoValor).toBe(-5000);
     expect(r.totalAnual).toBe(108000 - 5000);
   });
 
   it("no método valor as linhas por grupo não recebem variação", () => {
-    const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: 14000, prev: { modo: "tradicional" } }), 25);
+    const r = calcularPrevisao(
+      D,
+      params({ variacaoMetodo: "valor", variacaoParam: 14000, prev: { modo: "tradicional" } }),
+      25,
+    );
     expect(r.linhas.find((l) => l.grupo === "Pessoal")?.previsto).toBe(60000);
   });
 
   it("percentual acima de 100% no manual gera aviso; valor em R$ não", () => {
-    expect(calcularPrevisao(D, params({ variacao: 14000 }), 25).avisos.some((a) => a.includes("14000%"))).toBe(true);
+    expect(
+      calcularPrevisao(D, params({ variacao: 14000 }), 25).avisos.some((a) => a.includes("14000%")),
+    ).toBe(true);
     const r = calcularPrevisao(D, params({ variacaoMetodo: "valor", variacaoParam: 14000 }), 25);
     expect(r.avisos.some((a) => a.includes("incomum"))).toBe(false);
   });
@@ -85,7 +126,11 @@ describe("previsão — variação em valor fixo (R$)", () => {
 describe("previsão — valores derivados do anual ajustado", () => {
   it("reserva é por unidade: 120.000 anual, 100 unidades, 10% → 100,00 + 10,00 = 110,00", () => {
     const d = demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 120000 }] }]);
-    const r = calcularPrevisao(d, params({ variacao: 0, prev: { modo: "tradicional", fundoReservaPct: 10 } }), 100);
+    const r = calcularPrevisao(
+      d,
+      params({ variacao: 0, prev: { modo: "tradicional", fundoReservaPct: 10 } }),
+      100,
+    );
     expect(r.totalAnual).toBe(120000);
     expect(r.mensal).toBe(10000);
     expect(r.cotaUnidade).toBe(100);
@@ -96,8 +141,12 @@ describe("previsão — valores derivados do anual ajustado", () => {
   it("valor por unidade = anual ÷ 12 ÷ unidades + reserva por unidade, com o arredondamento escolhido", () => {
     // 121.800 ÷ 12 ÷ 25 = 406,00; reserva 10% = 40,60; total 446,60
     expect(calcularPrevisao(D, params({ arredondamento: "truncar" }), 25).rateioSugerido).toBe(446);
-    expect(calcularPrevisao(D, params({ arredondamento: "arredondar" }), 25).rateioSugerido).toBe(447);
-    expect(calcularPrevisao(D, params({ arredondamento: "centavos" }), 25).rateioSugerido).toBe(446.6);
+    expect(calcularPrevisao(D, params({ arredondamento: "arredondar" }), 25).rateioSugerido).toBe(
+      447,
+    );
+    expect(calcularPrevisao(D, params({ arredondamento: "centavos" }), 25).rateioSugerido).toBe(
+      446.6,
+    );
   });
 
   it("índice = valor por unidade ÷ rateio atual − 1", () => {
@@ -120,8 +169,22 @@ describe("previsão — variação e arredondamento", () => {
       { ano: 2025, pct: 5 },
       { ano: 2024, pct: 6 },
     ];
-    expect(resolverVariacao({ variacao: null, variacaoMetodo: "mediaIndices", variacaoParam: 2, indices }).pct).toBe(5.5);
-    expect(resolverVariacao({ variacao: null, variacaoMetodo: "mediaIndices", variacaoParam: null, indices }).pct).toBe(5);
+    expect(
+      resolverVariacao({
+        variacao: null,
+        variacaoMetodo: "mediaIndices",
+        variacaoParam: 2,
+        indices,
+      }).pct,
+    ).toBe(5.5);
+    expect(
+      resolverVariacao({
+        variacao: null,
+        variacaoMetodo: "mediaIndices",
+        variacaoParam: null,
+        indices,
+      }).pct,
+    ).toBe(5);
   });
   it("truncar corta os centavos; arredondar vai ao real mais próximo", () => {
     expect(arredondarValor(728.99, "truncar")).toBe(728);
@@ -136,7 +199,11 @@ describe("demonstrativo", () => {
       ...demonstrativoVazio(),
       saldoAnterior: { contas: [{ nome: "CC", valor: 1000 }], total: 0 },
       receitas: { itens: [{ nome: "Taxa", valor: 5000.1 }], subtotal: 0, totalComSaldo: 0 },
-      despesas: { grupos: [{ nome: "G", itens: [{ nome: "x", valor: 4000.05 }] }], subtotal: 0, saldoRestante: 0 },
+      despesas: {
+        grupos: [{ nome: "G", itens: [{ nome: "x", valor: 4000.05 }] }],
+        subtotal: 0,
+        saldoRestante: 0,
+      },
       saldoAtual: { contas: [{ nome: "CC", valor: 2000 }], total: 0 },
     });
     expect(d.despesas.saldoRestante).toBe(2000.05);
@@ -164,7 +231,12 @@ describe("previsão — critérios que produziram o resultado", () => {
     ];
     const r = calcularPrevisao(
       D,
-      params({ variacaoMetodo: "mediaIndices", variacaoParam: 2, indices, arredondamento: "truncar" }),
+      params({
+        variacaoMetodo: "mediaIndices",
+        variacaoParam: 2,
+        indices,
+        arredondamento: "truncar",
+      }),
       25,
     );
     expect(r.variacaoMetodo).toBe("mediaIndices");

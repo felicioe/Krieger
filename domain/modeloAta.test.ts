@@ -115,6 +115,32 @@ describe("modelos de ata", () => {
     expect(escolherModeloAta([ordinaria], "Rancho Queimado", "", "extraordinaria")).toBeNull();
   });
 
+  it("escolherModeloAta coloca o cartório exato antes da cidade, mesmo com tipo", () => {
+    // Cenário da #256: um cartório tem modelo próprio para o tipo da assembleia
+    // e a cidade tem outro. O cartório vence, ainda que o da cidade também tenha tipo.
+    const porCidade = modelo({ id: "cidade", cidade: "Rancho Queimado", cartorio: "", tipo: "ordinaria" });
+    const porCartorio = modelo({
+      id: "cartorio",
+      cidade: "Rancho Queimado",
+      cartorio: "1º Ofício",
+      tipo: "ordinaria",
+    });
+
+    expect(escolherModeloAta([porCidade, porCartorio], "Rancho Queimado", "1º Ofício", "ordinaria")?.id).toBe(
+      "cartorio",
+    );
+  });
+
+  it("escolherModeloAta usa o cartório sem tipo antes da cidade com tipo", () => {
+    // O tipo desempata dentro de cada nível, nunca por cima do cartório exato.
+    const porCidade = modelo({ id: "cidade", cidade: "Rancho Queimado", cartorio: "", tipo: "ordinaria" });
+    const porCartorio = modelo({ id: "cartorio", cidade: "Rancho Queimado", cartorio: "1º Ofício", tipo: "" });
+
+    expect(escolherModeloAta([porCidade, porCartorio], "Rancho Queimado", "1º Ofício", "ordinaria")?.id).toBe(
+      "cartorio",
+    );
+  });
+
   it("escolherModeloAta prefere cidade+cartório+tipo ao modelo só da cidade", () => {
     const porCidade = modelo({ id: "cidade", cidade: "Rancho Queimado", tipo: "ordinaria" });
     const porCartorio = modelo({ id: "cartorio", cidade: "Rancho Queimado", cartorio: "1º Ofício", tipo: "ordinaria" });

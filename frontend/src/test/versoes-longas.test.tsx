@@ -52,7 +52,9 @@ describe("registro de alterações com muitas versões e textos longos", () => {
     // Ao abrir, o foco vai para a lista (as setas rolam o histórico).
     expect(lista).toHaveFocus();
 
-    expect(within(janela).getAllByRole("button", { name: "Fechar" }).length).toBeGreaterThanOrEqual(1);
+    expect(within(janela).getAllByRole("button", { name: "Fechar" }).length).toBeGreaterThanOrEqual(
+      1,
+    );
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(botao).toHaveFocus();

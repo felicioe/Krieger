@@ -59,7 +59,11 @@ export type Bloco =
       /** linhas verticais entre colunas (formulário para preencher à mão) */
       grade?: boolean;
     }
-  | { tipo: "pares"; itens: { rotulo: string; valor: Texto }[]; alinhamento?: "esquerda" | "direita" }
+  | {
+      tipo: "pares";
+      itens: { rotulo: string; valor: Texto }[];
+      alinhamento?: "esquerda" | "direita";
+    }
   | { tipo: "imagem"; dataUrl: string; largura: number; altura: number; alinhamento?: Alinhamento }
   | { tipo: "espaco"; altura: number }
   | { tipo: "quebraPagina" }
@@ -69,7 +73,12 @@ export type Bloco =
    * assinatura — nunca como parágrafo separado antes — pra garantir que local/data e assinatura
    * sempre fiquem juntos na mesma página, mesmo se a seção cair perto do fim de uma página.
    */
-  | { tipo: "assinaturas"; itens: string[][]; localData?: string; localDataAlinhamento?: "centro" | "direita" };
+  | {
+      tipo: "assinaturas";
+      itens: string[][];
+      localData?: string;
+      localDataAlinhamento?: "centro" | "direita";
+    };
 
 export interface Timbre {
   logo: { dataUrl: string; ratio: number } | null;
@@ -129,7 +138,12 @@ export const COR = {
 } as const;
 
 /** Área útil da página A4 retrato, com margens de 56 pt. */
-export const PAGINA = { largura: 595.28, altura: 841.89, margem: 56, util: 595.28 - 2 * 56 } as const;
+export const PAGINA = {
+  largura: 595.28,
+  altura: 841.89,
+  margem: 56,
+  util: 595.28 - 2 * 56,
+} as const;
 
 /** Medidas da página para a orientação pedida. Fonte única do PDF, do Word e dos testes de largura. */
 export function areaPagina(orientacao: Orientacao = "retrato") {

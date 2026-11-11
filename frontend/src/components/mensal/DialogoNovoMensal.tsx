@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
 import { MesAnoInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
@@ -33,7 +40,10 @@ function mesSugerido(condoId: string, mensais: Mensal[], hoje = new Date()): Com
     .map((m) => competenciaMensal(m))
     .filter((c): c is Competencia => !!c)
     .sort((a, b) => ordemCompetencia(b) - ordemCompetencia(a))[0];
-  if (ultimo) return ultimo.mes === 12 ? { mes: 1, ano: ultimo.ano + 1 } : { mes: ultimo.mes + 1, ano: ultimo.ano };
+  if (ultimo)
+    return ultimo.mes === 12
+      ? { mes: 1, ano: ultimo.ano + 1 }
+      : { mes: ultimo.mes + 1, ano: ultimo.ano };
   return mesAnterior({ mes: hoje.getMonth() + 1, ano: hoje.getFullYear() });
 }
 
@@ -75,7 +85,8 @@ export function DialogoNovoMensal({
   );
 
   const criar = useMutation({
-    mutationFn: (dados: Omit<Mensal, "id">) => api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", dados),
+    mutationFn: (dados: Omit<Mensal, "id">) =>
+      api.salvar<Omit<Mensal, "id"> & { id?: string }>("mensais", dados),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("mensais") });
       queryClient.setQueryData(chaves.item("mensais", salvo.id), salvo);
@@ -102,7 +113,9 @@ export function DialogoNovoMensal({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Novo relatório mensal</DialogTitle>
-          <DialogDescription>O período do demonstrativo é preenchido com o mês escolhido.</DialogDescription>
+          <DialogDescription>
+            O período do demonstrativo é preenchido com o mês escolhido.
+          </DialogDescription>
         </DialogHeader>
         <form id="form-novo-mensal" onSubmit={enviar} className="grid gap-4" noValidate>
           {erro && (
@@ -111,7 +124,12 @@ export function DialogoNovoMensal({
             </Alert>
           )}
           <Field rotulo="Condomínio" obrigatorio>
-            <SelecaoBusca value={condoId} onChange={escolherCondo} opcoes={opcoes} placeholder="Escolha o condomínio" />
+            <SelecaoBusca
+              value={condoId}
+              onChange={escolherCondo}
+              opcoes={opcoes}
+              placeholder="Escolha o condomínio"
+            />
           </Field>
           <Field rotulo="Mês do relatório" obrigatorio className="max-w-[10rem]">
             <MesAnoInput
@@ -124,16 +142,27 @@ export function DialogoNovoMensal({
           </Field>
           {anterior && (
             <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-3 max-md:gap-3 pointer-coarse:gap-3">
-              <Checkbox id="copiar-anterior" checked={copiar} onCheckedChange={(v) => setCopiar(v === true)} className="mt-0.5" />
+              <Checkbox
+                id="copiar-anterior"
+                checked={copiar}
+                onCheckedChange={(v) => setCopiar(v === true)}
+                className="mt-0.5"
+              />
               <Label htmlFor="copiar-anterior" className="text-sm font-normal leading-snug">
-                Partir do relatório de {rotuloCompetencia(competenciaMensal(anterior))}: saldo anterior = saldo atual dele, e os mesmos
-                nomes de contas, receitas e despesas com valores zerados.
+                Partir do relatório de {rotuloCompetencia(competenciaMensal(anterior))}: saldo
+                anterior = saldo atual dele, e os mesmos nomes de contas, receitas e despesas com
+                valores zerados.
               </Label>
             </div>
           )}
         </form>
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => aoMudar(false)} disabled={criar.isPending}>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => aoMudar(false)}
+            disabled={criar.isPending}
+          >
             Cancelar
           </Button>
           <Button type="submit" form="form-novo-mensal" disabled={criar.isPending}>

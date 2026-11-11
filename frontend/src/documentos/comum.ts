@@ -39,8 +39,15 @@ export function blocosDemonstrativo(d: Demonstrativo, mostrarAnaliticas = true):
   for (const g of d.despesas.grupos) {
     if (mostrarAnaliticas) despesas.push({ celulas: [g.nome || "Sem grupo"], estilo: "subtotal" });
     else despesas.push(linha(g.nome || "Sem grupo", somar(g.itens), { estilo: "subtotal" }));
-    if (mostrarAnaliticas) despesas.push(...g.itens.map((i) => linha(i.nome, i.valor, { recuo: true })));
-    if (mostrarAnaliticas) despesas.push(linha(`Subtotal ${g.nome || "sem grupo"}`, somar(g.itens), { estilo: "subtotal", recuo: true }));
+    if (mostrarAnaliticas)
+      despesas.push(...g.itens.map((i) => linha(i.nome, i.valor, { recuo: true })));
+    if (mostrarAnaliticas)
+      despesas.push(
+        linha(`Subtotal ${g.nome || "sem grupo"}`, somar(g.itens), {
+          estilo: "subtotal",
+          recuo: true,
+        }),
+      );
   }
   despesas.push(linha("Total das despesas", d.totais.despesas, { estilo: "total" }));
 
@@ -77,10 +84,18 @@ export const localEData = (cidade: string, data: string) => {
 };
 
 /** Quebra um texto livre em parágrafos (linhas em branco separam parágrafos). */
-export function paragrafos(texto: string, o: Partial<Extract<Bloco, { tipo: "paragrafo" }>> = {}): Bloco[] {
+export function paragrafos(
+  texto: string,
+  o: Partial<Extract<Bloco, { tipo: "paragrafo" }>> = {},
+): Bloco[] {
   return texto
     .split(/\n\s*\n/)
     .map((p) => p.trim())
     .filter(Boolean)
-    .map((p) => ({ tipo: "paragrafo" as const, texto: p, alinhamento: "justificado" as const, ...o }));
+    .map((p) => ({
+      tipo: "paragrafo" as const,
+      texto: p,
+      alinhamento: "justificado" as const,
+      ...o,
+    }));
 }

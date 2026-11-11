@@ -37,21 +37,24 @@ const ITENS_INDIVIDUAIS: ItemLimpeza[] = [
     alvo: "condominios",
     titulo: "Condomínios",
     tabela: "kr_condominios",
-    descricao: "Apaga todos os condomínios cadastrados (dados gerais, administração, seguros, prazos e regras).",
+    descricao:
+      "Apaga todos os condomínios cadastrados (dados gerais, administração, seguros, prazos e regras).",
     rotuloBotao: "Apagar todos os condomínios",
   },
   {
     alvo: "exercicios",
     titulo: "Prestações de contas (Exercícios)",
     tabela: "kr_exercicios",
-    descricao: "Apaga todas as prestações de contas anuais, demonstrativos, considerações finais e previsões orçamentárias.",
+    descricao:
+      "Apaga todas as prestações de contas anuais, demonstrativos, considerações finais e previsões orçamentárias.",
     rotuloBotao: "Apagar prestações de contas",
   },
   {
     alvo: "mensais",
     titulo: "Relatórios mensais",
     tabela: "kr_mensais",
-    descricao: "Apaga todos os relatórios mensais importados ou digitados e contas a receber de cada competência.",
+    descricao:
+      "Apaga todos os relatórios mensais importados ou digitados e contas a receber de cada competência.",
     rotuloBotao: "Apagar relatórios mensais",
   },
   {
@@ -65,7 +68,8 @@ const ITENS_INDIVIDUAIS: ItemLimpeza[] = [
     alvo: "atas",
     titulo: "Atas de assembleia",
     tabela: "kr_atas",
-    descricao: "Apaga todas as atas de assembleia (rascunhos e atas finalizadas, lista de presença e deliberações).",
+    descricao:
+      "Apaga todas as atas de assembleia (rascunhos e atas finalizadas, lista de presença e deliberações).",
     rotuloBotao: "Apagar atas",
   },
   {
@@ -86,7 +90,8 @@ const ITENS_INDIVIDUAIS: ItemLimpeza[] = [
     alvo: "importacoes",
     titulo: "Importações de PDF pendentes",
     tabela: "kr_importacoes",
-    descricao: "Apaga os relatórios lidos de PDF que estão aguardando conferência de cadastro ou no histórico de staging.",
+    descricao:
+      "Apaga os relatórios lidos de PDF que estão aguardando conferência de cadastro ou no histórico de staging.",
     rotuloBotao: "Apagar fila de importações",
   },
   {
@@ -100,21 +105,24 @@ const ITENS_INDIVIDUAIS: ItemLimpeza[] = [
     alvo: "decisoes_previsao",
     titulo: "Histórico de divergências da previsão",
     tabela: "kr_decisoes_previsao",
-    descricao: "Apaga o registro histórico de decisões tomadas sobre divergências na previsão orçamentária sugerida.",
+    descricao:
+      "Apaga o registro histórico de decisões tomadas sobre divergências na previsão orçamentária sugerida.",
     rotuloBotao: "Apagar histórico de divergências",
   },
   {
     alvo: "decisoes_importacao",
     titulo: "Histórico de conflitos de importação",
     tabela: "kr_decisoes_importacao",
-    descricao: "Apaga o registro histórico de decisões tomadas sobre contas divergentes ao reimportar um relatório mensal ou prestação de contas já existente.",
+    descricao:
+      "Apaga o registro histórico de decisões tomadas sobre contas divergentes ao reimportar um relatório mensal ou prestação de contas já existente.",
     rotuloBotao: "Apagar histórico de conflitos",
   },
   {
     alvo: "documentos",
     titulo: "Consulta Inteligente de Documentos (Índices e Cache)",
     tabela: "kr_documentos / kr_documento_trechos / kr_consulta_*",
-    descricao: "Apaga os textos indexados de convenções, regimentos e atas, além do cache e histórico de perguntas à IA.",
+    descricao:
+      "Apaga os textos indexados de convenções, regimentos e atas, além do cache e histórico de perguntas à IA.",
     rotuloBotao: "Apagar documentos indexados",
   },
   {
@@ -183,7 +191,8 @@ function PaginaLimpezaDados() {
           <ShieldAlert />
           <AlertTitle>Acesso restrito a administradores</AlertTitle>
           <AlertDescription>
-            Somente usuários com perfil SuperADM têm permissão para visualizar ou executar a limpeza de cadastros.
+            Somente usuários com perfil SuperADM têm permissão para visualizar ou executar a limpeza
+            de cadastros.
           </AlertDescription>
         </Alert>
       </>
@@ -204,9 +213,10 @@ function PaginaLimpezaDados() {
           <AlertTriangle />
           <AlertTitle>Atenção: operação irreversível</AlertTitle>
           <AlertDescription>
-            Os registros apagados nesta tela são removidos diretamente do banco de dados e não podem ser desfeitos sem um
-            backup prévio. Seus usuários de acesso (<code>kr_usuarios</code>) e os dados de identificação do escritório (
-            <code>kr_config</code>) nunca são apagados por estas opções.
+            Os registros apagados nesta tela são removidos diretamente do banco de dados e não podem
+            ser desfeitos sem um backup prévio. Seus usuários de acesso (<code>kr_usuarios</code>) e
+            os dados de identificação do escritório (<code>kr_config</code>) nunca são apagados por
+            estas opções.
           </AlertDescription>
         </Alert>
 
@@ -235,7 +245,11 @@ function PaginaLimpezaDados() {
                 })
               }
             >
-              {limpar.isPending && confirmarAlvo?.alvo === "tudo" ? <Loader2 className="animate-spin" /> : <Trash2 />}
+              {limpar.isPending && confirmarAlvo?.alvo === "tudo" ? (
+                <Loader2 className="animate-spin" />
+              ) : (
+                <Trash2 />
+              )}
               Apagar todos os cadastros ({contagens.isPending ? "…" : totalGeral})
             </Button>
           </div>
@@ -247,7 +261,8 @@ function PaginaLimpezaDados() {
         >
           {contagens.isPending ? (
             <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" /> Consultando quantidade de registros no banco…
+              <Loader2 className="size-4 animate-spin" /> Consultando quantidade de registros no
+              banco…
             </div>
           ) : contagens.isError ? (
             <Alert variant="destructive">

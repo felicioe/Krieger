@@ -4,7 +4,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
 import { DataInput, Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
@@ -56,7 +63,8 @@ export function DialogoNovoEdital({
   }, [aberto, condoInicial]);
 
   const criar = useMutation({
-    mutationFn: (dados: Omit<Assembleia, "id">) => api.salvar<Omit<Assembleia, "id"> & { id?: string }>("assembleias", dados),
+    mutationFn: (dados: Omit<Assembleia, "id">) =>
+      api.salvar<Omit<Assembleia, "id"> & { id?: string }>("assembleias", dados),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("assembleias") });
       queryClient.setQueryData(chaves.item("assembleias", salvo.id), salvo);
@@ -70,7 +78,10 @@ export function DialogoNovoEdital({
     e.preventDefault();
     // Só condomínio e data são exigidos aqui; o horário é preenchido no formulário completo.
     const v = validarAssembleia({ condoId, data, hora1: "00:00", hora2: "", dataEmissao: "" });
-    const e2 = { ...(v.condoId ? { condoId: v.condoId } : {}), ...(v.data ? { data: v.data } : {}) };
+    const e2 = {
+      ...(v.condoId ? { condoId: v.condoId } : {}),
+      ...(v.data ? { data: v.data } : {}),
+    };
     setErros(e2);
     if (Object.keys(e2).length) return;
     const condo = condominios.find((c) => c.id === condoId);
@@ -102,7 +113,9 @@ export function DialogoNovoEdital({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Novo edital</DialogTitle>
-          <DialogDescription>Os demais campos vêm do cadastro do condomínio e podem ser ajustados em seguida.</DialogDescription>
+          <DialogDescription>
+            Os demais campos vêm do cadastro do condomínio e podem ser ajustados em seguida.
+          </DialogDescription>
         </DialogHeader>
         <form id="form-novo-edital" onSubmit={enviar} className="grid gap-4" noValidate>
           <Field rotulo="Condomínio" obrigatorio erro={erros.condoId ?? null}>
@@ -113,7 +126,11 @@ export function DialogoNovoEdital({
                 setErros((x) => ({ ...(x.data ? { data: x.data } : {}) }));
                 const paraEste = modelosDoCondominio(modelos, v);
                 setModeloId((atual) =>
-                  paraEste.some((m) => m.id === atual) ? atual : paraEste.length === 1 ? paraEste[0]!.id : SEM_MODELO,
+                  paraEste.some((m) => m.id === atual)
+                    ? atual
+                    : paraEste.length === 1
+                      ? paraEste[0]!.id
+                      : SEM_MODELO,
                 );
               }}
               opcoes={opcoesCondo}
@@ -134,16 +151,27 @@ export function DialogoNovoEdital({
               />
             </Field>
           </div>
-          <Field rotulo="Modelo de edital" dica="Só aparecem os modelos deste condomínio e os gerais. A pauta padrão do modelo é carregada no edital.">
+          <Field
+            rotulo="Modelo de edital"
+            dica="Só aparecem os modelos deste condomínio e os gerais. A pauta padrão do modelo é carregada no edital."
+          >
             <Selecao
               value={modeloId}
               onChange={setModeloId}
-              opcoes={[{ valor: SEM_MODELO, rotulo: "Sem modelo" }, ...disponiveis.map((m) => ({ valor: m.id, rotulo: m.nome }))]}
+              opcoes={[
+                { valor: SEM_MODELO, rotulo: "Sem modelo" },
+                ...disponiveis.map((m) => ({ valor: m.id, rotulo: m.nome })),
+              ]}
             />
           </Field>
         </form>
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => aoMudar(false)} disabled={criar.isPending}>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => aoMudar(false)}
+            disabled={criar.isPending}
+          >
             Cancelar
           </Button>
           <Button type="submit" form="form-novo-edital" disabled={criar.isPending}>

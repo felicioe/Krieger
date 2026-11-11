@@ -34,7 +34,14 @@ import { Marca } from "./Marca";
 import { sair, temPermissao, useUsuario } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-type Item = { titulo: string; to: string; icone: LucideIcon; permissao?: string; apenasAdmin?: boolean; perigoso?: boolean };
+type Item = {
+  titulo: string;
+  to: string;
+  icone: LucideIcon;
+  permissao?: string;
+  apenasAdmin?: boolean;
+  perigoso?: boolean;
+};
 
 /**
  * Menu agrupado por rotina do escritório. Painel e Condomínios ficam soltos no topo (uso diário);
@@ -45,23 +52,58 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     titulo: null,
     itens: [
       { titulo: "Painel", to: "/painel", icone: LayoutDashboard, permissao: "painel.visualizar" },
-      { titulo: "Condomínios", to: "/condominios", icone: Building2, permissao: "condominios.visualizar" },
+      {
+        titulo: "Condomínios",
+        to: "/condominios",
+        icone: Building2,
+        permissao: "condominios.visualizar",
+      },
     ],
   },
   {
     titulo: "Financeiro",
     itens: [
-      { titulo: "Prestação de contas", to: "/prestacao-contas", icone: FileSpreadsheet, permissao: "prestacao_contas.visualizar" },
-      { titulo: "Previsão orçamentária", to: "/previsao-orcamentaria", icone: Calculator, permissao: "previsao_orcamentaria.visualizar" },
-      { titulo: "Previsão para relatórios", to: "/previsao-orcamentaria?modo=relatorios", icone: Calculator, permissao: "previsao_orcamentaria.visualizar" },
+      {
+        titulo: "Prestação de contas",
+        to: "/prestacao-contas",
+        icone: FileSpreadsheet,
+        permissao: "prestacao_contas.visualizar",
+      },
+      {
+        titulo: "Previsão orçamentária",
+        to: "/previsao-orcamentaria",
+        icone: Calculator,
+        permissao: "previsao_orcamentaria.visualizar",
+      },
+      {
+        titulo: "Previsão para relatórios",
+        to: "/previsao-orcamentaria?modo=relatorios",
+        icone: Calculator,
+        permissao: "previsao_orcamentaria.visualizar",
+      },
     ],
   },
   {
     titulo: "Relatórios",
     itens: [
-      { titulo: "Previsto × Realizado", to: "/previsto-realizado", icone: GitCompareArrows, permissao: "previsto_realizado.visualizar" },
-      { titulo: "Previsto × Realizado mensal", to: "/relatorios/orcado-realizado-mensal", icone: CalendarRange, permissao: "previsto_realizado.visualizar" },
-      { titulo: "Acompanhamento de carga de dados mensais", to: "/relatorio-mensal", icone: CalendarRange, permissao: "relatorio_mensal.visualizar" },
+      {
+        titulo: "Previsto × Realizado",
+        to: "/previsto-realizado",
+        icone: GitCompareArrows,
+        permissao: "previsto_realizado.visualizar",
+      },
+      {
+        titulo: "Previsto × Realizado mensal",
+        to: "/relatorios/orcado-realizado-mensal",
+        icone: CalendarRange,
+        permissao: "previsto_realizado.visualizar",
+      },
+      {
+        titulo: "Acompanhamento de carga de dados mensais",
+        to: "/relatorio-mensal",
+        icone: CalendarRange,
+        permissao: "relatorio_mensal.visualizar",
+      },
     ],
   },
   {
@@ -69,20 +111,56 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
     itens: [
       { titulo: "Editais", to: "/editais", icone: Megaphone, permissao: "editais.visualizar" },
       { titulo: "Atas", to: "/atas", icone: ScrollText, permissao: "atas.visualizar" },
-      { titulo: "Modelos de edital", to: "/modelos", icone: FileText, permissao: "modelos.visualizar" },
-      { titulo: "Modelos de ata", to: "/modelos-ata", icone: ScrollText, permissao: "modelos_ata.visualizar" },
-      { titulo: "Drive de Documentos", to: "/drive-documentos", icone: FolderOpen, permissao: "drive_documentos.visualizar" },
-      { titulo: "Consulta Inteligente", to: "/consulta-documentos", icone: FileSearch, permissao: "consulta_documentos.visualizar" },
+      {
+        titulo: "Modelos de edital",
+        to: "/modelos",
+        icone: FileText,
+        permissao: "modelos.visualizar",
+      },
+      {
+        titulo: "Modelos de ata",
+        to: "/modelos-ata",
+        icone: ScrollText,
+        permissao: "modelos_ata.visualizar",
+      },
+      {
+        titulo: "Drive de Documentos",
+        to: "/drive-documentos",
+        icone: FolderOpen,
+        permissao: "drive_documentos.visualizar",
+      },
+      {
+        titulo: "Consulta Inteligente",
+        to: "/consulta-documentos",
+        icone: FileSearch,
+        permissao: "consulta_documentos.visualizar",
+      },
     ],
   },
   {
     titulo: "Administração",
     itens: [
-      { titulo: "Importador", to: "/importador", icone: FileUp, permissao: "importador.visualizar" },
+      {
+        titulo: "Importador",
+        to: "/importador",
+        icone: FileUp,
+        permissao: "importador.visualizar",
+      },
       { titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp },
-      { titulo: "Escritório", to: "/escritorio", icone: Briefcase, permissao: "escritorio.visualizar" },
+      {
+        titulo: "Escritório",
+        to: "/escritorio",
+        icone: Briefcase,
+        permissao: "escritorio.visualizar",
+      },
       { titulo: "Backup", to: "/backup", icone: DatabaseBackup, permissao: "backup.visualizar" },
-      { titulo: "Limpeza de Dados", to: "/limpeza-dados", icone: Trash2, apenasAdmin: true, perigoso: true },
+      {
+        titulo: "Limpeza de Dados",
+        to: "/limpeza-dados",
+        icone: Trash2,
+        apenasAdmin: true,
+        perigoso: true,
+      },
     ],
   },
 ];
@@ -92,7 +170,8 @@ export const ITENS_MENU: Item[] = GRUPOS_MENU.flatMap((g) => g.itens);
 
 const classeItem =
   "flex w-full items-center gap-3 border-l-4 border-transparent px-4 py-2 text-sm max-md:min-h-11 pointer-coarse:min-h-11 text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring";
-const classeAtivo = "bg-sidebar-accent border-sidebar-indicator text-sidebar-accent-foreground font-medium";
+const classeAtivo =
+  "bg-sidebar-accent border-sidebar-indicator text-sidebar-accent-foreground font-medium";
 
 function itemMenuAtivo(to: string, pathname: string, searchStr: string) {
   const [itemPath, itemSearch = ""] = to.split("?");
@@ -104,9 +183,7 @@ function itemMenuAtivo(to: string, pathname: string, searchStr: string) {
     return !currentParams.has("modo") || currentParams.get("modo") !== "relatorios";
   }
 
-  return Array.from(itemParams.entries()).every(
-    ([key, value]) => currentParams.get(key) === value,
-  );
+  return Array.from(itemParams.entries()).every(([key, value]) => currentParams.get(key) === value);
 }
 
 function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | undefined }) {
@@ -114,9 +191,12 @@ function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | 
   const location = useRouterState({ select: (state) => state.location });
   const ativo = itemMenuAtivo(item.to, location.pathname, location.searchStr);
   const [caminho] = item.to.split("?");
-  const modo = caminho === "/previsao-orcamentaria"
-    ? item.to.includes("modo=relatorios") ? "relatorios" as const : "rateio" as const
-    : undefined;
+  const modo =
+    caminho === "/previsao-orcamentaria"
+      ? item.to.includes("modo=relatorios")
+        ? ("relatorios" as const)
+        : ("rateio" as const)
+      : undefined;
   // A seleção de exercício pode acrescentar parâmetros sem trocar o modo da previsão.
   return (
     <Link
@@ -127,16 +207,27 @@ function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | 
       className={cn(
         classeItem,
         item.perigoso && "text-red-400 hover:bg-red-950/60 hover:text-red-300 font-medium",
-        ativo && (item.perigoso ? "bg-red-950/80 border-red-500 text-red-200 font-semibold" : classeAtivo),
+        ativo &&
+          (item.perigoso ? "bg-red-950/80 border-red-500 text-red-200 font-semibold" : classeAtivo),
       )}
     >
-      <Icone className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-400 opacity-100")} />
+      <Icone
+        className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-400 opacity-100")}
+      />
       <span className="min-w-0 break-words">{item.titulo}</span>
     </Link>
   );
 }
 
-function BotaoMenu({ icone: Icone, children, onClick }: { icone: LucideIcon; children: ReactNode; onClick: () => void }) {
+function BotaoMenu({
+  icone: Icone,
+  children,
+  onClick,
+}: {
+  icone: LucideIcon;
+  children: ReactNode;
+  onClick: () => void;
+}) {
   return (
     <button type="button" onClick={onClick} className={cn(classeItem, "text-left")}>
       <Icone className="size-4 shrink-0 opacity-90" />
@@ -178,19 +269,29 @@ export function ConteudoMenu({
       <div className="shrink-0 px-6 pb-5 pt-7">
         <Marca className="max-w-[min(12rem,100%)]" />
       </div>
-      <nav className="min-h-28 flex-1 overflow-y-auto overflow-x-hidden pb-2" aria-label="Menu principal">
+      <nav
+        className="min-h-28 flex-1 overflow-y-auto overflow-x-hidden pb-2"
+        aria-label="Menu principal"
+      >
         {GRUPOS_MENU.map((g, i) => {
           const idTitulo = `${idMenu}-grupo-${i}`;
           return (
             <div key={g.titulo ?? "inicio"} className={cn(i > 0 && "mt-3")}>
               {g.titulo && (
-                <p id={idTitulo} className="px-5 pb-1 pt-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-sidebar-muted">
+                <p
+                  id={idTitulo}
+                  className="px-5 pb-1 pt-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-sidebar-muted"
+                >
                   {g.titulo}
                 </p>
               )}
               <ul aria-labelledby={g.titulo ? idTitulo : undefined}>
                 {g.itens
-                  .filter((item) => (!item.apenasAdmin || usuario?.perfil === "admin") && (!item.permissao || temPermissao(usuario, item.permissao)))
+                  .filter(
+                    (item) =>
+                      (!item.apenasAdmin || usuario?.perfil === "admin") &&
+                      (!item.permissao || temPermissao(usuario, item.permissao)),
+                  )
                   .map((item) => (
                     <li key={item.to}>
                       <ItemMenu item={item} aoNavegar={aoNavegar} />
@@ -201,12 +302,18 @@ export function ConteudoMenu({
           );
         })}
       </nav>
-      <Collapsible open={contaAberta} onOpenChange={setContaAberta} className="shrink-0 border-t border-sidebar-border">
+      <Collapsible
+        open={contaAberta}
+        onOpenChange={setContaAberta}
+        className="shrink-0 border-t border-sidebar-border"
+      >
         <CollapsibleTrigger className={cn(classeItem, "py-3 text-left")}>
           <UserRound className="size-4 shrink-0 text-sidebar-muted" aria-hidden="true" />
           <span className="min-w-0 flex-1">
             <span className="sr-only">Conta: </span>
-            <span className="block text-sm font-medium wrap-anywhere">{usuario?.nome || usuario?.login}</span>
+            <span className="block text-sm font-medium wrap-anywhere">
+              {usuario?.nome || usuario?.login}
+            </span>
             <span className="block text-xs text-sidebar-muted">
               {PERFIL_ROTULO[usuario?.perfil ?? "user"] ?? "Usuário"}
             </span>
@@ -220,11 +327,17 @@ export function ConteudoMenu({
           <ul aria-label="Opções da conta" className="pb-2">
             {usuario?.perfil === "admin" && (
               <li>
-                <ItemMenu item={{ titulo: "Usuários", to: "/usuarios", icone: Users }} aoNavegar={aoNavegar} />
+                <ItemMenu
+                  item={{ titulo: "Usuários", to: "/usuarios", icone: Users }}
+                  aoNavegar={aoNavegar}
+                />
               </li>
             )}
             <li>
-              <ItemMenu item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }} aoNavegar={aoNavegar} />
+              <ItemMenu
+                item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }}
+                aoNavegar={aoNavegar}
+              />
             </li>
             {abrirRegistro && (
               <li>
