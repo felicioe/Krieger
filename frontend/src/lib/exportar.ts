@@ -20,6 +20,19 @@ function nomeComExtensao(nome: string, extensao: string): string {
   return `${limpo}.${extensao}`;
 }
 
+/** Baixa uma matriz em XLSX, preservando células numéricas e carregando o gerador sob demanda. */
+export async function baixarMatrizXlsx(
+  nome: string,
+  nomeAba: string,
+  matriz: (string | number)[][],
+) {
+  const { default: escreverXlsx } = await import("write-excel-file/browser");
+  await escreverXlsx(
+    matriz.map((linha) => linha.map((value) => ({ value }))),
+    { sheet: nomeAba.slice(0, 31) },
+  ).toFile(nomeComExtensao(nome, "xlsx"));
+}
+
 function baixar(blob: Blob, nome: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -45,9 +58,5 @@ export async function baixarXlsx<T>(
   colunas: ColunaExportacao<T>[],
   linhas: T[],
 ) {
-  const XLSX = await import("xlsx");
-  const planilha = XLSX.utils.aoa_to_sheet(matrizPlanilha(colunas, linhas));
-  const pasta = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(pasta, planilha, nomeAba.slice(0, 31));
-  XLSX.writeFile(pasta, nomeComExtensao(nome, "xlsx"));
+  await baixarMatrizXlsx(nome, nomeAba, matrizPlanilha(colunas, linhas));
 }

@@ -20,6 +20,7 @@ import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
 import type { Condominio, Exercicio } from "@/domain/types";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { imprimirTabela } from "@/lib/imprimirTabela";
+import { baixarMatrizXlsx } from "@/lib/exportar";
 import { RolagemTabela } from "@/components/ui/table";
 
 type Busca = { exercicio?: string; modo?: "rateio" | "relatorios" };
@@ -275,10 +276,16 @@ function RelatorioPrevisao({
     exportandoRef.current = true;
     setExportandoXlsx(true);
     try {
-      const XLSX = await import("xlsx");
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dadosExportacao), "Previsto x Realizado");
-      XLSX.writeFile(wb, `${nomeArquivo}.xlsx`);
+      await baixarMatrizXlsx(nomeArquivo, "Previsto x Realizado", [
+        ["Grupo", "Conta", "Realizado", "Previsto", "Variação (%)"],
+        ...dadosExportacao.map((linha) => [
+          linha.Grupo,
+          linha.Conta,
+          linha.Realizado,
+          linha.Previsto,
+          linha["Variação (%)"] ?? "",
+        ]),
+      ]);
     } catch {
       toast.error("Não foi possível preparar a planilha. Tente exportar novamente.");
     } finally {
