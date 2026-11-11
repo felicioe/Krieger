@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  cidadeDoCondominio,
   escolherModeloAta,
   normalizarModeloAta,
   novoModeloAta,
@@ -87,5 +88,39 @@ describe("modelos de ata", () => {
 
   it("renderizarTextoModeloAta aceita espaços dentro das chaves", () => {
     expect(renderizarTextoModeloAta("{{ ata.tipo }}", { ata: { tipo: "Extraordinária" } })).toBe("Extraordinária");
+  });
+
+  it("cidadeDoCondominio lê a cidade do endereço e devolve vazio sem endereço", () => {
+    expect(cidadeDoCondominio("Rua Augusto Wolf, s/n, Vargedo, Rancho Queimado/SC")).toBe("Rancho Queimado");
+    expect(cidadeDoCondominio("")).toBe("");
+    expect(cidadeDoCondominio("Rua sem cidade no formato")).toBe("");
+  });
+
+  it("escolherModeloAta separa ordinária de extraordinária na mesma cidade", () => {
+    const ordinaria = modelo({ id: "ord", cidade: "Rancho Queimado", tipo: "ordinaria" });
+    const extraordinaria = modelo({ id: "ext", cidade: "Rancho Queimado", tipo: "extraordinaria" });
+    const modelos = [ordinaria, extraordinaria];
+
+    expect(escolherModeloAta(modelos, "Rancho Queimado", "", "ordinaria")?.id).toBe("ord");
+    expect(escolherModeloAta(modelos, "Rancho Queimado", "", "extraordinaria")?.id).toBe("ext");
+    // Tipo desconhecido na assembleia aceita qualquer um dos dois.
+    expect(escolherModeloAta(modelos, "Rancho Queimado", "", "")?.id).toBe("ord");
+  });
+
+  it("escolherModeloAta ignora modelo de outro tipo e cai no geral", () => {
+    const ordinaria = modelo({ id: "ord", cidade: "Rancho Queimado", tipo: "ordinaria" });
+    const geral = modelo({ id: "geral", cidade: "", tipo: "" });
+
+    expect(escolherModeloAta([ordinaria, geral], "Rancho Queimado", "", "extraordinaria")?.id).toBe("geral");
+    expect(escolherModeloAta([ordinaria], "Rancho Queimado", "", "extraordinaria")).toBeNull();
+  });
+
+  it("escolherModeloAta prefere cidade+cartório+tipo ao modelo só da cidade", () => {
+    const porCidade = modelo({ id: "cidade", cidade: "Rancho Queimado", tipo: "ordinaria" });
+    const porCartorio = modelo({ id: "cartorio", cidade: "Rancho Queimado", cartorio: "1º Ofício", tipo: "ordinaria" });
+
+    expect(escolherModeloAta([porCidade, porCartorio], "Rancho Queimado", "1º Ofício", "ordinaria")?.id).toBe(
+      "cartorio",
+    );
   });
 });

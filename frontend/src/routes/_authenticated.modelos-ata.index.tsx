@@ -29,7 +29,7 @@ function PaginaModelosAta() {
     <>
       <PageHeader
         titulo="Modelos de ata"
-        descricao="Cadastre layouts de ata por cidade/cartório. O modelo mais específico é usado na geração do documento."
+        descricao="Layouts prontos por cidade/cartório. A escolha automática usa a cidade do condomínio e o tipo da assembleia."
         acoes={
           <Button onClick={() => setNovo(true)} permissao="modelos_ata.editar">
             <Plus /> Novo modelo
@@ -43,6 +43,12 @@ function PaginaModelosAta() {
           { chave: "nome", titulo: "Nome" },
           { chave: "cidade", titulo: "Cidade", render: (m) => m.cidade?.trim() || "—" },
           { chave: "cartorio", titulo: "Cartório", render: (m) => m.cartorio?.trim() || "—" },
+          {
+            chave: "tipo",
+            titulo: "Tipo",
+            render: (m) =>
+              m.tipo === "ordinaria" ? "Ordinária" : m.tipo === "extraordinaria" ? "Extraordinária" : "Os dois",
+          },
           {
             chave: "ativo",
             titulo: "Status",

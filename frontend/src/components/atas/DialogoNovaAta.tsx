@@ -14,7 +14,7 @@ import { formatData } from "@/lib/format";
 import { normalizarCondominio } from "@/domain/condominio";
 import { normalizarAssembleia, rotuloTipo } from "@/domain/edital";
 import { ataDoEdital, ataEmBranco, novaAtaDeAssembleia, validarNovaAta } from "@/domain/ata";
-import { escolherModeloAta } from "@/domain/modeloAta";
+import { cidadeDoCondominio, escolherModeloAta } from "@/domain/modeloAta";
 import type { Assembleia, Ata, Condominio, ModeloAta } from "@/domain/types";
 
 const SEM_EDITAL = "__sem";
@@ -33,7 +33,7 @@ export function DialogoNovaAta({
   condominios: Condominio[];
   assembleias: Assembleia[];
   atas: Ata[];
-  /** Modelos de ata por cartório/cidade: o mais específico para a cidade do edital já vem escolhido. */
+  /** Modelos de ata por cartório/cidade: o mais específico para a cidade do condomínio e o tipo já vem escolhido. */
   modelosAta?: ModeloAta[];
   condoInicial?: string;
 }) {
@@ -86,8 +86,9 @@ export function DialogoNovaAta({
     setErro(null);
     const c = normalizarCondominio(condo);
     const base = edital ? novaAtaDeAssembleia(normalizarAssembleia(edital), c) : ataEmBranco(c);
-    // O cartório não é campo do edital: fica vazio e o modelo por cidade (ou o geral) responde.
-    const modelo = escolherModeloAta(modelosAta, edital?.cidade ?? "", "");
+    // A cidade sai do endereço do condomínio (não da cidade de assinatura do escritório) e o tipo
+    // separa ordinária de extraordinária. O cartório não é campo do edital: fica vazio.
+    const modelo = escolherModeloAta(modelosAta, cidadeDoCondominio(c.enderecoEdital), "", base.tipo);
     criar.mutate(modelo ? { ...base, modeloAtaId: modelo.id } : base);
   }
 
