@@ -18,7 +18,7 @@ export function GraficoPizza({ dados }: { dados: { nome: string; valor: number }
   const total = dados.reduce((s, d) => s + d.valor, 0);
   const pct = (v: number) => `${total ? formatNumeroBR((v / total) * 100, 1) : "0"}%`;
   const config = Object.fromEntries(
-    dados.map((d, i) => [d.nome, { label: d.nome, color: corDoGrafico(i) }]),
+    dados.map((d, i) => [`categoria-${i}`, { label: d.nome, color: corDoGrafico(i) }]),
   ) satisfies ChartConfig;
   return (
     <div className="@container">
