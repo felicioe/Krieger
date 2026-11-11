@@ -1,5 +1,31 @@
 # Estado atual e passagem de contexto
 
+## Modelos de edital por cidade — 11/11/2026
+
+Os **44 editais** do acervo `OneDrive/.../krieger/editais` foram lidos e agrupados: **Balneário
+Camboriú** (24), **Camboriú** (13) e **Itajaí** (3), mais o que se repete no acervo. A prática é
+distinta por município — não é só trocar o nome da cidade.
+
+**Quatro modelos prontos**, em `domain/modelosEditalSeed.ts`:
+Balneário Camboriú tem **um** modelo que serve aos dois tipos (a abertura é a mesma; só o título muda)
+com o bloco `NOTAS` de LGPD, procuração, cônjuge, ausência e Artigo 1.335; Camboriú tem **dois**
+(ordinária com remissão ao Artigo 16 da convenção, extraordinária com 2/3 em primeira chamada);
+Itajaí tem **um**, com a abertura da praxe. Os modelos gerais e os de cada condomínio continuam
+funcionando.
+
+**Escolha automática.** `Modelo` ganhou `cidade` e `tipo` (opcionais). No diálogo de novo edital, a
+cidade sai do **endereço do condomínio** (`enderecoEdital`, como nas atas), filtra pelo tipo e deixa o
+modelo daquela cidade já marcado. A comparação normaliza acento e caixa e **não** casa cidade composta
+com parte dela: Balneário Camboriú não pega o modelo de Camboriú.
+
+**Cadastro.** A tela do modelo mostra e edita `Cidade` e `Tipo de assembleia` (vazio = serve aos
+dois); a lista ganhou as colunas Cidade e Tipo.
+
+**Carga.** `migrations/20261111_modelos_edital_por_cidade.sql` (REPLACE INTO idempotente) e o bloco
+equivalente em `schema.sql`, conferidos por `domain/modelosEditalSeed.test.ts`.
+
+**Não verificado:** a migration não foi aplicada em produção; depende da publicação.
+
 ## Modelos de ata por cidade com o layout real das atas — 11/11/2026
 
 As atas do escritório vêm de três municípios com práticas de redação diferentes. O acervo de 1.422

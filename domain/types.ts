@@ -486,6 +486,10 @@ export interface Modelo extends ComId {
   /** Condomínio dono do modelo; vazio = modelo genérico, válido para todos. */
   condoId: string;
   nome: string;
+  /** Cidade do condomínio para casar com o endereço (`enderecoEdital`). Vazio = geral. */
+  cidade?: string;
+  /** "ordinaria" / "extraordinaria". Vazio = serve aos dois tipos. */
+  tipo?: string;
   versao: number | string;
   pautaOrdinaria: string[];
   blocos: { id: string; tipo: TipoBloco; texto: string; cond: string }[];

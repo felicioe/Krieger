@@ -2,7 +2,15 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.10**.
+Versão atual: **1.11**.
+
+## 1.11 — Modelos de edital por cidade, escolhidos pelo endereço do condomínio
+
+- Quatro modelos de edital prontos, escritos a partir dos 44 editais reais do escritório: Balneário Camboriú e Itajaí com um modelo para os dois tipos de assembleia, Camboriú com ordinária e extraordinária próprias.
+- O cadastro do modelo de edital ganha Cidade e Tipo de assembleia (vazio serve aos dois), editáveis na tela e visíveis na lista.
+- No diálogo de novo edital, a cidade sai do endereço do condomínio e o modelo daquela cidade já vem marcado, respeitando o tipo da assembleia.
+- A comparação de cidade normaliza acento e caixa e não casa cidade composta com parte dela: Balneário Camboriú não pega o modelo de Camboriú.
+- Modelos gerais e por condomínio continuam funcionando como antes.
 
 ## 1.10 — Modelos de ata por cidade com o layout real das atas
 

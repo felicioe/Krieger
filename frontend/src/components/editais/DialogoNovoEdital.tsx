@@ -19,7 +19,7 @@ import { chaves } from "@/lib/queries";
 import { dataParaISO, parseData } from "@/lib/format";
 import { normalizarCondominio } from "@/domain/condominio";
 import { assembleiaPadrao, TIPOS_ASSEMBLEIA, validarAssembleia } from "@/domain/edital";
-import { modelosDoCondominio } from "@/domain/modelo";
+import { cidadeDoModeloEdital, escolherModeloEdital, modelosDoEdital } from "@/domain/modelo";
 import type { Assembleia, Condominio, ConfigEscritorio, Exercicio, Modelo } from "@/domain/types";
 
 const SEM_MODELO = "__sem";
@@ -53,9 +53,21 @@ export function DialogoNovoEdital({
     if (aberto) {
       setCondoId(condoInicial);
       setTipo("ordinaria");
-      // Só os modelos do condomínio escolhido (e os gerais): um único disponível já vem marcado.
-      const iniciais = modelosDoCondominio(modelos, condoInicial);
-      setModeloId(iniciais.length === 1 ? iniciais[0]!.id : SEM_MODELO);
+      // Modelo do condomínio para o tipo escolhido, com o da cidade dele na frente.
+      const cond = condominios.find((c) => c.id === condoInicial);
+      const iniciais = modelosDoEdital(
+        modelos,
+        condoInicial,
+        cidadeDoModeloEdital(cond?.enderecoEdital ?? ""),
+        "ordinaria",
+      );
+      setModeloId(
+        escolherModeloEdital(
+          iniciais,
+          cidadeDoModeloEdital(cond?.enderecoEdital ?? ""),
+          "ordinaria",
+        )?.id ?? SEM_MODELO,
+      );
       setData("");
       setErros({});
     }
@@ -105,8 +117,21 @@ export function DialogoNovoEdital({
   }
 
   const opcoesCondo = opcoesCondominio(condominios);
-  // Trocar o condomínio troca a lista de modelos; a escolha atual só permanece se continuar válida.
-  const disponiveis = modelosDoCondominio(modelos, condoId);
+  // Cidade do condomínio escolhido: o modelo padrão daquela cidade vem primeiro.
+  const cidadeCondo = cidadeDoModeloEdital(
+    condominios.find((c) => c.id === condoId)?.enderecoEdital ?? "",
+  );
+  // Trocar o condomínio ou o tipo troca a lista; a escolha atual só permanece se continuar válida.
+  const disponiveis = modelosDoEdital(modelos, condoId, cidadeCondo, tipo);
+  const escolherTipo = (v: Assembleia["tipo"]) => {
+    setTipo(v);
+    const lista = modelosDoEdital(modelos, condoId, cidadeCondo, v);
+    setModeloId((atual) =>
+      lista.some((m) => m.id === atual)
+        ? atual
+        : (escolherModeloEdital(lista, cidadeCondo, v)?.id ?? SEM_MODELO),
+    );
+  };
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !criar.isPending && aoMudar(v)}>
@@ -124,13 +149,14 @@ export function DialogoNovoEdital({
               onChange={(v) => {
                 setCondoId(v);
                 setErros((x) => ({ ...(x.data ? { data: x.data } : {}) }));
-                const paraEste = modelosDoCondominio(modelos, v);
+                const cidade = cidadeDoModeloEdital(
+                  condominios.find((c) => c.id === v)?.enderecoEdital ?? "",
+                );
+                const paraEste = modelosDoEdital(modelos, v, cidade, tipo);
                 setModeloId((atual) =>
                   paraEste.some((m) => m.id === atual)
                     ? atual
-                    : paraEste.length === 1
-                      ? paraEste[0]!.id
-                      : SEM_MODELO,
+                    : (escolherModeloEdital(paraEste, cidade, tipo)?.id ?? SEM_MODELO),
                 );
               }}
               opcoes={opcoesCondo}
@@ -139,7 +165,7 @@ export function DialogoNovoEdital({
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field rotulo="Tipo">
-              <Selecao value={tipo} onChange={setTipo} opcoes={TIPOS_ASSEMBLEIA} />
+              <Selecao value={tipo} onChange={escolherTipo} opcoes={TIPOS_ASSEMBLEIA} />
             </Field>
             <Field rotulo="Data da assembleia" obrigatorio erro={erros.data ?? null}>
               <DataInput
@@ -153,14 +179,17 @@ export function DialogoNovoEdital({
           </div>
           <Field
             rotulo="Modelo de edital"
-            dica="Só aparecem os modelos deste condomínio e os gerais. A pauta padrão do modelo é carregada no edital."
+            dica="Só aparecem os modelos deste condomínio e os gerais, compatíveis com o tipo escolhido; o da cidade do condomínio vem primeiro."
           >
             <Selecao
               value={modeloId}
               onChange={setModeloId}
               opcoes={[
                 { valor: SEM_MODELO, rotulo: "Sem modelo" },
-                ...disponiveis.map((m) => ({ valor: m.id, rotulo: m.nome })),
+                ...disponiveis.map((m) => ({
+                  valor: m.id,
+                  rotulo: m.cidade ? `${m.nome} — ${m.cidade}` : m.nome,
+                })),
               ]}
             />
           </Field>

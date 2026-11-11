@@ -7,6 +7,7 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 
 - [Estado atual e próximas tarefas](docs/ESTADO-ATUAL.md)
 - [Modelos de ata por cidade](docs/MODELOS-ATA-POR-CIDADE.md)
+- [Modelos de edital por cidade](docs/MODELOS-EDITAL-POR-CIDADE.md)
 - [Registro de Alterações](CHANGELOG.md) e [política de versões](docs/VERSIONAMENTO.md)
 - [Conexões verificadas entre as ferramentas](docs/CONEXOES.md)
 - [Instruções compartilhadas para agentes](AGENTS.md) e [entrada do Claude](CLAUDE.md)

@@ -1,4 +1,5 @@
 import { novoId } from "../lib/id";
+import { extrairCidadeDoEndereco } from "./notificacao";
 import type { Modelo, TipoBloco } from "./types";
 
 /**
@@ -44,6 +45,8 @@ export function normalizarModelo(raw: Partial<Modelo> & { id: string }): Modelo 
     id: raw.id,
     condoId: s(raw.condoId),
     nome: s(raw.nome),
+    cidade: s(raw.cidade).trim(),
+    tipo: s(raw.tipo).trim().toLowerCase(),
     versao: typeof raw.versao === "number" || typeof raw.versao === "string" ? raw.versao : 1,
     pautaOrdinaria: Array.isArray(raw.pautaOrdinaria) ? raw.pautaOrdinaria.map(s) : [],
     blocos: Array.isArray(raw.blocos)
@@ -85,4 +88,68 @@ export function modelosDoCondominio<T extends Pick<Modelo, "condoId">>(modelos: 
   const alvo = condoId.trim();
   if (!alvo) return modelos.filter((m) => !m.condoId.trim());
   return modelos.filter((m) => !m.condoId.trim() || m.condoId.trim() === alvo);
+}
+
+/**
+ * Cidade do condomínio para casar com o modelo de edital: sai do endereço do edital.
+ * `extrairCidadeDoEndereco` devolve preposição e "Cidade de" junto ("Em Camboriú",
+ * "Na Cidade de Itajaí"), então eles saem aqui.
+ */
+export function cidadeDoModeloEdital(enderecoEdital: string): string {
+  return extrairCidadeDoEndereco(enderecoEdital || "", "")
+    .replace(/^(?:em|na|no)\s+/i, "")
+    .replace(/^(?:cidade|munic[ií]pio)\s+(?:de\s+)?/i, "")
+    .replace(/^de\s+/i, "")
+    .trim();
+}
+
+/** Compara cidade sem acento, caixa e pontuação: "Balneário Camboriú" = "balneario camboriu". */
+function chaveCidade(v: string): string {
+  return v
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Mesma cidade: chave normalizada igual. Cidades compostas ("Balneário Camboriú") não casam com partes ("Camboriú"). */
+function mesmaCidade(a: string, b: string): boolean {
+  const ka = chaveCidade(a);
+  const kb = chaveCidade(b);
+  if (!ka || !kb) return false;
+  return ka === kb;
+}
+
+/** O modelo serve ao tipo de assembleia: sem tipo declarado serve aos dois. */
+function serveAoTipoModelo(m: Pick<Modelo, "tipo">, tipo: string): boolean {
+  const t = (m.tipo ?? "").trim().toLowerCase();
+  const alvo = tipo.trim().toLowerCase();
+  return !t || !alvo || t === alvo;
+}
+
+/**
+ * Modelos oferecidos no diálogo de novo edital para o condomínio escolhido.
+ * Filtra por tipo de assembleia (quando houver) e, entre os que servem, os da
+ * cidade do endereço do condomínio vêm primeiro — é o padrão por cidade da issue.
+ */
+export function modelosDoEdital<T extends Pick<Modelo, "condoId" | "cidade" | "tipo">>(
+  modelos: T[],
+  condoId: string,
+  cidade = "",
+  tipo = "",
+): T[] {
+  const doCondo = modelosDoCondominio(modelos, condoId).filter((m) => serveAoTipoModelo(m, tipo));
+  if (!cidade.trim()) return doCondo;
+  return [
+    ...doCondo.filter((m) => mesmaCidade(m.cidade ?? "", cidade)),
+    ...doCondo.filter((m) => !mesmaCidade(m.cidade ?? "", cidade)),
+  ];
+}
+
+/** Escolhe o melhor modelo do conjunto: o da cidade, senão o primeiro que serve o tipo. */
+export function escolherModeloEdital<T extends Pick<Modelo, "cidade" | "tipo">>(modelos: T[], cidade = "", tipo = ""): T | null {
+  const servem = modelos.filter((m) => serveAoTipoModelo(m, tipo));
+  if (!cidade.trim()) return servem[0] ?? modelos[0] ?? null;
+  return servem.find((m) => mesmaCidade(m.cidade ?? "", cidade)) ?? servem[0] ?? modelos[0] ?? null;
 }

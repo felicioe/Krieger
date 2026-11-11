@@ -25,6 +25,7 @@ import {
   validarModelo,
   type Bloco,
 } from "@/domain/modelo";
+import { TIPOS_ASSEMBLEIA } from "@/domain/edital";
 import type { Assembleia, Condominio, Modelo } from "@/domain/types";
 
 /** Modelo sem condomínio: serve a todos (padrão dos modelos criados antes desta opção). */
@@ -192,6 +193,29 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
                 value={String(m.versao)}
                 onChange={(e) => mudar({ versao: e.target.value })}
                 className="num"
+              />
+            </Field>
+            <Field
+              rotulo="Cidade"
+              dica="Casa com a cidade do endereço do condomínio, que passa a sugerir este modelo primeiro. Deixe em branco para um modelo de qualquer cidade."
+            >
+              <Input
+                value={m.cidade ?? ""}
+                onChange={(e) => mudar({ cidade: e.target.value })}
+                placeholder="Ex.: Balneário Camboriú"
+              />
+            </Field>
+            <Field
+              rotulo="Tipo de assembleia"
+              dica="Separa o modelo de ordinária do de extraordinária. Vazio = serve aos dois."
+            >
+              <Selecao
+                value={m.tipo ?? ""}
+                onChange={(v) => mudar({ tipo: v })}
+                opcoes={[
+                  { valor: "", rotulo: "Ordinária e extraordinária" },
+                  ...TIPOS_ASSEMBLEIA.map((o) => ({ valor: o.valor as string, rotulo: o.rotulo })),
+                ]}
               />
             </Field>
           </div>

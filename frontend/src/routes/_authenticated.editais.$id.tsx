@@ -46,7 +46,7 @@ import {
   validarAssembleia,
   type ErrosAssembleia,
 } from "@/domain/edital";
-import { modelosDoCondominio, normalizarModelo } from "@/domain/modelo";
+import { cidadeDoModeloEdital, modelosDoEdital, normalizarModelo } from "@/domain/modelo";
 import { ataDoEdital, novaAtaDeAssembleia } from "@/domain/ata";
 import { normalizarCondominio } from "@/domain/condominio";
 import { documentoEdital } from "@/documentos/edital";
@@ -199,10 +199,14 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
   // Modelos deste condomínio e os gerais. O modelo já escolhido permanece na lista mesmo que não
   // se aplique ao condomínio atual (edital antigo, ou condomínio trocado), com etiqueta dizendo de
   // onde ele vem — trocar o condomínio não descarta a escolha sem aviso.
-  const disponiveis = modelosDoCondominio(modelos, a.condoId);
+  const cidadeEdital = cidadeDoModeloEdital(condo?.enderecoEdital ?? "");
+  const disponiveis = modelosDoEdital(modelos, a.condoId, cidadeEdital, a.tipo);
   const opcoesModelo = [
     { valor: SEM_MODELO, rotulo: "Sem modelo" },
-    ...disponiveis.map((m) => ({ valor: m.id, rotulo: m.nome })),
+    ...disponiveis.map((m) => ({
+      valor: m.id,
+      rotulo: m.cidade ? `${m.nome} — ${m.cidade}` : m.nome,
+    })),
     ...(a.modeloId && !disponiveis.some((m) => m.id === a.modeloId)
       ? [
           {
