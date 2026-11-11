@@ -110,5 +110,9 @@ O agente correspondente é acionado pelo nome, ou pela descrição quando a tare
 se encaixa. Para a sessão principal mudar de modelo, use o seletor da interface
 e não o meio de uma implementação em andamento.
 
+As definições são carregadas na inicialização da sessão: editar `.claude/agents/*.md`
+com a sessão aberta não altera um agente já registrado. Depois de editar, abra
+sessão nova antes de concluir que a mudança não funcionou.
+
 O plano não cria agente para publicar. Deploy é irreversível e fica na sessão
 principal, com o responsável presente e registro na issue.
