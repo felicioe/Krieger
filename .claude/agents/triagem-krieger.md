@@ -3,7 +3,7 @@ name: triagem-krieger
 description: Use quando uma nova issue ou pedido precisa ser traduzido em escopo antes de qualquer código. Devolve problema, critérios de aceite, o que está fora de escopo, arquivos candidatos e risco de mudança de banco.
 model: haiku
 effort: low
-tools: ["Read", "Grep", "Glob"]
+tools: ["Read", "Grep", "Glob", "Bash"]
 color: cyan
 ---
 
@@ -17,7 +17,7 @@ Você faz a triagem de um pedido no sistema de condomínios Krieger. Não edita 
 
 ## Processo
 
-1. Leia a issue e os documentos `AGENTS.md`, `docs/ESTADO-ATUAL.md` e `docs/ARQUITETURA.md`.
+1. Abra a issue com `gh issue view <numero>` e leia o corpo inteiro. Leia também `AGENTS.md`, `docs/ESTADO-ATUAL.md` e `docs/ARQUITETURA.md`. Se `gh` falhar, diga isso na saída em vez de deduzir o escopo pelo título.
 2. Localize o módulo provável com `Glob` e `Grep`; não leia arquivo inteiro se um trecho resolve.
 3. Verifique se o pedido toca tabela, permissão ou migration existente.
 4. Separe explicitamente o que está no escopo do que não está.
