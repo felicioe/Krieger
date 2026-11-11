@@ -1,6 +1,7 @@
 import type { Bloco, Coluna, Documento, LinhaTabela, Texto, Alinhamento } from "./tipos";
 import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA, areaPagina } from "./tipos";
 import { bytesDe, carregarPng } from "./imagens";
+import { tipografia } from "./tipografia";
 
 /** Desenha o documento em Word (.docx, biblioteca docx carregada sob demanda). */
 export async function gerarWord(doc: Documento): Promise<Blob> {
@@ -30,6 +31,8 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
 
   const tw = (pt: number) => Math.round(pt * 20);
   const meio = (pt: number) => Math.round(pt * 2);
+  /** Família, corpo e escala de títulos do documento (12 pt para ata de cartório). */
+  const tip = tipografia(doc);
   const px = (pt: number) => Math.round((pt * 96) / 72);
   const folha = areaPagina(doc.orientacao);
   /** Moldura na página inteira (modelos de ata de cartório). */
@@ -51,8 +54,8 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   const LINHA = { style: BorderStyle.SINGLE, size: 4, color: COR.linha };
   const semBordas = { top: SEM, bottom: SEM, left: SEM, right: SEM, insideHorizontal: SEM, insideVertical: SEM };
 
-  type Base = { tamanho?: number; cor?: string; negrito?: boolean };
-  /** Trechos → runs; "\n" vira quebra de linha. */
+  type Base = { tamanho?: number; cor?: string; negrito?: boolean; fonte?: string };
+  /** Trechos → runs; "\n" vira quebra de linha. Corpo e família padrão vêm de `tip`. */
   function runs(t: Texto, base: Base = {}) {
     const trechos = typeof t === "string" ? [{ texto: t }] : t;
     const out: InstanceType<typeof TextRun>[] = [];
@@ -66,11 +69,12 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
             bold: ("negrito" in x && x.negrito) || base.negrito || false,
             italics: ("italico" in x && x.italico) || false,
             color: "suave" in x && x.suave ? COR.suave : (base.cor ?? COR.texto),
+            font: base.fonte ?? tip.familiaWord,
             ...("pequeno" in x && x.pequeno
-              ? { size: meio((base.tamanho ?? 10) - 1) }
+              ? { size: meio((base.tamanho ?? tip.corpo) - 1) }
               : base.tamanho
                 ? { size: meio(base.tamanho) }
-                : {}),
+                : { size: meio(tip.corpo) }),
           }),
         ),
       );
@@ -183,7 +187,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   async function bloco(b: Bloco) {
     switch (b.tipo) {
       case "titulo": {
-        const t = b.nivel === 1 ? 15 : b.nivel === 2 ? 12 : 10.5;
+        const t = b.nivel === 1 ? tip.titulo[1] : b.nivel === 2 ? tip.titulo[2] : tip.titulo[3];
         filhos.push(
           new Paragraph({
             alignment: al(b.alinhamento),
@@ -201,7 +205,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
             spacing: { after: tw(6) },
             ...(b.recuo ? { indent: { left: tw(16) } } : {}),
             children: runs(b.texto, {
-              tamanho: b.tamanho === "pequeno" ? 8.5 : b.tamanho === "grande" ? 13 : 10,
+              tamanho: b.tamanho === "pequeno" ? tip.paragrafo.pequeno : b.tamanho === "grande" ? tip.paragrafo.grande : tip.paragrafo.normal,
               ...(b.suave ? { cor: COR.suave } : {}),
               ...(b.negrito ? { negrito: true } : {}),
             }),
@@ -288,7 +292,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
                 new Paragraph({
                   alignment: AlignmentType.CENTER,
                   spacing: { after: 0 },
-                  children: runs(l, k > 0 ? { tamanho: 9, cor: COR.suave } : {}),
+                  children: runs(l, k > 0 ? { tamanho: tip.corpo - 1, cor: COR.suave } : {}),
                 }),
             ),
           });
@@ -379,7 +383,10 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
       ],
     });
   };
-  const rodapeTexto = [timbre?.rodape?.trim(), doc.rodape?.trim()].filter(Boolean).join("\n");
+  // Sem timbre (ata sem logo do escritório) some o texto de rodapé; a numeração de páginas fica.
+  const rodapeTexto = tip.rodapeEscritorio
+    ? [timbre?.rodape?.trim(), doc.rodape?.trim()].filter(Boolean).join("\n")
+    : "";
   const rodape = () =>
     new Footer({
       children: [
@@ -387,7 +394,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           spacing: { after: 0 },
-          children: [new TextRun({ children: ["Página ", PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES], size: meio(7.5), color: COR.suave })],
+          children: [new TextRun({ children: ["Página ", PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES], size: meio(7.5), color: COR.suave, font: tip.familiaWord })],
         }),
       ],
     });
@@ -398,7 +405,7 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
     title: doc.titulo,
     styles: {
       default: {
-        document: { run: { font: "Calibri", size: meio(10), color: COR.texto }, paragraph: { spacing: { line: 276 } } },
+        document: { run: { font: tip.familiaWord, size: meio(tip.corpo), color: COR.texto }, paragraph: { spacing: { line: 276 } } },
       },
     },
     numbering: {

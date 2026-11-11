@@ -1,5 +1,10 @@
 # Modelos de Ata — Condomínio Lago Negro
 
+> **Nota (11/11/2026):** este documento fica como histórico do primeiro conjunto. A origem única dos
+> oito modelos — inclusive os dois do Lago Negro, que passaram a sair **sem logo do escritório e com
+> borda de página** — é [`MODELOS-ATA-POR-CIDADE.md`](MODELOS-ATA-POR-CIDADE.md). Editar o texto de um
+> modelo exige editar lá e em `domain/modelosAtaSeed.ts`.
+
 Modelos escritos a partir das atas reais do Lago Negro (Rancho Queimado/SC). O cartório de Rancho
 Queimado aceita layout visual, com títulos e listas, além do texto corrido — por isso os modelos
 abaixo usam cabeçalhos e blocos.

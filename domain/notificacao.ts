@@ -315,10 +315,16 @@ export function dataPorExtenso(dataBR: string): string {
   return `${dia} de ${mes} de ${ano}`;
 }
 
-/** Extrai a cidade de um endereço no padrão "RUA ..., BAIRRO - CAMBORIÚ/SC - CEP ...". */
+/**
+ * Extrai a cidade de um endereço. A cidade vem antes da UF, separada por
+ * "/", travessão ou hífen, como em:
+ * - "RUA ..., BAIRRO - CAMBORIÚ/SC - CEP ..."
+ * - "Rua ..., Bairro, Balneário Camboriú – SC"
+ * - "Avenida ..., 2070, Balneário Camboriú - SC"
+ */
 export function extrairCidadeDoEndereco(endereco: string, padrao = "Camboriú"): string {
   if (!endereco || !endereco.trim()) return padrao;
-  const m = endereco.match(/(?:[-–,]\s*)([A-Za-zÀ-ÿ\s]+?)\s*\/\s*[A-Z]{2}\b/);
+  const m = endereco.match(/(?:[-–,]\s*)([A-Za-zÀ-ÿ\s]+?)\s*(?:\/|–|-)\s*[A-Z]{2}\b/);
   if (m && m[1]) {
     const bruto = m[1].trim();
     return bruto

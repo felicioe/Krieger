@@ -22,6 +22,29 @@ describe("notificacao (domínio)", () => {
     ).toBe("Camboriú");
   });
 
+  it("reconhece a cidade separada da UF por barra, travessão ou hífen", () => {
+    expect(extrairCidadeDoEndereco("Rua 3700, nº 281 – Centro, Balneário Camboriú – SC")).toBe(
+      "Balneário Camboriú",
+    );
+    expect(extrairCidadeDoEndereco("Avenida Atlântica, 2070, Balneário Camboriú - SC")).toBe(
+      "Balneário Camboriú",
+    );
+    expect(extrairCidadeDoEndereco("Rua Madrid, nº 165, Camboriú – SC")).toBe("Camboriú");
+    expect(extrairCidadeDoEndereco("Rua Blumenau, 100, Centro, Itajaí/SC")).toBe("Itajaí");
+  });
+
+  it("não confunde o bairro com a cidade quando há mais de um delimitador", () => {
+    expect(extrairCidadeDoEndereco("Rua X, 100, Centro, Camboriú – SC")).toBe("Camboriú");
+    expect(
+      extrairCidadeDoEndereco("RUA SANTA RITA, 97 - SÃO FRANCISCO DE ASSIS - CAMBORIÚ/SC - CEP 88.340-774"),
+    ).toBe("Camboriú");
+  });
+
+  it("devolve o padrão quando o endereço está vazio", () => {
+    expect(extrairCidadeDoEndereco("")).toBe("Camboriú");
+    expect(extrairCidadeDoEndereco("", "")).toBe("");
+  });
+
   it("monta parágrafo de multa com valor e extenso", () => {
     const p = montarParagrafoProvidencia({
       modalidade: "reincidencia_multa",

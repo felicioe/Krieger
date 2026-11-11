@@ -97,6 +97,24 @@ export interface Documento {
   rodape?: string;
   /** Moldura na página inteira (layout de cartório). Desenhada no PDF e no Word. */
   bordaPagina?: boolean;
+  /**
+   * Família tipográfica do documento. Ausente = `interface` (Source Sans 3 / Calibri),
+   * o padrão de edital, relatórios e previsto × realizado. `"documento"` usa Liberation
+   * Sans (PDF) / Arial (Word), métricas de Arial, para modelos de ata de cartório.
+   */
+  fonte?: "interface" | "documento";
+  /**
+   * Corpo base do texto corrido (pt). Ausente = 10 pt (padrão da interface).
+   * Títulos e parágrafos `pequeno`/`grande` escalam proporcionalmente; tabelas não.
+   */
+  tamanhoCorpo?: number;
+  /**
+   * Se `false`, suprime o texto de rodapé do escritório mesmo quando há timbre.
+   * A numeração "Página X de Y" continua sempre. Ausente = `true`.
+   * Ata de modelo sem logo do escritório já vem com `timbre: null`, então o efeito
+   * prático é o mesmo; o campo existe para casos futuros de timbre sem rodapé.
+   */
+  rodapeEscritorio?: boolean;
   blocos: Bloco[];
 }
 

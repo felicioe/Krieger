@@ -10,6 +10,21 @@ Decidido: a prioridade volta a ser `cidade+cartório > cidade > geral`, e o `tip
 dentro de cada nível, nunca por cima do cartório exato. Dois testes cobrem o caso, que nenhum
 deles alcançava antes. Corrigido na sessão de 11/11/2026 antes de a #256 ser encerrada.
 
+## 2026-11-11 — modelos de ata por cidade copiando o layout praticado nas atas reais
+
+O acervo de atas tem práticas de redação diferentes por município: Balneário Camboriú, Camboriú e
+Itajaí escrevem em prosa corrida, enquanto Rancho Queimado usa títulos e listas. Decidido: cadastrar
+um par ordinária/extraordinária por município, com o texto tirado das atas reais daquele município,
+em vez de um modelo genérico para todos.
+
+Decidido também que a ata **não leva logotipo nem rodapé do escritório e leva borda de página**, e
+que o documento sai em Liberation Sans 12 pt — a métrica da Arial usada nas atas —, com o restante do
+sistema mantendo a tipografia da interface. Sem timbre, o rodapé do escritório deixa de aparecer; a
+numeração de páginas permanece.
+
+A cidade do endereço do condomínio passa a ser reconhecida com `/`, travessão ou hífen antes da UF,
+porque cadastros reais usam "Balneário Camboriú – SC" e sem isso o modelo por cidade não casava.
+
 ## 2026-11-10 — modelo de ata escolhido pela cidade do condomínio e pelo tipo da assembleia
 
 A #256 criou a store `modelos_ata`, mas a escolha automática comparava o campo `cidade` do modelo
