@@ -39,8 +39,19 @@ function ListaValores({
       vazio={vazio}
       render={(l, up) => (
         <>
-          <Input aria-label={rotuloNome} placeholder={rotuloNome} value={l.nome} onChange={(e) => up({ nome: e.target.value })} disabled={bloqueado} />
-          <DinheiroInput aria-label="Valor" value={l.valor} onChange={(v) => up({ valor: v ?? 0 })} disabled={bloqueado} />
+          <Input
+            aria-label={rotuloNome}
+            placeholder={rotuloNome}
+            value={l.nome}
+            onChange={(e) => up({ nome: e.target.value })}
+            disabled={bloqueado}
+          />
+          <DinheiroInput
+            aria-label="Valor"
+            value={l.valor}
+            onChange={(v) => up({ valor: v ?? 0 })}
+            disabled={bloqueado}
+          />
         </>
       )}
     />
@@ -49,7 +60,12 @@ function ListaValores({
 
 function Total({ rotulo, valor, destaque }: { rotulo: string; valor: number; destaque?: boolean }) {
   return (
-    <div className={cn("mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 border-t pt-3 text-sm", destaque && "font-semibold text-primary")}>
+    <div
+      className={cn(
+        "mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-0.5 border-t pt-3 text-sm",
+        destaque && "font-semibold text-primary",
+      )}
+    >
       <span className="min-w-0 break-words text-muted-foreground">{rotulo}</span>
       <span className="num font-medium text-foreground">{formatBRL(valor)}</span>
     </div>
@@ -76,19 +92,27 @@ export function EditorDemonstrativo({
   bloqueado?: boolean;
 }) {
   const d = valor;
-  const mudar = (parcial: Partial<Demonstrativo>) => !bloqueado && onChange(recalcularDemonstrativo({ ...d, ...parcial }));
+  const mudar = (parcial: Partial<Demonstrativo>) =>
+    !bloqueado && onChange(recalcularDemonstrativo({ ...d, ...parcial }));
   const grupos = d.despesas.grupos;
-  const mudarGrupos = (g: Demonstrativo["despesas"]["grupos"]) => mudar({ despesas: { ...d.despesas, grupos: g } });
+  const mudarGrupos = (g: Demonstrativo["despesas"]["grupos"]) =>
+    mudar({ despesas: { ...d.despesas, grupos: g } });
 
   return (
     <fieldset disabled={bloqueado} className="min-w-0 space-y-6">
       <SectionCard titulo="Período" descricao="Intervalo coberto pelo demonstrativo.">
         <div className="grid max-w-md gap-4 sm:grid-cols-2">
           <Field rotulo="Início">
-            <DataInput value={d.periodo.ini} onChange={(v) => mudar({ periodo: { ...d.periodo, ini: v } })} />
+            <DataInput
+              value={d.periodo.ini}
+              onChange={(v) => mudar({ periodo: { ...d.periodo, ini: v } })}
+            />
           </Field>
           <Field rotulo="Fim">
-            <DataInput value={d.periodo.fim} onChange={(v) => mudar({ periodo: { ...d.periodo, fim: v } })} />
+            <DataInput
+              value={d.periodo.fim}
+              onChange={(v) => mudar({ periodo: { ...d.periodo, fim: v } })}
+            />
           </Field>
         </div>
         {avisoPeriodo}
@@ -136,7 +160,12 @@ export function EditorDemonstrativo({
         descricao={descricaoDespesas}
         acoes={
           !bloqueado && (
-            <Button type="button" variant="outline" size="sm" onClick={() => mudarGrupos([...grupos, { nome: "", itens: [] }])}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => mudarGrupos([...grupos, { nome: "", itens: [] }])}
+            >
               <Plus /> Adicionar grupo
             </Button>
           )
@@ -155,7 +184,11 @@ export function EditorDemonstrativo({
                     <Input
                       value={g.nome}
                       placeholder="Nome do grupo"
-                      onChange={(e) => mudarGrupos(grupos.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))}
+                      onChange={(e) =>
+                        mudarGrupos(
+                          grupos.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)),
+                        )
+                      }
                     />
                   </Field>
                   <Button
@@ -171,13 +204,18 @@ export function EditorDemonstrativo({
                 </div>
                 <ListaValores
                   itens={g.itens}
-                  onChange={(itens) => mudarGrupos(grupos.map((x, j) => (j === i ? { ...x, itens } : x)))}
+                  onChange={(itens) =>
+                    mudarGrupos(grupos.map((x, j) => (j === i ? { ...x, itens } : x)))
+                  }
                   rotuloNome="Despesa"
                   rotuloAdicionar="Adicionar despesa"
                   vazio="Nenhuma despesa neste grupo."
                   bloqueado={bloqueado}
                 />
-                <Total rotulo={`Subtotal ${g.nome || "do grupo"}`} valor={g.itens.reduce((s, l) => s + (l.valor || 0), 0)} />
+                <Total
+                  rotulo={`Subtotal ${g.nome || "do grupo"}`}
+                  valor={g.itens.reduce((s, l) => s + (l.valor || 0), 0)}
+                />
               </div>
             ))}
           </div>

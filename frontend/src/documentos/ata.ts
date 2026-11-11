@@ -82,7 +82,9 @@ export function documentoAta(o: {
   // Quando há modelo de ata escolhido, o corpo do documento vem do texto do modelo com variáveis substituídas;
   // o layout padrão (blocos fixos) só é usado como fallback.
   if (modelo?.texto?.trim()) {
-    const unidadesPresentes = presentes.map((p) => p.unidade.trim() || p.nome.trim()).filter(Boolean);
+    const unidadesPresentes = presentes
+      .map((p) => p.unidade.trim() || p.nome.trim())
+      .filter(Boolean);
     const itensPauta = a.itens.map((item) => item.titulo.trim()).filter(Boolean);
     const dataExtenso = a.data ? dataPorExtenso(formatData(a.data)) : "";
     const quorumTexto = a.quorum.totalUnidades
@@ -135,14 +137,40 @@ export function documentoAta(o: {
       tamanhoCorpo: 12,
       ...(a.status !== "finalizada" ? { marcaDagua: "RASCUNHO" } : {}),
       rodape: [nome, data && `Assembleia de ${data}`].filter(Boolean).join(" · "),
-      blocos: blocosModelo.length ? blocosModelo : [{ tipo: "paragrafo", texto: "Modelo de ata sem conteúdo.", suave: true }],
+      blocos: blocosModelo.length
+        ? blocosModelo
+        : [{ tipo: "paragrafo", texto: "Modelo de ata sem conteúdo.", suave: true }],
     };
   }
 
   const blocos: Bloco[] = [
-    { tipo: "titulo", nivel: 1, alinhamento: "centro", texto: `ATA DA ASSEMBLEIA GERAL ${tipo.toUpperCase()}` },
-    ...(nome ? [{ tipo: "paragrafo" as const, texto: nome, alinhamento: "centro" as const, negrito: true, tamanho: "grande" as const }] : []),
-    ...(condominio?.cnpj ? [{ tipo: "paragrafo" as const, texto: `CNPJ ${condominio.cnpj}`, alinhamento: "centro" as const, suave: true }] : []),
+    {
+      tipo: "titulo",
+      nivel: 1,
+      alinhamento: "centro",
+      texto: `ATA DA ASSEMBLEIA GERAL ${tipo.toUpperCase()}`,
+    },
+    ...(nome
+      ? [
+          {
+            tipo: "paragrafo" as const,
+            texto: nome,
+            alinhamento: "centro" as const,
+            negrito: true,
+            tamanho: "grande" as const,
+          },
+        ]
+      : []),
+    ...(condominio?.cnpj
+      ? [
+          {
+            tipo: "paragrafo" as const,
+            texto: `CNPJ ${condominio.cnpj}`,
+            alinhamento: "centro" as const,
+            suave: true,
+          },
+        ]
+      : []),
 
     { tipo: "titulo", nivel: 2, texto: "Dados da reunião" },
     {
@@ -173,7 +201,9 @@ export function documentoAta(o: {
             { titulo: "Nome", largura: "*" },
             { titulo: "Procurador", largura: 70, alinhamento: "centro" },
           ],
-          linhas: presentes.map((p) => ({ celulas: [p.unidade || "—", p.nome || "—", p.procurador ? "Sim" : "—"] })),
+          linhas: presentes.map((p) => ({
+            celulas: [p.unidade || "—", p.nome || "—", p.procurador ? "Sim" : "—"],
+          })),
         }
       : { tipo: "paragrafo", texto: "Lista de presentes não informada.", suave: true },
 
@@ -183,12 +213,34 @@ export function documentoAta(o: {
           const v = item.votos;
           const votou = v.favor + v.contra + v.abstencao > 0;
           return [
-            { tipo: "titulo", nivel: 3, texto: `${i + 1}. ${item.titulo.trim() || "Item sem título"}` },
+            {
+              tipo: "titulo",
+              nivel: 3,
+              texto: `${i + 1}. ${item.titulo.trim() || "Item sem título"}`,
+            },
             ...(item.discussao.trim()
-              ? [{ tipo: "paragrafo" as const, alinhamento: "justificado" as const, texto: [{ texto: "Discussão: ", negrito: true }, { texto: item.discussao.trim() }] }]
+              ? [
+                  {
+                    tipo: "paragrafo" as const,
+                    alinhamento: "justificado" as const,
+                    texto: [
+                      { texto: "Discussão: ", negrito: true },
+                      { texto: item.discussao.trim() },
+                    ],
+                  },
+                ]
               : []),
             ...(item.deliberacao.trim()
-              ? [{ tipo: "paragrafo" as const, alinhamento: "justificado" as const, texto: [{ texto: "Deliberação: ", negrito: true }, { texto: item.deliberacao.trim() }] }]
+              ? [
+                  {
+                    tipo: "paragrafo" as const,
+                    alinhamento: "justificado" as const,
+                    texto: [
+                      { texto: "Deliberação: ", negrito: true },
+                      { texto: item.deliberacao.trim() },
+                    ],
+                  },
+                ]
               : []),
             ...(votou
               ? [
@@ -203,8 +255,18 @@ export function documentoAta(o: {
         })
       : [{ tipo: "paragrafo" as const, texto: "Nenhum item registrado.", suave: true }]),
 
-    ...(a.encerramento.trim() ? [{ tipo: "titulo" as const, nivel: 2 as const, texto: "Encerramento" }, ...paragrafos(a.encerramento)] : []),
-    ...(a.observacoes.trim() ? [{ tipo: "titulo" as const, nivel: 2 as const, texto: "Observações" }, ...paragrafos(a.observacoes)] : []),
+    ...(a.encerramento.trim()
+      ? [
+          { tipo: "titulo" as const, nivel: 2 as const, texto: "Encerramento" },
+          ...paragrafos(a.encerramento),
+        ]
+      : []),
+    ...(a.observacoes.trim()
+      ? [
+          { tipo: "titulo" as const, nivel: 2 as const, texto: "Observações" },
+          ...paragrafos(a.observacoes),
+        ]
+      : []),
 
     ...(localEData(cidade, data) ? [{ tipo: "espaco" as const, altura: 12 }] : []),
     {
@@ -213,7 +275,9 @@ export function documentoAta(o: {
         [a.mesa.presidente.trim() || " ", "Presidente da mesa"],
         [a.mesa.secretario.trim() || " ", "Secretário(a)"],
       ],
-      ...(localEData(cidade, data) ? { localData: localEData(cidade, data), localDataAlinhamento: "direita" as const } : {}),
+      ...(localEData(cidade, data)
+        ? { localData: localEData(cidade, data), localDataAlinhamento: "direita" as const }
+        : {}),
     },
   ];
 

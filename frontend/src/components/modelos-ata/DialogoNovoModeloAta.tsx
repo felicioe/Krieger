@@ -5,7 +5,14 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
 import { api } from "@/lib/api";
 import { chaves } from "@/lib/queries";
@@ -25,7 +32,8 @@ export function DialogoNovoModeloAta({
   const [erro, setErro] = useState<string | null>(null);
 
   const criar = useMutation({
-    mutationFn: (dados: Omit<ModeloAta, "id">) => api.salvar<Omit<ModeloAta, "id"> & { id?: string }>("modelos_ata", dados),
+    mutationFn: (dados: Omit<ModeloAta, "id">) =>
+      api.salvar<Omit<ModeloAta, "id"> & { id?: string }>("modelos_ata", dados),
     onSuccess: async (salvo) => {
       await queryClient.invalidateQueries({ queryKey: chaves.store("modelos_ata") });
       queryClient.setQueryData(chaves.item("modelos_ata", salvo.id), salvo);
@@ -51,11 +59,22 @@ export function DialogoNovoModeloAta({
   }
 
   return (
-    <Dialog open={aberto} onOpenChange={(v) => { if (!v) { setErro(null); setNome(""); } aoMudar(v); }}>
+    <Dialog
+      open={aberto}
+      onOpenChange={(v) => {
+        if (!v) {
+          setErro(null);
+          setNome("");
+        }
+        aoMudar(v);
+      }}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Novo modelo de ata</DialogTitle>
-          <DialogDescription>O modelo poderá ser ajustado depois com cidade, cartório e texto.</DialogDescription>
+          <DialogDescription>
+            O modelo poderá ser ajustado depois com cidade, cartório e texto.
+          </DialogDescription>
         </DialogHeader>
         <form id="form-novo-modelo-ata" onSubmit={submit} className="space-y-4">
           <Field rotulo="Nome" erro={erro}>
@@ -71,7 +90,12 @@ export function DialogoNovoModeloAta({
           </Field>
         </form>
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => aoMudar(false)} disabled={criar.isPending}>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => aoMudar(false)}
+            disabled={criar.isPending}
+          >
             Cancelar
           </Button>
           <Button type="submit" form="form-novo-modelo-ata" disabled={criar.isPending}>

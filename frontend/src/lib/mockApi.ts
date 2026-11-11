@@ -3,7 +3,23 @@
  * Guarda tudo no localStorage e imita as regras e mensagens da API PHP.
  * Usuário semente: admin / admin123 (perfil admin).
  */
-import { STORES, type Assembleia, type Backup, type BackupRegistro, type Condominio, type ConsultaHistoricoItem, type DocumentoDrive, type DocumentoDriveConteudo, type DocumentoDriveRegistro, type Importacao, type Mensal, type Perfil, type Store, type Usuario, type UsuarioAdmin } from "@/domain/types";
+import {
+  STORES,
+  type Assembleia,
+  type Backup,
+  type BackupRegistro,
+  type Condominio,
+  type ConsultaHistoricoItem,
+  type DocumentoDrive,
+  type DocumentoDriveConteudo,
+  type DocumentoDriveRegistro,
+  type Importacao,
+  type Mensal,
+  type Perfil,
+  type Store,
+  type Usuario,
+  type UsuarioAdmin,
+} from "@/domain/types";
 import { condominioPadrao, normalizarCondominio } from "@/domain/condominio";
 import { inicializarIndicesImportados, validarIndicesCondominio } from "@/domain/indicesCondominio";
 import type { Exercicio, ConfigEscritorio } from "@/domain/types";
@@ -17,34 +33,59 @@ import { dataParaBR, dataParaISO } from "./format";
 import { novoId } from "./id";
 import { bytesDoDataUrl } from "./arquivo";
 import type { AnexoImportado } from "@/domain/types";
-import { rotasPermissoes } from './permissoes';
-import type { PermissaoExcecao, PermissaoCatalogo } from './apiTypes';
+import { rotasPermissoes } from "./permissoes";
+import type { PermissaoExcecao, PermissaoCatalogo } from "./apiTypes";
 
-const CHAVE_PERMISSOES = 'krieger-mock-permissoes-v1';
+const CHAVE_PERMISSOES = "krieger-mock-permissoes-v1";
 /** Matriz de permissões por perfil (SuperADM), separada das exceções por usuário. */
-const CHAVE_MATRIZ_PERFIS = 'krieger-mock-matriz-perfis-v1';
-const MODULOS_EDITAVEIS = ['condominios', 'prestacao_contas', 'previsao_orcamentaria', 'relatorio_mensal', 'importador', 'editais', 'atas', 'modelos', 'drive_documentos', 'escritorio'];
+const CHAVE_MATRIZ_PERFIS = "krieger-mock-matriz-perfis-v1";
+const MODULOS_EDITAVEIS = [
+  "condominios",
+  "prestacao_contas",
+  "previsao_orcamentaria",
+  "relatorio_mensal",
+  "importador",
+  "editais",
+  "atas",
+  "modelos",
+  "drive_documentos",
+  "escritorio",
+];
 /** Telas de administração: só o SuperADM (admin) alcança, qualquer que seja a matriz. */
-const MODULOS_ADMINISTRACAO = ['usuarios', 'backup', 'escritorio'];
+const MODULOS_ADMINISTRACAO = ["usuarios", "backup", "escritorio"];
 /** Permissões padrão de cada perfil, espelhando migrations/20261108_perfis_tres_niveis.sql. */
 function permissoesPadraoDoPerfil(perfil: Perfil): string[] {
-  if (perfil === 'admin') return ['*'];
+  if (perfil === "admin") return ["*"];
   const todas = catalogoPermissoes().map((p) => p.chave);
   // ADM e Usuário começam iguais: tudo menos as telas de administração.
-  return todas.filter((chave) => !MODULOS_ADMINISTRACAO.includes(chave.split('.')[0] ?? ''));
+  return todas.filter((chave) => !MODULOS_ADMINISTRACAO.includes(chave.split(".")[0] ?? ""));
 }
 
 /** Matriz vigente: o que o SuperADM gravou para o perfil, ou o padrão quando ainda não mexeu. */
 function permissoesDoPerfil(perfil: Perfil): string[] {
-  if (perfil === 'admin') return ['*'];
+  if (perfil === "admin") return ["*"];
   const gravada = ler<Record<string, string[]>>(CHAVE_MATRIZ_PERFIS, () => ({}))[perfil];
   return Array.isArray(gravada) ? gravada : permissoesPadraoDoPerfil(perfil);
 }
 function catalogoPermissoes(): PermissaoCatalogo[] {
   const modulos = [...new Set(rotasPermissoes.map(([, m]) => m))];
-  return modulos.flatMap((m) => ['visualizar', ...(MODULOS_EDITAVEIS.includes(m) ? ['editar'] : [])].map((acao) => ({ chave: m + '.' + acao, modulo: m, tela: m, acao })));
+  return modulos.flatMap((m) =>
+    ["visualizar", ...(MODULOS_EDITAVEIS.includes(m) ? ["editar"] : [])].map((acao) => ({
+      chave: m + "." + acao,
+      modulo: m,
+      tela: m,
+      acao,
+    })),
+  );
 }
-import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoResposta, type ContagensLimpeza, type Registro } from "./apiTypes";
+import {
+  ApiError,
+  type AlvoLimpeza,
+  type ApiAdapter,
+  type ConfirmarImportacaoResposta,
+  type ContagensLimpeza,
+  type Registro,
+} from "./apiTypes";
 
 const CHAVE_DADOS = "krieger-mock-dados-v1";
 const CHAVE_USUARIOS = "krieger-mock-usuarios-v1";
@@ -161,9 +202,31 @@ function semente(): Dados {
     linhasLista: 30,
   };
   const assembleias: Registro[] = [
-    { ...assembleiaBase, ...editalExemplo(), id: "ass-1", condoId: "condo-acacias", tipo: "ordinaria", data: dataParaISO(emDias(12)) },
-    { ...assembleiaBase, id: "ass-2", condoId: "condo-solar", tipo: "extraordinaria", modalidade: "online", data: dataParaISO(emDias(30)), hora1: "20:00" },
-    { ...assembleiaBase, id: "ass-3", condoId: "condo-pinheiros", tipo: "ordinaria", data: dataParaISO(emDias(-40)), hora1: "19:30" },
+    {
+      ...assembleiaBase,
+      ...editalExemplo(),
+      id: "ass-1",
+      condoId: "condo-acacias",
+      tipo: "ordinaria",
+      data: dataParaISO(emDias(12)),
+    },
+    {
+      ...assembleiaBase,
+      id: "ass-2",
+      condoId: "condo-solar",
+      tipo: "extraordinaria",
+      modalidade: "online",
+      data: dataParaISO(emDias(30)),
+      hora1: "20:00",
+    },
+    {
+      ...assembleiaBase,
+      id: "ass-3",
+      condoId: "condo-pinheiros",
+      tipo: "ordinaria",
+      data: dataParaISO(emDias(-40)),
+      hora1: "19:30",
+    },
   ];
   return {
     condominios,
@@ -171,7 +234,17 @@ function semente(): Dados {
     mensais: mensaisExemplo(condominios[0] as Registro),
     assembleias,
     modelos: [modeloExemplo(), modeloExemploSolar()],
-    config: [{ id: "escritorio", nome: "Krieger Assessoria Contábil e Condominial", cidade: "", rodape: "", assinatura: "", logo: "", logoRatio: null }],
+    config: [
+      {
+        id: "escritorio",
+        nome: "Krieger Assessoria Contábil e Condominial",
+        cidade: "",
+        rodape: "",
+        assinatura: "",
+        logo: "",
+        logoRatio: null,
+      },
+    ],
     importacoes: [],
     anexos_importacao: [],
     atas: [ataExemplo(assembleias[0] as Registro, condominios[0] as Registro)],
@@ -183,7 +256,14 @@ function semente(): Dados {
 
 /** Modelo de edital de exemplo, com variáveis {{...}} e condições no formato de `domain/modeloTexto.ts`. */
 function modeloExemplo(): Registro {
-  return { id: "mod-padrao", condoId: "", nome: "Edital padrão", versao: 2, pautaOrdinaria: PAUTA_EXEMPLO, blocos: blocosExemplo() };
+  return {
+    id: "mod-padrao",
+    condoId: "",
+    nome: "Edital padrão",
+    versao: 2,
+    pautaOrdinaria: PAUTA_EXEMPLO,
+    blocos: blocosExemplo(),
+  };
 }
 
 /** Modelo de exemplo de um condomínio específico, para a lista mostrar as duas formas. */
@@ -218,11 +298,35 @@ function blocosExemplo() {
     ),
     b("b4", "pauta", ""),
     b("b5", "texto", "Local: {{assembleia.local}}.", 'assembleia.modalidade != "online"'),
-    b("b6", "texto", "Acesso pelo Zoom: {{assembleia.zoomLink}} — ID {{assembleia.zoomId}} — senha {{assembleia.zoomSenha}}.", 'assembleia.modalidade != "presencial"'),
-    b("b7", "item", "A prestação de contas do exercício de {{assembleia.exercicio}} será enviada por e-mail.", 'assembleia.entregaContas == "email"'),
-    b("b7a", "item", "A prestação de contas do exercício de {{assembleia.exercicio}} ficará à disposição na administração.", 'assembleia.entregaContas == "administracao"'),
-    b("b7b", "item", "A prestação de contas do exercício de {{assembleia.exercicio}} estará disponível no aplicativo.", 'assembleia.entregaContas == "aplicativo"'),
-    b("b8", "item", "Os condôminos poderão ser representados por procurador, mediante procuração por escrito."),
+    b(
+      "b6",
+      "texto",
+      "Acesso pelo Zoom: {{assembleia.zoomLink}} — ID {{assembleia.zoomId}} — senha {{assembleia.zoomSenha}}.",
+      'assembleia.modalidade != "presencial"',
+    ),
+    b(
+      "b7",
+      "item",
+      "A prestação de contas do exercício de {{assembleia.exercicio}} será enviada por e-mail.",
+      'assembleia.entregaContas == "email"',
+    ),
+    b(
+      "b7a",
+      "item",
+      "A prestação de contas do exercício de {{assembleia.exercicio}} ficará à disposição na administração.",
+      'assembleia.entregaContas == "administracao"',
+    ),
+    b(
+      "b7b",
+      "item",
+      "A prestação de contas do exercício de {{assembleia.exercicio}} estará disponível no aplicativo.",
+      'assembleia.entregaContas == "aplicativo"',
+    ),
+    b(
+      "b8",
+      "item",
+      "Os condôminos poderão ser representados por procurador, mediante procuração por escrito.",
+    ),
     b("b9", "esquerda", "{{assembleia.cidade}}, {{assembleia.dataEmissao}}."),
     b("b10", "esquerda", "{{assembleia.assinante}}\n{{assembleia.cargo}}"),
   ];
@@ -273,9 +377,24 @@ function ataExemplo(edital: Registro, condo: Registro): Registro {
     quorum: { ...base.quorum, unidadesPresentes: 5 },
     itens: [
       ...(primeiro
-        ? [{ ...primeiro, discussao: "Apresentado o demonstrativo do exercício; dúvidas sobre a conta de água esclarecidas.", deliberacao: "Contas aprovadas.", votos: { favor: 4, contra: 0, abstencao: 1 } }]
+        ? [
+            {
+              ...primeiro,
+              discussao:
+                "Apresentado o demonstrativo do exercício; dúvidas sobre a conta de água esclarecidas.",
+              deliberacao: "Contas aprovadas.",
+              votos: { favor: 4, contra: 0, abstencao: 1 },
+            },
+          ]
         : []),
-      ...(segundo ? [{ ...segundo, discussao: "Apresentada a previsão orçamentária com os ajustes propostos." }] : []),
+      ...(segundo
+        ? [
+            {
+              ...segundo,
+              discussao: "Apresentada a previsão orçamentária com os ajustes propostos.",
+            },
+          ]
+        : []),
       ...resto,
     ],
   };
@@ -290,26 +409,52 @@ function exercicioExemplo(condo: Registro): Registro {
   const demonstrativo = recalcularDemonstrativo({
     ...e.demonstrativo!,
     periodo: { ini: `01/01/${ano}`, fim: `31/12/${ano}` },
-    saldoAnterior: { contas: [l("Conta corrente", 12300.5), l("Aplicação financeira", 45000)], total: 0 },
+    saldoAnterior: {
+      contas: [l("Conta corrente", 12300.5), l("Aplicação financeira", 45000)],
+      total: 0,
+    },
     receitas: {
-      itens: [l("Taxa condominial", 374400), l("Fundo de reserva", 37440), l("Multas e juros", 2150.3), l("Rendimentos de aplicação", 3820.15)],
+      itens: [
+        l("Taxa condominial", 374400),
+        l("Fundo de reserva", 37440),
+        l("Multas e juros", 2150.3),
+        l("Rendimentos de aplicação", 3820.15),
+      ],
       subtotal: 0,
       totalComSaldo: 0,
     },
     despesas: {
       grupos: [
-        { nome: "Pessoal", itens: [l("Salários", 132000), l("Encargos sociais", 52800), l("Vale-transporte", 9600)] },
+        {
+          nome: "Pessoal",
+          itens: [l("Salários", 132000), l("Encargos sociais", 52800), l("Vale-transporte", 9600)],
+        },
         { nome: "Consumo", itens: [l("Água e esgoto", 54300), l("Energia elétrica", 31200)] },
         {
           nome: "Manutenção",
-          itens: [l("Manutenção de elevadores", 14400), l("Jardinagem", 9000), l("Fundo de caixa p/ obras", 24000), l("Manutenção predial", 18750.4)],
+          itens: [
+            l("Manutenção de elevadores", 14400),
+            l("Jardinagem", 9000),
+            l("Fundo de caixa p/ obras", 24000),
+            l("Manutenção predial", 18750.4),
+          ],
         },
-        { nome: "Administrativas", itens: [l("Taxa de administração", 21600), l("Seguro predial", 6850), l("Material de escritório", 1240.6)] },
+        {
+          nome: "Administrativas",
+          itens: [
+            l("Taxa de administração", 21600),
+            l("Seguro predial", 6850),
+            l("Material de escritório", 1240.6),
+          ],
+        },
       ],
       subtotal: 0,
       saldoRestante: 0,
     },
-    saldoAtual: { contas: [l("Conta corrente", 14369.95), l("Aplicação financeira", 85000)], total: 0 },
+    saldoAtual: {
+      contas: [l("Conta corrente", 14369.95), l("Aplicação financeira", 85000)],
+      total: 0,
+    },
   });
   return {
     ...e,
@@ -320,8 +465,20 @@ function exercicioExemplo(condo: Registro): Registro {
       modo: "tradicional",
       fundoReservaPct: 10,
       ajustes: [
-        { id: "aj-1", descricao: "Pintura da fachada (rateio em 12 meses)", sinal: "+", valor: 18000, grupo: "Manutenção" },
-        { id: "aj-2", descricao: "Fim do contrato de vigilância noturna", sinal: "-", valor: 6000, grupo: "Pessoal" },
+        {
+          id: "aj-1",
+          descricao: "Pintura da fachada (rateio em 12 meses)",
+          sinal: "+",
+          valor: 18000,
+          grupo: "Manutenção",
+        },
+        {
+          id: "aj-2",
+          descricao: "Fim do contrato de vigilância noturna",
+          sinal: "-",
+          valor: 6000,
+          grupo: "Pessoal",
+        },
       ],
     },
   } as unknown as Registro;
@@ -339,8 +496,20 @@ function mensaisExemplo(condo: Registro): Registro[] {
   // Saldo inicial = saldo atual do exercício de exemplo (31/12 do ano anterior).
   let contas = [l("Conta corrente", 14369.95), l("Aplicação financeira", 85000)];
   const notasPorMes: Record<number, { rubrica: string; texto: string; valor: number | null }[]> = {
-    3: [{ rubrica: "Pintura da fachada (rateio em 12 meses)", texto: "Início da pintura da fachada, aprovada em assembleia; 1ª de 6 parcelas.", valor: 3000 }],
-    5: [{ rubrica: "Energia elétrica", texto: "Reajuste tarifário da concessionária aplicado a partir deste mês.", valor: null }],
+    3: [
+      {
+        rubrica: "Pintura da fachada (rateio em 12 meses)",
+        texto: "Início da pintura da fachada, aprovada em assembleia; 1ª de 6 parcelas.",
+        valor: 3000,
+      },
+    ],
+    5: [
+      {
+        rubrica: "Energia elétrica",
+        texto: "Reajuste tarifário da concessionária aplicado a partir deste mês.",
+        valor: null,
+      },
+    ],
   };
   return Array.from({ length: ate }, (_, i) => {
     const m = i + 1;
@@ -350,14 +519,28 @@ function mensaisExemplo(condo: Registro): Registro[] {
       periodo: { ini: `01/${p(m)}/${ano}`, fim: `${ultimoDia(m)}/${p(m)}/${ano}` },
       saldoAnterior: { contas: contas.map((c) => ({ ...c })), total: 0 },
       receitas: {
-        itens: [l("Taxa condominial", 31200 * 1.1 - 715 * (3 + (m % 3))), l("Fundo de reserva", 3120), l("Rendimentos de aplicação", 410 + m * 12.5)],
+        itens: [
+          l("Taxa condominial", 31200 * 1.1 - 715 * (3 + (m % 3))),
+          l("Fundo de reserva", 3120),
+          l("Rendimentos de aplicação", 410 + m * 12.5),
+        ],
         subtotal: 0,
         totalComSaldo: 0,
       },
       despesas: {
         grupos: [
-          { nome: "Pessoal", itens: [l("Salários", 11550), l("Encargos sociais", 4620), l("Vale-transporte", 840 * osc)] },
-          { nome: "Consumo", itens: [l("Água e esgoto", 4751 * osc), l("Energia elétrica", 2730 * 1.18 * osc)] },
+          {
+            nome: "Pessoal",
+            itens: [
+              l("Salários", 11550),
+              l("Encargos sociais", 4620),
+              l("Vale-transporte", 840 * osc),
+            ],
+          },
+          {
+            nome: "Consumo",
+            itens: [l("Água e esgoto", 4751 * osc), l("Energia elétrica", 2730 * 1.18 * osc)],
+          },
           {
             nome: "Manutenção",
             itens: [
@@ -368,7 +551,14 @@ function mensaisExemplo(condo: Registro): Registro[] {
               ...(m >= 3 && m <= 8 ? [l("Pintura da fachada (rateio em 12 meses)", 3000)] : []),
             ],
           },
-          { nome: "Administrativas", itens: [l("Taxa de administração", 1890), l("Seguro predial", 599), l("Material de escritório", 108.55 * osc)] },
+          {
+            nome: "Administrativas",
+            itens: [
+              l("Taxa de administração", 1890),
+              l("Seguro predial", 599),
+              l("Material de escritório", 108.55 * osc),
+            ],
+          },
         ],
         subtotal: 0,
         saldoRestante: 0,
@@ -376,7 +566,10 @@ function mensaisExemplo(condo: Registro): Registro[] {
     });
     // Saldo atual fecha com o calculado: aplicação cresce, o resto fica na conta corrente.
     const aplicacao = 85000 + 1500 * m;
-    contas = [l("Conta corrente", base.despesas.saldoRestante - aplicacao), l("Aplicação financeira", aplicacao)];
+    contas = [
+      l("Conta corrente", base.despesas.saldoRestante - aplicacao),
+      l("Aplicação financeira", aplicacao),
+    ];
     const demonstrativo = recalcularDemonstrativo({ ...base, saldoAtual: { contas, total: 0 } });
     const inadimplentes = 3 + (m % 3);
     return {
@@ -385,7 +578,10 @@ function mensaisExemplo(condo: Registro): Registro[] {
       condoNome: nome,
       demonstrativo,
       origem: [],
-      receber: { unidades: inadimplentes, valor: Math.round(inadimplentes * 715 * (1 + (m % 2) * 0.6) * 100) / 100 },
+      receber: {
+        unidades: inadimplentes,
+        valor: Math.round(inadimplentes * 715 * (1 + (m % 2) * 0.6) * 100) / 100,
+      },
       notas: notasPorMes[m] ?? [],
     } as unknown as Registro;
   });
@@ -398,7 +594,7 @@ function usuariosSemente(): UsuarioMock[] {
       login: "admin",
       nome: "SuperADM",
       perfil: "admin",
-      permissoes: ['*'],
+      permissoes: ["*"],
       ativo: true,
       trocarSenha: false,
       criadoEm: new Date().toISOString(),
@@ -443,9 +639,21 @@ function dados(): Dados {
       for (const novo of mensaisExemplo(condo)) {
         const i = d.mensais.findIndex((m) => m.id === novo.id);
         const antigo = i >= 0 ? (d.mensais[i] as unknown as Mensal) : null;
-        if (antigo && (antigo.demonstrativo?.saldoAnterior?.contas?.length ?? 0) === 0 && (antigo.notas?.length ?? 0) === 0) {
+        if (
+          antigo &&
+          (antigo.demonstrativo?.saldoAnterior?.contas?.length ?? 0) === 0 &&
+          (antigo.notas?.length ?? 0) === 0
+        ) {
           d.mensais[i] = novo;
-        } else if (!antigo && !d.mensais.some((m) => m["condoId"] === "condo-acacias" && JSON.stringify((m as unknown as Mensal).demonstrativo?.periodo) === JSON.stringify((novo as unknown as Mensal).demonstrativo?.periodo))) {
+        } else if (
+          !antigo &&
+          !d.mensais.some(
+            (m) =>
+              m["condoId"] === "condo-acacias" &&
+              JSON.stringify((m as unknown as Mensal).demonstrativo?.periodo) ===
+                JSON.stringify((novo as unknown as Mensal).demonstrativo?.periodo),
+          )
+        ) {
           d.mensais.push(novo);
         }
       }
@@ -468,7 +676,11 @@ function dados(): Dados {
     localStorage.setItem(CHAVE_EXEMPLO_ATAS, "1");
     const edital = d.assembleias.find((a) => a.id === "ass-1");
     const condo = d.condominios.find((c) => c.id === "condo-acacias");
-    if (edital && condo && !d.atas.some((a) => a.id === "ata-acacias" || a["assembleiaId"] === "ass-1")) {
+    if (
+      edital &&
+      condo &&
+      !d.atas.some((a) => a.id === "ata-acacias" || a["assembleiaId"] === "ass-1")
+    ) {
       d.atas.push(ataExemplo(edital, condo));
       gravar(CHAVE_DADOS, d);
     }
@@ -508,9 +720,17 @@ type DocumentoDriveMock = DocumentoDrive & {
   paginasTexto?: string[];
 };
 const driveDocumentos = () => ler<DocumentoDriveMock[]>(CHAVE_DRIVE_DOCUMENTOS, () => []);
-const semConteudoDrive = ({ pdfBase64: _p, originalBase64: _o, paginasTexto: _t, ...doc }: DocumentoDriveMock): DocumentoDrive => doc;
+const semConteudoDrive = ({
+  pdfBase64: _p,
+  originalBase64: _o,
+  paginasTexto: _t,
+  ...doc
+}: DocumentoDriveMock): DocumentoDrive => doc;
 
-function normalizarDocMock(n: DocumentoDriveRegistro, existente?: DocumentoDriveMock): DocumentoDriveMock {
+function normalizarDocMock(
+  n: DocumentoDriveRegistro,
+  existente?: DocumentoDriveMock,
+): DocumentoDriveMock {
   const agora = new Date().toISOString();
   const trechos = Array.isArray(n.trechos) ? n.trechos : [];
   const pdfDataUrl = n.pdfDataUrl ?? existente?.pdfBase64 ?? null;
@@ -548,11 +768,22 @@ function sessao(): Usuario {
   const u = id ? usuarios().find((x) => x.id === id && x.ativo) : undefined;
   if (!u) throw new ApiError("Sessão expirada. Entre novamente.", 401);
   const { id: uid, login, nome, perfil, trocarSenha } = u;
-  const excecoes = ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []).filter((p) => p.usuarioId === uid);
+  const excecoes = ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []).filter(
+    (p) => p.usuarioId === uid,
+  );
   const doPerfil = permissoesDoPerfil(perfil);
-  const permitidas = doPerfil.filter((chave) => !excecoes.some((p) => p.permissaoChave === chave && p.efeito === 'negar'));
-  const concedidas = excecoes.filter((p) => p.efeito === 'permitir').map((p) => p.permissaoChave);
-  return { id: uid, login, nome, perfil, trocarSenha, permissoes: perfil === 'admin' ? ['*'] : [...new Set([...permitidas, ...concedidas])] };
+  const permitidas = doPerfil.filter(
+    (chave) => !excecoes.some((p) => p.permissaoChave === chave && p.efeito === "negar"),
+  );
+  const concedidas = excecoes.filter((p) => p.efeito === "permitir").map((p) => p.permissaoChave);
+  return {
+    id: uid,
+    login,
+    nome,
+    perfil,
+    trocarSenha,
+    permissoes: perfil === "admin" ? ["*"] : [...new Set([...permitidas, ...concedidas])],
+  };
 }
 function exigirAdmin() {
   const u = sessao();
@@ -573,37 +804,71 @@ export const mockApi: ApiAdapter = {
   async fechamentoExercicio(id, fechar, motivo, versao) {
     await espera();
     const eu = sessao();
-    if (eu.perfil !== "admin" && !eu.permissoes?.includes("*") && !eu.permissoes?.includes("prestacao_contas.editar")) throw new ApiError("Sem permissão para editar prestação de contas.", 403);
-    const d = dados(); const i = d.exercicios.findIndex((e) => e.id === id);
+    if (
+      eu.perfil !== "admin" &&
+      !eu.permissoes?.includes("*") &&
+      !eu.permissoes?.includes("prestacao_contas.editar")
+    )
+      throw new ApiError("Sem permissão para editar prestação de contas.", 403);
+    const d = dados();
+    const i = d.exercicios.findIndex((e) => e.id === id);
     if (i < 0) throw new ApiError("Prestação de contas não encontrada.", 404);
     const e = clone(d.exercicios[i]) as unknown as Exercicio;
-    if ((e.atualizadoEm ?? null) !== versao) throw new ApiError("A prestação foi alterada. Atualize a página.", 409);
+    if ((e.atualizadoEm ?? null) !== versao)
+      throw new ApiError("A prestação foi alterada. Atualize a página.", 409);
     if (!!e.fechado === fechar) throw new ApiError("O exercício já está nesse estado.", 409);
     if (!fechar && !motivo.trim()) throw new ApiError("Informe o motivo da reabertura.", 400);
     if (fechar) {
       const c = d.condominios.find((c) => c.id === e.condoId) as unknown as Condominio | undefined;
-      if (!c || !e.demonstrativo) throw new ApiError("Informe condomínio e demonstrativo antes de fechar.", 400);
-      const anterior = d.exercicios.find((x) => x["condoId"] === e.condoId && Number(x["ano"]) === Number(e.ano) - 1) as unknown as Exercicio | undefined;
-      e.fechamento = { versao: 1, fechadoEm: new Date().toISOString(), fechadoPor: eu.id, condominio: clone(c),
+      if (!c || !e.demonstrativo)
+        throw new ApiError("Informe condomínio e demonstrativo antes de fechar.", 400);
+      const anterior = d.exercicios.find(
+        (x) => x["condoId"] === e.condoId && Number(x["ano"]) === Number(e.ano) - 1,
+      ) as unknown as Exercicio | undefined;
+      e.fechamento = {
+        versao: 1,
+        fechadoEm: new Date().toISOString(),
+        fechadoPor: eu.id,
+        condominio: clone(c),
         mensais: clone(d.mensais.filter((m) => m["condoId"] === e.condoId)) as unknown as Mensal[],
         exercicioAnterior: anterior ? { demonstrativo: clone(anterior.demonstrativo) } : null,
-        escritorio: clone(d.config.find((x) => x.id === "escritorio") ?? null) as unknown as ConfigEscritorio | null };
+        escritorio: clone(
+          d.config.find((x) => x.id === "escritorio") ?? null,
+        ) as unknown as ConfigEscritorio | null,
+      };
     } else delete e.fechamento;
     e.fechado = fechar;
-    e.historicoFechamento = [...(e.historicoFechamento ?? []), { acao: fechar ? "fechar" : "reabrir", em: new Date().toISOString(), por: eu.id, motivo: motivo.trim() }];
+    e.historicoFechamento = [
+      ...(e.historicoFechamento ?? []),
+      {
+        acao: fechar ? "fechar" : "reabrir",
+        em: new Date().toISOString(),
+        por: eu.id,
+        motivo: motivo.trim(),
+      },
+    ];
     e.atualizadoEm = new Date().toISOString();
-    d.exercicios[i] = e as unknown as Registro; gravar(CHAVE_DADOS, d); return clone(e);
+    d.exercicios[i] = e as unknown as Registro;
+    gravar(CHAVE_DADOS, d);
+    return clone(e);
   },
   anexos: {
     async listar(exercicioId: string) {
       await espera();
       sessao();
-      if (!exercicioId || exercicioId.length > 64) throw new ApiError("Id inválido (obrigatório, até 64 caracteres).", 400);
+      if (!exercicioId || exercicioId.length > 64)
+        throw new ApiError("Id inválido (obrigatório, até 64 caracteres).", 400);
       const anexos = dados().anexos_importacao as unknown as AnexoImportado[];
-      return anexos.filter((a) => a.exercicioId === exercicioId).map((a) => {
-        const { arquivoDataUrl, ...metadados } = clone(a);
-        return { ...metadados, arquivoBytes: bytesDoDataUrl(arquivoDataUrl || ""), temArquivo: !!arquivoDataUrl };
-      });
+      return anexos
+        .filter((a) => a.exercicioId === exercicioId)
+        .map((a) => {
+          const { arquivoDataUrl, ...metadados } = clone(a);
+          return {
+            ...metadados,
+            arquivoBytes: bytesDoDataUrl(arquivoDataUrl || ""),
+            temArquivo: !!arquivoDataUrl,
+          };
+        });
     },
   },
   async listar<T>(store: Store) {
@@ -635,21 +900,48 @@ export const mockApi: ApiAdapter = {
       }
       if (i >= 0) id = d.condominios[i]!.id;
     }
-    const obj = { ...clone(o), id, ...(["exercicios", "condominios"].includes(s) ? { atualizadoEm: new Date().toISOString() } : {}) } as unknown as Registro;
+    const obj = {
+      ...clone(o),
+      id,
+      ...(["exercicios", "condominios"].includes(s)
+        ? { atualizadoEm: new Date().toISOString() }
+        : {}),
+    } as unknown as Registro;
     if (s === "anexos_importacao") {
       const anterior = d.anexos_importacao.find((a) => a.id === id);
-      if (d.exercicios.some((e) => e["fechado"] && (e.id === obj["exercicioId"] || e.id === anterior?.["exercicioId"]))) throw new ApiError("Reabra o exercício antes de alterar anexos.", 409);
+      if (
+        d.exercicios.some(
+          (e) =>
+            e["fechado"] && (e.id === obj["exercicioId"] || e.id === anterior?.["exercicioId"]),
+        )
+      )
+        throw new ApiError("Reabra o exercício antes de alterar anexos.", 409);
     }
     if (s === "exercicios") {
-      if (d.exercicios[i]?.["fechado"] || obj["fechado"] || obj["fechamento"]) throw new ApiError("Exercício fechado. Use a ação explícita de fechamento/reabertura.", 409);
+      if (d.exercicios[i]?.["fechado"] || obj["fechado"] || obj["fechamento"])
+        throw new ApiError(
+          "Exercício fechado. Use a ação explícita de fechamento/reabertura.",
+          409,
+        );
       delete obj["historicoFechamento"];
-      if (d.exercicios[i]?.["historicoFechamento"]) obj["historicoFechamento"] = d.exercicios[i]!["historicoFechamento"];
+      if (d.exercicios[i]?.["historicoFechamento"])
+        obj["historicoFechamento"] = d.exercicios[i]!["historicoFechamento"];
       const ci = d.condominios.findIndex((c) => c.id === obj["condoId"]);
-      if (ci >= 0) d.condominios[ci] = inicializarIndicesImportados(d.condominios[ci] as unknown as Condominio, obj as unknown as Exercicio) as unknown as Registro;
+      if (ci >= 0)
+        d.condominios[ci] = inicializarIndicesImportados(
+          d.condominios[ci] as unknown as Condominio,
+          obj as unknown as Exercicio,
+        ) as unknown as Registro;
     }
     if (s === "condominios") {
       obj["indices"] = validarIndicesCondominio((obj as unknown as Condominio).indices ?? []);
-      if (obj["indicesInicializados"] || d.condominios[i]?.["indicesInicializados"] || JSON.stringify(d.condominios[i]?.["indices"] ?? []) !== JSON.stringify(obj["indices"]) || (obj["indices"] as unknown[]).length) obj["indicesInicializados"] = true;
+      if (
+        obj["indicesInicializados"] ||
+        d.condominios[i]?.["indicesInicializados"] ||
+        JSON.stringify(d.condominios[i]?.["indices"] ?? []) !== JSON.stringify(obj["indices"]) ||
+        (obj["indices"] as unknown[]).length
+      )
+        obj["indicesInicializados"] = true;
       else delete obj["indicesInicializados"];
     }
     if (i >= 0) d[s][i] = obj;
@@ -662,9 +954,18 @@ export const mockApi: ApiAdapter = {
     sessao();
     const d = dados();
     const s = validarStore(store);
-    if (s === "anexos_importacao" && d.exercicios.some((e) => e["fechado"] && e.id === d.anexos_importacao.find((a) => a.id === id)?.["exercicioId"])) throw new ApiError("Reabra o exercício antes de excluir anexos.", 409);
-    if (s === "exercicios" && d.exercicios.find((e) => e.id === id)?.["fechado"]) throw new ApiError("Reabra o exercício antes de excluir.", 409);
-    if (s === "condominios" && d.exercicios.some((e) => e["condoId"] === id && e["fechado"])) throw new ApiError("Reabra os exercícios antes de excluir o condomínio.", 409);
+    if (
+      s === "anexos_importacao" &&
+      d.exercicios.some(
+        (e) =>
+          e["fechado"] && e.id === d.anexos_importacao.find((a) => a.id === id)?.["exercicioId"],
+      )
+    )
+      throw new ApiError("Reabra o exercício antes de excluir anexos.", 409);
+    if (s === "exercicios" && d.exercicios.find((e) => e.id === id)?.["fechado"])
+      throw new ApiError("Reabra o exercício antes de excluir.", 409);
+    if (s === "condominios" && d.exercicios.some((e) => e["condoId"] === id && e["fechado"]))
+      throw new ApiError("Reabra os exercícios antes de excluir o condomínio.", 409);
     d[s] = d[s].filter((x) => x.id !== id);
     gravar(CHAVE_DADOS, d);
   },
@@ -682,25 +983,45 @@ export const mockApi: ApiAdapter = {
     if (i < 0) throw new ApiError("Importação não encontrada.", 404);
     const imp = d.importacoes[i] as unknown as Importacao;
     const destino = pedido.destino;
-    if (destino !== "mensais" && destino !== "exercicios") throw new ApiError("Destino da importação inválido.", 400);
+    if (destino !== "mensais" && destino !== "exercicios")
+      throw new ApiError("Destino da importação inválido.", 400);
     if (imp.status === "confirmado") {
       const ja = imp.registroId ? d[destino].find((x) => x.id === imp.registroId) : undefined;
-      if (!ja) throw new ApiError("Esta importação já foi confirmada, mas o registro gravado não foi encontrado.", 409);
-      return clone({ registro: ja, condominioId: imp.condominioId ?? "", criouCondominio: false, atualizouCadastro: false, reutilizado: true }) as unknown as ConfirmarImportacaoResposta;
+      if (!ja)
+        throw new ApiError(
+          "Esta importação já foi confirmada, mas o registro gravado não foi encontrado.",
+          409,
+        );
+      return clone({
+        registro: ja,
+        condominioId: imp.condominioId ?? "",
+        criouCondominio: false,
+        atualizouCadastro: false,
+        reutilizado: true,
+      }) as unknown as ConfirmarImportacaoResposta;
     }
-    if (imp.status !== "pendente") throw new ApiError("Esta importação foi descartada e não pode ser confirmada.", 409);
+    if (imp.status !== "pendente")
+      throw new ApiError("Esta importação foi descartada e não pode ser confirmada.", 409);
     const condoId = pedido.condominio?.id;
     const registro = pedido.registro as unknown as Registro;
-    if (!condoId || !registro?.id) throw new ApiError("Dados incompletos para confirmar a importação.", 400);
-    if (registro["condoId"] !== condoId) throw new ApiError("O registro não pertence ao condomínio informado.", 400);
-    if (d[destino].some((x) => x.id === registro.id)) throw new ApiError("Já existe um registro com este identificador.", 409);
+    if (!condoId || !registro?.id)
+      throw new ApiError("Dados incompletos para confirmar a importação.", 400);
+    if (registro["condoId"] !== condoId)
+      throw new ApiError("O registro não pertence ao condomínio informado.", 400);
+    if (d[destino].some((x) => x.id === registro.id))
+      throw new ApiError("Já existe um registro com este identificador.", 409);
     const condoIdx = d.condominios.findIndex((c) => c.id === condoId);
     const existe = condoIdx >= 0;
-    if (!existe && !("nome" in pedido.condominio)) throw new ApiError("Condomínio não encontrado.", 404);
+    if (!existe && !("nome" in pedido.condominio))
+      throw new ApiError("Condomínio não encontrado.", 404);
     // Campos complementares: só os que o cadastro existente ainda tem em branco (defesa adicional,
     // além da checagem já feita no cliente antes de pedir confirmação ao usuário).
     let atualizouCadastro = false;
-    if (existe && "camposComplementares" in pedido.condominio && pedido.condominio.camposComplementares) {
+    if (
+      existe &&
+      "camposComplementares" in pedido.condominio &&
+      pedido.condominio.camposComplementares
+    ) {
       const atual = d.condominios[condoIdx] as unknown as Condominio;
       const patch = pedido.condominio.camposComplementares;
       const campos: ("codigo" | "nome" | "cnpj")[] = ["codigo", "nome", "cnpj"];
@@ -718,9 +1039,13 @@ export const mockApi: ApiAdapter = {
     // Tudo validado: uma única gravação (não sobra condomínio sem relatório nem importação pendente).
     if (!existe) d.condominios.push(clone(pedido.condominio) as unknown as Registro);
     if (destino === "exercicios") {
-      if (registro["fechado"] || registro["fechamento"]) throw new ApiError("Use o fechamento explícito após importar.", 409);
+      if (registro["fechado"] || registro["fechamento"])
+        throw new ApiError("Use o fechamento explícito após importar.", 409);
       const ci = d.condominios.findIndex((c) => c.id === condoId);
-      d.condominios[ci] = inicializarIndicesImportados(d.condominios[ci] as unknown as Condominio, registro as unknown as Exercicio) as unknown as Registro;
+      d.condominios[ci] = inicializarIndicesImportados(
+        d.condominios[ci] as unknown as Condominio,
+        registro as unknown as Exercicio,
+      ) as unknown as Registro;
     }
     d[destino].push(clone(registro));
     d.importacoes[i] = {
@@ -731,14 +1056,22 @@ export const mockApi: ApiAdapter = {
       registroId: registro.id,
     } as unknown as Registro;
     gravar(CHAVE_DADOS, d);
-    return clone({ registro, condominioId: condoId, criouCondominio: !existe, atualizouCadastro, reutilizado: false }) as unknown as ConfirmarImportacaoResposta;
+    return clone({
+      registro,
+      condominioId: condoId,
+      criouCondominio: !existe,
+      atualizouCadastro,
+      reutilizado: false,
+    }) as unknown as ConfirmarImportacaoResposta;
   },
   async importar(backup: Backup, substituir: boolean) {
     await espera(300);
     exigirAdmin();
-    if (!backup || typeof backup !== "object") throw new ApiError("Arquivo de backup inválido.", 400);
+    if (!backup || typeof backup !== "object")
+      throw new ApiError("Arquivo de backup inválido.", 400);
     const d = dados();
-    if (d.exercicios.some((e) => e["fechado"])) throw new ApiError("Reabra os exercícios antes de restaurar dados.", 409);
+    if (d.exercicios.some((e) => e["fechado"]))
+      throw new ApiError("Reabra os exercícios antes de restaurar dados.", 409);
     let total = 0;
     for (const s of STORES) {
       const itens = backup[s];
@@ -746,7 +1079,10 @@ export const mockApi: ApiAdapter = {
         if (substituir) d[s] = [];
         continue;
       }
-      const validos = itens.filter((x): x is Registro => !!x && typeof x === "object" && typeof (x as Registro).id === "string");
+      const validos = itens.filter(
+        (x): x is Registro =>
+          !!x && typeof x === "object" && typeof (x as Registro).id === "string",
+      );
       total += validos.length;
       if (substituir) d[s] = clone(validos);
       else {
@@ -764,7 +1100,11 @@ export const mockApi: ApiAdapter = {
     async criar() {
       await espera(200);
       const eu = sessao();
-      const dadosAtuais = { ...clone(dados()), _exportadoEm: new Date().toISOString(), _versao: 1 } as Backup;
+      const dadosAtuais = {
+        ...clone(dados()),
+        _exportadoEm: new Date().toISOString(),
+        _versao: 1,
+      } as Backup;
       const reg: BackupRegistroMock = {
         id: novoId(),
         geradoPorNome: eu.nome,
@@ -827,7 +1167,8 @@ export const mockApi: ApiAdapter = {
       };
     },
     async limpar(alvo: AlvoLimpeza) {
-      if (dados().exercicios.some((e) => e["fechado"])) throw new ApiError("Reabra os exercícios antes de limpar dados.", 409);
+      if (dados().exercicios.some((e) => e["fechado"]))
+        throw new ApiError("Reabra os exercícios antes de limpar dados.", 409);
       await espera();
       exigirAdmin();
       const d = dados();
@@ -888,18 +1229,28 @@ export const mockApi: ApiAdapter = {
       const t = tent[chave];
       if (t?.ate && t.ate > Date.now()) {
         const min = Math.ceil((t.ate - Date.now()) / 60000);
-        throw new ApiError(`Muitas tentativas sem sucesso. Acesso bloqueado por ${min} minuto(s).`, 429);
+        throw new ApiError(
+          `Muitas tentativas sem sucesso. Acesso bloqueado por ${min} minuto(s).`,
+          429,
+        );
       }
       const lista = usuarios();
       const u = lista.find((x) => x.login === chave);
       if (!u || u.senha !== senha) {
         const n = (t && (!t.ate || t.ate <= Date.now()) ? t.n : 0) + 1;
-        tent[chave] = n >= MAX_TENTATIVAS ? { n: 0, ate: Date.now() + BLOQUEIO_MIN * 60000 } : { n };
+        tent[chave] =
+          n >= MAX_TENTATIVAS ? { n: 0, ate: Date.now() + BLOQUEIO_MIN * 60000 } : { n };
         gravar(CHAVE_TENTATIVAS, tent);
         if (n >= MAX_TENTATIVAS) {
-          throw new ApiError(`Muitas tentativas sem sucesso. Acesso bloqueado por ${BLOQUEIO_MIN} minutos.`, 429);
+          throw new ApiError(
+            `Muitas tentativas sem sucesso. Acesso bloqueado por ${BLOQUEIO_MIN} minutos.`,
+            429,
+          );
         }
-        throw new ApiError(`Usuário ou senha incorretos. Restam ${MAX_TENTATIVAS - n} tentativa(s).`, 401);
+        throw new ApiError(
+          `Usuário ou senha incorretos. Restam ${MAX_TENTATIVAS - n} tentativa(s).`,
+          401,
+        );
       }
       if (!u.ativo) throw new ApiError("Usuário inativo. Procure o administrador.", 403);
       delete tent[chave];
@@ -945,7 +1296,8 @@ export const mockApi: ApiAdapter = {
         const login = (dadosU.login || "").trim();
         const e = validarLogin(login);
         if (e) throw new ApiError(e, 400);
-        if (lista.some((x) => x.login === login)) throw new ApiError("Já existe um usuário com este login.", 409);
+        if (lista.some((x) => x.login === login))
+          throw new ApiError("Já existe um usuário com este login.", 409);
         if (!dadosU.senha) throw new ApiError("Informe a senha provisória.", 400);
         const novo: UsuarioMock = {
           id: novoId(),
@@ -966,11 +1318,13 @@ export const mockApi: ApiAdapter = {
       const u = lista.find((x) => x.id === dadosU.id);
       if (!u) throw new ApiError("Usuário não encontrado.", 404);
       const admins = lista.filter((x) => x.perfil === "admin" && x.ativo);
-      const deixaDeSerAdmin = u.perfil === "admin" && u.ativo && (dadosU.perfil !== "admin" || !dadosU.ativo);
+      const deixaDeSerAdmin =
+        u.perfil === "admin" && u.ativo && (dadosU.perfil !== "admin" || !dadosU.ativo);
       if (deixaDeSerAdmin && admins.length <= 1) {
         throw new ApiError("Não é possível remover o último administrador ativo.", 400);
       }
-      if (u.id === eu.id && !dadosU.ativo) throw new ApiError("Você não pode desativar o seu próprio usuário.", 400);
+      if (u.id === eu.id && !dadosU.ativo)
+        throw new ApiError("Você não pode desativar o seu próprio usuário.", 400);
       u.nome = nome;
       u.perfil = dadosU.perfil;
       u.ativo = dadosU.ativo;
@@ -991,25 +1345,34 @@ export const mockApi: ApiAdapter = {
       if (u.perfil === "admin" && lista.filter((x) => x.perfil === "admin").length <= 1) {
         throw new ApiError("Não é possível excluir o último administrador.", 400);
       }
-      gravar(CHAVE_USUARIOS, lista.filter((x) => x.id !== id));
+      gravar(
+        CHAVE_USUARIOS,
+        lista.filter((x) => x.id !== id),
+      );
     },
     async permissoes() {
       await espera();
       exigirAdmin();
-      return { catalogo: catalogoPermissoes(), excecoes: ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []) };
+      return {
+        catalogo: catalogoPermissoes(),
+        excecoes: ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []),
+      };
     },
     async perfis() {
       await espera();
       exigirAdmin();
       return {
         catalogo: catalogoPermissoes(),
-        perfis: (['admin', 'adm', 'user'] as Perfil[]).map((id) => {
+        perfis: (["admin", "adm", "user"] as Perfil[]).map((id) => {
           const vigentes = new Set(permissoesDoPerfil(id));
           return {
             id,
             nome: PERFIL_ROTULO[id],
-            permissoes: catalogoPermissoes().map((p) => ({ chave: p.chave, permitida: id === 'admin' || vigentes.has(p.chave) })),
-            fixo: id === 'admin',
+            permissoes: catalogoPermissoes().map((p) => ({
+              chave: p.chave,
+              permitida: id === "admin" || vigentes.has(p.chave),
+            })),
+            fixo: id === "admin",
           };
         }),
       };
@@ -1017,20 +1380,30 @@ export const mockApi: ApiAdapter = {
     async perfilPermissaoSalvar(perfil, chave, permitida) {
       await espera();
       exigirAdmin();
-      if (perfil === 'admin') throw new ApiError('O SuperADM tem acesso total e não pode ser restringido.', 400);
-      if (!catalogoPermissoes().some((p) => p.chave === chave)) throw new ApiError('Permissão não encontrada.', 404);
+      if (perfil === "admin")
+        throw new ApiError("O SuperADM tem acesso total e não pode ser restringido.", 400);
+      if (!catalogoPermissoes().some((p) => p.chave === chave))
+        throw new ApiError("Permissão não encontrada.", 404);
       const atual = ler<Record<string, string[]>>(CHAVE_MATRIZ_PERFIS, () => ({}));
       const atualDoPerfil = new Set(permissoesDoPerfil(perfil));
-      if (permitida) atualDoPerfil.add(chave); else atualDoPerfil.delete(chave);
-      localStorage.setItem(CHAVE_MATRIZ_PERFIS, JSON.stringify({ ...atual, [perfil]: [...atualDoPerfil] }));
+      if (permitida) atualDoPerfil.add(chave);
+      else atualDoPerfil.delete(chave);
+      localStorage.setItem(
+        CHAVE_MATRIZ_PERFIS,
+        JSON.stringify({ ...atual, [perfil]: [...atualDoPerfil] }),
+      );
     },
     async permissaoSalvar(usuarioId, chave, efeito) {
       await espera();
       exigirAdmin();
-      if (!usuarios().some((u) => u.id === usuarioId)) throw new ApiError('Usuário não encontrado.', 404);
-      if (!catalogoPermissoes().some((p) => p.chave === chave)) throw new ApiError('Permissão não encontrada.', 404);
-      const itens = ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []).filter((p) => p.usuarioId !== usuarioId || p.permissaoChave !== chave);
-      if (efeito !== 'remover') itens.push({ usuarioId, permissaoChave: chave, efeito });
+      if (!usuarios().some((u) => u.id === usuarioId))
+        throw new ApiError("Usuário não encontrado.", 404);
+      if (!catalogoPermissoes().some((p) => p.chave === chave))
+        throw new ApiError("Permissão não encontrada.", 404);
+      const itens = ler<PermissaoExcecao[]>(CHAVE_PERMISSOES, () => []).filter(
+        (p) => p.usuarioId !== usuarioId || p.permissaoChave !== chave,
+      );
+      if (efeito !== "remover") itens.push({ usuarioId, permissaoChave: chave, efeito });
       gravar(CHAVE_PERMISSOES, itens);
     },
   },
@@ -1039,7 +1412,8 @@ export const mockApi: ApiAdapter = {
       await espera();
       sessao();
       const todos = driveDocumentos();
-      const filtrados = !condoId || condoId === "*" ? todos : todos.filter((d) => d.condoId === condoId);
+      const filtrados =
+        !condoId || condoId === "*" ? todos : todos.filter((d) => d.condoId === condoId);
       return clone(filtrados.map(semConteudoDrive));
     },
     async resumo() {
@@ -1056,7 +1430,11 @@ export const mockApi: ApiAdapter = {
       sessao();
       if (!doc.condoId) throw new ApiError("Condomínio obrigatório.", 400);
       const lista = driveDocumentos();
-      const idx = lista.findIndex((d) => d.condoId === doc.condoId && (d.caminhoRelativo === doc.caminhoRelativo || d.hash === doc.hash));
+      const idx = lista.findIndex(
+        (d) =>
+          d.condoId === doc.condoId &&
+          (d.caminhoRelativo === doc.caminhoRelativo || d.hash === doc.hash),
+      );
       const normalizado = normalizarDocMock(doc, idx >= 0 ? lista[idx] : undefined);
       if (idx >= 0) lista[idx] = normalizado;
       else lista.unshift(normalizado);
@@ -1101,7 +1479,10 @@ export const mockApi: ApiAdapter = {
     async excluir(id: string) {
       await espera();
       sessao();
-      gravar(CHAVE_DRIVE_DOCUMENTOS, driveDocumentos().filter((d) => d.id !== id));
+      gravar(
+        CHAVE_DRIVE_DOCUMENTOS,
+        driveDocumentos().filter((d) => d.id !== id),
+      );
     },
     // Sem acervo indexado neste ambiente de demonstração — a busca real roda no servidor (FULLTEXT).
     async perguntar(condoId: string, pergunta: string, _documentoId?: string) {
@@ -1134,7 +1515,11 @@ export const mockApi: ApiAdapter = {
     async historico(condoId: string) {
       await espera();
       sessao();
-      return clone(!condoId || condoId === "*" ? consultaHistorico() : consultaHistorico().filter((h) => h.condoId === condoId));
+      return clone(
+        !condoId || condoId === "*"
+          ? consultaHistorico()
+          : consultaHistorico().filter((h) => h.condoId === condoId),
+      );
     },
   },
 };

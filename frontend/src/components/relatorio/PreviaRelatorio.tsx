@@ -13,9 +13,18 @@ import { RolagemTabela } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
-import type { ResultadoPrevisaoSugerida, ResultadoPrevisaoSugeridaPorUnidade } from "@/domain/previsaoSugerida";
+import type {
+  ResultadoPrevisaoSugerida,
+  ResultadoPrevisaoSugeridaPorUnidade,
+} from "@/domain/previsaoSugerida";
 import { criteriosDaPrevisao } from "@/domain/previsaoCriterios";
-import type { Condominio, ConfigEscritorio, Exercicio, LinhaValor, PrevisaoSugeridaExercicio } from "@/domain/types";
+import type {
+  Condominio,
+  ConfigEscritorio,
+  Exercicio,
+  LinhaValor,
+  PrevisaoSugeridaExercicio,
+} from "@/domain/types";
 import { contagem } from "@/components/app/textos";
 
 /** Prévia na tela do documento montado (sem PDF). Só as seções incluídas, numeradas na ordem. */
@@ -31,30 +40,55 @@ export function PreviaRelatorio({
   escritorio: ConfigEscritorio | null;
 }) {
   const incluidas = SECOES.filter((s) => rel.secoes[s.id]);
-  const numero = (id: SecaoId) => incluidas.filter((s) => s.id !== "capa" && s.id !== "assinatura").findIndex((s) => s.id === id) + 1;
+  const numero = (id: SecaoId) =>
+    incluidas
+      .filter((s) => s.id !== "capa" && s.id !== "assinatura")
+      .findIndex((s) => s.id === id) + 1;
   const nomeCondo = condominio ? nomeParaRelatorio(condominio) : e.condoNome;
   const d = rel.demonstrativo;
 
   if (incluidas.length === 0) {
-    return <p className="rounded-md border border-dashed bg-card px-6 py-16 text-center text-sm text-muted-foreground">Nenhuma seção incluída.</p>;
+    return (
+      <p className="rounded-md border border-dashed bg-card px-6 py-16 text-center text-sm text-muted-foreground">
+        Nenhuma seção incluída.
+      </p>
+    );
   }
 
   return (
-    <article className="@container mx-auto max-w-[52rem] break-words rounded-sm border bg-card px-6 py-8 text-sm shadow-sm sm:px-12 sm:py-12" aria-label="Prévia do relatório final">
+    <article
+      className="@container mx-auto max-w-[52rem] break-words rounded-sm border bg-card px-6 py-8 text-sm shadow-sm sm:px-12 sm:py-12"
+      aria-label="Prévia do relatório final"
+    >
       {rel.secoes.capa && (
         <section className="flex min-h-[28rem] flex-col items-center justify-center border-b pb-12 text-center [&>*]:max-w-full">
-          {escritorio?.logo && <img src={escritorio.logo} alt={escritorio.nome || "Logo do escritório"} className="mb-10 max-h-20 w-auto" />}
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Prestação de contas</p>
+          {escritorio?.logo && (
+            <img
+              src={escritorio.logo}
+              alt={escritorio.nome || "Logo do escritório"}
+              className="mb-10 max-h-20 w-auto"
+            />
+          )}
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+            Prestação de contas
+          </p>
           <h1 className="mt-3 text-2xl font-semibold text-primary">{nomeCondo}</h1>
-          {condominio?.cnpj && <p className="num mt-1 text-muted-foreground">CNPJ {condominio.cnpj}</p>}
+          {condominio?.cnpj && (
+            <p className="num mt-1 text-muted-foreground">CNPJ {condominio.cnpj}</p>
+          )}
           <p className="mt-6 text-lg">Exercício {e.ano}</p>
           {d?.periodo.ini && d.periodo.fim && (
             <p className="num text-muted-foreground">
               {d.periodo.ini} a {d.periodo.fim}
             </p>
           )}
-          <p className="mt-10 text-muted-foreground">{[e.cidade, e.dataEmissao].filter(Boolean).join(", ") || "Cidade e data de emissão não informadas"}</p>
-          {escritorio?.nome && <p className="mt-1 text-xs text-muted-foreground">{escritorio.nome}</p>}
+          <p className="mt-10 text-muted-foreground">
+            {[e.cidade, e.dataEmissao].filter(Boolean).join(", ") ||
+              "Cidade e data de emissão não informadas"}
+          </p>
+          {escritorio?.nome && (
+            <p className="mt-1 text-xs text-muted-foreground">{escritorio.nome}</p>
+          )}
         </section>
       )}
 
@@ -64,45 +98,63 @@ export function PreviaRelatorio({
             <Vazio>Sem demonstrativo.</Vazio>
           ) : (
             <div className="space-y-5">
-              <Bloco titulo="Saldo anterior" linhas={d.saldoAnterior.contas} total={d.totais.saldoAnterior} />
+              <Bloco
+                titulo="Saldo anterior"
+                linhas={d.saldoAnterior.contas}
+                total={d.totais.saldoAnterior}
+              />
               <Bloco titulo="Receitas" linhas={d.receitas.itens} total={d.totais.receitas} />
               <div>
                 <h4 className="mb-1 font-semibold">Despesas</h4>
-                <RolagemTabela className=""><table className="w-full">
-                  <tbody>
-                    {d.despesas.grupos.map((g) => {
-                      const sub = g.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
-                      return (
-                        <Fragment key={g.nome}>
-                          {e.mostrarContasAnaliticasDemonstrativo === false ? (
-                            <Linha nome={g.nome || "Sem grupo"} valor={sub} forte />
-                          ) : (
-                            <tr>
-                              <td colSpan={2} className="pt-2 text-xs font-semibold uppercase tracking-wide text-primary">
-                                {g.nome || "Sem grupo"}
-                              </td>
-                            </tr>
-                          )}
-                          {e.mostrarContasAnaliticasDemonstrativo !== false && g.itens.map((i, k) => (
-                            <Linha key={k} nome={i.nome} valor={i.valor} recuo />
-                          ))}
-                          {e.mostrarContasAnaliticasDemonstrativo !== false && <Linha nome={`Subtotal ${g.nome}`} valor={sub} sutil />}
-                        </Fragment>
-                      );
-                    })}
-                    <Linha nome="Total das despesas" valor={d.totais.despesas} forte />
-                  </tbody>
-                </table></RolagemTabela>
+                <RolagemTabela className="">
+                  <table className="w-full">
+                    <tbody>
+                      {d.despesas.grupos.map((g) => {
+                        const sub = g.itens.reduce((s, i) => s + (Number(i.valor) || 0), 0);
+                        return (
+                          <Fragment key={g.nome}>
+                            {e.mostrarContasAnaliticasDemonstrativo === false ? (
+                              <Linha nome={g.nome || "Sem grupo"} valor={sub} forte />
+                            ) : (
+                              <tr>
+                                <td
+                                  colSpan={2}
+                                  className="pt-2 text-xs font-semibold uppercase tracking-wide text-primary"
+                                >
+                                  {g.nome || "Sem grupo"}
+                                </td>
+                              </tr>
+                            )}
+                            {e.mostrarContasAnaliticasDemonstrativo !== false &&
+                              g.itens.map((i, k) => (
+                                <Linha key={k} nome={i.nome} valor={i.valor} recuo />
+                              ))}
+                            {e.mostrarContasAnaliticasDemonstrativo !== false && (
+                              <Linha nome={`Subtotal ${g.nome}`} valor={sub} sutil />
+                            )}
+                          </Fragment>
+                        );
+                      })}
+                      <Linha nome="Total das despesas" valor={d.totais.despesas} forte />
+                    </tbody>
+                  </table>
+                </RolagemTabela>
               </div>
-              <Bloco titulo="Saldo atual" linhas={d.saldoAtual.contas} total={d.totais.saldoAtual} />
-              <RolagemTabela className=""><table className="w-full rounded-sm bg-muted/50">
-                <tbody>
-                  <Linha nome="Saldo anterior" valor={d.totais.saldoAnterior} />
-                  <Linha nome="(+) Receitas" valor={d.totais.receitas} />
-                  <Linha nome="(−) Despesas" valor={d.totais.despesas} />
-                  <Linha nome="(=) Saldo atual" valor={d.totais.saldoAtual} forte />
-                </tbody>
-              </table></RolagemTabela>
+              <Bloco
+                titulo="Saldo atual"
+                linhas={d.saldoAtual.contas}
+                total={d.totais.saldoAtual}
+              />
+              <RolagemTabela className="">
+                <table className="w-full rounded-sm bg-muted/50">
+                  <tbody>
+                    <Linha nome="Saldo anterior" valor={d.totais.saldoAnterior} />
+                    <Linha nome="(+) Receitas" valor={d.totais.receitas} />
+                    <Linha nome="(−) Despesas" valor={d.totais.despesas} />
+                    <Linha nome="(=) Saldo atual" valor={d.totais.saldoAtual} forte />
+                  </tbody>
+                </table>
+              </RolagemTabela>
             </div>
           )}
         </Secao>
@@ -118,7 +170,9 @@ export function PreviaRelatorio({
         <Secao
           n={numero("previsao")}
           titulo={`Previsão orçamentária — Exercício ${e.ano}`}
-          {...(d?.periodo.ini && d.periodo.fim ? { sub: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.` } : {})}
+          {...(d?.periodo.ini && d.periodo.fim
+            ? { sub: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.` }
+            : {})}
         >
           <p className="mb-3 text-sm">Previsão calculada pelo Krieger. {rel.origemBasePrevisao}</p>
           {rel.avisoRateioAprovado && (
@@ -135,89 +189,147 @@ export function PreviaRelatorio({
               </div>
             ))}
           </dl>
-          <h4 className="mb-1 font-semibold">{rel.previsao.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}</h4>
+          <h4 className="mb-1 font-semibold">
+            {rel.previsao.modo === "detalhado"
+              ? "Despesas previstas por item"
+              : "Despesas previstas por grupo"}
+          </h4>
           {/* Mesma tabela da tela de Previsão orçamentária: realizado x média prevista mensal. */}
-          <RolagemTabela className=""><table className="w-full">
-            <thead>
-              <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="py-1 text-left font-semibold">{rel.previsao.modo === "detalhado" ? "Rubrica" : "Grupo"}</th>
-                <th className="py-1 text-right font-semibold">Realizado</th>
-                <th className="py-1 text-right font-semibold">Média prevista dos grupos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rel.previsao.linhas.map((l, i) => (
-                <tr key={i} className="border-b border-dashed last:border-0">
-                  <td className="py-1">
-                    {l.nome}
-                    {rel.previsao.modo === "detalhado" && <span className="text-xs text-muted-foreground"> · {l.grupo}</span>}
-                    {l.deduzida && <span className="text-xs text-muted-foreground"> (com dedução)</span>}
-                  </td>
-                  <td className="num py-1 text-right text-muted-foreground">{formatBRL(l.realizado)}</td>
-                  <td className="num py-1 text-right">{formatBRL(l.previsto / rel.previsao.mesesAnalisados)}</td>
+          <RolagemTabela className="">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="py-1 text-left font-semibold">
+                    {rel.previsao.modo === "detalhado" ? "Rubrica" : "Grupo"}
+                  </th>
+                  <th className="py-1 text-right font-semibold">Realizado</th>
+                  <th className="py-1 text-right font-semibold">Média prevista dos grupos</th>
                 </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr className="border-t font-semibold">
-                <td className="py-1">Total dos grupos</td>
-                <td className="num py-1 text-right">{formatBRL(rel.previsao.base)}</td>
-                <td className="num py-1 text-right">
-                  {formatBRL(rel.previsao.linhas.reduce((s, l) => s + l.previsto, 0) / rel.previsao.mesesAnalisados)}
-                </td>
-              </tr>
-            </tfoot>
-          </table></RolagemTabela>
-          <p className="mt-1 text-xs text-muted-foreground">Valores mensais por grupo; o anual ajustado está no resumo abaixo.</p>
+              </thead>
+              <tbody>
+                {rel.previsao.linhas.map((l, i) => (
+                  <tr key={i} className="border-b border-dashed last:border-0">
+                    <td className="py-1">
+                      {l.nome}
+                      {rel.previsao.modo === "detalhado" && (
+                        <span className="text-xs text-muted-foreground"> · {l.grupo}</span>
+                      )}
+                      {l.deduzida && (
+                        <span className="text-xs text-muted-foreground"> (com dedução)</span>
+                      )}
+                    </td>
+                    <td className="num py-1 text-right text-muted-foreground">
+                      {formatBRL(l.realizado)}
+                    </td>
+                    <td className="num py-1 text-right">
+                      {formatBRL(l.previsto / rel.previsao.mesesAnalisados)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t font-semibold">
+                  <td className="py-1">Total dos grupos</td>
+                  <td className="num py-1 text-right">{formatBRL(rel.previsao.base)}</td>
+                  <td className="num py-1 text-right">
+                    {formatBRL(
+                      rel.previsao.linhas.reduce((s, l) => s + l.previsto, 0) /
+                        rel.previsao.mesesAnalisados,
+                    )}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </RolagemTabela>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Valores mensais por grupo; o anual ajustado está no resumo abaixo.
+          </p>
           {rel.previsao.ajustes.length > 0 && (
             <div className="mt-4">
               <h4 className="mb-1 font-semibold">Ajustes</h4>
-              <RolagemTabela className=""><table className="w-full">
-                <tbody>
-                  {rel.previsao.ajustes.map((a) => (
-                    <Linha
-                      key={a.id}
-                      nome={`${a.sinal === "-" ? "(−)" : "(+)"} ${a.descricao || "Ajuste"}${a.grupo ? ` · ${a.grupo}` : ""}`}
-                      valor={a.valor}
-                    />
-                  ))}
-                </tbody>
-              </table></RolagemTabela>
+              <RolagemTabela className="">
+                <table className="w-full">
+                  <tbody>
+                    {rel.previsao.ajustes.map((a) => (
+                      <Linha
+                        key={a.id}
+                        nome={`${a.sinal === "-" ? "(−)" : "(+)"} ${a.descricao || "Ajuste"}${a.grupo ? ` · ${a.grupo}` : ""}`}
+                        valor={a.valor}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </RolagemTabela>
             </div>
           )}
-          <RolagemTabela className="mt-4"><table className="w-full rounded-sm bg-muted/50">
-            <tbody>
-              <Linha nome="Base (despesas realizadas)" valor={rel.previsao.base} />
-              <Linha nome="(−) Dedução" valor={rel.previsao.deducao} />
-              <Linha
-                nome={e.variacaoMetodo === "valor" ? "(+) Variação" : `(+) Variação ${formatNumeroBR(rel.previsao.variacaoPct)}%`}
-                valor={rel.previsao.variacaoValor}
-              />
-              <Linha nome="Variação de despesas sugeridas (+/−)" valor={rel.previsao.variacaoDespesasValor} />
-              <Linha nome="(+) Ajustes" valor={rel.previsao.ajustesMais} />
-              <Linha nome="(−) Ajustes" valor={rel.previsao.ajustesMenos} />
-              <Linha nome="Anual ajustado" valor={rel.previsao.totalAnual} forte />
-              <Linha nome={`Total mensal do condomínio (÷ ${rel.previsao.mesesAnalisados} meses)`} valor={rel.previsao.mensal} />
-              {e.mostrarPrevisaoPorUnidade !== false && rel.previsao.unidades !== null && (
-                <>
-                  <Linha nome={`Cota por unidade (÷ ${rel.previsao.unidades} unidades)`} valor={rel.previsao.cotaUnidade} />
-                  <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(rel.previsao.fundoReservaPct)}%`} valor={rel.previsao.reservaUnidade} />
-                  <Linha nome="Valor sugerido por unidade" valor={rel.previsao.rateioSugerido} forte />
-                </>
-              )}
-              <Linha nome="Rateio atual por unidade" valor={rel.previsao.rateioAtual} />
-              <tr>
-                <td className="px-3 py-1">Índice de reajuste</td>
-                <td className="num px-3 py-1 text-right">{pctTexto(rel.previsao.indice)}</td>
-              </tr>
-              {e.rateioAprovado != null && <Linha nome="Rateio aprovado por unidade (informado)" valor={e.rateioAprovado} forte />}
-            </tbody>
-          </table></RolagemTabela>
+          <RolagemTabela className="mt-4">
+            <table className="w-full rounded-sm bg-muted/50">
+              <tbody>
+                <Linha nome="Base (despesas realizadas)" valor={rel.previsao.base} />
+                <Linha nome="(−) Dedução" valor={rel.previsao.deducao} />
+                <Linha
+                  nome={
+                    e.variacaoMetodo === "valor"
+                      ? "(+) Variação"
+                      : `(+) Variação ${formatNumeroBR(rel.previsao.variacaoPct)}%`
+                  }
+                  valor={rel.previsao.variacaoValor}
+                />
+                <Linha
+                  nome="Variação de despesas sugeridas (+/−)"
+                  valor={rel.previsao.variacaoDespesasValor}
+                />
+                <Linha nome="(+) Ajustes" valor={rel.previsao.ajustesMais} />
+                <Linha nome="(−) Ajustes" valor={rel.previsao.ajustesMenos} />
+                <Linha nome="Anual ajustado" valor={rel.previsao.totalAnual} forte />
+                <Linha
+                  nome={`Total mensal do condomínio (÷ ${rel.previsao.mesesAnalisados} meses)`}
+                  valor={rel.previsao.mensal}
+                />
+                {e.mostrarPrevisaoPorUnidade !== false && rel.previsao.unidades !== null && (
+                  <>
+                    <Linha
+                      nome={`Cota por unidade (÷ ${rel.previsao.unidades} unidades)`}
+                      valor={rel.previsao.cotaUnidade}
+                    />
+                    <Linha
+                      nome={`(+) Reserva por unidade ${formatNumeroBR(rel.previsao.fundoReservaPct)}%`}
+                      valor={rel.previsao.reservaUnidade}
+                    />
+                    <Linha
+                      nome="Valor sugerido por unidade"
+                      valor={rel.previsao.rateioSugerido}
+                      forte
+                    />
+                  </>
+                )}
+                <Linha nome="Rateio atual por unidade" valor={rel.previsao.rateioAtual} />
+                <tr>
+                  <td className="px-3 py-1">Índice de reajuste</td>
+                  <td className="num px-3 py-1 text-right">{pctTexto(rel.previsao.indice)}</td>
+                </tr>
+                {e.rateioAprovado != null && (
+                  <Linha
+                    nome="Rateio aprovado por unidade (informado)"
+                    valor={e.rateioAprovado}
+                    forte
+                  />
+                )}
+              </tbody>
+            </table>
+          </RolagemTabela>
           {e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade && (
             <div className="mt-6 border-t pt-4">
               <h4 className="font-semibold">Referência histórica importada do Systemar</h4>
-              <p className="mb-3 text-sm">Dados de origem preservados, sem substituir o cálculo do Krieger acima.</p>
-              <PrevisaoSugeridaPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} u={rel.previsaoSugeridaPorUnidade} />
+              <p className="mb-3 text-sm">
+                Dados de origem preservados, sem substituir o cálculo do Krieger acima.
+              </p>
+              <PrevisaoSugeridaPrevia
+                e={e}
+                previsao={e.previsaoSugerida}
+                r={rel.previsaoSugerida}
+                u={rel.previsaoSugeridaPorUnidade}
+              />
             </div>
           )}
         </Secao>
@@ -229,27 +341,40 @@ export function PreviaRelatorio({
           titulo="Previsto × Realizado"
           sub={`Previsão ${e.ano} × realizado de ${rel.comparativo.meses[0]?.rotulo} a ${rel.comparativo.mesAte.rotulo} (${contagem(rel.comparativo.relatoriosUsados, "relatório mensal", "relatórios mensais")}).`}
         >
-          <RolagemTabela className="mb-4"><table className="w-full rounded-sm bg-muted/50">
-            <tbody>
-              <Linha nome="Previsto anual" valor={rel.comparativo.total.previstoAnual} />
-              <Linha nome={`Previsto até ${rel.comparativo.mesAte.rotulo}`} valor={rel.comparativo.total.previsto} />
-              {!semRealizado(rel.comparativo) && (
-                <>
-                  <Linha nome={`Realizado até ${rel.comparativo.mesAte.rotulo}`} valor={rel.comparativo.total.realizado} />
-                  <tr className="font-semibold">
-                    <td className="px-3 py-1">Diferença</td>
-                    <td className="num px-3 py-1 text-right">
-                      {formatBRL(rel.comparativo.total.diferenca)} ({pctTexto(rel.comparativo.total.pct)})
-                    </td>
-                  </tr>
-                </>
-              )}
-            </tbody>
-          </table></RolagemTabela>
+          <RolagemTabela className="mb-4">
+            <table className="w-full rounded-sm bg-muted/50">
+              <tbody>
+                <Linha nome="Previsto anual" valor={rel.comparativo.total.previstoAnual} />
+                <Linha
+                  nome={`Previsto até ${rel.comparativo.mesAte.rotulo}`}
+                  valor={rel.comparativo.total.previsto}
+                />
+                {!semRealizado(rel.comparativo) && (
+                  <>
+                    <Linha
+                      nome={`Realizado até ${rel.comparativo.mesAte.rotulo}`}
+                      valor={rel.comparativo.total.realizado}
+                    />
+                    <tr className="font-semibold">
+                      <td className="px-3 py-1">Diferença</td>
+                      <td className="num px-3 py-1 text-right">
+                        {formatBRL(rel.comparativo.total.diferenca)} (
+                        {pctTexto(rel.comparativo.total.pct)})
+                      </td>
+                    </tr>
+                  </>
+                )}
+              </tbody>
+            </table>
+          </RolagemTabela>
           {rel.comparativo.grupos.length > 0 && semRealizado(rel.comparativo) ? (
             <AvisoSemRealizado r={rel.comparativo} />
           ) : (
-            <TabelaComparativo r={rel.comparativo} compacta mostrarAnaliticas={e.mostrarContasAnaliticas !== false} />
+            <TabelaComparativo
+              r={rel.comparativo}
+              compacta
+              mostrarAnaliticas={e.mostrarContasAnaliticas !== false}
+            />
           )}
         </Secao>
       )}
@@ -267,7 +392,11 @@ export function PreviaRelatorio({
           {e.mostrarPizza !== false && (
             <>
               <h4 className="mb-2 mt-6 font-semibold">Despesas do exercício {e.ano} por grupo</h4>
-              {rel.despesasGrupo.length ? <GraficoPizza dados={rel.despesasGrupo} /> : <Vazio>Sem despesas no demonstrativo.</Vazio>}
+              {rel.despesasGrupo.length ? (
+                <GraficoPizza dados={rel.despesasGrupo} />
+              ) : (
+                <Vazio>Sem despesas no demonstrativo.</Vazio>
+              )}
             </>
           )}
           {e.mostrarReceitasPorCategoria !== false && rel.receitasPorCategoria.length > 0 && (
@@ -295,29 +424,33 @@ export function PreviaRelatorio({
             <Vazio>Nenhum relatório mensal no período.</Vazio>
           ) : (
             <>
-              <RolagemTabela className=""><table className="w-full">
-                <thead>
-                  <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-                    <th className="py-1 text-left font-semibold">Mês</th>
-                    <th className="py-1 text-right font-semibold">Unidades</th>
-                    <th className="py-1 text-right font-semibold">Valor a receber</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rel.inadimplencia.linhas.map((l, i) => (
-                    <tr key={i} className="border-b border-dashed last:border-0">
-                      <td className="num py-1">{l.mes}</td>
-                      <td className="num py-1 text-right">{l.unidades ?? "—"}</td>
-                      <td className="num py-1 text-right">{formatBRL(l.valor)}</td>
+              <RolagemTabela className="">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+                      <th className="py-1 text-left font-semibold">Mês</th>
+                      <th className="py-1 text-right font-semibold">Unidades</th>
+                      <th className="py-1 text-right font-semibold">Valor a receber</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table></RolagemTabela>
+                  </thead>
+                  <tbody>
+                    {rel.inadimplencia.linhas.map((l, i) => (
+                      <tr key={i} className="border-b border-dashed last:border-0">
+                        <td className="num py-1">{l.mes}</td>
+                        <td className="num py-1 text-right">{l.unidades ?? "—"}</td>
+                        <td className="num py-1 text-right">{formatBRL(l.valor)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </RolagemTabela>
               {rel.inadimplencia.final && (
                 <p className="mt-3 rounded-sm bg-muted/50 px-3 py-2">
                   Posição em <span className="num">{rel.inadimplencia.final.mes}</span>:{" "}
                   <strong className="num">{formatBRL(rel.inadimplencia.final.valor)}</strong>
-                  {rel.inadimplencia.final.unidades !== null && ` (${rel.inadimplencia.final.unidades} unidades)`}.
+                  {rel.inadimplencia.final.unidades !== null &&
+                    ` (${rel.inadimplencia.final.unidades} unidades)`}
+                  .
                 </p>
               )}
             </>
@@ -332,14 +465,19 @@ export function PreviaRelatorio({
           ) : (
             <ol className="@container space-y-3">
               {rel.notas.map((n, i) => (
-                <li key={i} className="grid grid-cols-1 gap-x-2 gap-y-0.5 @min-[16rem]:grid-cols-[3.5rem_minmax(0,1fr)]">
+                <li
+                  key={i}
+                  className="grid grid-cols-1 gap-x-2 gap-y-0.5 @min-[16rem]:grid-cols-[3.5rem_minmax(0,1fr)]"
+                >
                   <span className="num text-muted-foreground">{n.mes}</span>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
                       <span className="min-w-0 break-words font-medium">{n.rubrica || "Nota"}</span>
                       {n.valor !== null && <span className="num">{formatBRL(n.valor)}</span>}
                     </div>
-                    {n.texto && <p className="mt-0.5 whitespace-pre-line text-muted-foreground">{n.texto}</p>}
+                    {n.texto && (
+                      <p className="mt-0.5 whitespace-pre-line text-muted-foreground">{n.texto}</p>
+                    )}
                   </div>
                 </li>
               ))}
@@ -357,16 +495,32 @@ export function PreviaRelatorio({
             ) : (
               <p className="text-muted-foreground">Assinatura não cadastrada no Escritório</p>
             )}
-            {escritorio?.nome && <p className="mt-1 text-xs text-muted-foreground">{escritorio.nome}</p>}
+            {escritorio?.nome && (
+              <p className="mt-1 text-xs text-muted-foreground">{escritorio.nome}</p>
+            )}
           </div>
-          {escritorio?.rodape && <p className="mt-10 whitespace-pre-line text-xs text-muted-foreground">{escritorio.rodape}</p>}
+          {escritorio?.rodape && (
+            <p className="mt-10 whitespace-pre-line text-xs text-muted-foreground">
+              {escritorio.rodape}
+            </p>
+          )}
         </section>
       )}
     </article>
   );
 }
 
-function Secao({ n, titulo, sub, children }: { n: number; titulo: string; sub?: string; children: ReactNode }) {
+function Secao({
+  n,
+  titulo,
+  sub,
+  children,
+}: {
+  n: number;
+  titulo: string;
+  sub?: string;
+  children: ReactNode;
+}) {
   return (
     <section className="border-b py-8 last:border-0">
       <h2 className="text-base font-semibold text-primary">
@@ -378,9 +532,23 @@ function Secao({ n, titulo, sub, children }: { n: number; titulo: string; sub?: 
   );
 }
 
-const Vazio = ({ children }: { children: ReactNode }) => <p className="text-muted-foreground">{children}</p>;
+const Vazio = ({ children }: { children: ReactNode }) => (
+  <p className="text-muted-foreground">{children}</p>
+);
 
-function Linha({ nome, valor, forte, sutil, recuo }: { nome: string; valor: number | null; forte?: boolean; sutil?: boolean; recuo?: boolean }) {
+function Linha({
+  nome,
+  valor,
+  forte,
+  sutil,
+  recuo,
+}: {
+  nome: string;
+  valor: number | null;
+  forte?: boolean;
+  sutil?: boolean;
+  recuo?: boolean;
+}) {
   return (
     <tr className={cn(forte && "font-semibold", sutil && "text-xs text-muted-foreground")}>
       <td className={cn("px-3 py-1", recuo && "pl-6")}>{nome}</td>
@@ -389,23 +557,42 @@ function Linha({ nome, valor, forte, sutil, recuo }: { nome: string; valor: numb
   );
 }
 
-function Bloco({ titulo, linhas, total, mostrarAnaliticas = true }: { titulo: string; linhas: LinhaValor[]; total: number; mostrarAnaliticas?: boolean }) {
+function Bloco({
+  titulo,
+  linhas,
+  total,
+  mostrarAnaliticas = true,
+}: {
+  titulo: string;
+  linhas: LinhaValor[];
+  total: number;
+  mostrarAnaliticas?: boolean;
+}) {
   return (
     <div>
       <h4 className="mb-1 font-semibold">{titulo}</h4>
-      <RolagemTabela className=""><table className="w-full">
-        <tbody>
-          {mostrarAnaliticas && linhas.map((l, i) => (
-            <Linha key={i} nome={l.nome} valor={l.valor} recuo />
-          ))}
-          <Linha nome={`Total ${titulo.toLowerCase()}`} valor={total} forte />
-        </tbody>
-      </table></RolagemTabela>
+      <RolagemTabela className="">
+        <table className="w-full">
+          <tbody>
+            {mostrarAnaliticas &&
+              linhas.map((l, i) => <Linha key={i} nome={l.nome} valor={l.valor} recuo />)}
+            <Linha nome={`Total ${titulo.toLowerCase()}`} valor={total} forte />
+          </tbody>
+        </table>
+      </RolagemTabela>
     </div>
   );
 }
 
-function Item({ rotulo, children, alinhar }: { rotulo: string; children: ReactNode; alinhar?: "esquerda" | "direita" }) {
+function Item({
+  rotulo,
+  children,
+  alinhar,
+}: {
+  rotulo: string;
+  children: ReactNode;
+  alinhar?: "esquerda" | "direita";
+}) {
   return (
     // minmax(min-content,…) no valor: em 320 px o rótulo (até 14rem) é que quebra, e o valor
     // (R$ 8.500.000,00, datas) fica inteiro sem passar da página. Com texto ampliado (prévia
@@ -441,7 +628,9 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
             {administracao.map((m, i) => (
               <Item key={i} rotulo={m.cargo || "—"}>
                 {m.nome}
-                {m.mandatoFim && <span className="text-muted-foreground"> · mandato até {m.mandatoFim}</span>}
+                {m.mandatoFim && (
+                  <span className="text-muted-foreground"> · mandato até {m.mandatoFim}</span>
+                )}
               </Item>
             ))}
           </dl>
@@ -451,9 +640,21 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
         <div>
           <h4 className="mb-1 font-semibold">Seguro</h4>
           <dl>
-            {c.seguradora && <Item rotulo="Seguradora" alinhar="direita">{c.seguradora}</Item>}
-            {c.vigenciaSeguro && <Item rotulo="Vigência até" alinhar="direita"><span className="num">{formatData(c.vigenciaSeguro)}</span></Item>}
-            {c.seguro.riscoAbsoluto !== null && <Item rotulo="Risco absoluto" alinhar="direita"><span className="num">{formatBRL(c.seguro.riscoAbsoluto)}</span></Item>}
+            {c.seguradora && (
+              <Item rotulo="Seguradora" alinhar="direita">
+                {c.seguradora}
+              </Item>
+            )}
+            {c.vigenciaSeguro && (
+              <Item rotulo="Vigência até" alinhar="direita">
+                <span className="num">{formatData(c.vigenciaSeguro)}</span>
+              </Item>
+            )}
+            {c.seguro.riscoAbsoluto !== null && (
+              <Item rotulo="Risco absoluto" alinhar="direita">
+                <span className="num">{formatBRL(c.seguro.riscoAbsoluto)}</span>
+              </Item>
+            )}
             {coberturas.map((cb, i) => (
               <Item key={i} rotulo={cb.desc || "Cobertura"} alinhar="direita">
                 <span className="num">{formatBRL(cb.valor)}</span>
@@ -462,18 +663,43 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
           </dl>
         </div>
       )}
-      {(c.vigenciaExtintores || c.ultGordura || c.ultDedetizacao || c.ultCaixaDagua || c.vistoriaAno) && (
+      {(c.vigenciaExtintores ||
+        c.ultGordura ||
+        c.ultDedetizacao ||
+        c.ultCaixaDagua ||
+        c.vistoriaAno) && (
         <div>
           <h4 className="mb-1 font-semibold">Manutenções e vistorias</h4>
           <dl>
-            {c.vigenciaExtintores && <Item rotulo="Recarga dos extintores até"><span className="num">{formatData(c.vigenciaExtintores)}</span></Item>}
-            {c.ultGordura && <Item rotulo="Última limpeza da caixa de gordura"><span className="num">{formatData(c.ultGordura)}</span></Item>}
-            {c.ultDedetizacao && <Item rotulo="Última dedetização"><span className="num">{formatData(c.ultDedetizacao)}</span></Item>}
-            {c.ultCaixaDagua && <Item rotulo="Última limpeza da caixa d'água"><span className="num">{formatData(c.ultCaixaDagua)}</span></Item>}
+            {c.vigenciaExtintores && (
+              <Item rotulo="Recarga dos extintores até">
+                <span className="num">{formatData(c.vigenciaExtintores)}</span>
+              </Item>
+            )}
+            {c.ultGordura && (
+              <Item rotulo="Última limpeza da caixa de gordura">
+                <span className="num">{formatData(c.ultGordura)}</span>
+              </Item>
+            )}
+            {c.ultDedetizacao && (
+              <Item rotulo="Última dedetização">
+                <span className="num">{formatData(c.ultDedetizacao)}</span>
+              </Item>
+            )}
+            {c.ultCaixaDagua && (
+              <Item rotulo="Última limpeza da caixa d'água">
+                <span className="num">{formatData(c.ultCaixaDagua)}</span>
+              </Item>
+            )}
             {c.vistoriaAno && (
               <Item rotulo="Vistoria técnica">
                 <span className="num">{c.vistoriaAno}</span>
-                {proximaVistoria && <span className="text-muted-foreground"> · próxima em {dataParaBR(proximaVistoria)}</span>}
+                {proximaVistoria && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · próxima em {dataParaBR(proximaVistoria)}
+                  </span>
+                )}
                 {c.vistoriaLei && <span className="text-muted-foreground"> · {c.vistoriaLei}</span>}
               </Item>
             )}
@@ -497,38 +723,54 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
       {servicos.length > 0 && (
         <div>
           <h4 className="mb-1 font-semibold">Consumo de serviços</h4>
-          <RolagemTabela className=""><table className="w-full">
-            <thead>
-              <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-                <th className="py-1 text-left font-semibold">Serviço</th>
-                <th className="py-1 text-right font-semibold">Consumido no período</th>
-                <th className="py-1 text-right font-semibold">Valor médio (÷ 12)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {servicos.map((s, i) => (
-                <tr key={i} className="border-b border-dashed last:border-0">
-                  <td className="py-1">
-                    {s.nome}
-                    {s.consumo.rubricas.length > 0 && (
-                      <span className="block text-xs text-muted-foreground">{s.consumo.rubricas.join(", ")}</span>
-                    )}
-                    {s.fornecedor && <span className="block text-xs text-muted-foreground">{s.fornecedor}</span>}
-                  </td>
-                  <td className="num py-1 text-right">{formatBRL(s.consumo.valor)}</td>
-                  <td className="num py-1 text-right text-muted-foreground">{formatBRL(s.consumo.valor / 12)}</td>
+          <RolagemTabela className="">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="py-1 text-left font-semibold">Serviço</th>
+                  <th className="py-1 text-right font-semibold">Consumido no período</th>
+                  <th className="py-1 text-right font-semibold">Valor médio (÷ 12)</th>
                 </tr>
-              ))}
-            </tbody>
-          </table></RolagemTabela>
+              </thead>
+              <tbody>
+                {servicos.map((s, i) => (
+                  <tr key={i} className="border-b border-dashed last:border-0">
+                    <td className="py-1">
+                      {s.nome}
+                      {s.consumo.rubricas.length > 0 && (
+                        <span className="block text-xs text-muted-foreground">
+                          {s.consumo.rubricas.join(", ")}
+                        </span>
+                      )}
+                      {s.fornecedor && (
+                        <span className="block text-xs text-muted-foreground">{s.fornecedor}</span>
+                      )}
+                    </td>
+                    <td className="num py-1 text-right">{formatBRL(s.consumo.valor)}</td>
+                    <td className="num py-1 text-right text-muted-foreground">
+                      {formatBRL(s.consumo.valor / 12)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </RolagemTabela>
         </div>
       )}
       {(receber !== null || pagar !== null) && (
         <div>
           <h4 className="mb-1 font-semibold">Valores</h4>
           <dl>
-            {receber !== null && <Item rotulo="Contas a receber"><span className="num">{formatBRL(receber)}</span></Item>}
-            {pagar !== null && <Item rotulo="Contas a pagar"><span className="num">{formatBRL(pagar)}</span></Item>}
+            {receber !== null && (
+              <Item rotulo="Contas a receber">
+                <span className="num">{formatBRL(receber)}</span>
+              </Item>
+            )}
+            {pagar !== null && (
+              <Item rotulo="Contas a pagar">
+                <span className="num">{formatBRL(pagar)}</span>
+              </Item>
+            )}
           </dl>
         </div>
       )}
@@ -575,61 +817,79 @@ function PrevisaoSugeridaPrevia({
   const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
   return (
     <>
-      <RolagemTabela className=""><table className="w-full">
-        <thead>
-          <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="py-1 text-left font-semibold">Categoria de despesa</th>
-            <th className="py-1 text-right font-semibold">Anual</th>
-            <th className="py-1 text-right font-semibold">Média mês</th>
-          </tr>
-        </thead>
-        <tbody>
-          {p.categorias.map((c, i) => (
-            <tr key={i} className="border-b border-dashed last:border-0">
-              <td className="py-1">{c.nome}</td>
-              <td className="num py-1 text-right">{formatBRL(c.anual)}</td>
-              <td className="num py-1 text-right text-muted-foreground">{formatBRL(c.media)}</td>
+      <RolagemTabela className="">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="py-1 text-left font-semibold">Categoria de despesa</th>
+              <th className="py-1 text-right font-semibold">Anual</th>
+              <th className="py-1 text-right font-semibold">Média mês</th>
             </tr>
-          ))}
-          <tr className="font-semibold">
-            <td className="py-1">Total das despesas</td>
-            <td className="num py-1 text-right">{formatBRL(r.totalDespesasAno)}</td>
-            <td className="num py-1 text-right">{formatBRL(r.totalDespesasMedia)}</td>
-          </tr>
-        </tbody>
-      </table></RolagemTabela>
-      <RolagemTabela className="mt-4"><table className="w-full rounded-sm bg-muted/50">
-        <tbody>
-          <Linha nome="Total das despesas do ano" valor={r.totalDespesasAno} />
-          {p.deducoes.map((x) => (
-            <Linha key={x.id} nome={`${sinal(x.sinal)} ${x.descricao || "Dedução"}`} valor={Math.abs(x.valor)} />
-          ))}
-          <Linha nome="Total ordinário" valor={r.totalOrdinario} forte />
-          <Linha nome={`${sinal(p.variacao.sinal)} Variação de despesas sugeridas`} valor={Math.abs(p.variacao.valor)} />
-          <Linha nome="Total final (anual)" valor={r.totalFinal} forte />
-          <Linha nome="Rateio mensal sugerido (÷ 12)" valor={r.rateioMensalSugerido} forte />
-          <Linha nome="Rateio mensal atual" valor={r.rateioMensalAtual} />
-          <tr>
-            <td className="px-3 py-1">Índice sugerido para correção</td>
-            <td className="num px-3 py-1 text-right">{pctTexto(r.indiceSugerido)}</td>
-          </tr>
-          {e.rateioAprovado != null && <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />}
-        </tbody>
-      </table></RolagemTabela>
+          </thead>
+          <tbody>
+            {p.categorias.map((c, i) => (
+              <tr key={i} className="border-b border-dashed last:border-0">
+                <td className="py-1">{c.nome}</td>
+                <td className="num py-1 text-right">{formatBRL(c.anual)}</td>
+                <td className="num py-1 text-right text-muted-foreground">{formatBRL(c.media)}</td>
+              </tr>
+            ))}
+            <tr className="font-semibold">
+              <td className="py-1">Total das despesas</td>
+              <td className="num py-1 text-right">{formatBRL(r.totalDespesasAno)}</td>
+              <td className="num py-1 text-right">{formatBRL(r.totalDespesasMedia)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </RolagemTabela>
+      <RolagemTabela className="mt-4">
+        <table className="w-full rounded-sm bg-muted/50">
+          <tbody>
+            <Linha nome="Total das despesas do ano" valor={r.totalDespesasAno} />
+            {p.deducoes.map((x) => (
+              <Linha
+                key={x.id}
+                nome={`${sinal(x.sinal)} ${x.descricao || "Dedução"}`}
+                valor={Math.abs(x.valor)}
+              />
+            ))}
+            <Linha nome="Total ordinário" valor={r.totalOrdinario} forte />
+            <Linha
+              nome={`${sinal(p.variacao.sinal)} Variação de despesas sugeridas`}
+              valor={Math.abs(p.variacao.valor)}
+            />
+            <Linha nome="Total final (anual)" valor={r.totalFinal} forte />
+            <Linha nome="Rateio mensal sugerido (÷ 12)" valor={r.rateioMensalSugerido} forte />
+            <Linha nome="Rateio mensal atual" valor={r.rateioMensalAtual} />
+            <tr>
+              <td className="px-3 py-1">Índice sugerido para correção</td>
+              <td className="num px-3 py-1 text-right">{pctTexto(r.indiceSugerido)}</td>
+            </tr>
+            {e.rateioAprovado != null && (
+              <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />
+            )}
+          </tbody>
+        </table>
+      </RolagemTabela>
       {mostrarPorUnidade && (
         <>
           <h4 className="mb-1 mt-5 font-semibold">Previsão orçamentária por unidade</h4>
-          <RolagemTabela className=""><table className="w-full rounded-sm bg-muted/50">
-            <tbody>
-              <tr>
-                <td className="px-3 py-1">Unidades</td>
-                <td className="num px-3 py-1 text-right">{u.unidades}</td>
-              </tr>
-              <Linha nome="Cota por unidade" valor={u.cotaUnidade} />
-              <Linha nome={`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`} valor={u.reservaUnidade} />
-              <Linha nome="Valor por unidade" valor={u.valorUnidade} forte />
-            </tbody>
-          </table></RolagemTabela>
+          <RolagemTabela className="">
+            <table className="w-full rounded-sm bg-muted/50">
+              <tbody>
+                <tr>
+                  <td className="px-3 py-1">Unidades</td>
+                  <td className="num px-3 py-1 text-right">{u.unidades}</td>
+                </tr>
+                <Linha nome="Cota por unidade" valor={u.cotaUnidade} />
+                <Linha
+                  nome={`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`}
+                  valor={u.reservaUnidade}
+                />
+                <Linha nome="Valor por unidade" valor={u.valorUnidade} forte />
+              </tbody>
+            </table>
+          </RolagemTabela>
         </>
       )}
     </>

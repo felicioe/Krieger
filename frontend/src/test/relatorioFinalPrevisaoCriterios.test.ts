@@ -37,15 +37,26 @@ describe("Previsão orçamentária no relatório final: mesmos critérios e tabe
         { ano: 2024, pct: 6 },
       ],
     };
-    const rel = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
-    const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio: null });
+    const rel = montarRelatorioFinal({
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+      mensais: [],
+    });
+    const doc = await documentoRelatorioFinal({
+      rel,
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+    });
     return { rel, doc };
   }
 
   it("o documento declara método, índices usados e arredondamento, com os rótulos da tela", async () => {
     const { doc } = await gerar();
     const pares = doc.blocos.find(
-      (b): b is Pares => b.tipo === "pares" && b.itens.some((i) => i.rotulo === "Método da variação"),
+      (b): b is Pares =>
+        b.tipo === "pares" && b.itens.some((i) => i.rotulo === "Método da variação"),
     );
     expect(pares, "bloco de critérios da previsão").toBeDefined();
     const valor = (rotulo: string) => pares!.itens.find((i) => i.rotulo === rotulo)?.valor;
@@ -58,7 +69,8 @@ describe("Previsão orçamentária no relatório final: mesmos critérios e tabe
   it("a tabela por grupo é a da tela: realizado × média prevista, com Total dos grupos no rodapé", async () => {
     const { rel, doc } = await gerar();
     const tabela = doc.blocos.find(
-      (b): b is Tabela => b.tipo === "tabela" && b.colunas.some((c) => c.titulo === "Média prevista dos grupos"),
+      (b): b is Tabela =>
+        b.tipo === "tabela" && b.colunas.some((c) => c.titulo === "Média prevista dos grupos"),
     );
     expect(tabela, "tabela da previsão").toBeDefined();
 
@@ -73,11 +85,14 @@ describe("Previsão orçamentária no relatório final: mesmos critérios e tabe
   it("método valor: a variação aplicada aparece em reais e não lista índices", async () => {
     const { doc } = await gerar({ variacaoMetodo: "valor", variacaoParam: 5000 });
     const pares = doc.blocos.find(
-      (b): b is Pares => b.tipo === "pares" && b.itens.some((i) => i.rotulo === "Método da variação"),
+      (b): b is Pares =>
+        b.tipo === "pares" && b.itens.some((i) => i.rotulo === "Método da variação"),
     );
     const rotulos = pares!.itens.map((i) => i.rotulo);
     expect(rotulos).not.toContain("Índices usados na média");
-    expect(pares!.itens.find((i) => i.rotulo === "Método da variação")?.valor).toBe("Valor fixo (R$)");
+    expect(pares!.itens.find((i) => i.rotulo === "Método da variação")?.valor).toBe(
+      "Valor fixo (R$)",
+    );
     expect(pares!.itens.find((i) => i.rotulo === "Variação aplicada")?.valor).toBe(formatBRL(5000));
   });
 });

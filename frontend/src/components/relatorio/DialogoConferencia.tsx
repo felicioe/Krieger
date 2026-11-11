@@ -1,14 +1,29 @@
 import { useState } from "react";
 import { CircleCheck, CircleX, Loader2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Formato } from "@/lib/documento/baixar";
 import type { RelatorioFinal, SituacaoConferencia } from "@/domain/relatorioFinal";
 
-const ICONE: Record<SituacaoConferencia, typeof CircleCheck> = { ok: CircleCheck, aviso: TriangleAlert, erro: CircleX };
-const COR: Record<SituacaoConferencia, string> = { ok: "text-success", aviso: "text-warning-foreground", erro: "text-destructive" };
+const ICONE: Record<SituacaoConferencia, typeof CircleCheck> = {
+  ok: CircleCheck,
+  aviso: TriangleAlert,
+  erro: CircleX,
+};
+const COR: Record<SituacaoConferencia, string> = {
+  ok: "text-success",
+  aviso: "text-warning-foreground",
+  erro: "text-destructive",
+};
 
 /** Resumo de conferência dos totais, mostrado antes de emitir. */
 export function DialogoConferencia({
@@ -85,7 +100,10 @@ export function DialogoConferencia({
             const Icone = ICONE[c.situacao];
             return (
               <li key={c.titulo} className="flex items-start gap-3 px-3 py-2.5 text-sm">
-                <Icone className={cn("mt-0.5 size-4 shrink-0", COR[c.situacao])} aria-label={c.situacao} />
+                <Icone
+                  className={cn("mt-0.5 size-4 shrink-0", COR[c.situacao])}
+                  aria-label={c.situacao}
+                />
                 <div>
                   <div className="font-medium">{c.titulo}</div>
                   <div className="text-muted-foreground">{c.detalhe}</div>
@@ -95,14 +113,20 @@ export function DialogoConferencia({
           })}
         </ul>
         <p className="text-xs text-muted-foreground">
-          Emitir salva o relatório, registra a data e quem emitiu e baixa o arquivo no formato escolhido.
+          Emitir salva o relatório, registra a data e quem emitiu e baixa o arquivo no formato
+          escolhido.
         </p>
 
         <DialogFooter>
           <Button variant="ghost" type="button" onClick={() => aoMudar(false)} disabled={!!ocupado}>
             Voltar e revisar
           </Button>
-          <Button variant="outline" type="button" onClick={() => emitir("docx")} disabled={!!ocupado}>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => emitir("docx")}
+            disabled={!!ocupado}
+          >
             {ocupado === "docx" && <Loader2 className="animate-spin" />}
             {erros ? "Emitir Word mesmo assim" : "Emitir em Word"}
           </Button>

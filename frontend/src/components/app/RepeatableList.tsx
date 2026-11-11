@@ -118,7 +118,9 @@ export function RepeatableList<T>({
       return `Posição ${alvo.current} de ${total}.`;
     },
     onDragEnd: ({ over }) =>
-      over ? `Linha solta na posição ${alvo.current} de ${total}.` : "Linha solta fora da lista; nada mudou.",
+      over
+        ? `Linha solta na posição ${alvo.current} de ${total}.`
+        : "Linha solta fora da lista; nada mudou.",
     onDragCancel: () => "Movimento cancelado. A linha voltou ao lugar.",
   };
 

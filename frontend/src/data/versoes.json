@@ -96,9 +96,7 @@
     {
       "versao": "1.0",
       "titulo": "Implantação do sistema",
-      "alteracoes": [
-        "Implantação inicial do Sistema Krieger."
-      ]
+      "alteracoes": ["Implantação inicial do Sistema Krieger."]
     }
   ]
 }

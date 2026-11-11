@@ -31,13 +31,22 @@ describe("#229 impressão em janela própria", () => {
     const eventos: string[] = [];
     let aoCarregar: (() => void) | undefined;
     const janela = {
-      set opener(valor: unknown) { expect(valor).toBeNull(); eventos.push("isolou"); },
+      set opener(valor: unknown) {
+        expect(valor).toBeNull();
+        eventos.push("isolou");
+      },
       document: {
         open: () => eventos.push("abriu documento"),
-        write: (html: string) => { expect(html).toContain("&lt;teste&gt;"); eventos.push("escreveu"); },
+        write: (html: string) => {
+          expect(html).toContain("&lt;teste&gt;");
+          eventos.push("escreveu");
+        },
         close: () => eventos.push("fechou documento"),
       },
-      addEventListener: (_: string, fn: () => void) => { eventos.push("registrou"); aoCarregar = fn; },
+      addEventListener: (_: string, fn: () => void) => {
+        eventos.push("registrou");
+        aoCarregar = fn;
+      },
       focus: () => eventos.push("focou"),
       print: () => eventos.push("imprimiu"),
       close: vi.fn(),
@@ -46,7 +55,13 @@ describe("#229 impressão em janela própria", () => {
     expect(imprimirTabela(tabela)).toBe(true);
     // O listener de load so sobrevive se for registrado depois de document.open().
     expect(eventos.indexOf("registrou")).toBeGreaterThan(eventos.indexOf("abriu documento"));
-    expect(eventos).toEqual(["isolou", "abriu documento", "registrou", "escreveu", "fechou documento"]);
+    expect(eventos).toEqual([
+      "isolou",
+      "abriu documento",
+      "registrou",
+      "escreveu",
+      "fechou documento",
+    ]);
     expect(abrir.mock.calls[0]?.[2]).not.toContain("noopener");
     aoCarregar?.();
     expect(eventos.slice(-2)).toEqual(["focou", "imprimiu"]);

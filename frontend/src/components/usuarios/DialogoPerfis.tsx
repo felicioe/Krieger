@@ -67,14 +67,22 @@ export function DialogoPerfis({ aoFechar }: { aoFechar: () => void }) {
   }, [catalogo]);
 
   function permitida(perfil: Perfil, chave: string): boolean {
-    return perfis.find((p) => p.id === perfil)?.permissoes.find((x) => x.chave === chave)?.permitida ?? false;
+    return (
+      perfis.find((p) => p.id === perfil)?.permissoes.find((x) => x.chave === chave)?.permitida ??
+      false
+    );
   }
 
   function marcar(perfil: Perfil, chave: string, valor: boolean) {
     setPerfis((lista) =>
       lista.map((p) =>
         p.id === perfil
-          ? { ...p, permissoes: p.permissoes.map((x) => (x.chave === chave ? { ...x, permitida: valor } : x)) }
+          ? {
+              ...p,
+              permissoes: p.permissoes.map((x) =>
+                x.chave === chave ? { ...x, permitida: valor } : x,
+              ),
+            }
           : p,
       ),
     );
@@ -110,7 +118,8 @@ export function DialogoPerfis({ aoFechar }: { aoFechar: () => void }) {
 
         {carregando ? (
           <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="animate-spin" aria-hidden="true" /> Carregando a matriz de permissões…
+            <Loader2 className="animate-spin" aria-hidden="true" /> Carregando a matriz de
+            permissões…
           </p>
         ) : erro ? (
           <Alert variant="destructive">
@@ -159,7 +168,10 @@ export function DialogoPerfis({ aoFechar }: { aoFechar: () => void }) {
                           const ocupado = salvando === `${p.id}:${chave.chave}`;
                           const rotuloAcao = ACAO[chave.acao] ?? chave.acao;
                           return (
-                            <li key={chave.chave} className="flex items-center justify-between gap-3 px-3 py-2">
+                            <li
+                              key={chave.chave}
+                              className="flex items-center justify-between gap-3 px-3 py-2"
+                            >
                               <div className="min-w-0">
                                 <p className="text-sm font-medium">
                                   {chave.tela} · {rotuloAcao}
@@ -167,7 +179,9 @@ export function DialogoPerfis({ aoFechar }: { aoFechar: () => void }) {
                                 <p className="text-xs text-muted-foreground">{chave.chave}</p>
                               </div>
                               <div className="flex shrink-0 items-center gap-2">
-                                {ocupado && <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />}
+                                {ocupado && (
+                                  <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                                )}
                                 <Badge variant={marcado ? "success" : "secondary"}>
                                   {marcado ? "Permitida" : "Negada"}
                                 </Badge>

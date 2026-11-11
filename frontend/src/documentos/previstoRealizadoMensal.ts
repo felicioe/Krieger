@@ -3,7 +3,11 @@ import type { Bloco, Coluna, Documento, LinhaTabela } from "@/lib/documento/tipo
 import { nomeParaRelatorio } from "@/domain/condominio";
 import type { Condominio, ConfigEscritorio, Exercicio, Mensal } from "@/domain/types";
 import type { ResultadoMensalDetalhado } from "@/domain/previstoRealizadoMensal";
-import { colunasMensalExport, linhasMensalExport, type OpcoesMensalExport } from "@/lib/colunasRelatorios";
+import {
+  colunasMensalExport,
+  linhasMensalExport,
+  type OpcoesMensalExport,
+} from "@/lib/colunasRelatorios";
 import { celulaTexto } from "@/lib/exportar";
 import { contagem } from "@/components/app/textos";
 import { timbreDoEscritorio } from "./comum";
@@ -48,24 +52,35 @@ export function documentoPrevistoRealizadoMensal(o: {
   }));
 
   const blocos: Bloco[] = [
-    { tipo: "paragrafo", texto: "PREVISTO × REALIZADO MENSAL", tamanho: "pequeno", suave: true, negrito: true },
+    {
+      tipo: "paragrafo",
+      texto: "PREVISTO × REALIZADO MENSAL",
+      tamanho: "pequeno",
+      suave: true,
+      negrito: true,
+    },
     { tipo: "titulo", nivel: 1, texto: nome || "Condomínio" },
     {
       tipo: "pares",
       itens: [
         { rotulo: "Previsão", valor: `Exercício ${String(e.ano)}` },
         { rotulo: "Período", valor: periodo },
-        { rotulo: "Relatórios mensais", valor: contagem(r.relatoriosUsados, "relatório considerado", "relatórios considerados") },
+        {
+          rotulo: "Relatórios mensais",
+          valor: contagem(r.relatoriosUsados, "relatório considerado", "relatórios considerados"),
+        },
         { rotulo: "Colunas", valor: rotuloColunas(opcoes) },
       ],
     },
     ...(faltantes.length
-      ? [{
-          tipo: "paragrafo" as const,
-          texto: `Sem relatório mensal em: ${faltantes.map((m) => m.rotulo).join(", ")}. O realizado acumulado é parcial; meses ausentes aparecem como "Sem dados", sem variação calculada.`,
-          suave: true,
-          tamanho: "pequeno" as const,
-        }]
+      ? [
+          {
+            tipo: "paragrafo" as const,
+            texto: `Sem relatório mensal em: ${faltantes.map((m) => m.rotulo).join(", ")}. O realizado acumulado é parcial; meses ausentes aparecem como "Sem dados", sem variação calculada.`,
+            suave: true,
+            tamanho: "pequeno" as const,
+          },
+        ]
       : []),
     { tipo: "tabela", pequena: true, colunas: colunasDoc, linhas },
   ];
@@ -81,6 +96,11 @@ export function documentoPrevistoRealizadoMensal(o: {
 }
 
 function rotuloColunas(o: OpcoesMensalExport): string {
-  const partes = [o.orcado ? "previsto" : null, "realizado", o.horizontal ? "análise horizontal" : null, o.vertical ? "análise vertical" : null];
+  const partes = [
+    o.orcado ? "previsto" : null,
+    "realizado",
+    o.horizontal ? "análise horizontal" : null,
+    o.vertical ? "análise vertical" : null,
+  ];
   return partes.filter(Boolean).join(" · ");
 }

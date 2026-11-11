@@ -7,7 +7,7 @@ import { ID_CONTEUDO } from "@/components/app/foco";
 import { PularParaConteudo } from "@/components/app/PularParaConteudo";
 import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
 import { recarregarSessao } from "@/lib/auth";
-import { podeAcessarRota } from '@/lib/permissoes';
+import { podeAcessarRota } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
@@ -36,7 +36,8 @@ export const Route = createFileRoute("/_authenticated")({
       ["/usuarios", "usuarios.visualizar"],
     ];
     if (!podeAcessarRota(usuario, location.pathname)) {
-      const destino = permissoesPorRota.find(([rota]) => podeAcessarRota(usuario, rota))?.[0] ?? "/minha-senha";
+      const destino =
+        permissoesPorRota.find(([rota]) => podeAcessarRota(usuario, rota))?.[0] ?? "/minha-senha";
       throw redirect({ to: destino as never });
     }
     return { usuario };

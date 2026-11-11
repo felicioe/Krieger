@@ -7,12 +7,7 @@
  */
 import { conteudoCsv, matrizPlanilha, type ColunaExportacao } from "@/domain/exportacao";
 
-export {
-  celulaTexto,
-  conteudoCsv,
-  matrizPlanilha,
-  numeroParaCelula,
-} from "@/domain/exportacao";
+export { celulaTexto, conteudoCsv, matrizPlanilha, numeroParaCelula } from "@/domain/exportacao";
 export type { ColunaExportacao } from "@/domain/exportacao";
 
 function nomeComExtensao(nome: string, extensao: string): string {

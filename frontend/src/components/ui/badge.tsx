@@ -16,7 +16,8 @@ const badgeVariants = cva(
         outline: "text-foreground",
         warning: "border-transparent bg-warning/20 text-warning-foreground",
         // Fundo opaco (verde 15% sobre o cartão): o texto mantém 4,5:1 mesmo em linhas com fundo cinza.
-        success: "border-transparent bg-[color-mix(in_oklab,var(--success)_15%,var(--card))] text-success",
+        success:
+          "border-transparent bg-[color-mix(in_oklab,var(--success)_15%,var(--card))] text-success",
         alerta: "border-transparent bg-destructive/12 text-destructive",
       },
     },

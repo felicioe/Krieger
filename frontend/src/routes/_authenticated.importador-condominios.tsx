@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_authenticated/importador-condominios")({
       "Listagem de Condomínios",
       "Importa a Listagem Completa de Condomínios do Systemar: cadastra os novos e atualiza os campos que mudaram nos já existentes.",
     ),
-  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
   component: PaginaImportadorCondominios,
 });
 

@@ -18,7 +18,11 @@ function comSaldo(mes: number, ano: number): Mensal {
   m.demonstrativo = recalcularDemonstrativo({
     ...m.demonstrativo!,
     receitas: { itens: [{ nome: "Taxa condominial", valor: 1000 }], subtotal: 0, totalComSaldo: 0 },
-    despesas: { grupos: [{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 600 }] }], subtotal: 0, saldoRestante: 0 },
+    despesas: {
+      grupos: [{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 600 }] }],
+      subtotal: 0,
+      saldoRestante: 0,
+    },
     saldoAtual: { contas: [{ nome: "Conta corrente", valor: 400 }], total: 0 },
   });
   return m;
@@ -27,15 +31,22 @@ function comSaldo(mes: number, ano: number): Mensal {
 describe("relatório mensal", () => {
   it("o período do novo relatório cobre o mês inteiro", () => {
     expect(periodoDoMes({ mes: 2, ano: 2024 })).toEqual({ ini: "01/02/2024", fim: "29/02/2024" });
-    expect(competenciaMensal(mensalPadrao(condo, { mes: 9, ano: 2026 }))).toEqual({ mes: 9, ano: 2026 });
+    expect(competenciaMensal(mensalPadrao(condo, { mes: 9, ano: 2026 }))).toEqual({
+      mes: 9,
+      ano: 2026,
+    });
   });
 
   it("partindo do mês anterior: saldo anterior = saldo atual dele; nomes copiados com valores zerados", () => {
     const anterior = comSaldo(1, 2026);
     const novo = mensalPadrao(condo, { mes: 2, ano: 2026 }, anterior);
-    expect(novo.demonstrativo!.saldoAnterior.contas).toEqual([{ nome: "Conta corrente", valor: 400 }]);
+    expect(novo.demonstrativo!.saldoAnterior.contas).toEqual([
+      { nome: "Conta corrente", valor: 400 },
+    ]);
     expect(novo.demonstrativo!.saldoAnterior.total).toBe(400);
-    expect(novo.demonstrativo!.despesas.grupos).toEqual([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 0 }] }]);
+    expect(novo.demonstrativo!.despesas.grupos).toEqual([
+      { nome: "Pessoal", itens: [{ nome: "Salários", valor: 0 }] },
+    ]);
     expect(novo.demonstrativo!.receitas.itens).toEqual([{ nome: "Taxa condominial", valor: 0 }]);
   });
 

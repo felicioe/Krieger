@@ -22,7 +22,8 @@ import {
 import type { Condominio } from "@/domain/types";
 
 /** Não é a Listagem Completa de Condomínios do Systemar. */
-const ERRO_NAO_LISTAGEM = 'Este PDF não parece ser a "Listagem de Condomínios" do Systemar; verifique se é o relatório certo.';
+const ERRO_NAO_LISTAGEM =
+  'Este PDF não parece ser a "Listagem de Condomínios" do Systemar; verifique se é o relatório certo.';
 
 type Progresso = { feito: number; total: number };
 
@@ -77,13 +78,23 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
       const cnpjs = lidas.map((l) => l.cnpj).filter((c): c is string => !!c);
       if (cnpjs.length > 0) {
         setProgressoReceita({ feito: 0, total: 0 });
-        const brutos = await consultarCnpjsEmLote(cnpjs, (feito, total) => setProgressoReceita({ feito, total }));
+        const brutos = await consultarCnpjsEmLote(cnpjs, (feito, total) =>
+          setProgressoReceita({ feito, total }),
+        );
         const resolvidos = new Map<string, DadosReceitaResolvidos>();
-        for (const [cnpj, d] of brutos) resolvidos.set(cnpj, { razaoSocial: d?.razaoSocial ?? null, endereco: d ? enderecoDaReceita(d) : null });
+        for (const [cnpj, d] of brutos)
+          resolvidos.set(cnpj, {
+            razaoSocial: d?.razaoSocial ?? null,
+            endereco: d ? enderecoDaReceita(d) : null,
+          });
         setReceita(resolvidos);
       }
     } catch (e) {
-      setErro(e instanceof Error && /password|Invalid PDF/i.test(e.message) ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)." : mensagemErro(e));
+      setErro(
+        e instanceof Error && /password|Invalid PDF/i.test(e.message)
+          ? "Não foi possível abrir o PDF (arquivo protegido ou inválido)."
+          : mensagemErro(e),
+      );
     } finally {
       setLendo(false);
       if (entrada.current) entrada.current.value = "";
@@ -98,7 +109,11 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
       for (let i = 0; i < escolhidos.length; i++) {
         const r = escolhidos[i]!;
         const idNovo = (idsNovosRef.current[r.linha.codigo] ??= novoId());
-        const dados = { ...(r.existente ?? {}), ...r.proposto, id: r.existente?.id ?? idNovo } as Condominio;
+        const dados = {
+          ...(r.existente ?? {}),
+          ...r.proposto,
+          id: r.existente?.id ?? idNovo,
+        } as Condominio;
         await api.salvar<Condominio>("condominios", dados);
         setProgressoSalvar({ feito: i + 1, total: escolhidos.length });
       }
@@ -115,10 +130,16 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
     },
   });
 
-  const receitaEmAndamento = !!progressoReceita && progressoReceita.total > 0 && progressoReceita.feito < progressoReceita.total;
-  const totalSelecionados = analise ? analise.filter((r) => selecionados[r.linha.codigo]).length : 0;
+  const receitaEmAndamento =
+    !!progressoReceita &&
+    progressoReceita.total > 0 &&
+    progressoReceita.feito < progressoReceita.total;
+  const totalSelecionados = analise
+    ? analise.filter((r) => selecionados[r.linha.codigo]).length
+    : 0;
   const linhasTabela = useMemo(
-    () => (analise ? [...analise].sort((a, b) => a.linha.nome.localeCompare(b.linha.nome, "pt-BR")) : []),
+    () =>
+      analise ? [...analise].sort((a, b) => a.linha.nome.localeCompare(b.linha.nome, "pt-BR")) : [],
     [analise],
   );
 
@@ -134,27 +155,43 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
         />
       ),
     },
-    { chave: "codigo", titulo: "Código", className: "num whitespace-nowrap", render: (r) => r.linha.codigo },
+    {
+      chave: "codigo",
+      titulo: "Código",
+      className: "num whitespace-nowrap",
+      render: (r) => r.linha.codigo,
+    },
     {
       chave: "nome",
       titulo: "Condomínio",
       render: (r) => (
         <div className="min-w-0">
-          <div className="font-medium text-foreground">{String(r.proposto.nome ?? r.linha.nome)}</div>
+          <div className="font-medium text-foreground">
+            {String(r.proposto.nome ?? r.linha.nome)}
+          </div>
           {r.existente && r.proposto.nome !== r.existente.nome && (
             <div className="text-xs text-muted-foreground line-through">{r.existente.nome}</div>
           )}
         </div>
       ),
     },
-    { chave: "cnpj", titulo: "CNPJ", className: "whitespace-nowrap", render: (r) => r.linha.cnpj || "—" },
+    {
+      chave: "cnpj",
+      titulo: "CNPJ",
+      className: "whitespace-nowrap",
+      render: (r) => r.linha.cnpj || "—",
+    },
     {
       chave: "status",
       titulo: "Status",
       render: (r) => (
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant={r.existente ? "secondary" : "default"}>
-            {!r.existente ? "Novo" : r.camposAlterados.length ? `Atualiza ${r.camposAlterados.length} campo(s)` : "Sem mudança"}
+            {!r.existente
+              ? "Novo"
+              : r.camposAlterados.length
+                ? `Atualiza ${r.camposAlterados.length} campo(s)`
+                : "Sem mudança"}
           </Badge>
           {r.alertas.length > 0 && (
             <Badge variant="destructive" title={r.alertas.join(" ")}>
@@ -176,7 +213,12 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
         aria-label="Arquivo PDF da Listagem de Condomínios"
         onChange={(e) => escolher(e.target.files?.[0])}
       />
-      <Button type="button" variant="outline" onClick={() => entrada.current?.click()} disabled={lendo}>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => entrada.current?.click()}
+        disabled={lendo}
+      >
         {lendo ? <Loader2 className="animate-spin" /> : <FileUp />}
         Escolher PDF da Listagem de Condomínios
       </Button>
@@ -191,9 +233,15 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
       {progressoReceita && (
         <SectionCard titulo="Consultando a Receita Federal">
           <p className="text-sm text-muted-foreground">
-            {progressoReceita.feito} de {progressoReceita.total || "…"} CNPJs consultados{receitaEmAndamento ? "…" : "."}
+            {progressoReceita.feito} de {progressoReceita.total || "…"} CNPJs consultados
+            {receitaEmAndamento ? "…" : "."}
           </p>
-          <Progress value={progressoReceita.total ? (progressoReceita.feito / progressoReceita.total) * 100 : 0} className="mt-2" />
+          <Progress
+            value={
+              progressoReceita.total ? (progressoReceita.feito / progressoReceita.total) * 100 : 0
+            }
+            className="mt-2"
+          />
         </SectionCard>
       )}
 
@@ -210,14 +258,19 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
             disabled={receitaEmAndamento || salvar.isPending || totalSelecionados === 0}
           >
             {salvar.isPending && <Loader2 className="animate-spin" />}
-            {receitaEmAndamento ? "Aguarde a consulta à Receita Federal…" : `Confirmar importação (${totalSelecionados})`}
+            {receitaEmAndamento
+              ? "Aguarde a consulta à Receita Federal…"
+              : `Confirmar importação (${totalSelecionados})`}
           </Button>
           {progressoSalvar && (
             <div className="mt-2">
               <p className="text-xs text-muted-foreground">
                 Salvando {progressoSalvar.feito} de {progressoSalvar.total}…
               </p>
-              <Progress value={(progressoSalvar.feito / progressoSalvar.total) * 100} className="mt-1" />
+              <Progress
+                value={(progressoSalvar.feito / progressoSalvar.total) * 100}
+                className="mt-1"
+              />
             </div>
           )}
         </SectionCard>

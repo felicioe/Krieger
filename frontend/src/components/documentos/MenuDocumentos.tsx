@@ -48,7 +48,12 @@ export function MenuDocumentos({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" type="button" disabled={!!bloqueio || gerando !== null} title={bloqueio ?? undefined}>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={!!bloqueio || gerando !== null}
+          title={bloqueio ?? undefined}
+        >
           {gerando ? <Loader2 className="animate-spin" /> : <FileDown />}
           {gerando ? `Gerando ${gerando.toLowerCase()}…` : rotulo}
           <ChevronDown className="opacity-60" />
@@ -58,15 +63,23 @@ export function MenuDocumentos({
         {documentos.map((d, i) => (
           <Fragment key={d.rotulo}>
             {i > 0 && <DropdownMenuSeparator />}
-            <DropdownMenuLabel className="text-xs text-muted-foreground">{d.rotulo}</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-xs text-muted-foreground">
+              {d.rotulo}
+            </DropdownMenuLabel>
             {d.bloqueio ? (
               <p className="px-2 pb-1.5 text-xs text-muted-foreground">{d.bloqueio}</p>
             ) : (
               <>
-                <DropdownMenuItem onSelect={() => baixar(d, "pdf")} aria-label={`${d.rotulo} em PDF`}>
+                <DropdownMenuItem
+                  onSelect={() => baixar(d, "pdf")}
+                  aria-label={`${d.rotulo} em PDF`}
+                >
                   <FileText /> PDF
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => baixar(d, "docx")} aria-label={`${d.rotulo} em Word`}>
+                <DropdownMenuItem
+                  onSelect={() => baixar(d, "docx")}
+                  aria-label={`${d.rotulo} em Word`}
+                >
                   <FileType2 /> Word (.docx)
                 </DropdownMenuItem>
               </>

@@ -22,7 +22,15 @@ export const Route = createFileRoute("/_authenticated/escritorio")({
   component: Escritorio,
 });
 
-const VAZIO: ConfigEscritorio = { id: "escritorio", nome: "", cidade: "", rodape: "", assinatura: "", logo: "", logoRatio: null };
+const VAZIO: ConfigEscritorio = {
+  id: "escritorio",
+  nome: "",
+  cidade: "",
+  rodape: "",
+  assinatura: "",
+  logo: "",
+  logoRatio: null,
+};
 
 function Escritorio() {
   const { data } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
@@ -34,7 +42,8 @@ function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
   const [e, setE] = useState<ConfigEscritorio>(inicial);
   const [processando, setProcessando] = useState(false);
   const arquivo = useRef<HTMLInputElement>(null);
-  const set = <K extends keyof ConfigEscritorio>(k: K, v: ConfigEscritorio[K]) => setE((x) => ({ ...x, [k]: v }));
+  const set = <K extends keyof ConfigEscritorio>(k: K, v: ConfigEscritorio[K]) =>
+    setE((x) => ({ ...x, [k]: v }));
 
   const salvar = useMutation({
     mutationFn: (dados: ConfigEscritorio) => api.salvar("config", dados),
@@ -74,7 +83,12 @@ function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
         titulo="Escritório"
         descricao="Estes dados aparecem no cabeçalho, rodapé e assinatura dos documentos."
         acoes={
-          <Button permissao="escritorio.editar" type="submit" form="form-escritorio" disabled={salvar.isPending}>
+          <Button
+            permissao="escritorio.editar"
+            type="submit"
+            form="form-escritorio"
+            disabled={salvar.isPending}
+          >
             {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />} Salvar
           </Button>
         }
@@ -91,19 +105,37 @@ function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
               </Field>
             </div>
             <Field rotulo="Rodapé">
-              <Input value={e.rodape} onChange={(x) => set("rodape", x.target.value)} placeholder="Endereço, telefone, e-mail…" />
+              <Input
+                value={e.rodape}
+                onChange={(x) => set("rodape", x.target.value)}
+                placeholder="Endereço, telefone, e-mail…"
+              />
             </Field>
-            <Field rotulo="Assinatura" dica="Uma informação por linha (nome, cargo, registro profissional…).">
-              <Textarea rows={5} value={e.assinatura} onChange={(x) => set("assinatura", x.target.value)} />
+            <Field
+              rotulo="Assinatura"
+              dica="Uma informação por linha (nome, cargo, registro profissional…)."
+            >
+              <Textarea
+                rows={5}
+                value={e.assinatura}
+                onChange={(x) => set("assinatura", x.target.value)}
+              />
             </Field>
           </div>
         </SectionCard>
 
-        <SectionCard titulo="Logotipo" descricao="Reduzido automaticamente a no máximo 900 px de largura.">
+        <SectionCard
+          titulo="Logotipo"
+          descricao="Reduzido automaticamente a no máximo 900 px de largura."
+        >
           <div className="grid gap-3">
             <div className="flex min-h-36 items-center justify-center rounded-md border border-dashed bg-muted/40 p-4">
               {e.logo ? (
-                <img src={e.logo} alt="Logotipo do escritório" className="max-h-32 max-w-full object-contain" />
+                <img
+                  src={e.logo}
+                  alt="Logotipo do escritório"
+                  className="max-h-32 max-w-full object-contain"
+                />
               ) : (
                 <span className="text-sm text-muted-foreground">Nenhum logotipo</span>
               )}
@@ -116,17 +148,30 @@ function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
               onChange={(x) => escolherLogo(x.target.files?.[0])}
             />
             <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => arquivo.current?.click()} disabled={processando}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => arquivo.current?.click()}
+                disabled={processando}
+              >
                 {processando ? <Loader2 className="animate-spin" /> : <ImagePlus />}
                 {e.logo ? "Trocar imagem" : "Escolher imagem"}
               </Button>
               {e.logo && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => setE((x) => ({ ...x, logo: "", logoRatio: null }))}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setE((x) => ({ ...x, logo: "", logoRatio: null }))}
+                >
                   <X /> Remover
                 </Button>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Lembre-se de salvar após trocar o logotipo.</p>
+            <p className="text-xs text-muted-foreground">
+              Lembre-se de salvar após trocar o logotipo.
+            </p>
           </div>
         </SectionCard>
       </form>

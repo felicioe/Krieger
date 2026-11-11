@@ -37,7 +37,10 @@ function montar(condominios: Condominio[]) {
 }
 async function lerPdf(u: ReturnType<typeof userEvent.setup>) {
   await u.click(screen.getByRole("button", { name: "Importar PDF" }));
-  await u.upload(screen.getByLabelText("Arquivo PDF do relatório"), new File(["%PDF"], "relatorio.pdf", { type: "application/pdf" }));
+  await u.upload(
+    screen.getByLabelText("Arquivo PDF do relatório"),
+    new File(["%PDF"], "relatorio.pdf", { type: "application/pdf" }),
+  );
 }
 
 describe("importação: condomínio de nome parecido já cadastrado", () => {
@@ -50,8 +53,12 @@ describe("importação: condomínio de nome parecido já cadastrado", () => {
     const u = userEvent.setup();
     montar([OUTRO, ESTRELAS]);
     await lerPdf(u);
-    expect(await screen.findByText(/Isso pode ser/)).toHaveTextContent("Residencial Estrelas do Mar");
-    expect(screen.getByText(/Nenhum condomínio cadastrado com este código ou CNPJ/)).toBeInTheDocument();
+    expect(await screen.findByText(/Isso pode ser/)).toHaveTextContent(
+      "Residencial Estrelas do Mar",
+    );
+    expect(
+      screen.getByText(/Nenhum condomínio cadastrado com este código ou CNPJ/),
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Conferir cadastro novo" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Solar Juliana/ })).not.toBeInTheDocument();
   });
@@ -60,13 +67,19 @@ describe("importação: condomínio de nome parecido já cadastrado", () => {
     const u = userEvent.setup();
     montar([ESTRELAS]);
     await lerPdf(u);
-    await u.click(await screen.findByRole("button", { name: "Usar o cadastro Residencial Estrelas do Mar" }));
-    expect(screen.getByText(/Condomínio cadastrado:/)).toHaveTextContent("037 · Residencial Estrelas do Mar");
+    await u.click(
+      await screen.findByRole("button", { name: "Usar o cadastro Residencial Estrelas do Mar" }),
+    );
+    expect(screen.getByText(/Condomínio cadastrado:/)).toHaveTextContent(
+      "037 · Residencial Estrelas do Mar",
+    );
 
     await u.click(screen.getByRole("button", { name: "Não é este, é um condomínio novo" }));
     expect(screen.getByRole("button", { name: "Conferir cadastro novo" })).toBeInTheDocument();
 
-    await u.click(screen.getByRole("button", { name: "Usar o cadastro Residencial Estrelas do Mar" }));
+    await u.click(
+      screen.getByRole("button", { name: "Usar o cadastro Residencial Estrelas do Mar" }),
+    );
     await u.click(screen.getByRole("button", { name: "Criar relatório mensal" }));
     await waitFor(async () => {
       const mensais = await mockApi.listar<Mensal>("mensais");

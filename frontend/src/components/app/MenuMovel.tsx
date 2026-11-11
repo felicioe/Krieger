@@ -63,7 +63,8 @@ export function MenuMovel({
       focoPendente.current = false;
       const atual = document.activeElement;
       // Não rouba o foco se a pessoa já foi para outro controle durante a carga.
-      if (!atual || atual === document.body || !atual.isConnected || atual === destinoFoco()) focarDestino();
+      if (!atual || atual === document.body || !atual.isConnected || atual === destinoFoco())
+        focarDestino();
     });
     return () => cancelAnimationFrame(quadro);
   }, [carregando, caminho]);

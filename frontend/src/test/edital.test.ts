@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
-import { assembleiaPadrao, camposDaModalidade, prepararAssembleia, validarAssembleia } from "@/domain/edital";
-import { modeloPadrao, modelosDoCondominio, normalizarModelo, prepararModelo, validarModelo } from "@/domain/modelo";
+import {
+  assembleiaPadrao,
+  camposDaModalidade,
+  prepararAssembleia,
+  validarAssembleia,
+} from "@/domain/edital";
+import {
+  modeloPadrao,
+  modelosDoCondominio,
+  normalizarModelo,
+  prepararModelo,
+  validarModelo,
+} from "@/domain/modelo";
 import type { Condominio, Modelo } from "@/domain/types";
 
 const condo: Condominio = {
@@ -42,7 +53,12 @@ describe("editais", () => {
   });
 
   it("ao salvar, limpa o Zoom do edital presencial e o local do on-line", () => {
-    const base = { ...assembleiaPadrao({ condo, tipo: "ordinaria", data: "2026-11-10" }), zoomLink: "https://zoom.us/j/1", zoomId: "1", zoomSenha: "x" };
+    const base = {
+      ...assembleiaPadrao({ condo, tipo: "ordinaria", data: "2026-11-10" }),
+      zoomLink: "https://zoom.us/j/1",
+      zoomId: "1",
+      zoomSenha: "x",
+    };
     const presencial = prepararAssembleia({ ...base, modalidade: "presencial" });
     expect([presencial.zoomLink, presencial.zoomId, presencial.zoomSenha]).toEqual(["", "", ""]);
     expect(presencial.local).toBe("Rua das Flores, 100");
@@ -52,22 +68,43 @@ describe("editais", () => {
   });
 
   it("descarta itens de pauta vazios ao salvar", () => {
-    const a = prepararAssembleia({ ...assembleiaPadrao({ condo, tipo: "extraordinaria", data: "2026-11-10" }), pauta: ["Obras", "  ", ""] });
+    const a = prepararAssembleia({
+      ...assembleiaPadrao({ condo, tipo: "extraordinaria", data: "2026-11-10" }),
+      pauta: ["Obras", "  ", ""],
+    });
     expect(a.pauta).toEqual(["Obras"]);
   });
 
   it("exige condomínio, data e horário da 1ª convocação válidos", () => {
-    expect(validarAssembleia({ condoId: "", data: "", hora1: "", hora2: "", dataEmissao: "" })).toEqual({
+    expect(
+      validarAssembleia({ condoId: "", data: "", hora1: "", hora2: "", dataEmissao: "" }),
+    ).toEqual({
       condoId: "Escolha o condomínio.",
       data: "Informe a data da assembleia.",
       hora1: "Informe o horário da 1ª convocação.",
     });
-    expect(validarAssembleia({ condoId: "c1", data: "31/02/2026", hora1: "25:00", hora2: "19:3", dataEmissao: "" })).toEqual({
+    expect(
+      validarAssembleia({
+        condoId: "c1",
+        data: "31/02/2026",
+        hora1: "25:00",
+        hora2: "19:3",
+        dataEmissao: "",
+      }),
+    ).toEqual({
       data: "Data inválida.",
       hora1: "Horário inválido (hh:mm).",
       hora2: "Horário inválido (hh:mm).",
     });
-    expect(validarAssembleia({ condoId: "c1", data: "10/11/2026", hora1: "19:00", hora2: "", dataEmissao: "" })).toEqual({});
+    expect(
+      validarAssembleia({
+        condoId: "c1",
+        data: "10/11/2026",
+        hora1: "19:00",
+        hora2: "",
+        dataEmissao: "",
+      }),
+    ).toEqual({});
   });
 });
 
@@ -94,10 +131,15 @@ describe("modelos de edital", () => {
     const doCondo = { ...modelo, id: "do-condo", condoId: "c1" };
     const deOutro = { ...modelo, id: "de-outro", condoId: "c2" };
 
-    expect(modelosDoCondominio([geral, doCondo, deOutro], "c1").map((m) => m.id)).toEqual(["geral", "do-condo"]);
+    expect(modelosDoCondominio([geral, doCondo, deOutro], "c1").map((m) => m.id)).toEqual([
+      "geral",
+      "do-condo",
+    ]);
     // Sem condomínio escolhido, só os gerais: não oferecer o modelo de um condomínio para outro.
     expect(modelosDoCondominio([geral, doCondo, deOutro], "").map((m) => m.id)).toEqual(["geral"]);
-    expect(modelosDoCondominio([geral, doCondo, deOutro], "c3").map((m) => m.id)).toEqual(["geral"]);
+    expect(modelosDoCondominio([geral, doCondo, deOutro], "c3").map((m) => m.id)).toEqual([
+      "geral",
+    ]);
   });
 
   it("o modelo novo guarda o condomínio escolhido", () => {

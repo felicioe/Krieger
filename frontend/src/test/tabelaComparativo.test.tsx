@@ -6,7 +6,15 @@ import type { GrupoComparativo, ResultadoComparativo, Totais } from "@/domain/pr
 
 function totais(previsto: number, realizado: number): Totais {
   const diferenca = realizado - previsto;
-  return { previstoAnual: previsto, previstoMensal: previsto / 12, previsto, realizado, diferenca, pct: 0, situacao: "dentro" };
+  return {
+    previstoAnual: previsto,
+    previstoMensal: previsto / 12,
+    previsto,
+    realizado,
+    diferenca,
+    pct: 0,
+    situacao: "dentro",
+  };
 }
 
 function comparativoFixture(): ResultadoComparativo {

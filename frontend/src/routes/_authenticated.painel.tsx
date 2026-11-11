@@ -34,11 +34,12 @@ import {
 } from "@/domain/painel";
 import type { Assembleia, Condominio, ConfigBackup, Exercicio } from "@/domain/types";
 import { haDias, prazoDias } from "@/components/app/textos";
-import { useUsuario } from '@/lib/auth';
-import { podeAcessarRota } from '@/lib/permissoes';
+import { useUsuario } from "@/lib/auth";
+import { podeAcessarRota } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated/painel")({
-  head: () => cabecalho("Painel", "Visão geral dos condomínios, vencimentos e próximas assembleias."),
+  head: () =>
+    cabecalho("Painel", "Visão geral dos condomínios, vencimentos e próximas assembleias."),
   loader: ({ context: { queryClient } }) =>
     Promise.all([
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
@@ -68,13 +69,28 @@ function urgenciaVencimento(dias: number): "alerta" | "warning" | "secondary" {
   return dias < 0 ? "alerta" : dias <= 30 ? "warning" : "secondary";
 }
 
-function Indicador({ titulo, valor, icone: Icone, to }: { titulo: string; valor: number; icone: LucideIcon; to: string }) {
+function Indicador({
+  titulo,
+  valor,
+  icone: Icone,
+  to,
+}: {
+  titulo: string;
+  valor: number;
+  icone: LucideIcon;
+  to: string;
+}) {
   // #82: com texto 200% em 320 px a palavra "CONDOMÍNIOS" + ícone + p-5 passavam da coluna;
   // o ícone pode descer de linha e o respiro lateral é menor só abaixo de sm.
   return (
-    <Link to={to} className="group min-w-0 rounded-md border bg-card p-4 shadow-sm transition-colors hover:border-sidebar-indicator sm:p-5">
+    <Link
+      to={to}
+      className="group min-w-0 rounded-md border bg-card p-4 shadow-sm transition-colors hover:border-sidebar-indicator sm:p-5"
+    >
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-        <span className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titulo}</span>
+        <span className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {titulo}
+        </span>
         <Icone className="size-4 shrink-0 text-sidebar-indicator" aria-hidden />
       </div>
       <div className="num mt-3 break-words text-3xl font-semibold text-primary">{valor}</div>
@@ -94,7 +110,8 @@ function Painel() {
   const vencimentos = calcularVencimentos(condos, hoje, 90);
   const pendencias = calcularPendenciasAjuste(condos, exercicios);
   const proximas = proximasAssembleias(assembleias, hoje, 5);
-  const nomeCondo = (id: string) => condos.find((c) => c.id === id)?.nome ?? "Condomínio não encontrado";
+  const nomeCondo = (id: string) =>
+    condos.find((c) => c.id === id)?.nome ?? "Condomínio não encontrado";
   const diasBackup = diasDesdeBackup(backup?.em, hoje);
 
   return (
@@ -120,12 +137,20 @@ function Painel() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Indicador titulo="Condomínios" valor={condos.length} icone={Building2} to="/condominios" />
-        <Indicador titulo="Prestações de contas" valor={exercicios.length} icone={FileSpreadsheet} to="/prestacao-contas" />
+        <Indicador
+          titulo="Prestações de contas"
+          valor={exercicios.length}
+          icone={FileSpreadsheet}
+          to="/prestacao-contas"
+        />
         <Indicador titulo="Editais" valor={assembleias.length} icone={Megaphone} to="/editais" />
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <SectionCard titulo="Vencimentos e prazos" descricao="Próximos 90 dias e itens já vencidos.">
+        <SectionCard
+          titulo="Vencimentos e prazos"
+          descricao="Próximos 90 dias e itens já vencidos."
+        >
           {vencimentos.length === 0 ? (
             <p className="text-sm text-muted-foreground">Nenhum vencimento nos próximos 90 dias.</p>
           ) : (
@@ -154,7 +179,10 @@ function Painel() {
                         {v.descricao} · {dataParaBR(v.data)}
                       </div>
                     </div>
-                    <Badge variant={urgenciaVencimento(v.dias)} className="ml-auto max-w-full shrink-0">
+                    <Badge
+                      variant={urgenciaVencimento(v.dias)}
+                      className="ml-auto max-w-full shrink-0"
+                    >
                       {prazoDias(v.dias)}
                     </Badge>
                   </li>
@@ -167,7 +195,17 @@ function Painel() {
         <SectionCard titulo="Próximas assembleias">
           <DataTable
             colunas={[
-              { chave: "data", titulo: "Data", className: "whitespace-nowrap", render: (a: Assembleia) => <span className="num">{formatData(a.data)}{a.hora1 ? ` · ${a.hora1}` : ""}</span> },
+              {
+                chave: "data",
+                titulo: "Data",
+                className: "whitespace-nowrap",
+                render: (a: Assembleia) => (
+                  <span className="num">
+                    {formatData(a.data)}
+                    {a.hora1 ? ` · ${a.hora1}` : ""}
+                  </span>
+                ),
+              },
               { chave: "condo", titulo: "Condomínio", render: (a) => nomeCondo(a.condoId) },
               {
                 chave: "tipo",
@@ -175,18 +213,27 @@ function Painel() {
                 render: (a) => (
                   <span>
                     {TIPO_ASSEMBLEIA[a.tipo] ?? a.tipo}
-                    {a.modalidade && <span className="block text-xs text-muted-foreground">{MODALIDADE[a.modalidade] ?? a.modalidade}</span>}
+                    {a.modalidade && (
+                      <span className="block text-xs text-muted-foreground">
+                        {MODALIDADE[a.modalidade] ?? a.modalidade}
+                      </span>
+                    )}
                   </span>
                 ),
               },
             ]}
             dados={proximas}
             chaveLinha={(a) => a.id}
-            {...(podeAcessarRota(usuario, '/editais') ? {
-              aoClicar: (a: Assembleia) => { void navigate({ to: '/editais/$id', params: { id: a.id } }); },
-              colunaAcao: 'condo',
-              rotuloAcao: (a: Assembleia) => `Abrir edital de ${nomeCondo(a.condoId)}, ${formatData(a.data)}`,
-            } : {})}
+            {...(podeAcessarRota(usuario, "/editais")
+              ? {
+                  aoClicar: (a: Assembleia) => {
+                    void navigate({ to: "/editais/$id", params: { id: a.id } });
+                  },
+                  colunaAcao: "condo",
+                  rotuloAcao: (a: Assembleia) =>
+                    `Abrir edital de ${nomeCondo(a.condoId)}, ${formatData(a.data)}`,
+                }
+              : {})}
             vazio="Nenhuma assembleia agendada."
           />
         </SectionCard>
@@ -207,17 +254,26 @@ function Painel() {
                     <Icone className="size-4" aria-hidden />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block break-words text-sm font-medium text-foreground">{p.condoNome}</span>
-                    <span className="block break-words text-xs text-muted-foreground">{p.descricao}</span>
+                    <span className="block break-words text-sm font-medium text-foreground">
+                      {p.condoNome}
+                    </span>
+                    <span className="block break-words text-xs text-muted-foreground">
+                      {p.descricao}
+                    </span>
                   </span>
                   <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                 </>
               );
-              const classe = "alvo-toque flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 hover:text-primary";
+              const classe =
+                "alvo-toque flex items-center gap-3 py-2.5 first:pt-0 last:pb-0 hover:text-primary";
               return (
                 <li key={`${p.tipo}-${p.condoId}-${p.exercicioId ?? i}`}>
                   {p.tipo === "divergencia_previsao" ? (
-                    <Link to="/previsao-orcamentaria" search={{ exercicio: p.exercicioId! }} className={classe}>
+                    <Link
+                      to="/previsao-orcamentaria"
+                      search={{ exercicio: p.exercicioId! }}
+                      className={classe}
+                    >
                       {miolo}
                     </Link>
                   ) : (

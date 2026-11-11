@@ -5,21 +5,21 @@ de contraste da WCAG 2.x. Não é certificação; a medição na produção cont
 
 ## Limites que identificam um controle (WCAG 1.4.11, mínimo 3:1)
 
-| Uso | Token | Cor | Branco (#fff) | Fundo (#f4f6f9) | Linha das listas (muted/40) |
-|---|---|---|---|---|---|
-| Borda de campo, seleção, área de texto, sinal +/−, trilho da chave desligada | `--control` | #798898 | 3,63:1 | 3,35:1 | 3,19:1 |
-| Borda da caixa de marcar | `--primary` | #0a3a5e | 11,81:1 | 10,89:1 | 11,23:1 |
-| Anel e borda de foco | `--ring` | #3b678e | 5,96:1 | 5,50:1 | 5,67:1 |
-| Borda de campo com erro (`aria-invalid`) | `--destructive` | #c22826 | 5,82:1 | 5,37:1 | 5,53:1 |
+| Uso                                                                          | Token           | Cor     | Branco (#fff) | Fundo (#f4f6f9) | Linha das listas (muted/40) |
+| ---------------------------------------------------------------------------- | --------------- | ------- | ------------- | --------------- | --------------------------- |
+| Borda de campo, seleção, área de texto, sinal +/−, trilho da chave desligada | `--control`     | #798898 | 3,63:1        | 3,35:1          | 3,19:1                      |
+| Borda da caixa de marcar                                                     | `--primary`     | #0a3a5e | 11,81:1       | 10,89:1         | 11,23:1                     |
+| Anel e borda de foco                                                         | `--ring`        | #3b678e | 5,96:1        | 5,50:1          | 5,67:1                      |
+| Borda de campo com erro (`aria-invalid`)                                     | `--destructive` | #c22826 | 5,82:1        | 5,37:1          | 5,53:1                      |
 
 ## Texto (mínimo 4,5:1)
 
-| Uso | Token | Branco | Fundo |
-|---|---|---|---|
-| Texto principal | `--foreground` | 14,53:1 | 13,40:1 |
-| Rótulos, dicas, placeholder, ícone da seleção | `--muted-foreground` | 5,50:1 | 5,07:1 |
-| Mensagem de erro | `--destructive` | 5,82:1 | 5,37:1 |
-| Títulos dos grupos do menu (sobre o azul do menu) | `--sidebar-muted` | 5,32:1 sobre `--sidebar` | |
+| Uso                                               | Token                | Branco                   | Fundo   |
+| ------------------------------------------------- | -------------------- | ------------------------ | ------- |
+| Texto principal                                   | `--foreground`       | 14,53:1                  | 13,40:1 |
+| Rótulos, dicas, placeholder, ícone da seleção     | `--muted-foreground` | 5,50:1                   | 5,07:1  |
+| Mensagem de erro                                  | `--destructive`      | 5,82:1                   | 5,37:1  |
+| Títulos dos grupos do menu (sobre o azul do menu) | `--sidebar-muted`    | 5,32:1 sobre `--sidebar` |         |
 
 ## Estados
 

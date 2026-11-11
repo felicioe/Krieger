@@ -1,5 +1,18 @@
 import type { Content, TDocumentDefinitions, TableCell } from "pdfmake/interfaces";
-import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA, areaPagina, type Alinhamento, type Bloco, type Coluna, type Documento, type LinhaTabela, type Texto } from "./tipos";
+import {
+  COR,
+  MARGEM_CELULA,
+  PAGINA,
+  RECUO_CELULA,
+  TAMANHO_TABELA,
+  areaPagina,
+  type Alinhamento,
+  type Bloco,
+  type Coluna,
+  type Documento,
+  type LinhaTabela,
+  type Texto,
+} from "./tipos";
 import { carregarPng, paraPng } from "./imagens";
 import { FONTES, FONTES_DOCUMENTO, vfsFonte, vfsFonteDocumento } from "./fontes";
 import { tipografia, type Tipografia } from "./tipografia";
@@ -75,7 +88,9 @@ export async function montarDefinicao(doc: Documento): Promise<TDocumentDefiniti
   // Decisão: o texto do rodapé identifica o escritório. Ata de modelo sem logo do escritório
   // (`timbre: null`) não o carrega; a numeração "Página X de Y" continua, porque é referência
   // do documento, não do escritório. Ver `rodapeEscritorio` em tipografia.ts.
-  const rodapeTexto = t.rodapeEscritorio ? [timbre?.rodape?.trim(), doc.rodape?.trim()].filter(Boolean).join("\n") : "";
+  const rodapeTexto = t.rodapeEscritorio
+    ? [timbre?.rodape?.trim(), doc.rodape?.trim()].filter(Boolean).join("\n")
+    : "";
 
   return {
     pageSize: "A4",
@@ -84,7 +99,9 @@ export async function montarDefinicao(doc: Documento): Promise<TDocumentDefiniti
     ...(doc.bordaPagina ? { background: () => moldura(folha) } : {}),
     info: { title: doc.titulo, creator: "Sistema Krieger" },
     defaultStyle: { font: t.familiaPdf, fontSize: t.corpo, lineHeight: 1.25, color: c(COR.texto) },
-    ...(doc.marcaDagua ? { watermark: { text: doc.marcaDagua, color: c(COR.primaria), opacity: 0.07, bold: true } } : {}),
+    ...(doc.marcaDagua
+      ? { watermark: { text: doc.marcaDagua, color: c(COR.primaria), opacity: 0.07, bold: true } }
+      : {}),
     header: (pagina: number) => {
       if (!timbre || (doc.semTimbreNaCapa && pagina === 1)) return null;
       const altura = 34;
@@ -94,7 +111,9 @@ export async function montarDefinicao(doc: Documento): Promise<TDocumentDefiniti
         stack: [
           {
             columns: [
-              logo ? { image: logo, fit: [largura, altura], width: largura } : { text: "", width: 0 },
+              logo
+                ? { image: logo, fit: [largura, altura], width: largura }
+                : { text: "", width: 0 },
               {
                 text: timbre.nome,
                 alignment: "right",
@@ -106,7 +125,17 @@ export async function montarDefinicao(doc: Documento): Promise<TDocumentDefiniti
             ],
           },
           {
-            canvas: [{ type: "line", x1: 0, y1: 6, x2: folha.util, y2: 6, lineWidth: 0.8, lineColor: c(COR.primaria) }],
+            canvas: [
+              {
+                type: "line",
+                x1: 0,
+                y1: 6,
+                x2: folha.util,
+                y2: 6,
+                lineWidth: 0.8,
+                lineColor: c(COR.primaria),
+              },
+            ],
           },
         ],
       } as Content;
@@ -115,7 +144,13 @@ export async function montarDefinicao(doc: Documento): Promise<TDocumentDefiniti
       margin: [PAGINA.margem, 18, PAGINA.margem, 0],
       columns: [
         { text: rodapeTexto, fontSize: 7.5, color: c(COR.suave), lineHeight: 1.2 },
-        { text: `Página ${pagina} de ${total}`, fontSize: 7.5, color: c(COR.suave), alignment: "right", width: 80 },
+        {
+          text: `Página ${pagina} de ${total}`,
+          fontSize: 7.5,
+          color: c(COR.suave),
+          alignment: "right",
+          width: 80,
+        },
       ],
     }),
     content: conteudo,
@@ -123,7 +158,10 @@ export async function montarDefinicao(doc: Documento): Promise<TDocumentDefiniti
     pageBreakBefore: (no, consulta) => {
       if (no.headlineLevel === undefined) return false;
       const limite = no.headlineLevel <= 2 ? 0.8 : 0.87;
-      return no.startPosition.verticalRatio > limite || consulta.getFollowingNodesOnPage().every((n) => n.headlineLevel !== undefined);
+      return (
+        no.startPosition.verticalRatio > limite ||
+        consulta.getFollowingNodesOnPage().every((n) => n.headlineLevel !== undefined)
+      );
     },
   };
 }
@@ -162,8 +200,14 @@ async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promi
       ];
     }
     case "lista": {
-      const itens = b.itens.map((i) => ({ text: texto(i, t.corpo), margin: [0, 0, 0, 3] }) as Content);
-      return [b.numerada ? ({ ol: itens, margin: [12, 0, 0, 8] } as Content) : ({ ul: itens, margin: [12, 0, 0, 8] } as Content)];
+      const itens = b.itens.map(
+        (i) => ({ text: texto(i, t.corpo), margin: [0, 0, 0, 3] }) as Content,
+      );
+      return [
+        b.numerada
+          ? ({ ol: itens, margin: [12, 0, 0, 8] } as Content)
+          : ({ ul: itens, margin: [12, 0, 0, 8] } as Content),
+      ];
     }
     case "pares":
       return [
@@ -172,10 +216,19 @@ async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promi
             widths: [150, "*"],
             body: b.itens.map((p) => [
               { text: p.rotulo, color: c(COR.suave) },
-              { text: texto(p.valor, t.corpo), ...(b.alinhamento === "direita" ? { alignment: "right" } : {}) },
+              {
+                text: texto(p.valor, t.corpo),
+                ...(b.alinhamento === "direita" ? { alignment: "right" } : {}),
+              },
             ]),
           },
-          layout: { defaultBorder: false, paddingLeft: () => 0, paddingRight: () => 8, paddingTop: () => 1.5, paddingBottom: () => 1.5 },
+          layout: {
+            defaultBorder: false,
+            paddingLeft: () => 0,
+            paddingRight: () => 8,
+            paddingTop: () => 1.5,
+            paddingBottom: () => 1.5,
+          },
           margin: [0, 0, 0, 8],
         } as Content,
       ];
@@ -183,7 +236,14 @@ async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promi
       return [tabela(b.colunas, b.linhas, b)];
     case "imagem": {
       const png = await paraPng(b.dataUrl);
-      return [{ image: png, fit: [b.largura, b.altura], alignment: ALINHA[b.alinhamento ?? "centro"], margin: [0, 4, 0, 10] } as Content];
+      return [
+        {
+          image: png,
+          fit: [b.largura, b.altura],
+          alignment: ALINHA[b.alinhamento ?? "centro"],
+          margin: [0, 4, 0, 10],
+        } as Content,
+      ];
     }
     case "espaco":
       return [{ text: "", margin: [0, b.altura, 0, 0] }];
@@ -200,8 +260,25 @@ async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promi
             {
               width: largura,
               stack: [
-                { canvas: [{ type: "line", x1: 0, y1: 0, x2: largura, y2: 0, lineWidth: 0.7, lineColor: c(COR.texto) }] },
-                ...linhas.map((l, k) => ({ text: l, alignment: "center", margin: [0, k === 0 ? 4 : 0, 0, 0], ...(k > 0 ? { fontSize: t.corpo - 1, color: c(COR.suave) } : {}) })),
+                {
+                  canvas: [
+                    {
+                      type: "line",
+                      x1: 0,
+                      y1: 0,
+                      x2: largura,
+                      y2: 0,
+                      lineWidth: 0.7,
+                      lineColor: c(COR.texto),
+                    },
+                  ],
+                },
+                ...linhas.map((l, k) => ({
+                  text: l,
+                  alignment: "center",
+                  margin: [0, k === 0 ? 4 : 0, 0, 0],
+                  ...(k > 0 ? { fontSize: t.corpo - 1, color: c(COR.suave) } : {}),
+                })),
               ],
             },
           ]),
@@ -214,7 +291,15 @@ async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promi
       return [
         {
           stack: [
-            ...(b.localData ? [{ text: b.localData, alignment: ALINHA[b.localDataAlinhamento ?? "centro"], margin: [0, 0, 0, 6] }] : []),
+            ...(b.localData
+              ? [
+                  {
+                    text: b.localData,
+                    alignment: ALINHA[b.localDataAlinhamento ?? "centro"],
+                    margin: [0, 0, 0, 6],
+                  },
+                ]
+              : []),
             colunas,
           ],
           unbreakable: true,
@@ -227,7 +312,13 @@ async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promi
 function tabela(
   colunas: Coluna[],
   linhas: LinhaTabela[],
-  o: { semCabecalho?: boolean; fundo?: boolean; pequena?: boolean; alturaLinha?: number; grade?: boolean },
+  o: {
+    semCabecalho?: boolean;
+    fundo?: boolean;
+    pequena?: boolean;
+    alturaLinha?: number;
+    grade?: boolean;
+  },
 ): Content {
   const tam = o.pequena ? TAMANHO_TABELA.pequena : TAMANHO_TABELA.normal;
   const n = colunas.length;
@@ -250,7 +341,16 @@ function tabela(
     const estilo = l.estilo ?? "normal";
     if (estilo === "grupo") {
       corpo.push([
-        { text: texto(l.celulas[0] ?? "", tam - 1), colSpan: n, bold: true, fontSize: tam - 1, lineHeight: 1.05, color: c(COR.primaria), fillColor: c(COR.grupo), characterSpacing: 0.3 },
+        {
+          text: texto(l.celulas[0] ?? "", tam - 1),
+          colSpan: n,
+          bold: true,
+          fontSize: tam - 1,
+          lineHeight: 1.05,
+          color: c(COR.primaria),
+          fillColor: c(COR.grupo),
+          characterSpacing: 0.3,
+        },
         ...Array.from({ length: n - 1 }, () => ({ text: "" })),
       ]);
       continue;
@@ -268,12 +368,16 @@ function tabela(
       })),
     );
   }
-  const totais = new Set(linhas.map((l, i) => (l.estilo === "total" ? i + (o.semCabecalho ? 0 : 1) : -1)));
+  const totais = new Set(
+    linhas.map((l, i) => (l.estilo === "total" ? i + (o.semCabecalho ? 0 : 1) : -1)),
+  );
   return {
     table: {
       headerRows: o.semCabecalho ? 0 : 1,
       widths: colunas.map((col) => col.largura ?? "*"),
-      ...(o.alturaLinha ? { heights: (i: number) => (i < (o.semCabecalho ? 0 : 1) ? "auto" : o.alturaLinha!) } : {}),
+      ...(o.alturaLinha
+        ? { heights: (i: number) => (i < (o.semCabecalho ? 0 : 1) ? "auto" : o.alturaLinha!) }
+        : {}),
       body: corpo,
       dontBreakRows: true,
     },

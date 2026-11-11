@@ -69,7 +69,11 @@ function larguraTexto(texto: string, tamanho: number, negrito = false): number {
 }
 
 /** Largura do maior trecho de uma célula, com o corpo e o peso de cada trecho. */
-function medidas(t: Texto, tamanho: number, negrito: boolean): { inteiro: number; palavra: number } {
+function medidas(
+  t: Texto,
+  tamanho: number,
+  negrito: boolean,
+): { inteiro: number; palavra: number } {
   const trechos = typeof t === "string" ? [{ texto: t }] : t;
   let inteiro = 0;
   let palavra = 0;

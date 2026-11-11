@@ -32,7 +32,13 @@ export function SecaoRecolhivel({
 }) {
   return (
     <Collapsible open={aberta} onOpenChange={aoMudar} asChild>
-      <section id={id} className={cn("min-w-0 scroll-mt-20 rounded-md border bg-card text-card-foreground shadow-sm", className)}>
+      <section
+        id={id}
+        className={cn(
+          "min-w-0 scroll-mt-20 rounded-md border bg-card text-card-foreground shadow-sm",
+          className,
+        )}
+      >
         <h2 className="m-0">
           <CollapsibleTrigger
             className={cn(

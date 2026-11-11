@@ -9,11 +9,20 @@ import { timbreDoEscritorio } from "./comum";
 
 /** Lista de presença e procuração: só desenham o que o domínio já montou. `assembleia.data` em aaaa-mm-dd. */
 
-type Entrada = { assembleia: Assembleia; condominio: Condominio; escritorio: ConfigEscritorio | null };
+type Entrada = {
+  assembleia: Assembleia;
+  condominio: Condominio;
+  escritorio: ConfigEscritorio | null;
+};
 
-const rodapeDe = (a: Assembleia, nome: string) => [nome, a.data && `Assembleia de ${formatData(a.data)}`].filter(Boolean).join(" · ");
+const rodapeDe = (a: Assembleia, nome: string) =>
+  [nome, a.data && `Assembleia de ${formatData(a.data)}`].filter(Boolean).join(" · ");
 
-export function documentoListaPresenca({ assembleia: a, condominio, escritorio }: Entrada): Documento {
+export function documentoListaPresenca({
+  assembleia: a,
+  condominio,
+  escritorio,
+}: Entrada): Documento {
   const lista = montarListaPresenca(condominio, a);
   const nome = nomeParaRelatorio(condominio);
   const blocos: Bloco[] = [
@@ -22,7 +31,12 @@ export function documentoListaPresenca({ assembleia: a, condominio, escritorio }
     { tipo: "espaco", altura: 6 },
   ];
   if (lista.linhas.length === 0) {
-    blocos.push({ tipo: "paragrafo", suave: true, texto: "Sem linhas: informe as linhas da lista no edital ou as unidades no cadastro do condomínio." });
+    blocos.push({
+      tipo: "paragrafo",
+      suave: true,
+      texto:
+        "Sem linhas: informe as linhas da lista no edital ou as unidades no cadastro do condomínio.",
+    });
   } else {
     blocos.push({
       tipo: "tabela",

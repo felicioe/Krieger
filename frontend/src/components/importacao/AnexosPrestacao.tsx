@@ -16,15 +16,17 @@ import { chaves } from "@/lib/queries";
 import type { AnexoImportado } from "@/domain/types";
 import type { MetadadosAnexoImportado } from "@/lib/apiTypes";
 
-export const anexosQuery = (exercicioId: string) => queryOptions({
-  queryKey: [...chaves.store("anexos_importacao"), "metadados", exercicioId],
-  queryFn: () => api.anexos.listar(exercicioId),
-});
+export const anexosQuery = (exercicioId: string) =>
+  queryOptions({
+    queryKey: [...chaves.store("anexos_importacao"), "metadados", exercicioId],
+    queryFn: () => api.anexos.listar(exercicioId),
+  });
 
 async function baixar(a: MetadadosAnexoImportado) {
   try {
     const completo = await api.obter<AnexoImportado>("anexos_importacao", a.id);
-    if (!completo?.arquivoDataUrl) throw new Error("Arquivo indisponível. Atualize a lista e tente novamente.");
+    if (!completo?.arquivoDataUrl)
+      throw new Error("Arquivo indisponível. Atualize a lista e tente novamente.");
     salvarArquivo(await dataUrlParaBlob(completo.arquivoDataUrl), a.arquivo || "comparativo.pdf");
   } catch (e) {
     toast.error(`Não foi possível baixar o PDF: ${mensagemErro(e)}`);
@@ -32,7 +34,13 @@ async function baixar(a: MetadadosAnexoImportado) {
 }
 
 /** PDFs anexados a esta prestação de contas pelo Importador (referência, não mexem no demonstrativo). */
-export function AnexosPrestacao({ exercicioId, bloqueado = false }: { exercicioId: string; bloqueado?: boolean }) {
+export function AnexosPrestacao({
+  exercicioId,
+  bloqueado = false,
+}: {
+  exercicioId: string;
+  bloqueado?: boolean;
+}) {
   const queryClient = useQueryClient();
   const { data: metadados } = useSuspenseQuery(anexosQuery(exercicioId));
   const anexos = [...metadados].sort((a, b) => b.importadoEm.localeCompare(a.importadoEm));
@@ -74,8 +82,18 @@ export function AnexosPrestacao({ exercicioId, bloqueado = false }: { exercicioI
               </span>
             ),
           },
-          { chave: "periodo", titulo: "Período", className: "whitespace-nowrap", render: (a) => <span className="num">{textoPeriodo(a.relatorio)}</span> },
-          { chave: "importadoEm", titulo: "Anexado em", className: "whitespace-nowrap", render: (a) => <span className="num">{formatDataHora(a.importadoEm)}</span> },
+          {
+            chave: "periodo",
+            titulo: "Período",
+            className: "whitespace-nowrap",
+            render: (a) => <span className="num">{textoPeriodo(a.relatorio)}</span>,
+          },
+          {
+            chave: "importadoEm",
+            titulo: "Anexado em",
+            className: "whitespace-nowrap",
+            render: (a) => <span className="num">{formatDataHora(a.importadoEm)}</span>,
+          },
           {
             chave: "acoes",
             titulo: "Ações",
@@ -89,7 +107,11 @@ export function AnexosPrestacao({ exercicioId, bloqueado = false }: { exercicioI
                   onClick={async () => {
                     if (baixandoId) return;
                     setBaixandoId(a.id);
-                    try { await baixar(a); } finally { setBaixandoId(null); }
+                    try {
+                      await baixar(a);
+                    } finally {
+                      setBaixandoId(null);
+                    }
                   }}
                   disabled={!a.temArquivo || !!baixandoId}
                   aria-label={`Baixar ${a.arquivo}`}
@@ -101,7 +123,8 @@ export function AnexosPrestacao({ exercicioId, bloqueado = false }: { exercicioI
                   variant="ghost"
                   size="sm"
                   className="text-destructive hover:text-destructive"
-                  disabled={bloqueado} onClick={() => setExcluindo(a)}
+                  disabled={bloqueado}
+                  onClick={() => setExcluindo(a)}
                   aria-label={`Excluir anexo ${a.arquivo}`}
                 >
                   <Trash2 /> Excluir

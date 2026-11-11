@@ -1,13 +1,28 @@
 import { Fragment, useId, useRef, type ReactNode } from "react";
 import { Link } from "@/components/app/LinkPermitido";
 import { SinalToggle } from "./SinalToggle";
-import { AcaoAviso, QuadroAvisos, SemValor, SituacaoResultado, tipoAviso, type ItemAviso } from "./AvisosPrevisao";
+import {
+  AcaoAviso,
+  QuadroAvisos,
+  SemValor,
+  SituacaoResultado,
+  tipoAviso,
+  type ItemAviso,
+} from "./AvisosPrevisao";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
@@ -54,14 +69,22 @@ export function PainelPrevisao({
   const refVariacao = useRef<HTMLInputElement>(null);
   const parcial = r.rateioSugerido === null;
   const tipos = r.avisos.map((texto) => ({ texto, tipo: tipoAviso(texto) }));
-  const textoDe = (...t: string[]) => tipos.filter((a) => t.includes(a.tipo)).map((a) => a.texto).join(" ") || null;
+  const textoDe = (...t: string[]) =>
+    tipos
+      .filter((a) => t.includes(a.tipo))
+      .map((a) => a.texto)
+      .join(" ") || null;
   const avisoVariacao = textoDe("variacao");
   const semUnidades = !unidades;
   const itensAviso: ItemAviso[] = tipos.map(({ texto, tipo }) => {
     let acao: ReactNode = null;
     if (tipo === "unidades")
       acao = (
-        <Link to="/condominios/$id" params={{ id: condoId }} className="text-xs font-medium underline underline-offset-2 hover:no-underline">
+        <Link
+          to="/condominios/$id"
+          params={{ id: condoId }}
+          className="text-xs font-medium underline underline-offset-2 hover:no-underline"
+        >
           Informar unidades no cadastro
         </Link>
       );
@@ -82,20 +105,45 @@ export function PainelPrevisao({
               <Selecao value={prev.modo} onChange={(v) => setPrev({ modo: v })} opcoes={MODOS} />
             </Field>
             <Field rotulo="Arredondamento do valor por unidade" className="sm:col-span-3">
-              <Selecao value={e.arredondamento} onChange={(v) => onChange({ arredondamento: v })} opcoes={ARREDONDAMENTO} />
+              <Selecao
+                value={e.arredondamento}
+                onChange={(v) => onChange({ arredondamento: v })}
+                opcoes={ARREDONDAMENTO}
+              />
             </Field>
-            <Field rotulo="Percentual fixo" dica="Reajuste aplicado sobre a base realizada deste exercício." aviso={avisoVariacao} className="sm:col-span-2">
-              <PercentualInput ref={refVariacao} value={e.variacaoMetodo === "percentual" ? e.variacaoParam : e.variacao} onChange={(v) => onChange({ variacao: v, variacaoMetodo: "percentual", variacaoParam: v })} />
+            <Field
+              rotulo="Percentual fixo"
+              dica="Reajuste aplicado sobre a base realizada deste exercício."
+              aviso={avisoVariacao}
+              className="sm:col-span-2"
+            >
+              <PercentualInput
+                ref={refVariacao}
+                value={e.variacaoMetodo === "percentual" ? e.variacaoParam : e.variacao}
+                onChange={(v) =>
+                  onChange({ variacao: v, variacaoMetodo: "percentual", variacaoParam: v })
+                }
+              />
             </Field>
-            <Field rotulo="Fundo de reserva" dica="Sobre o valor por unidade." className="sm:col-span-2">
-              <PercentualInput value={prev.fundoReservaPct} onChange={(v) => setPrev({ fundoReservaPct: v })} />
+            <Field
+              rotulo="Fundo de reserva"
+              dica="Sobre o valor por unidade."
+              className="sm:col-span-2"
+            >
+              <PercentualInput
+                value={prev.fundoReservaPct}
+                onChange={(v) => setPrev({ fundoReservaPct: v })}
+              />
             </Field>
             <Field
               rotulo="Dedução (retirar da base)"
               dica="Despesas cujo nome ou grupo contém este texto saem da base. Aceita expressão regular."
               className="sm:col-span-4"
             >
-              <Input value={e.deducaoRegex} onChange={(ev) => onChange({ deducaoRegex: ev.target.value })} />
+              <Input
+                value={e.deducaoRegex}
+                onChange={(ev) => onChange({ deducaoRegex: ev.target.value })}
+              />
             </Field>
             <CaixaUnidades unidades={unidades} condoId={condoId} className="sm:col-span-2" />
           </div>
@@ -118,10 +166,23 @@ export function PainelPrevisao({
               reordenavel={false}
               render={(i, up) => (
                 <>
-                  <InteiroInput aria-label="Ano" value={i.ano} onChange={(v) => up({ ano: v })} maxLength={4} />
-                  <PercentualInput aria-label="Índice" value={i.pct} onChange={(v) => up({ pct: v })} />
+                  <InteiroInput
+                    aria-label="Ano"
+                    value={i.ano}
+                    onChange={(v) => up({ ano: v })}
+                    maxLength={4}
+                  />
+                  <PercentualInput
+                    aria-label="Índice"
+                    value={i.pct}
+                    onChange={(v) => up({ pct: v })}
+                  />
                   <label className="flex items-center gap-2 text-xs text-muted-foreground @xs:justify-self-center">
-                    <Switch checked={i.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                    <Switch
+                      checked={i.noRelatorio !== false}
+                      onCheckedChange={(v) => up({ noRelatorio: v })}
+                      aria-label="Incluir no relatório"
+                    />
                     <span className="@xs:hidden">Incluir nas Considerações finais</span>
                   </label>
                 </>
@@ -145,27 +206,55 @@ export function PainelPrevisao({
             vazio="Nenhum ajuste. A previsão usa só a base com a variação."
             render={(a, up) => (
               <>
-                <SinalToggle valor={a.sinal} onChange={(sinal) => up({ sinal })} rotulo="Sinal do ajuste" />
-                <Input aria-label="Descrição" placeholder="Descrição do ajuste" value={a.descricao} onChange={(ev) => up({ descricao: ev.target.value })} />
+                <SinalToggle
+                  valor={a.sinal}
+                  onChange={(sinal) => up({ sinal })}
+                  rotulo="Sinal do ajuste"
+                />
+                <Input
+                  aria-label="Descrição"
+                  placeholder="Descrição do ajuste"
+                  value={a.descricao}
+                  onChange={(ev) => up({ descricao: ev.target.value })}
+                />
                 <div className="col-span-full @min-[12rem]:col-span-1 @min-[12rem]:col-start-2 @xl:col-start-auto">
-                  <DinheiroInput aria-label="Valor anual" value={a.valor} onChange={(v) => up({ valor: Math.abs(v ?? 0) })} />
+                  <DinheiroInput
+                    aria-label="Valor anual"
+                    value={a.valor}
+                    onChange={(v) => up({ valor: Math.abs(v ?? 0) })}
+                  />
                 </div>
               </>
             )}
           />
         </SectionCard>
 
-        <SectionCard titulo="(+/−) Variação de despesas sugeridas" descricao="Valor anual somado (+) ou subtraído (−) do total ordinário, sem vínculo com grupo de despesas.">
+        <SectionCard
+          titulo="(+/−) Variação de despesas sugeridas"
+          descricao="Valor anual somado (+) ou subtraído (−) do total ordinário, sem vínculo com grupo de despesas."
+        >
           <div className="@container max-w-md">
             <div className="grid grid-cols-1 gap-2 @min-[12rem]:grid-cols-[5.75rem_minmax(0,1fr)]">
-              <SinalToggle valor={variacaoDespesas.sinal} onChange={(sinal) => setPrev({ variacaoDespesas: { ...variacaoDespesas, sinal } })} rotulo="Sinal da variação" />
-              <DinheiroInput aria-label="Valor da variação de despesas sugeridas" value={variacaoDespesas.valor} onChange={(v) => setPrev({ variacaoDespesas: { ...variacaoDespesas, valor: Math.abs(v ?? 0) } })} />
+              <SinalToggle
+                valor={variacaoDespesas.sinal}
+                onChange={(sinal) => setPrev({ variacaoDespesas: { ...variacaoDespesas, sinal } })}
+                rotulo="Sinal da variação"
+              />
+              <DinheiroInput
+                aria-label="Valor da variação de despesas sugeridas"
+                value={variacaoDespesas.valor}
+                onChange={(v) =>
+                  setPrev({ variacaoDespesas: { ...variacaoDespesas, valor: Math.abs(v ?? 0) } })
+                }
+              />
             </div>
           </div>
         </SectionCard>
 
         <SectionCard
-          titulo={r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"}
+          titulo={
+            r.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo"
+          }
           descricao="Baseado exclusivamente no realizado reduzido do período analisado."
         >
           <TabelaLinhas r={r} />
@@ -189,7 +278,11 @@ export function PainelPrevisao({
 
 export function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
   if (r.linhas.length === 0) {
-    return <p className="text-sm text-muted-foreground">Lance as despesas no demonstrativo da prestação de contas para ver a previsão.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        Lance as despesas no demonstrativo da prestação de contas para ver a previsão.
+      </p>
+    );
   }
   const grupos = [...new Set(r.linhas.map((l) => l.grupo))];
 
@@ -201,8 +294,12 @@ export function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
             <TableHead className="text-xs font-semibold uppercase tracking-wide text-primary">
               {r.modo === "detalhado" ? "Despesa" : "Grupo"}
             </TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Realizado</TableHead>
-            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">Média prevista dos grupos</TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">
+              Realizado
+            </TableHead>
+            <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-primary">
+              Média prevista dos grupos
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -212,13 +309,19 @@ export function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
               <Fragment key={g}>
                 {r.modo === "detalhado" && (
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableCell colSpan={3} className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <TableCell
+                      colSpan={3}
+                      className="py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
                       {g || "Sem grupo"}
                     </TableCell>
                   </TableRow>
                 )}
                 {linhas.map((l, i) => (
-                  <TableRow key={`${g}-${i}`} className={cn(l.deduzida && l.previsto === 0 && "text-muted-foreground")}>
+                  <TableRow
+                    key={`${g}-${i}`}
+                    className={cn(l.deduzida && l.previsto === 0 && "text-muted-foreground")}
+                  >
                     <TableCell className={cn(r.modo === "detalhado" && "pl-6")}>
                       <span>{l.nome || "Sem nome"}</span>
                       {l.deduzida && (
@@ -227,8 +330,12 @@ export function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="num whitespace-nowrap text-right">{formatBRL(l.realizado)}</TableCell>
-                    <TableCell className="num whitespace-nowrap text-right font-medium">{formatBRL(l.previsto / r.mesesAnalisados)}</TableCell>
+                    <TableCell className="num whitespace-nowrap text-right">
+                      {formatBRL(l.realizado)}
+                    </TableCell>
+                    <TableCell className="num whitespace-nowrap text-right font-medium">
+                      {formatBRL(l.previsto / r.mesesAnalisados)}
+                    </TableCell>
                   </TableRow>
                 ))}
               </Fragment>
@@ -239,11 +346,19 @@ export function TabelaLinhas({ r }: { r: ResultadoPrevisao }) {
           <TableRow className="bg-secondary hover:bg-secondary">
             <TableCell className="font-semibold text-primary">Total dos grupos</TableCell>
             <TableCell className="num whitespace-nowrap text-right">{formatBRL(r.base)}</TableCell>
-            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">{formatBRL(r.linhas.reduce((soma, linha) => soma + linha.previsto, 0) / r.mesesAnalisados)}</TableCell>
+            <TableCell className="num whitespace-nowrap text-right font-semibold text-primary">
+              {formatBRL(
+                r.linhas.reduce((soma, linha) => soma + linha.previsto, 0) / r.mesesAnalisados,
+              )}
+            </TableCell>
           </TableRow>
         </TableFooter>
       </Table>
-      <p className="px-5 py-3 text-xs text-muted-foreground @max-[14rem]:px-3">A média dos grupos considera as deduções e o percentual. Valores sem vínculo com grupos, como ajustes avulsos e variação de despesas sugeridas, aparecem no Resumo da previsão e compõem o anual ajustado.</p>
+      <p className="px-5 py-3 text-xs text-muted-foreground @max-[14rem]:px-3">
+        A média dos grupos considera as deduções e o percentual. Valores sem vínculo com grupos,
+        como ajustes avulsos e variação de despesas sugeridas, aparecem no Resumo da previsão e
+        compõem o anual ajustado.
+      </p>
     </div>
   );
 }
@@ -262,17 +377,39 @@ function LinhaResumo({
   className?: string;
 }) {
   return (
-    <div className={cn("flex min-w-0 flex-nowrap items-baseline justify-between gap-3 py-1 text-sm", forte && "font-semibold text-primary", className)}>
-      <span className={cn("min-w-0 flex-1 truncate", !forte && "text-muted-foreground")} title={rotulo}>{rotulo}</span>
+    <div
+      className={cn(
+        "flex min-w-0 flex-nowrap items-baseline justify-between gap-3 py-1 text-sm",
+        forte && "font-semibold text-primary",
+        className,
+      )}
+    >
+      <span
+        className={cn("min-w-0 flex-1 truncate", !forte && "text-muted-foreground")}
+        title={rotulo}
+      >
+        {rotulo}
+      </span>
       <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
     </div>
   );
 }
 
-function AjusteResumo({ descricao, valor, negativo }: { descricao: string; valor: string; negativo: boolean }) {
+function AjusteResumo({
+  descricao,
+  valor,
+  negativo,
+}: {
+  descricao: string;
+  valor: string;
+  negativo: boolean;
+}) {
   return (
     <div className="flex min-w-0 items-center justify-between gap-3 py-1 text-sm">
-      <span className="min-w-0 flex-1 truncate text-muted-foreground" title={`(+/−) Ajustes da previsão (${descricao})`}>
+      <span
+        className="min-w-0 flex-1 truncate text-muted-foreground"
+        title={`(+/−) Ajustes da previsão (${descricao})`}
+      >
         (+/−) Ajustes da previsão <span className="font-medium text-foreground">({descricao})</span>
       </span>
       <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
@@ -301,18 +438,24 @@ function Resumo({
   anoAnterior?: number | string | undefined;
   aoAprovar: () => void;
 }) {
-  const ausente = (n: number | null, motivo?: string) => (n === null ? <SemValor motivo={motivo} /> : formatBRL(n));
+  const ausente = (n: number | null, motivo?: string) =>
+    n === null ? <SemValor motivo={motivo} /> : formatBRL(n);
   return (
     <section className="rounded-md border bg-card shadow-sm" aria-label="Resumo da previsão">
       <header className="border-b px-5 py-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">Resumo da previsão</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-primary">
+          Resumo da previsão
+        </h2>
         <p className="mt-0.5 text-xs text-muted-foreground">Atualiza a cada alteração.</p>
       </header>
       <div className="px-5 py-4">
         <div className="mb-3">
           <SituacaoResultado parcial={parcial} avisos={r.avisos.length} idQuadro={idQuadro} />
         </div>
-        <LinhaResumo rotulo={anoAnterior ? `Base (realizado de ${anoAnterior})` : "Base (despesas realizadas)"} valor={formatBRL(r.base)} />
+        <LinhaResumo
+          rotulo={anoAnterior ? `Base (realizado de ${anoAnterior})` : "Base (despesas realizadas)"}
+          valor={formatBRL(r.base)}
+        />
         <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
         <LinhaResumo
           rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${pct(r.variacaoPct)}`}
@@ -325,27 +468,47 @@ function Resumo({
             negativo={r.variacaoDespesasValor < 0}
           />
         )}
-        {r.ajustes.filter((a) => Number(a.valor) > 0).map((a) => {
-          const valor = a.sinal === "-" ? -Math.abs(a.valor) : Math.abs(a.valor);
-          return (
-            <AjusteResumo
-              key={a.id}
-              descricao={a.descricao || "Ajuste sem descrição"}
-              valor={`${valor < 0 ? "−" : "+"}${formatBRL(Math.abs(valor))}`}
-              negativo={valor < 0}
-            />
-          );
-        })}
-        <LinhaResumo rotulo="Anual ajustado" valor={formatBRL(r.totalAnual)} forte className="mt-1 border-t pt-2" />
+        {r.ajustes
+          .filter((a) => Number(a.valor) > 0)
+          .map((a) => {
+            const valor = a.sinal === "-" ? -Math.abs(a.valor) : Math.abs(a.valor);
+            return (
+              <AjusteResumo
+                key={a.id}
+                descricao={a.descricao || "Ajuste sem descrição"}
+                valor={`${valor < 0 ? "−" : "+"}${formatBRL(Math.abs(valor))}`}
+                negativo={valor < 0}
+              />
+            );
+          })}
+        <LinhaResumo
+          rotulo="Anual ajustado"
+          valor={formatBRL(r.totalAnual)}
+          forte
+          className="mt-1 border-t pt-2"
+        />
 
         <div className="mt-4 border-t pt-3">
-          <LinhaResumo rotulo={`Média mensal (÷ ${r.mesesAnalisados})`} valor={formatBRL(r.mensal)} />
-          <LinhaResumo rotulo="(÷) Unidades" valor={r.unidades ? String(r.unidades) : <SemValor motivo="não informado" />} />
+          <LinhaResumo
+            rotulo={`Média mensal (÷ ${r.mesesAnalisados})`}
+            valor={formatBRL(r.mensal)}
+          />
+          <LinhaResumo
+            rotulo="(÷) Unidades"
+            valor={r.unidades ? String(r.unidades) : <SemValor motivo="não informado" />}
+          />
           <LinhaResumo rotulo="Cota por unidade" valor={ausente(r.cotaUnidade)} forte />
-          <LinhaResumo rotulo={`(+) Reserva por unidade ${pct(r.fundoReservaPct)}`} valor={ausente(r.reservaUnidade)} />
+          <LinhaResumo
+            rotulo={`(+) Reserva por unidade ${pct(r.fundoReservaPct)}`}
+            valor={ausente(r.reservaUnidade)}
+          />
         </div>
 
-        <ValorPorUnidade valor={r.rateioSugerido} rodape={ROTULO_ARRED[arredondamento]} semUnidades={semUnidades} />
+        <ValorPorUnidade
+          valor={r.rateioSugerido}
+          rodape={ROTULO_ARRED[arredondamento]}
+          semUnidades={semUnidades}
+        />
 
         <div className="mt-3">
           <LinhaResumo rotulo="Rateio atual" valor={formatBRL(r.rateioAtual)} />
@@ -358,11 +521,16 @@ function Resumo({
         </div>
 
         {r.rateioSugerido !== null && (
-          <Button type="button" variant="outline" size="sm" className="mt-3 w-full" onClick={aoAprovar}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="mt-3 w-full"
+            onClick={aoAprovar}
+          >
             Usar como rateio aprovado
           </Button>
         )}
-
       </div>
     </section>
   );
@@ -386,7 +554,9 @@ export function ValorPorUnidade({
         <div className="text-xs font-semibold uppercase tracking-wide">{titulo}</div>
         <div className="mt-0.5 text-base font-semibold">Não calculado</div>
         <div className="text-xs">
-          {semUnidades ? "Falta a quantidade de unidades no cadastro do condomínio." : "Faltam dados para o cálculo; veja os avisos."}
+          {semUnidades
+            ? "Falta a quantidade de unidades no cadastro do condomínio."
+            : "Faltam dados para o cálculo; veja os avisos."}
         </div>
       </div>
     );
@@ -401,7 +571,15 @@ export function ValorPorUnidade({
 }
 
 /** Quantidade de unidades (só leitura, vem do cadastro); sem unidades fica em destaque com o atalho. */
-export function CaixaUnidades({ unidades, condoId, className }: { unidades: number | null; condoId: string; className?: string }) {
+export function CaixaUnidades({
+  unidades,
+  condoId,
+  className,
+}: {
+  unidades: number | null;
+  condoId: string;
+  className?: string;
+}) {
   const falta = !unidades;
   return (
     <div className={cn("grid content-start gap-1.5", className)}>
@@ -412,13 +590,22 @@ export function CaixaUnidades({ unidades, condoId, className }: { unidades: numb
           falta ? "border-warning bg-warning/10 text-warning-foreground" : "bg-muted/40",
         )}
       >
-        <span className={cn(!falta && "num", falta && "font-medium")}>{falta ? "Não informado" : unidades}</span>
+        <span className={cn(!falta && "num", falta && "font-medium")}>
+          {falta ? "Não informado" : unidades}
+        </span>
         {condoId && (
           <Link
             to="/condominios/$id"
             params={{ id: condoId }}
-            className={cn("alvo-toque text-xs underline underline-offset-2", falta ? "font-medium" : "text-primary")}
-            aria-label={falta ? "Informar unidades no cadastro do condomínio" : "Alterar unidades no cadastro do condomínio"}
+            className={cn(
+              "alvo-toque text-xs underline underline-offset-2",
+              falta ? "font-medium" : "text-primary",
+            )}
+            aria-label={
+              falta
+                ? "Informar unidades no cadastro do condomínio"
+                : "Alterar unidades no cadastro do condomínio"
+            }
           >
             {falta ? "informar" : "alterar"}
           </Link>

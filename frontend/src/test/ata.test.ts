@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
 import { assembleiaPadrao } from "@/domain/edital";
-import { contarUnidadesPresentes, novaAtaDeAssembleia, prepararAta, validarAta, validarNovaAta, novoItemAta } from "@/domain/ata";
+import {
+  contarUnidadesPresentes,
+  novaAtaDeAssembleia,
+  prepararAta,
+  validarAta,
+  validarNovaAta,
+  novoItemAta,
+} from "@/domain/ata";
 import type { Assembleia, Condominio } from "@/domain/types";
 
 const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias", unidades: 48 };
@@ -30,15 +37,27 @@ describe("atas", () => {
   it("cada linha da pauta vira um item com discussão e deliberação vazias", () => {
     const ata = novaAtaDeAssembleia(edital, condo);
     expect(ata.itens).toEqual([
-      { titulo: "Prestação de contas;", discussao: "", deliberacao: "", votos: { favor: 0, contra: 0, abstencao: 0 } },
-      { titulo: "Assuntos gerais.", discussao: "", deliberacao: "", votos: { favor: 0, contra: 0, abstencao: 0 } },
+      {
+        titulo: "Prestação de contas;",
+        discussao: "",
+        deliberacao: "",
+        votos: { favor: 0, contra: 0, abstencao: 0 },
+      },
+      {
+        titulo: "Assuntos gerais.",
+        discussao: "",
+        deliberacao: "",
+        votos: { favor: 0, contra: 0, abstencao: 0 },
+      },
     ]);
     expect(ata.mesa).toEqual({ presidente: "", secretario: "" });
     expect(ata.presentes).toEqual([]);
   });
 
   it("um edital tem no máximo uma ata", () => {
-    expect(validarNovaAta("e1", [{ id: "a1", assembleiaId: "e1" }])).toBe("Este edital já tem uma ata.");
+    expect(validarNovaAta("e1", [{ id: "a1", assembleiaId: "e1" }])).toBe(
+      "Este edital já tem uma ata.",
+    );
     expect(validarNovaAta("e2", [{ id: "a1", assembleiaId: "e1" }])).toBeNull();
   });
 
@@ -67,8 +86,13 @@ describe("atas", () => {
   });
 
   it("exige condomínio e data válida; horário, se informado, em hh:mm", () => {
-    expect(validarAta({ condoId: "", data: "", hora: "" })).toEqual({ condoId: "Escolha o condomínio.", data: "Informe a data da assembleia." });
-    expect(validarAta({ condoId: "c1", data: "31/10/2026", hora: "7" })).toEqual({ hora: "Horário inválido (hh:mm)." });
+    expect(validarAta({ condoId: "", data: "", hora: "" })).toEqual({
+      condoId: "Escolha o condomínio.",
+      data: "Informe a data da assembleia.",
+    });
+    expect(validarAta({ condoId: "c1", data: "31/10/2026", hora: "7" })).toEqual({
+      hora: "Horário inválido (hh:mm).",
+    });
     expect(validarAta({ condoId: "c1", data: "2026-10-31", hora: "" })).toEqual({});
   });
 });

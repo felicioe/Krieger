@@ -30,8 +30,18 @@ const ata: Ata = {
   ],
   quorum: { unidadesPresentes: 24, totalUnidades: 120 },
   itens: [
-    { titulo: "Leitura e aprovação da ata anterior", discussao: "Lida sem ressalvas", deliberacao: "Aprovada por unanimidade", votos: { favor: 24, contra: 0, abstencao: 0 } },
-    { titulo: "Aprovação das contas", discussao: "", deliberacao: "Aprovadas", votos: { favor: 20, contra: 1, abstencao: 3 } },
+    {
+      titulo: "Leitura e aprovação da ata anterior",
+      discussao: "Lida sem ressalvas",
+      deliberacao: "Aprovada por unanimidade",
+      votos: { favor: 24, contra: 0, abstencao: 0 },
+    },
+    {
+      titulo: "Aprovação das contas",
+      discussao: "",
+      deliberacao: "Aprovadas",
+      votos: { favor: 20, contra: 1, abstencao: 3 },
+    },
   ],
   encerramento: "Não havendo mais assuntos.",
   observacoes: "",
@@ -65,23 +75,49 @@ const blocos = (b: Bloco[]) => b;
 describe("documento da ata com modelo de cartório", () => {
   it("converte #, ## e listas do texto do modelo nos blocos correspondentes", async () => {
     const { documentoAta } = await import("@/documentos/ata");
-    const doc = documentoAta({ ata, condominio: condo, cidade: "Rancho Queimado", escritorio: null, modelo: { texto: `${MODELO}\n\n- primeiro item\n- segundo item` } });
+    const doc = documentoAta({
+      ata,
+      condominio: condo,
+      cidade: "Rancho Queimado",
+      escritorio: null,
+      modelo: { texto: `${MODELO}\n\n- primeiro item\n- segundo item` },
+    });
 
-    const titulos = doc.blocos.filter((b): b is Extract<Bloco, { tipo: "titulo" }> => b.tipo === "titulo");
+    const titulos = doc.blocos.filter(
+      (b): b is Extract<Bloco, { tipo: "titulo" }> => b.tipo === "titulo",
+    );
     expect(titulos[0]?.nivel).toBe(1);
     expect(titulos[0]?.texto).toBe("ATA DA ASSEMBLEIA GERAL Ordinária");
-    expect(titulos.some((t) => t.nivel === 2 && t.texto === "Condomínio Rural Lago Negro")).toBe(true);
+    expect(titulos.some((t) => t.nivel === 2 && t.texto === "Condomínio Rural Lago Negro")).toBe(
+      true,
+    );
 
-    const listas = doc.blocos.filter((b): b is Extract<Bloco, { tipo: "lista" }> => b.tipo === "lista");
+    const listas = doc.blocos.filter(
+      (b): b is Extract<Bloco, { tipo: "lista" }> => b.tipo === "lista",
+    );
     expect(listas).toHaveLength(1);
     expect(listas[0]?.itens).toEqual(["primeiro item", "segundo item"]);
   });
 
   it("substitui as variáveis novas (dataExtenso, unidades, quorumTexto, itensTexto)", async () => {
     const { documentoAta } = await import("@/documentos/ata");
-    const doc = documentoAta({ ata, condominio: condo, cidade: "Rancho Queimado", escritorio: null, modelo: { texto: MODELO } });
+    const doc = documentoAta({
+      ata,
+      condominio: condo,
+      cidade: "Rancho Queimado",
+      escritorio: null,
+      modelo: { texto: MODELO },
+    });
     const texto = blocos(doc.blocos)
-      .map((b) => (b.tipo === "paragrafo" ? (typeof b.texto === "string" ? b.texto : b.texto.map((t) => t.texto).join("")) : b.tipo === "titulo" ? b.texto : ""))
+      .map((b) =>
+        b.tipo === "paragrafo"
+          ? typeof b.texto === "string"
+            ? b.texto
+            : b.texto.map((t) => t.texto).join("")
+          : b.tipo === "titulo"
+            ? b.texto
+            : "",
+      )
       .join("\n");
 
     expect(texto).not.toContain("{{");
@@ -96,13 +132,33 @@ describe("documento da ata com modelo de cartório", () => {
 
   it("respeita logoEscritorio e bordaPagina do modelo", async () => {
     const { documentoAta } = await import("@/documentos/ata");
-    const escritorio = { id: "escritorio" as const, nome: "Krieger", cidade: "", rodape: "", assinatura: "", logo: "data:image/png;base64,AA", logoRatio: 3 };
+    const escritorio = {
+      id: "escritorio" as const,
+      nome: "Krieger",
+      cidade: "",
+      rodape: "",
+      assinatura: "",
+      logo: "data:image/png;base64,AA",
+      logoRatio: 3,
+    };
 
-    const semLogo = documentoAta({ ata, condominio: condo, cidade: "X", escritorio, modelo: { texto: MODELO, logoEscritorio: false, bordaPagina: true } });
+    const semLogo = documentoAta({
+      ata,
+      condominio: condo,
+      cidade: "X",
+      escritorio,
+      modelo: { texto: MODELO, logoEscritorio: false, bordaPagina: true },
+    });
     expect(semLogo.timbre).toBeNull();
     expect(semLogo.bordaPagina).toBe(true);
 
-    const comLogo = documentoAta({ ata, condominio: condo, cidade: "X", escritorio, modelo: { texto: MODELO, logoEscritorio: true, bordaPagina: false } });
+    const comLogo = documentoAta({
+      ata,
+      condominio: condo,
+      cidade: "X",
+      escritorio,
+      modelo: { texto: MODELO, logoEscritorio: true, bordaPagina: false },
+    });
     expect(comLogo.timbre?.nome).toBe("Krieger");
     expect(comLogo.bordaPagina).toBeUndefined();
   });

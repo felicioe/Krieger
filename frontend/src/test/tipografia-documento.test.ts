@@ -72,8 +72,26 @@ describe("documento da ata com modelo", () => {
   it("pede a tipografia de documento e mantém a borda sem o logo do escritório", async () => {
     const { documentoAta } = await import("@/documentos/ata");
     const { tipografia } = await import("@/lib/documento/tipografia");
-    const escritorio = { id: "escritorio" as const, nome: "Krieger", cidade: "", rodape: "", assinatura: "", logo: "data:image/png;base64,AA", logoRatio: 3 };
-    const doc = documentoAta({ ata, condominio: condo, cidade: "Rancho Queimado", escritorio, modelo: { texto: "# ATA DA ASSEMBLEIA GERAL ORDINÁRIA\n\nCorpo.", logoEscritorio: false, bordaPagina: true } });
+    const escritorio = {
+      id: "escritorio" as const,
+      nome: "Krieger",
+      cidade: "",
+      rodape: "",
+      assinatura: "",
+      logo: "data:image/png;base64,AA",
+      logoRatio: 3,
+    };
+    const doc = documentoAta({
+      ata,
+      condominio: condo,
+      cidade: "Rancho Queimado",
+      escritorio,
+      modelo: {
+        texto: "# ATA DA ASSEMBLEIA GERAL ORDINÁRIA\n\nCorpo.",
+        logoEscritorio: false,
+        bordaPagina: true,
+      },
+    });
 
     expect(doc.fonte).toBe("documento");
     expect(doc.tamanhoCorpo).toBe(12);
@@ -99,7 +117,13 @@ describe("documento da ata com modelo", () => {
       logo: "data:image/png;base64,AA",
       logoRatio: 3,
     };
-    const doc = documentoAta({ ata, condominio: condo, cidade: "Rancho Queimado", escritorio, modelo: { texto: "# ATA\n\nCorpo.", logoEscritorio: false, bordaPagina: true } });
+    const doc = documentoAta({
+      ata,
+      condominio: condo,
+      cidade: "Rancho Queimado",
+      escritorio,
+      modelo: { texto: "# ATA\n\nCorpo.", logoEscritorio: false, bordaPagina: true },
+    });
 
     const definicao = await montarDefinicao(doc);
     const texto = JSON.stringify(definicao);
@@ -110,7 +134,10 @@ describe("documento da ata com modelo", () => {
 
     // A numeração de páginas é do documento e continua existindo (o footer é função,
     // por isso não aparece no JSON: chamamos como o pdfmake chama).
-    const rodape = definicao.footer as (pagina: number, total: number) => { columns: { text: string }[] };
+    const rodape = definicao.footer as (
+      pagina: number,
+      total: number,
+    ) => { columns: { text: string }[] };
     const primeiro = rodape(1, 3).columns.map((c) => c.text);
     expect(primeiro.some((t) => t.includes("Página 1 de 3"))).toBe(true);
     expect(primeiro.join(" ")).not.toContain("Escritório Krieger");

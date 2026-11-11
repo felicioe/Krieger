@@ -52,7 +52,14 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   const al = (a?: Alinhamento | undefined) => ALINHA[a ?? "esquerda"];
   const SEM = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
   const LINHA = { style: BorderStyle.SINGLE, size: 4, color: COR.linha };
-  const semBordas = { top: SEM, bottom: SEM, left: SEM, right: SEM, insideHorizontal: SEM, insideVertical: SEM };
+  const semBordas = {
+    top: SEM,
+    bottom: SEM,
+    left: SEM,
+    right: SEM,
+    insideHorizontal: SEM,
+    insideVertical: SEM,
+  };
 
   type Base = { tamanho?: number; cor?: string; negrito?: boolean; fonte?: string };
   /** Trechos → runs; "\n" vira quebra de linha. Corpo e família padrão vêm de `tip`. */
@@ -87,7 +94,14 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
 
   function celula(
     t: Texto,
-    o: { largura: number; alinhamento?: Alinhamento | undefined; fill?: string; span?: number; recuo?: boolean | undefined; lado?: number } & Base,
+    o: {
+      largura: number;
+      alinhamento?: Alinhamento | undefined;
+      fill?: string;
+      span?: number;
+      recuo?: boolean | undefined;
+      lado?: number;
+    } & Base,
   ) {
     return new TableCell({
       width: { size: o.largura, type: WidthType.DXA },
@@ -108,7 +122,10 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
 
   /** `extra` (twips) soma às colunas de largura fixa: no PDF a largura é só do texto, sem a margem da célula. */
   function larguras(colunas: Coluna[], extra = 0): number[] {
-    const fixas = colunas.reduce((s, c) => s + (typeof c.largura === "number" ? tw(c.largura) + extra : 0), 0);
+    const fixas = colunas.reduce(
+      (s, c) => s + (typeof c.largura === "number" ? tw(c.largura) + extra : 0),
+      0,
+    );
     const livres = colunas.filter((c) => typeof c.largura !== "number").length;
     const resto = livres ? Math.max(600, Math.floor((UTIL - fixas) / livres)) : 0;
     return colunas.map((c) => (typeof c.largura === "number" ? tw(c.largura) + extra : resto));
@@ -117,9 +134,17 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   function tabela(
     colunas: Coluna[],
     linhas: LinhaTabela[],
-    o: { semCabecalho?: boolean; fundo?: boolean; pequena?: boolean; alturaLinha?: number; grade?: boolean },
+    o: {
+      semCabecalho?: boolean;
+      fundo?: boolean;
+      pequena?: boolean;
+      alturaLinha?: number;
+      grade?: boolean;
+    },
   ) {
-    const altura = o.alturaLinha ? { height: { value: Math.round(o.alturaLinha * 20), rule: HeightRule.ATLEAST } } : {};
+    const altura = o.alturaLinha
+      ? { height: { value: Math.round(o.alturaLinha * 20), rule: HeightRule.ATLEAST } }
+      : {};
     // tabela pequena (comparativo): mesma margem lateral e mesma largura de texto por coluna que o PDF
     const lado = (o.pequena ? MARGEM_CELULA.pequena : MARGEM_CELULA.normal) * 20;
     const ws = larguras(colunas, o.pequena ? 2 * lado : 0);
@@ -132,7 +157,15 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
           tableHeader: true,
           cantSplit: true,
           children: colunas.map((c, i) =>
-            celula(c.titulo, { largura: ws[i]!, lado, alinhamento: c.alinhamento, fill: COR.fundo, negrito: true, cor: COR.primaria, tamanho: tam - 0.5 }),
+            celula(c.titulo, {
+              largura: ws[i]!,
+              lado,
+              alinhamento: c.alinhamento,
+              fill: COR.fundo,
+              negrito: true,
+              cor: COR.primaria,
+              tamanho: tam - 0.5,
+            }),
           ),
         }),
       );
@@ -143,7 +176,17 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
         rows.push(
           new TableRow({
             cantSplit: true,
-            children: [celula(l.celulas[0] ?? "", { largura: total, lado, span: colunas.length, fill: COR.grupo, negrito: true, cor: COR.primaria, tamanho: tam - 1 })],
+            children: [
+              celula(l.celulas[0] ?? "", {
+                largura: total,
+                lado,
+                span: colunas.length,
+                fill: COR.grupo,
+                negrito: true,
+                cor: COR.primaria,
+                tamanho: tam - 1,
+              }),
+            ],
           }),
         );
         continue;
@@ -174,8 +217,22 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
       borders: o.fundo
         ? semBordas
         : o.grade
-          ? { top: LINHA, bottom: LINHA, left: LINHA, right: LINHA, insideHorizontal: LINHA, insideVertical: LINHA }
-          : { top: LINHA, bottom: LINHA, left: SEM, right: SEM, insideHorizontal: LINHA, insideVertical: SEM },
+          ? {
+              top: LINHA,
+              bottom: LINHA,
+              left: LINHA,
+              right: LINHA,
+              insideHorizontal: LINHA,
+              insideVertical: LINHA,
+            }
+          : {
+              top: LINHA,
+              bottom: LINHA,
+              left: SEM,
+              right: SEM,
+              insideHorizontal: LINHA,
+              insideVertical: SEM,
+            },
       rows,
     });
   }
@@ -192,8 +249,15 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
           new Paragraph({
             alignment: al(b.alinhamento),
             keepNext: true,
-            spacing: { before: tw(b.nivel === 1 ? 0 : b.nivel === 2 ? 16 : 10), after: tw(b.nivel === 1 ? 8 : b.nivel === 2 ? 6 : 3) },
-            children: runs(b.texto, { tamanho: t, negrito: true, cor: b.nivel === 3 ? COR.texto : COR.primaria }),
+            spacing: {
+              before: tw(b.nivel === 1 ? 0 : b.nivel === 2 ? 16 : 10),
+              after: tw(b.nivel === 1 ? 8 : b.nivel === 2 ? 6 : 3),
+            },
+            children: runs(b.texto, {
+              tamanho: t,
+              negrito: true,
+              cor: b.nivel === 3 ? COR.texto : COR.primaria,
+            }),
           }),
         );
         return;
@@ -205,7 +269,12 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
             spacing: { after: tw(6) },
             ...(b.recuo ? { indent: { left: tw(16) } } : {}),
             children: runs(b.texto, {
-              tamanho: b.tamanho === "pequeno" ? tip.paragrafo.pequeno : b.tamanho === "grande" ? tip.paragrafo.grande : tip.paragrafo.normal,
+              tamanho:
+                b.tamanho === "pequeno"
+                  ? tip.paragrafo.pequeno
+                  : b.tamanho === "grande"
+                    ? tip.paragrafo.grande
+                    : tip.paragrafo.normal,
               ...(b.suave ? { cor: COR.suave } : {}),
               ...(b.negrito ? { negrito: true } : {}),
             }),
@@ -217,7 +286,11 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
         b.itens.forEach((i) =>
           filhos.push(
             new Paragraph({
-              numbering: { reference: b.numerada ? "numerada" : "marcadores", level: 0, instance: instancia },
+              numbering: {
+                reference: b.numerada ? "numerada" : "marcadores",
+                level: 0,
+                instance: instancia,
+              },
               spacing: { after: tw(3) },
               children: runs(i),
             }),
@@ -240,7 +313,10 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
                   cantSplit: true,
                   children: [
                     celula(p.rotulo, { largura: ws[0]!, cor: COR.suave }),
-                    celula(p.valor, { largura: ws[1]!, alinhamento: b.alinhamento === "direita" ? "direita" : "esquerda" }),
+                    celula(p.valor, {
+                      largura: ws[1]!,
+                      alinhamento: b.alinhamento === "direita" ? "direita" : "esquerda",
+                    }),
                   ],
                 }),
             ),
@@ -263,7 +339,10 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
               new ImageRun({
                 type: "png",
                 data: bytesDe(img.dataUrl),
-                transformation: { width: px(img.largura * escala), height: px(img.altura * escala) },
+                transformation: {
+                  width: px(img.largura * escala),
+                  height: px(img.altura * escala),
+                },
               }),
             ],
           }),
@@ -281,11 +360,20 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
         const vao = 32;
         const larg = Math.min(220, (folha.util - (n - 1) * vao) / n);
         const lado = (folha.util - n * larg - (n - 1) * vao) / 2;
-        const ws = [tw(lado), ...b.itens.flatMap((_, i) => (i > 0 ? [tw(vao), tw(larg)] : [tw(larg)])), tw(lado)];
+        const ws = [
+          tw(lado),
+          ...b.itens.flatMap((_, i) => (i > 0 ? [tw(vao), tw(larg)] : [tw(larg)])),
+          tw(lado),
+        ];
         const assinatura = (linhas: string[], w: number) =>
           new TableCell({
             width: { size: w, type: WidthType.DXA },
-            borders: { top: { style: BorderStyle.SINGLE, size: 6, color: COR.texto }, bottom: SEM, left: SEM, right: SEM },
+            borders: {
+              top: { style: BorderStyle.SINGLE, size: 6, color: COR.texto },
+              bottom: SEM,
+              left: SEM,
+              right: SEM,
+            },
             margins: { top: 60, left: 40, right: 40 },
             children: linhas.map(
               (l, k) =>
@@ -296,7 +384,12 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
                 }),
             ),
           });
-        const vazia = (w: number) => new TableCell({ width: { size: w, type: WidthType.DXA }, borders: { top: SEM, bottom: SEM, left: SEM, right: SEM }, children: [new Paragraph({ children: [] })] });
+        const vazia = (w: number) =>
+          new TableCell({
+            width: { size: w, type: WidthType.DXA },
+            borders: { top: SEM, bottom: SEM, left: SEM, right: SEM },
+            children: [new Paragraph({ children: [] })],
+          });
         filhos.push(
           // `keepNext` encadeado (local/data → espaçador → tabela) pra local/data e assinatura
           // nunca ficarem em páginas diferentes (ver comentário em tipos.ts).
@@ -321,7 +414,10 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
                 cantSplit: true,
                 children: [
                   vazia(ws[0]!),
-                  ...b.itens.flatMap((linhas, i) => [...(i > 0 ? [vazia(tw(vao))] : []), assinatura(linhas, tw(larg))]),
+                  ...b.itens.flatMap((linhas, i) => [
+                    ...(i > 0 ? [vazia(tw(vao))] : []),
+                    assinatura(linhas, tw(larg)),
+                  ]),
                   vazia(ws[ws.length - 1]!),
                 ],
               }),
@@ -338,7 +434,13 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   const timbre = doc.timbre;
   const logo = timbre?.logo ? await carregarPng(timbre.logo.dataUrl) : null;
   const aviso = doc.marcaDagua
-    ? [new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 60 }, children: runs(doc.marcaDagua, { negrito: true, cor: COR.suave, tamanho: 8 }) })]
+    ? [
+        new Paragraph({
+          alignment: AlignmentType.RIGHT,
+          spacing: { after: 60 },
+          children: runs(doc.marcaDagua, { negrito: true, cor: COR.suave, tamanho: 8 }),
+        }),
+      ]
     : [];
   const cabecalho = () => {
     if (!timbre) return new Header({ children: aviso });
@@ -365,7 +467,13 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
                     new Paragraph({
                       spacing: { after: 0 },
                       children: logo
-                        ? [new ImageRun({ type: "png", data: bytesDe(logo.dataUrl), transformation: { width: px(largura), height: px(altura) } })]
+                        ? [
+                            new ImageRun({
+                              type: "png",
+                              data: bytesDe(logo.dataUrl),
+                              transformation: { width: px(largura), height: px(altura) },
+                            }),
+                          ]
                         : [],
                     }),
                   ],
@@ -374,7 +482,13 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
                   width: { size: ws[1]!, type: WidthType.DXA },
                   verticalAlign: VerticalAlign.BOTTOM,
                   margins: { bottom: 80, right: 0 },
-                  children: [new Paragraph({ alignment: AlignmentType.RIGHT, spacing: { after: 0 }, children: runs(timbre.nome, { negrito: true, cor: COR.primaria, tamanho: 9 }) })],
+                  children: [
+                    new Paragraph({
+                      alignment: AlignmentType.RIGHT,
+                      spacing: { after: 0 },
+                      children: runs(timbre.nome, { negrito: true, cor: COR.primaria, tamanho: 9 }),
+                    }),
+                  ],
                 }),
               ],
             }),
@@ -390,11 +504,25 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
   const rodape = () =>
     new Footer({
       children: [
-        ...(rodapeTexto ? [new Paragraph({ spacing: { after: 40 }, children: runs(rodapeTexto, { tamanho: 7.5, cor: COR.suave }) })] : []),
+        ...(rodapeTexto
+          ? [
+              new Paragraph({
+                spacing: { after: 40 },
+                children: runs(rodapeTexto, { tamanho: 7.5, cor: COR.suave }),
+              }),
+            ]
+          : []),
         new Paragraph({
           alignment: AlignmentType.RIGHT,
           spacing: { after: 0 },
-          children: [new TextRun({ children: ["Página ", PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES], size: meio(7.5), color: COR.suave, font: tip.familiaWord })],
+          children: [
+            new TextRun({
+              children: ["Página ", PageNumber.CURRENT, " de ", PageNumber.TOTAL_PAGES],
+              size: meio(7.5),
+              color: COR.suave,
+              font: tip.familiaWord,
+            }),
+          ],
         }),
       ],
     });
@@ -405,18 +533,37 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
     title: doc.titulo,
     styles: {
       default: {
-        document: { run: { font: tip.familiaWord, size: meio(tip.corpo), color: COR.texto }, paragraph: { spacing: { line: 276 } } },
+        document: {
+          run: { font: tip.familiaWord, size: meio(tip.corpo), color: COR.texto },
+          paragraph: { spacing: { line: 276 } },
+        },
       },
     },
     numbering: {
       config: [
         {
           reference: "numerada",
-          levels: [{ level: 0, format: LevelFormat.DECIMAL, text: "%1.", alignment: AlignmentType.START, style: { paragraph: { indent: { left: 520, hanging: 300 } } } }],
+          levels: [
+            {
+              level: 0,
+              format: LevelFormat.DECIMAL,
+              text: "%1.",
+              alignment: AlignmentType.START,
+              style: { paragraph: { indent: { left: 520, hanging: 300 } } },
+            },
+          ],
         },
         {
           reference: "marcadores",
-          levels: [{ level: 0, format: LevelFormat.BULLET, text: "•", alignment: AlignmentType.START, style: { paragraph: { indent: { left: 520, hanging: 260 } } } }],
+          levels: [
+            {
+              level: 0,
+              format: LevelFormat.BULLET,
+              text: "•",
+              alignment: AlignmentType.START,
+              style: { paragraph: { indent: { left: 520, hanging: 260 } } },
+            },
+          ],
         },
       ],
     },
@@ -426,11 +573,21 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
           titlePage: capaSemTimbre,
           page: {
             size: { width: tw(folha.largura), height: tw(folha.altura) },
-            margin: { top: tw(timbre ? 92 : PAGINA.margem), bottom: tw(64), left: tw(PAGINA.margem), right: tw(PAGINA.margem), header: tw(28), footer: tw(24) },
+            margin: {
+              top: tw(timbre ? 92 : PAGINA.margem),
+              bottom: tw(64),
+              left: tw(PAGINA.margem),
+              right: tw(PAGINA.margem),
+              header: tw(28),
+              footer: tw(24),
+            },
             ...(doc.bordaPagina ? { borders: moldura() } : {}),
           },
         },
-        headers: { default: cabecalho(), ...(capaSemTimbre ? { first: new Header({ children: aviso }) } : {}) },
+        headers: {
+          default: cabecalho(),
+          ...(capaSemTimbre ? { first: new Header({ children: aviso }) } : {}),
+        },
         footers: { default: rodape(), ...(capaSemTimbre ? { first: rodape() } : {}) },
         children: filhos,
       },

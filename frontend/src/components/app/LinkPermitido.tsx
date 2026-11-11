@@ -15,12 +15,7 @@ export const Link = forwardRef<HTMLAnchorElement, ComponentProps<typeof LinkRout
       !podeAcessarRota(usuario, props.to)
     )
       return null;
-    if (
-      usuario &&
-      parametros &&
-      typeof parametros === "object" &&
-      parametros['id'] === "novo"
-    ) {
+    if (usuario && parametros && typeof parametros === "object" && parametros["id"] === "novo") {
       const rota = typeof props.to === "string" ? props.to : "";
       const modulo = rota.split("/")[1]?.replaceAll("-", "_");
       if (

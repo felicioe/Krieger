@@ -76,7 +76,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Sistema Krieger" },
       {
         name: "description",
-        content: "Sistema Krieger — prestação de contas, relatórios, editais e atas de condomínios.",
+        content:
+          "Sistema Krieger — prestação de contas, relatórios, editais e atas de condomínios.",
       },
       { name: "author", content: "Krieger Assessoria Contábil e Condominial" },
       { property: "og:type", content: "website" },
