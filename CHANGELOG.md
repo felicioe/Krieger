@@ -2,7 +2,16 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.09**.
+Versão atual: **1.10**.
+
+## 1.10 — Modelos de ata por cidade com o layout real das atas
+
+- Oito modelos de ata prontos: ordinária e extraordinária para Balneário Camboriú, Camboriú, Itajaí e Rancho Queimado, escritos a partir do texto das atas reais do escritório.
+- Balneário Camboriú, Camboriú e Itajaí usam prosa corrida, como as atas praticadas nesses municípios; os do Lago Negro mantêm o layout com títulos.
+- Ata gerada sai com borda de página e sem logotipo ou rodapé do escritório.
+- A tipografia do documento de ata passa a ser Liberation Sans 12 pt, a mesma métrica da Arial usada nas atas reais; edital e relatórios não mudam.
+- A cidade do endereço do condomínio passa a ser reconhecida também quando escrita como 'Cidade – SC' ou 'Cidade - SC', não só 'Cidade/SC'.
+- Migration 20261111_modelos_ata_por_cidade.sql atualiza instalações existentes; schema.sql traz os oito modelos para instalação nova.
 
 ## 1.09 — Modelos de ata prontos e escolha por cidade do condomínio
 

@@ -1,5 +1,40 @@
 # Estado atual e passagem de contexto
 
+## Modelos de ata por cidade com o layout real das atas — 11/11/2026
+
+As atas do escritório vêm de três municípios com práticas de redação diferentes. O acervo de 1.422
+arquivos analisado em `OneDrive/.../krieger/atas` tem 510 ordinárias e 212 extraordinárias,
+concentradas em **Balneário Camboriú** (512), **Camboriú** (116) e **Itajaí** (50). Joinville aparece
+só como endereço de condômino e ficou fora. A formatação dominante é **justificado**, **Arial**,
+corpo **12 pt** e **borda de página** (858 dos 1.422 arquivos).
+
+**Oito modelos prontos.** `domain/modelosAtaSeed.ts` passou de 2 para 8 registros: ordinária e
+extraordinária para Balneário Camboriú, Camboriú, Itajaí e Rancho Queimado. Balneário Camboriú,
+Camboriú e Itajaí usam **prosa corrida**, sem cabeçalhos intermediários, como as atas reais desses
+municípios; os dois do Lago Negro mantêm o layout com títulos que o cartório de Rancho Queimado
+aceita. O documento de origem passou a ser `docs/MODELOS-ATA-POR-CIDADE.md`, comparado byte a byte
+pelo teste da semente.
+
+**Sem logo, com borda.** Decisão do responsável: ata não leva logotipo nem rodapé do escritório e
+leva sempre borda de página. Todos os modelos têm `logoEscritorio: false` e `bordaPagina: true`, e o
+gerador suprime o texto de rodapé quando não há timbre, mantendo a numeração de páginas.
+
+**Tipografia do documento.** O documento de ata usa Liberation Sans (mesma métrica da Arial; GPLv2
+com exceção de fonte) em corpo 12 pt, com as faces embutidas no chunk de PDF. Edital, relatórios e
+previsto×realizado continuam em Source Sans 3 a 10 pt.
+
+**Cidade no endereço.** `extrairCidadeDoEndereco` passou a aceitar `/`, travessão e hífen antes da
+UF. Antes, `... Balneário Camboriú – SC` devolvia vazio e nenhum modelo por cidade casava.
+
+**Carga.** A migration `migrations/20261111_modelos_ata_por_cidade.sql` reescreve os dois ids do
+Lago Negro (agora sem logo e com borda) e acrescenta os seis novos; `schema.sql` traz os oito.
+`scripts/test-modelos-ata-migracao.php` aplica a migration antiga e a nova, duas vezes cada, e
+valida ids, cidade, tipo, borda, ausência de logo e idempotência.
+
+**Versão.** 1.10 em `frontend/src/data/versoes.json`; CHANGELOG regenerado.
+
+**Não verificado:** a migration não foi aplicada no banco de produção; depende da publicação.
+
 ## Modelos de ata prontos e escolha pela cidade do condomínio — 10/11/2026
 
 A issue #256 tinha entregado a store `modelos_ata`, mas os modelos do Lago Negro estavam só em

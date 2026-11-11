@@ -1,0 +1,32 @@
+Licença das fontes Liberation Sans (LiberationSans-*.ttf)
+=========================================================
+
+As quatro faces deste diretório são a família Liberation Sans, de Red Hat, Inc.
+
+Aviso de copyright e licença gravado na própria fonte (tabela `name`, IDs 0/13/14):
+
+  Copyright (c) 2007 Red Hat, Inc. All rights reserved.
+  LIBERATION is a trademark of Red Hat, Inc.
+
+  Licensed under the Liberation Fonts license, see
+  https://fedoraproject.org/wiki/Licensing/LiberationFontLicense
+
+Resumo da licença
+-----------------
+A Liberation Fonts License é a GNU General Public License, versão 2, com uma
+exceção de fonte concedida pela Red Hat: embutir a fonte, sem modificação, em um
+documento (inclusive PDF) não torna esse documento obra derivada sujeita à GPL.
+Só a fonte em si, e eventuais modificações nela, permanecem sob a GPLv2.
+
+Textos integrais, nas fontes canônicas:
+  - Licença Liberation (Red Hat):
+    https://fedoraproject.org/wiki/Licensing/LiberationFontLicense
+  - GNU GPL versão 2:
+    https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
+
+Uso neste projeto
+-----------------
+Os arquivos vieram de `pdfjs-dist/standard_fonts` (pacote do Mozilla pdf.js,
+Apache-2.0; a fonte em si mantém a licença acima) e foram subsetados em Unicode,
+sem alteração de desenho. São embutidos apenas no PDF; nenhum código do projeto
+incorpora a fonte como código-fonte. A exceção de fonte cobre o PDF gerado.
