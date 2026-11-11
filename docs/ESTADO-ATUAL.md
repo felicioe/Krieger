@@ -1,5 +1,41 @@
 # Estado atual e passagem de contexto
 
+## Modelos de ata prontos e escolha pela cidade do condomínio — 10/11/2026
+
+A issue #256 tinha entregado a store `modelos_ata`, mas os modelos do Lago Negro estavam só em
+`docs/MODELOS-ATA-LAGO-NEGRO.md`: a tela nascia vazia. Duas falhas de desenho apareceram ao
+cadastrá-los de verdade.
+
+**Cidade errada.** `escolherModeloAta` recebia a cidade do **edital** e, sem ela, a do
+**escritório** — que é Balneário Camboriú. Atas do Lago Negro (Rancho Queimado) saíam assinadas em
+Balneário Camboriú e nenhum modelo por cidade casava. Agora a função recebe a cidade extraída do
+**endereço do condomínio** (`cidadeDoCondominio` → `extrairCidadeDoEndereco` em
+`domain/notificacao.ts`, reaproveitado), e `cidadeDoCondominio` devolve vazio quando o endereço não
+tem o padrão `... CIDADE/UF ...` — aí só o modelo geral responde.
+
+**Dois modelos, uma cidade.** Ordinária e extraordinária precisam coexistir em Rancho Queimado. O
+`ModeloAta` ganhou `tipo` (`"ordinaria"`, `"extraordinaria"` ou vazio = serve aos dois) e
+`escolherModeloAta(modelos, cidade, cartorio, tipo)` ordena: cidade+cartório+mesmo tipo >
+cidade+mesmo tipo > cidade+cartório > cidade > geral+mesmo tipo > geral. Modelo de tipo diferente é
+descartado.
+
+**Carga.** `domain/modelosAtaSeed.ts` (`modelosAtaSemente()`) é a fonte única; a migration
+`migrations/20261110_modelos_ata_lago_negro.sql` e o bloco espelhado em `schema.sql` (REPLACE INTO,
+idempotente) trazem os mesmos registros. `domain/modelosAtaSeed.test.ts` confere os três lados e o
+texto contra o documento de origem. O `mockApi.ts` também semeia e, para quem já usava o preview,
+acrescenta os modelos uma vez (`CHAVE_EXEMPLO_MODELOS_ATA`).
+
+**Telas.** O editor de modelo de ata ganhou o campo **Tipo de assembleia**; a lista ganhou a coluna
+**Tipo**. A assinatura da ata (`{{cidade}}`) **não** mudou: continua vindo do edital/escritório.
+
+**Teste PHP/CI.** `scripts/test-modelos-ata-migracao.php` aplica a migration duas vezes no MySQL
+efêmero e valida ids, cidade, tipo, texto e idempotência; há um passo novo no workflow.
+
+**Versão.** 1.09 em `frontend/src/data/versoes.json`; CHANGELOG regenerado.
+
+**Não verificado:** a migration ainda não foi aplicada no MySQL de produção (ação pendente de
+publicação, como as anteriores).
+
 ## Plano de desenvolvimento por etapa e modelo — 10/11/2026
 
 Criado `docs/PLANO-ETAPAS-MODELOS.md`, que distribui o trabalho em 11 etapas com modelo e esforço

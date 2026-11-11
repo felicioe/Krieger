@@ -67,7 +67,8 @@ Os testes exercitam TypeScript em Node, sem navegador, extração PDF, PHP ou My
 (acesso à operação, nenhum acesso às telas de administração).
 
 `domain/*.ts` e `lib/format.ts`/`lib/id.ts` na raiz são a única fonte de verdade
-(testada com Vitest). `frontend/src/domain/*` (21 arquivos) e
+(testada com Vitest). `frontend/src/domain/*` (32 arquivos, dos quais um —
+`demonstrativoDinamico.ts` — tem lógica própria) e
 `frontend/src/lib/{format.ts,id.ts}` são re-exports de uma linha pra cá (PR #41)
 — nunca duplicam a lógica. Editar só a raiz já atualiza a UI; nunca escrever
 regra de negócio dentro de `frontend/src/domain` ou duplicá-la em componentes.

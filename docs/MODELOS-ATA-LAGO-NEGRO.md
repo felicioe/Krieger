@@ -1,8 +1,18 @@
 # Modelos de Ata — Condomínio Lago Negro
 
-Modelos escritos a partir das atas reais do Lago Negro (Rancho Queimado/SC), para cadastro em
-**Modelos de ata** no sistema. O cartório de Rancho Queimado aceita layout visual, com títulos e
-listas, além do texto corrido — por isso os modelos abaixo usam cabeçalhos e blocos.
+Modelos escritos a partir das atas reais do Lago Negro (Rancho Queimado/SC). O cartório de Rancho
+Queimado aceita layout visual, com títulos e listas, além do texto corrido — por isso os modelos
+abaixo usam cabeçalhos e blocos.
+
+**Estes dois modelos já vêm cadastrados** (versão 1.09): na instalação nova pelo `schema.sql` e,
+nas existentes, pela migration `migrations/20261110_modelos_ata_lago_negro.sql`. A fonte única em
+código é `domain/modelosAtaSeed.ts`; este documento é a referência de texto que o teste
+`domain/modelosAtaSeed.test.ts` compara. Cadastrar à mão de novo não é necessário — e editar o
+texto aqui sem editar a semente (ou vice-versa) quebra esse teste.
+
+A escolha automática usa a **cidade extraída do endereço do condomínio** (não a cidade de
+assinatura do escritório) e o **tipo** da assembleia, por isso os dois modelos coexistem em Rancho
+Queimado.
 
 ## Como o texto do modelo é montado
 
@@ -68,9 +78,9 @@ Não use `{{ata.quorum}}`, `{{ata.mesa}}` ou `{{condominio}}` sozinhos: são obj
 
 ## Modelo 1 — Ata de Assembleia Geral Ordinária (Lago Negro)
 
-Nome sugerido: `Lago Negro — Ordinária (Rancho Queimado)`
+Nome: `Lago Negro — Ordinária (Rancho Queimado)`
 Cidade: `Rancho Queimado` · Cartório: em branco (vale para qualquer cartório da cidade)
-Logo do escritório: marcado · Borda de página: desmarcado
+Tipo: `Ordinária` · Logo do escritório: marcado · Borda de página: desmarcado
 
 ```
 # ATA DA ASSEMBLEIA GERAL ORDINÁRIA
@@ -122,9 +132,9 @@ Secretário(a)
 
 ## Modelo 2 — Ata de Assembleia Geral Extraordinária (Lago Negro)
 
-Nome sugerido: `Lago Negro — Extraordinária (Rancho Queimado)`
+Nome: `Lago Negro — Extraordinária (Rancho Queimado)`
 Cidade: `Rancho Queimado` · Cartório: em branco (vale para qualquer cartório da cidade)
-Logo do escritório: marcado · Borda de página: desmarcado
+Tipo: `Extraordinária` · Logo do escritório: marcado · Borda de página: desmarcado
 
 ```
 # ATA DA ASSEMBLEIA GERAL EXTRAORDINÁRIA

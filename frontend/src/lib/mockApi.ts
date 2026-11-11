@@ -12,6 +12,7 @@ import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrat
 import { PERFIL_ROTULO, validarLogin, validarNovaSenha } from "@/domain/usuario";
 import { novaAtaDeAssembleia } from "@/domain/ata";
 import { normalizarAssembleia } from "@/domain/edital";
+import { modelosAtaSemente } from "@/domain/modelosAtaSeed";
 import { dataParaBR, dataParaISO } from "./format";
 import { novoId } from "./id";
 import { bytesDoDataUrl } from "./arquivo";
@@ -54,6 +55,7 @@ const CHAVE_EXEMPLO_MENSAIS = "krieger-mock-exemplo-mensais-v2";
 const CHAVE_EXEMPLO_EDITAIS = "krieger-mock-exemplo-editais-v1";
 const CHAVE_EXEMPLO_ATAS = "krieger-mock-exemplo-atas-v1";
 const CHAVE_EXEMPLO_MODELO_V2 = "krieger-mock-exemplo-modelo-v2";
+const CHAVE_EXEMPLO_MODELOS_ATA = "krieger-mock-exemplo-modelos-ata-v1";
 const CHAVE_BACKUPS = "krieger-mock-backups-v1";
 const CHAVE_CONSULTA_HISTORICO = "krieger-mock-consulta-historico-v1";
 const CHAVE_DRIVE_DOCUMENTOS = "krieger-mock-drive-documentos-v1";
@@ -173,21 +175,7 @@ function semente(): Dados {
     importacoes: [],
     anexos_importacao: [],
     atas: [ataExemplo(assembleias[0] as Registro, condominios[0] as Registro)],
-    modelos_ata: [
-      {
-        id: "mod-ata-geral",
-        nome: "Ata padrão (cartório livre)",
-        cidade: "",
-        cartorio: "",
-        texto:
-          "ATA DA ASSEMBLEIA GERAL {{ata.tipo}}\n\nAos {{ata.data}}, às {{ata.hora}}, em {{ata.local}}, reuniram-se os condôminos do {{condominio.nomeRelatorio}}.\n\nPresidente: {{ata.mesa.presidente}}; Secretário: {{ata.mesa.secretario}}.\n\nQuorum: {{ata.quorum.unidadesPresentes}} de {{ata.quorum.totalUnidades}} unidades.\n\nEncerramento: {{ata.encerramento}}.",
-        logoEscritorio: true,
-        bordaPagina: false,
-        ativo: true,
-        criadoEm: new Date().toISOString(),
-        atualizadoEm: new Date().toISOString(),
-      },
-    ],
+    modelos_ata: modelosAtaSemente() as unknown as Registro[],
     decisoes_previsao: [],
     decisoes_importacao: [],
   };
@@ -494,6 +482,18 @@ function dados(): Dados {
       d.modelos[i] = { ...antigo, versao: 2, blocos: blocosExemplo() };
       gravar(CHAVE_DADOS, d);
     }
+  }
+  if (!localStorage.getItem(CHAVE_EXEMPLO_MODELOS_ATA)) {
+    localStorage.setItem(CHAVE_EXEMPLO_MODELOS_ATA, "1");
+    // Quem já usava o preview ganha os modelos prontos uma vez; não sobrescreve o que foi editado.
+    let mudou = false;
+    for (const m of modelosAtaSemente()) {
+      if (!d.modelos_ata.some((x) => x.id === m.id)) {
+        d.modelos_ata.push(m as unknown as Registro);
+        mudou = true;
+      }
+    }
+    if (mudou) gravar(CHAVE_DADOS, d);
   }
   return d;
 }

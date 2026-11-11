@@ -1,5 +1,27 @@
 # Decisões do projeto
 
+## 2026-11-10 — modelo de ata escolhido pela cidade do condomínio e pelo tipo da assembleia
+
+A #256 criou a store `modelos_ata`, mas a escolha automática comparava o campo `cidade` do modelo
+com a cidade do **edital** e, quando o edital não tinha cidade, com a do **escritório** — que é
+Balneário Camboriú. Resultado: ata de um condomínio de Rancho Queimado saía assinada em Balneário
+Camboriú e nenhum modelo por cidade casava. E os dois modelos de Lago Negro (ordinária e
+extraordinária) disputavam a mesma cidade, sem nada que os separasse.
+
+Decidido: a cidade de comparação passa a sair do **endereço do condomínio**
+(`enderecoEdital`, via `extrairCidadeDoEndereco`), e o modelo ganha o campo **`tipo`**
+(ordinária, extraordinária ou vazio = as duas). A assinatura do documento (`{{cidade}}`) **não**
+muda: continua vindo do edital/escritório, porque ali a cidade é a do local da assembleia, não a
+do imóvel.
+
+Decidido também que os dois modelos do Lago Negro passam a vir **cadastrados**: `schema.sql` para
+instalação nova e migration `20261110_modelos_ata_lago_negro.sql` para as existentes, com
+`domain/modelosAtaSeed.ts` como fonte única e um teste que compara código, SQL e o documento de
+origem — para o texto não se dividir entre três cópias.
+
+`cidadeDoCondominio` devolve vazio quando o endereço não segue o padrão `... CIDADE/UF ...`; nesse
+caso só o modelo geral responde. Cadastrar o endereço no formato é o que ativa o modelo por cidade.
+
 ## 2026-11-10 — plano de desenvolvimento por etapa, com modelo e esforço próprios
 
 O responsável perguntou se dava para usar um tipo diferente de modelo em cada etapa do trabalho.

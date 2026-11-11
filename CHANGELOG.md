@@ -2,7 +2,15 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.08**.
+Versão atual: **1.09**.
+
+## 1.09 — Modelos de ata prontos e escolha por cidade do condomínio
+
+- Os modelos de ata do Condomínio Lago Negro (ordinária e extraordinária) passam a vir cadastrados na instalação, em vez de só documentados.
+- A escolha automática do modelo usa a cidade extraída do endereço do condomínio, não mais a cidade de assinatura do escritório.
+- O modelo de ata ganhou o campo tipo (ordinária, extraordinária ou as duas), para a cidade ter os dois layouts.
+- A lista de modelos mostra o tipo de cada um e o editor permite alterá-lo.
+- Migration 20261110_modelos_ata_lago_negro.sql para instalações existentes; schema.sql traz os mesmos modelos para instalação nova.
 
 ## 1.08 — Modelos de ata por cartório/cidade
 

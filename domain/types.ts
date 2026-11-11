@@ -494,8 +494,10 @@ export interface Modelo extends ComId {
 
 /**
  * Modelo de ata por cartório/cidade (issue #256).
- * - `cidade`: opcional; sem cidade = modelo geral.
+ * - `cidade`: opcional; sem cidade = modelo geral. Comparada com a cidade do endereço do
+ *   condomínio (não com a cidade de assinatura do escritório).
  * - `cartorio`: opcional; sem cartório = vale para qualquer cartório da cidade.
+ * - `tipo`: opcional; "ordinaria"/"extraordinaria". Vazio = serve aos dois tipos.
  * - `texto`: corpo da ata com variáveis {{ata.*}} / {{condominio.*}} / {{escritorio.*}}.
  * - `logoEscritorio` / `bordaPagina`: opções visuais do documento gerado.
  */
@@ -504,6 +506,7 @@ export interface ModeloAta extends ComId {
   nome: string;
   cidade?: string | null;
   cartorio?: string | null;
+  tipo?: string | null;
   texto: string;
   logoEscritorio: boolean;
   bordaPagina: boolean;

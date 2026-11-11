@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Field } from "@/components/app/Field";
+import { Selecao } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves } from "@/lib/queries";
+import { OPCOES_TIPO } from "@/domain/ata";
 import { normalizarModeloAta, validarModeloAta } from "@/domain/modeloAta";
 import type { ModeloAta } from "@/domain/types";
 import { PainelVariaveis } from "@/components/modelos-ata/PainelVariaveis";
@@ -36,6 +38,7 @@ function RouteComponent() {
     nome: "",
     cidade: "",
     cartorio: "",
+    tipo: "",
     texto: "",
     logoEscritorio: true,
     bordaPagina: false,
@@ -50,6 +53,7 @@ function RouteComponent() {
         nome: modelo.nome ?? "",
         cidade: modelo.cidade ?? "",
         cartorio: modelo.cartorio ?? "",
+        tipo: modelo.tipo ?? "",
         texto: modelo.texto ?? "",
         logoEscritorio: modelo.logoEscritorio ?? true,
         bordaPagina: modelo.bordaPagina ?? false,
@@ -111,6 +115,16 @@ function RouteComponent() {
         </Field>
         <Field rotulo="Cartório (opcional)" dica="Deixe em branco para valer em qualquer cartório da cidade.">
           <Input value={form.cartorio ?? ""} onChange={(e) => setForm({ ...form, cartorio: e.target.value })} placeholder="Ex.: 1º Ofício" />
+        </Field>
+        <Field rotulo="Tipo de assembleia" dica="Separe o modelo de ordinária do de extraordinária. Vazio = serve aos dois.">
+          <Selecao
+            value={form.tipo ?? ""}
+            onChange={(v) => setForm({ ...form, tipo: v })}
+            opcoes={[
+              { valor: "", rotulo: "Ordinária e extraordinária" },
+              ...OPCOES_TIPO.map((o) => ({ valor: o.valor as string, rotulo: o.rotulo })),
+            ]}
+          />
         </Field>
         <Field rotulo="Texto da ata" dica="Use variáveis como {{ata.tipo}}, {{ata.data}}, {{condominio.nomeRelatorio}}. Pressione Ctrl+/ para ver todas." obrigatorio>
           <div className="relative">

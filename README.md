@@ -25,7 +25,7 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
 Os fontes React estão em `frontend/` (PRs #21/#23), sem lógica duplicada — os
-30 arquivos de `frontend/src/domain/` e os 3 de `frontend/src/lib/` (format.ts,
+32 arquivos de `frontend/src/domain/` e os 3 de `frontend/src/lib/` (format.ts,
 id.ts, colunasRelatorios.ts) são re-exports de uma linha pra `domain/`/`lib/` da raiz (PR #41).
 O pacote (`npm run package:hostinger`) empacota o build desse frontend (já
 compilado antes, `cd frontend && npm run build`) junto com o backend PHP — ver
