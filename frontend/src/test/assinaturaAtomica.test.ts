@@ -3,7 +3,7 @@ import { condominioPadrao } from "@/domain/condominio";
 import { exercicioPadrao } from "@/domain/exercicio";
 import { montarRelatorioFinal } from "@/domain/relatorioFinal";
 import type { Bloco } from "@/lib/documento/tipos";
-import type { Ata, Condominio, Exercicio } from "@/domain/types";
+import type { Ata, Condominio, ConfigEscritorio, Exercicio } from "@/domain/types";
 
 // Os gráficos viram PNG no navegador (canvas); aqui basta uma imagem qualquer.
 vi.mock("@/lib/documento/imagens", async (original) => ({
@@ -23,15 +23,32 @@ describe("local/data e assinatura formam um bloco átomo (nunca em páginas dife
     const { documentoRelatorioFinal } = await import("@/documentos/relatorioFinal");
     const e = { id: "e1", ...exercicioPadrao(condo, 2025, "Florianópolis") } as Exercicio;
     e.dataEmissao = "02/11/2026";
-    const rel = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
-    const escritorio = { nome: "Escritório Teste", assinatura: "Síndico Responsável" } as any;
+    const rel = montarRelatorioFinal({
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+      mensais: [],
+    });
+    const escritorio: ConfigEscritorio = {
+      id: "escritorio",
+      nome: "Escritório Teste",
+      cidade: "Florianópolis",
+      rodape: "",
+      assinatura: "Síndico Responsável",
+      logo: "",
+      logoRatio: null,
+    };
     const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio });
 
-    const assinaturas = doc.blocos.find((b): b is Extract<Bloco, { tipo: "assinaturas" }> => b.tipo === "assinaturas");
+    const assinaturas = doc.blocos.find(
+      (b): b is Extract<Bloco, { tipo: "assinaturas" }> => b.tipo === "assinaturas",
+    );
     expect(assinaturas?.localData).toBe("Florianópolis, 02/11/2026.");
 
     // Nenhum parágrafo solto com o texto de local/data fora do bloco de assinaturas.
-    const paragrafoSolto = doc.blocos.some((b) => b.tipo === "paragrafo" && b.texto === "Florianópolis, 02/11/2026.");
+    const paragrafoSolto = doc.blocos.some(
+      (b) => b.tipo === "paragrafo" && b.texto === "Florianópolis, 02/11/2026.",
+    );
     expect(paragrafoSolto).toBe(false);
   });
 
@@ -39,10 +56,22 @@ describe("local/data e assinatura formam um bloco átomo (nunca em páginas dife
     const { documentoRelatorioFinal } = await import("@/documentos/relatorioFinal");
     const e = { id: "e1", ...exercicioPadrao(condo, 2025, "") } as Exercicio;
     e.dataEmissao = "";
-    const rel = montarRelatorioFinal({ exercicio: e, condominio: condo, escritorio: null, mensais: [] });
-    const doc = await documentoRelatorioFinal({ rel, exercicio: e, condominio: condo, escritorio: null });
+    const rel = montarRelatorioFinal({
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+      mensais: [],
+    });
+    const doc = await documentoRelatorioFinal({
+      rel,
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+    });
 
-    const assinaturas = doc.blocos.find((b): b is Extract<Bloco, { tipo: "assinaturas" }> => b.tipo === "assinaturas");
+    const assinaturas = doc.blocos.find(
+      (b): b is Extract<Bloco, { tipo: "assinaturas" }> => b.tipo === "assinaturas",
+    );
     expect(assinaturas?.localData).toBeUndefined();
   });
 
@@ -67,11 +96,15 @@ describe("local/data e assinatura formam um bloco átomo (nunca em páginas dife
     };
     const doc = documentoAta({ ata, condominio: condo, cidade: "Florianópolis", escritorio: null });
 
-    const assinaturas = doc.blocos.find((b): b is Extract<Bloco, { tipo: "assinaturas" }> => b.tipo === "assinaturas");
+    const assinaturas = doc.blocos.find(
+      (b): b is Extract<Bloco, { tipo: "assinaturas" }> => b.tipo === "assinaturas",
+    );
     expect(assinaturas?.localData).toBe("Florianópolis, 02/11/2026.");
     expect(assinaturas?.localDataAlinhamento).toBe("direita");
 
-    const paragrafoSolto = doc.blocos.some((b) => b.tipo === "paragrafo" && b.texto === "Florianópolis, 02/11/2026.");
+    const paragrafoSolto = doc.blocos.some(
+      (b) => b.tipo === "paragrafo" && b.texto === "Florianópolis, 02/11/2026.",
+    );
     expect(paragrafoSolto).toBe(false);
   });
 });

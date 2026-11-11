@@ -16,10 +16,14 @@ describe("exportação XLSX", () => {
     salvarArquivo.mockResolvedValue(undefined);
     escreverXlsx.mockReturnValue({ toFile: salvarArquivo });
 
-    await baixarMatrizXlsx("relatório: anual", "Uma aba com nome maior que trinta e um caracteres", [
-      ["Conta", "Valor"],
-      ["Energia", 123.45],
-    ]);
+    await baixarMatrizXlsx(
+      "relatório: anual",
+      "Uma aba com nome maior que trinta e um caracteres",
+      [
+        ["Conta", "Valor"],
+        ["Energia", 123.45],
+      ],
+    );
 
     expect(escreverXlsx).toHaveBeenCalledWith(
       [

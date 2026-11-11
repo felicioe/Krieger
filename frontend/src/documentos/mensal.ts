@@ -7,7 +7,11 @@ import type { Condominio, ConfigEscritorio, Mensal } from "@/domain/types";
 import { blocosDemonstrativo, timbreDoEscritorio } from "./comum";
 
 /** Relatório mensal: demonstrativo do mês, contas a receber e notas explicativas. */
-export function documentoMensal(o: { mensal: Mensal; condominio: Condominio | null; escritorio: ConfigEscritorio | null }): Documento {
+export function documentoMensal(o: {
+  mensal: Mensal;
+  condominio: Condominio | null;
+  escritorio: ConfigEscritorio | null;
+}): Documento {
   const { mensal: m, condominio } = o;
   const nome = condominio ? nomeParaRelatorio(condominio) : m.condoNome;
   const comp = rotuloCompetencia(competenciaMensal(m));
@@ -15,7 +19,13 @@ export function documentoMensal(o: { mensal: Mensal; condominio: Condominio | nu
   const notas = m.notas.filter((n) => n.rubrica.trim() || n.texto.trim() || n.valor !== null);
 
   const blocos: Bloco[] = [
-    { tipo: "paragrafo", texto: "RELATÓRIO MENSAL", tamanho: "pequeno", suave: true, negrito: true },
+    {
+      tipo: "paragrafo",
+      texto: "RELATÓRIO MENSAL",
+      tamanho: "pequeno",
+      suave: true,
+      negrito: true,
+    },
     { tipo: "titulo", nivel: 1, texto: nome || "Condomínio" },
     {
       tipo: "paragrafo",
@@ -30,7 +40,9 @@ export function documentoMensal(o: { mensal: Mensal; condominio: Condominio | nu
     },
 
     { tipo: "titulo", nivel: 2, texto: "1. Demonstrativo de receitas e despesas" },
-    ...(d ? blocosDemonstrativo(d) : [{ tipo: "paragrafo" as const, texto: "Sem demonstrativo.", suave: true }]),
+    ...(d
+      ? blocosDemonstrativo(d)
+      : [{ tipo: "paragrafo" as const, texto: "Sem demonstrativo.", suave: true }]),
 
     { tipo: "titulo", nivel: 2, texto: "2. Contas a receber" },
     {
@@ -43,7 +55,10 @@ export function documentoMensal(o: { mensal: Mensal; condominio: Condominio | nu
               ? "Não informado"
               : `${m.receber.unidades}${condominio?.unidades ? ` de ${condominio.unidades} unidades` : ""}`,
         },
-        { rotulo: "Valor total a receber", valor: m.receber.valor === null ? "Não informado" : formatBRL(m.receber.valor) },
+        {
+          rotulo: "Valor total a receber",
+          valor: m.receber.valor === null ? "Não informado" : formatBRL(m.receber.valor),
+        },
       ],
     },
 
@@ -57,9 +72,20 @@ export function documentoMensal(o: { mensal: Mensal; condominio: Condominio | nu
               ...(n.valor !== null ? [{ texto: `  ·  ${formatBRL(n.valor)}`, suave: true }] : []),
             ],
           },
-          ...(n.texto.trim() ? [{ tipo: "paragrafo" as const, texto: n.texto.trim(), recuo: true, alinhamento: "justificado" as const }] : []),
+          ...(n.texto.trim()
+            ? [
+                {
+                  tipo: "paragrafo" as const,
+                  texto: n.texto.trim(),
+                  recuo: true,
+                  alinhamento: "justificado" as const,
+                },
+              ]
+            : []),
         ])
-      : [{ tipo: "paragrafo" as const, texto: "Nenhuma nota explicativa neste mês.", suave: true }]),
+      : [
+          { tipo: "paragrafo" as const, texto: "Nenhuma nota explicativa neste mês.", suave: true },
+        ]),
   ];
 
   return {

@@ -28,7 +28,13 @@ import { chaves, usuariosQuery } from "@/lib/queries";
 import { useUsuario } from "@/lib/auth";
 import { formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
-import { PERFIL_ROTULO, PERFIS_ATRIBUIVEIS, SENHA_MINIMA, validarLogin, validarNovaSenha } from "@/domain/usuario";
+import {
+  PERFIL_ROTULO,
+  PERFIS_ATRIBUIVEIS,
+  SENHA_MINIMA,
+  validarLogin,
+  validarNovaSenha,
+} from "@/domain/usuario";
 import type { Perfil, UsuarioAdmin } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
@@ -219,7 +225,11 @@ function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFech
         <DialogHeader>
           <DialogTitle>Permissões de {usuario.nome}</DialogTitle>
           <DialogDescription>
-            {usuario.perfil === 'admin' ? 'O SuperADM tem acesso total e não pode ser restringido. Altere o perfil para ADM ou Usuário para limitar acessos.' : 'Defina exceções individuais. Sem exceção, vale o que o perfil ' + PERFIL_ROTULO[usuario.perfil] + ' tiver marcado em Perfis e permissões.'}
+            {usuario.perfil === "admin"
+              ? "O SuperADM tem acesso total e não pode ser restringido. Altere o perfil para ADM ou Usuário para limitar acessos."
+              : "Defina exceções individuais. Sem exceção, vale o que o perfil " +
+                PERFIL_ROTULO[usuario.perfil] +
+                " tiver marcado em Perfis e permissões."}
           </DialogDescription>
         </DialogHeader>
         {carregando ? (
@@ -249,7 +259,7 @@ function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFech
                   <Button
                     size="sm"
                     variant={estado[p.chave] === "permitir" ? "default" : "outline"}
-                    disabled={!!salvando || usuario.perfil === 'admin'}
+                    disabled={!!salvando || usuario.perfil === "admin"}
                     onClick={() => salvar(p.chave, "permitir")}
                   >
                     Permitir
@@ -257,7 +267,7 @@ function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFech
                   <Button
                     size="sm"
                     variant={estado[p.chave] === "negar" ? "destructive" : "outline"}
-                    disabled={!!salvando || usuario.perfil === 'admin'}
+                    disabled={!!salvando || usuario.perfil === "admin"}
                     onClick={() => salvar(p.chave, "negar")}
                   >
                     Negar
@@ -265,7 +275,12 @@ function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFech
                   <Button
                     size="sm"
                     variant="ghost"
-                    disabled={!!salvando || usuario.perfil === 'admin' || !estado[p.chave] || estado[p.chave] === 'remover'}
+                    disabled={
+                      !!salvando ||
+                      usuario.perfil === "admin" ||
+                      !estado[p.chave] ||
+                      estado[p.chave] === "remover"
+                    }
                     onClick={() => salvar(p.chave, "remover")}
                   >
                     Padrão

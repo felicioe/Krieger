@@ -2,7 +2,12 @@ import { useState } from "react";
 import { ChevronDown, FileDown, FileText, FileType2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { baixarDocumento, ROTULO_FORMATO, type Formato } from "@/lib/documento/baixar";
 import type { Documento } from "@/lib/documento/tipos";
 
@@ -34,7 +39,12 @@ export function BotaoDocumento({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" type="button" disabled={!!bloqueio || gerando !== null} title={bloqueio ?? undefined}>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={!!bloqueio || gerando !== null}
+          title={bloqueio ?? undefined}
+        >
           {gerando ? <Loader2 className="animate-spin" /> : <FileDown />}
           {gerando ? `Gerando ${ROTULO_FORMATO[gerando]}…` : rotulo}
           <ChevronDown className="opacity-60" />

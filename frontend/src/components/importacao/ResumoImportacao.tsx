@@ -5,7 +5,11 @@ import { Selecao } from "@/components/app/inputs";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { ROTULO_LAYOUT, colunasDoRelatorio, resumoConferencia } from "@/domain/importacao";
 import { validarPrevisaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
-import type { ConsideracoesFinaisLidas, PrevisaoSugeridaLida, RelatorioLido } from "@/domain/pdfParser";
+import type {
+  ConsideracoesFinaisLidas,
+  PrevisaoSugeridaLida,
+  RelatorioLido,
+} from "@/domain/pdfParser";
 import type { Demonstrativo, DestinoImportacao } from "@/domain/types";
 import { contagem } from "@/components/app/textos";
 
@@ -34,7 +38,10 @@ export function ResumoImportacao({
   const c = relatorio.condominio;
   const d = demonstrativo;
   const nDespesas = d.despesas.grupos.reduce((s, g) => s + g.itens.length, 0);
-  const periodo = d.periodo.ini || d.periodo.fim ? `${d.periodo.ini || "—"} a ${d.periodo.fim || "—"}` : "não encontrado";
+  const periodo =
+    d.periodo.ini || d.periodo.fim
+      ? `${d.periodo.ini || "—"} a ${d.periodo.fim || "—"}`
+      : "não encontrado";
 
   return (
     <div className="grid gap-4 text-sm">
@@ -53,7 +60,11 @@ export function ResumoImportacao({
       </dl>
 
       {colunas.length > 0 && (
-        <Field rotulo="Coluna do comparativo a usar" className="max-w-xs" dica="O PDF traz um valor por mês; escolha o mês ou o total do período.">
+        <Field
+          rotulo="Coluna do comparativo a usar"
+          className="max-w-xs"
+          dica="O PDF traz um valor por mês; escolha o mês ou o total do período."
+        >
           <Selecao value={coluna} onChange={aoMudarColuna} opcoes={colunas} />
         </Field>
       )}
@@ -62,10 +73,22 @@ export function ResumoImportacao({
         <dl className="grid gap-1.5 sm:grid-cols-2 sm:gap-x-6">
           {(
             [
-              ["Saldo anterior", d.totais.saldoAnterior, contagem(d.saldoAnterior.contas.length, "conta", "contas")],
+              [
+                "Saldo anterior",
+                d.totais.saldoAnterior,
+                contagem(d.saldoAnterior.contas.length, "conta", "contas"),
+              ],
               ["Receitas", d.totais.receitas, contagem(d.receitas.itens.length, "item", "itens")],
-              ["Despesas", d.totais.despesas, `${contagem(nDespesas, "item", "itens")} em ${contagem(d.despesas.grupos.length, "grupo", "grupos")}`],
-              ["Saldo atual", d.totais.saldoAtual, contagem(d.saldoAtual.contas.length, "conta", "contas")],
+              [
+                "Despesas",
+                d.totais.despesas,
+                `${contagem(nDespesas, "item", "itens")} em ${contagem(d.despesas.grupos.length, "grupo", "grupos")}`,
+              ],
+              [
+                "Saldo atual",
+                d.totais.saldoAtual,
+                contagem(d.saldoAtual.contas.length, "conta", "contas"),
+              ],
             ] as const
           ).map(([rotulo, valor, detalhe]) => (
             <div key={rotulo} className="flex items-baseline justify-between gap-3">
@@ -79,7 +102,11 @@ export function ResumoImportacao({
       </div>
 
       <ConferenciaPdf conf={conf} layout={relatorio.layout} />
-      <PaginasExtras destino={destino} consideracoes={consideracoes} previsaoSugerida={previsaoSugerida} />
+      <PaginasExtras
+        destino={destino}
+        consideracoes={consideracoes}
+        previsaoSugerida={previsaoSugerida}
+      />
       {d.avisos.length > 0 && (
         <Alert variant="warning">
           <TriangleAlert />
@@ -105,10 +132,18 @@ export type ResultadoConferencia = {
 };
 
 /** Só apresenta o estado da conferência automática do PDF (quem decide é o domínio). */
-export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; layout: RelatorioLido["layout"] }) {
+export function ConferenciaPdf({
+  conf,
+  layout,
+}: {
+  conf: ResultadoConferencia;
+  layout: RelatorioLido["layout"];
+}) {
   const [um, varios] = layout === "comparativo" ? ["linha", "linhas"] : ["seção", "seções"];
   const temCobertura = conf.comparacoes != null && conf.esperadas != null;
-  const cobertura = temCobertura ? `${conf.comparacoes} de ${contagem(conf.esperadas!, um, varios)}` : null;
+  const cobertura = temCobertura
+    ? `${conf.comparacoes} de ${contagem(conf.esperadas!, um, varios)}`
+    : null;
   const estado = conf.estado ?? (conf.mensagens.length > 0 ? "divergente" : null);
   const lista =
     conf.mensagens.length > 0 ? (
@@ -121,11 +156,15 @@ export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; l
 
   if (estado === "verificado") {
     return (
-      <div className="flex items-start gap-2 rounded-md border border-success/40 bg-success/10 p-3 text-success" data-estado="verificado">
+      <div
+        className="flex items-start gap-2 rounded-md border border-success/40 bg-success/10 p-3 text-success"
+        data-estado="verificado"
+      >
         <CircleCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
         <p>
-          <span className="font-semibold">Conferência completa:</span> {cobertura ? `${cobertura} comparadas` : "totais comparados"} com a
-          soma dos itens lidos, sem diferenças.
+          <span className="font-semibold">Conferência completa:</span>{" "}
+          {cobertura ? `${cobertura} comparadas` : "totais comparados"} com a soma dos itens lidos,
+          sem diferenças.
         </p>
       </div>
     );
@@ -135,7 +174,9 @@ export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; l
       <Alert variant="warning" data-estado="divergente">
         <TriangleAlert />
         <AlertDescription>
-          <p className="font-semibold">Conferência com diferenças{cobertura ? ` (${cobertura} comparadas)` : ""}:</p>
+          <p className="font-semibold">
+            Conferência com diferenças{cobertura ? ` (${cobertura} comparadas)` : ""}:
+          </p>
           {lista}
         </AlertDescription>
       </Alert>
@@ -147,8 +188,12 @@ export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; l
         <CircleHelp />
         <AlertDescription>
           <p>
-            <span className="font-semibold">Conferência parcial:</span> {cobertura ? `só ${cobertura} puderam ser comparadas` : "só parte dos totais pôde ser comparada"} com a
-            soma dos itens. As demais não têm total no PDF para comparar; confira esses valores manualmente.
+            <span className="font-semibold">Conferência parcial:</span>{" "}
+            {cobertura
+              ? `só ${cobertura} puderam ser comparadas`
+              : "só parte dos totais pôde ser comparada"}{" "}
+            com a soma dos itens. As demais não têm total no PDF para comparar; confira esses
+            valores manualmente.
           </p>
           {lista}
         </AlertDescription>
@@ -164,7 +209,8 @@ export function ConferenciaPdf({ conf, layout }: { conf: ResultadoConferencia; l
           {estado === "nao_verificado"
             ? "o PDF não traz totais que permitam comparar com a soma dos itens"
             : "a leitura não informou quantos totais foram comparados"}
-          {cobertura ? ` (${cobertura} comparadas)` : ""}. Confira os valores manualmente antes de usar.
+          {cobertura ? ` (${cobertura} comparadas)` : ""}. Confira os valores manualmente antes de
+          usar.
         </p>
       </AlertDescription>
     </Alert>
@@ -188,7 +234,8 @@ function PaginasExtras({
     campo === "Índice sugerido para correção" ? `${formatNumeroBR(valor)}%` : formatBRL(valor);
   const detalhes = cf
     ? [
-        cf.administracao.length > 0 && `${contagem(cf.administracao.length, "membro", "membros")} da administração`,
+        cf.administracao.length > 0 &&
+          `${contagem(cf.administracao.length, "membro", "membros")} da administração`,
         (cf.seguro.riscoAbsoluto != null || cf.seguro.coberturas.length > 0) && "seguro",
         cf.seguradora && `seguradora ${cf.seguradora}`,
         (cf.ultCaixaDagua || cf.ultDedetizacao || cf.ultGordura) && "datas de manutenção",
@@ -215,7 +262,9 @@ function PaginasExtras({
               <li>
                 <span className="font-medium">Previsão orçamentária sugerida lida</span>
                 {pv.categorias.length > 0 && <> ({pv.categorias.length} categoria(s) de despesa</>}
-                {pv.categorias.length > 0 && pv.rateioMensalSugerido != null && <>, rateio mensal sugerido no PDF {formatBRL(pv.rateioMensalSugerido)}</>}
+                {pv.categorias.length > 0 && pv.rateioMensalSugerido != null && (
+                  <>, rateio mensal sugerido no PDF {formatBRL(pv.rateioMensalSugerido)}</>
+                )}
                 {pv.categorias.length > 0 && <>)</>}.{" "}
                 {naPrestacao
                   ? "Ela preenche o menu Previsão orçamentária, onde as deduções e a variação continuam editáveis."
@@ -230,20 +279,23 @@ function PaginasExtras({
           <TriangleAlert />
           <AlertDescription>
             <p className="font-semibold">
-              Previsão sugerida: os totais que o PDF já traz prontos não batem com o que o sistema recalculou a partir das categorias
-              lidas. Provável erro de leitura (ex.: uma linha de subtotal reconhecida como categoria de despesa) — confira a página
-              “Previsão orçamentária ordinária sugerida” do PDF antes de confirmar.
+              Previsão sugerida: os totais que o PDF já traz prontos não batem com o que o sistema
+              recalculou a partir das categorias lidas. Provável erro de leitura (ex.: uma linha de
+              subtotal reconhecida como categoria de despesa) — confira a página “Previsão
+              orçamentária ordinária sugerida” do PDF antes de confirmar.
             </p>
             <ul className="mt-1.5 list-disc pl-4">
               {divergencias.map((d) => (
                 <li key={d.campo}>
-                  {d.campo}: PDF informa {formatoCampo(d.campo, d.doPdf)}, sistema calculou {formatoCampo(d.campo, d.calculado)}.
+                  {d.campo}: PDF informa {formatoCampo(d.campo, d.doPdf)}, sistema calculou{" "}
+                  {formatoCampo(d.campo, d.calculado)}.
                 </li>
               ))}
             </ul>
             <p className="mt-1.5 text-xs text-muted-foreground">
-              Esse aviso continua disponível depois de confirmar, na Previsão orçamentária desse exercício (aba “Sugerida pelo
-              Systemar”) — é lá que dá pra concluir a análise e, se mantiver os valores calculados, confirmar a divergência.
+              Esse aviso continua disponível depois de confirmar, na Previsão orçamentária desse
+              exercício (aba “Sugerida pelo Systemar”) — é lá que dá pra concluir a análise e, se
+              mantiver os valores calculados, confirmar a divergência.
             </p>
           </AlertDescription>
         </Alert>

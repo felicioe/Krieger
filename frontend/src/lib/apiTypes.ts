@@ -35,8 +35,19 @@ export type MetadadosAnexoImportado = Omit<AnexoImportado, "arquivoDataUrl"> & {
   arquivoBytes: number;
   temArquivo: boolean;
 };
-export type PermissaoCatalogo = { chave: string; modulo: string; tela: string; acao: string; descricao?: string | null; ativo?: boolean };
-export type PermissaoExcecao = { usuarioId: string; permissaoChave: string; efeito: "permitir" | "negar" };
+export type PermissaoCatalogo = {
+  chave: string;
+  modulo: string;
+  tela: string;
+  acao: string;
+  descricao?: string | null;
+  ativo?: boolean;
+};
+export type PermissaoExcecao = {
+  usuarioId: string;
+  permissaoChave: string;
+  efeito: "permitir" | "negar";
+};
 
 /** Matriz de permissões de um perfil. `fixo` marca o SuperADM, que tem acesso total e não é editável. */
 export type PerfilMatriz = {
@@ -49,7 +60,12 @@ export type PerfilMatriz = {
 export type ConfirmarImportacaoPedido = {
   importacaoId: string;
   destino: DestinoImportacao;
-  condominio: { id: string; camposComplementares?: { codigo: string | null; nome: string | null; cnpj: string | null } } | Condominio;
+  condominio:
+    | {
+        id: string;
+        camposComplementares?: { codigo: string | null; nome: string | null; cnpj: string | null };
+      }
+    | Condominio;
   registro: Mensal | Exercicio;
   cadastro: { codigo: string | null; nome: string | null; cnpj: string | null };
 };
@@ -82,7 +98,12 @@ export type ContagensLimpeza = Record<Exclude<AlvoLimpeza, "tudo">, number>;
 
 /** Contrato único de acesso a dados — implementado pela API PHP e pelo mock. */
 export interface ApiAdapter {
-  fechamentoExercicio(id: string, fechar: boolean, motivo: string, versao: string | null): Promise<Exercicio>;
+  fechamentoExercicio(
+    id: string,
+    fechar: boolean,
+    motivo: string,
+    versao: string | null,
+  ): Promise<Exercicio>;
   anexos: {
     listar(exercicioId: string): Promise<MetadadosAnexoImportado[]>;
   };
@@ -113,7 +134,11 @@ export interface ApiAdapter {
     usuarioSalvar(u: UsuarioSalvar): Promise<unknown>;
     usuarioExcluir(id: string): Promise<void>;
     permissoes(): Promise<{ catalogo: PermissaoCatalogo[]; excecoes: PermissaoExcecao[] }>;
-    permissaoSalvar(usuarioId: string, chave: string, efeito: "permitir" | "negar" | "remover"): Promise<void>;
+    permissaoSalvar(
+      usuarioId: string,
+      chave: string,
+      efeito: "permitir" | "negar" | "remover",
+    ): Promise<void>;
     perfis(): Promise<{ catalogo: PermissaoCatalogo[]; perfis: PerfilMatriz[] }>;
     perfilPermissaoSalvar(perfil: Perfil, chave: string, permitida: boolean): Promise<void>;
   };
@@ -121,7 +146,9 @@ export interface ApiAdapter {
   documentos: {
     listar(condoId: string): Promise<DocumentoDrive[]>;
     resumo(): Promise<Record<string, number>>;
-    registrar(doc: DocumentoDriveRegistro): Promise<{ id: string; condoId: string; tipo: TipoDocumentoConsulta; indexadoEm: string }>;
+    registrar(
+      doc: DocumentoDriveRegistro,
+    ): Promise<{ id: string; condoId: string; tipo: TipoDocumentoConsulta; indexadoEm: string }>;
     conteudo(id: string): Promise<DocumentoDriveConteudo>;
     atualizar(dados: {
       id: string;

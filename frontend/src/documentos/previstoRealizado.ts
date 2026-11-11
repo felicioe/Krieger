@@ -32,7 +32,10 @@ export async function documentoPrevistoRealizado(o: {
       tipo: "tabela",
       semCabecalho: true,
       fundo: true,
-      colunas: [{ titulo: "", largura: "*" }, { titulo: "Valor", largura: 150, alinhamento: "direita" }],
+      colunas: [
+        { titulo: "", largura: "*" },
+        { titulo: "Valor", largura: 150, alinhamento: "direita" },
+      ],
       linhas: [
         { celulas: ["Previsto anual", formatBRL(c.total.previstoAnual)] },
         { celulas: [`Previsto até ${c.mesAte.rotulo}`, formatBRL(c.total.previsto)] },
@@ -41,14 +44,24 @@ export async function documentoPrevistoRealizado(o: {
           ? []
           : [
               { celulas: [`Realizado até ${c.mesAte.rotulo}`, formatBRL(c.total.realizado)] },
-              { celulas: ["Diferença", `${formatBRL(c.total.diferenca)} (${pctTexto(c.total.pct)})`], estilo: "total" as const },
+              {
+                celulas: [
+                  "Diferença",
+                  `${formatBRL(c.total.diferenca)} (${pctTexto(c.total.pct)})`,
+                ],
+                estilo: "total" as const,
+              },
             ]),
       ],
     },
   ];
   if (c.avisos.length) b.push({ tipo: "paragrafo", texto: c.avisos.join(" "), suave: true });
   if (c.grupos.length === 0) {
-    b.push({ tipo: "paragrafo", texto: "A previsão deste exercício não tem despesas lançadas.", suave: true });
+    b.push({
+      tipo: "paragrafo",
+      texto: "A previsão deste exercício não tem despesas lançadas.",
+      suave: true,
+    });
   } else if (semRealizado(c)) {
     b.push({ tipo: "paragrafo", texto: textoSemRealizado(c), negrito: true });
   } else {
@@ -67,7 +80,11 @@ export async function documentoPrevistoRealizado(o: {
   }
   return {
     titulo: `Previsto × Realizado ${e.ano} — ${nome}`,
-    arquivo: nomeDeArquivo("previsto-realizado", condominio?.codigo || nome, `${e.ano}-ate-${c.mesAte.rotulo.replace("/", "-")}`),
+    arquivo: nomeDeArquivo(
+      "previsto-realizado",
+      condominio?.codigo || nome,
+      `${e.ano}-ate-${c.mesAte.rotulo.replace("/", "-")}`,
+    ),
     timbre: timbreDoEscritorio(escritorio),
     rodape: `${nome} · Previsto × Realizado ${e.ano}`,
     blocos: b,

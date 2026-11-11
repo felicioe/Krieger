@@ -41,21 +41,15 @@ export async function gerarNotificacaoWordBlob(opcoes: {
 }): Promise<Blob> {
   const { dados, condominio, escritorio } = opcoes;
   const d = await import("docx");
-  const {
-    AlignmentType,
-    Document,
-    Footer,
-    Packer,
-    Paragraph,
-    TextRun,
-    UnderlineType,
-  } = d;
+  const { AlignmentType, Document, Footer, Packer, Paragraph, TextRun, UnderlineType } = d;
 
   const nomeCondo = (condominio.nomeRelatorio || condominio.nome || "CONDOMÍNIO").toUpperCase();
   const nomeCondoNormal = condominio.nomeRelatorio || condominio.nome || "Condomínio";
   const cidade = dados.cidade.trim() || "Camboriú";
   const dataExt = dataPorExtenso(dados.dataEmissao);
-  const destinatario = (dados.condomino.trim() || "[NOME DO CONDÔMINO / PROPRIETÁRIO]").toUpperCase();
+  const destinatario = (
+    dados.condomino.trim() || "[NOME DO CONDÔMINO / PROPRIETÁRIO]"
+  ).toUpperCase();
   const unidade = dados.unidade.trim() || "[Unidade / Apto]";
   const inquilino = dados.inquilino.trim();
   const tituloDoc = (dados.titulo.trim() || "NOTIFICAÇÃO").toUpperCase();
@@ -72,7 +66,11 @@ export async function gerarNotificacaoWordBlob(opcoes: {
         }),
     );
 
-  const paragrafosCorpo = [dados.paragrafoFato, dados.paragrafoBaseLegal, dados.paragrafoProvidencia]
+  const paragrafosCorpo = [
+    dados.paragrafoFato,
+    dados.paragrafoBaseLegal,
+    dados.paragrafoProvidencia,
+  ]
     .map((p) => p.trim())
     .filter(Boolean);
 

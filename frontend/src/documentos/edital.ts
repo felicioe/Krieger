@@ -60,7 +60,20 @@ export function documentoEdital(o: {
     titulo: `Edital de convocação — ${nome}`,
     arquivo: nomeDeArquivo("edital", condominio.codigo || nome, a.data),
     timbre: a.timbrado ? timbreDoEscritorio(o.escritorio) : null,
-    rodape: [nome, a.data && `Assembleia ${rotuloTipo(a.tipo).toLowerCase()} de ${formatData(a.data)}`].filter(Boolean).join(" · "),
-    blocos: blocos.length ? blocos : [{ tipo: "paragrafo", texto: "O modelo escolhido não tem blocos visíveis para este edital.", suave: true }],
+    rodape: [
+      nome,
+      a.data && `Assembleia ${rotuloTipo(a.tipo).toLowerCase()} de ${formatData(a.data)}`,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    blocos: blocos.length
+      ? blocos
+      : [
+          {
+            tipo: "paragrafo",
+            texto: "O modelo escolhido não tem blocos visíveis para este edital.",
+            suave: true,
+          },
+        ],
   };
 }

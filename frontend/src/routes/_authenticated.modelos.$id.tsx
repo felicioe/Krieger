@@ -17,7 +17,14 @@ import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
-import { novoBloco, normalizarModelo, prepararModelo, TIPOS_BLOCO, validarModelo, type Bloco } from "@/domain/modelo";
+import {
+  novoBloco,
+  normalizarModelo,
+  prepararModelo,
+  TIPOS_BLOCO,
+  validarModelo,
+  type Bloco,
+} from "@/domain/modelo";
 import type { Assembleia, Condominio, Modelo } from "@/domain/types";
 
 /** Modelo sem condomínio: serve a todos (padrão dos modelos criados antes desta opção). */
@@ -62,7 +69,10 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
 
   const usos = assembleias.filter((a) => a.modeloId === m.id).length;
-  const opcoesCondo = [{ valor: GERAL, rotulo: "Geral (todos os condomínios)", busca: "geral todos" }, ...opcoesCondominio(condominios)];
+  const opcoesCondo = [
+    { valor: GERAL, rotulo: "Geral (todos os condomínios)", busca: "geral todos" },
+    ...opcoesCondominio(condominios),
+  ];
   const sujo = JSON.stringify(m) !== salvoJson;
   const mudar = (parcial: Partial<Modelo>) => setM((x) => ({ ...x, ...parcial }));
 
@@ -71,7 +81,9 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
   const liberado = useRef(false);
   useBlocker({
     shouldBlockFn: () =>
-      !liberado.current && sujoRef.current && !window.confirm("Há alterações não salvas neste modelo. Sair mesmo assim?"),
+      !liberado.current &&
+      sujoRef.current &&
+      !window.confirm("Há alterações não salvas neste modelo. Sair mesmo assim?"),
     enableBeforeUnload: () => !liberado.current && sujoRef.current,
   });
 
@@ -121,14 +133,29 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
           </Button>
         }
         titulo={m.nome || "Modelo de edital"}
-        descricao={usos ? `Usado em ${usos} ${usos === 1 ? "edital" : "editais"}.` : "Ainda não usado em editais."}
+        descricao={
+          usos
+            ? `Usado em ${usos} ${usos === 1 ? "edital" : "editais"}.`
+            : "Ainda não usado em editais."
+        }
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <Button permissao="modelos.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button
+              permissao="modelos.editar"
+              variant="outline"
+              type="button"
+              onClick={() => setConfirmarExclusao(true)}
+              className="text-destructive hover:text-destructive"
+            >
               <Trash2 /> Excluir
             </Button>
-            <Button permissao="modelos.editar" type="submit" form="form-modelo" disabled={salvar.isPending}>
+            <Button
+              permissao="modelos.editar"
+              type="submit"
+              form="form-modelo"
+              disabled={salvar.isPending}
+            >
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
@@ -161,17 +188,25 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
               />
             </Field>
             <Field rotulo="Versão">
-              <Input value={String(m.versao)} onChange={(e) => mudar({ versao: e.target.value })} className="num" />
+              <Input
+                value={String(m.versao)}
+                onChange={(e) => mudar({ versao: e.target.value })}
+                className="num"
+              />
             </Field>
           </div>
           {historico > 0 && (
             <p className="mt-3 text-xs text-muted-foreground">
-              Histórico: {historico} {historico === 1 ? "registro guardado" : "registros guardados"} (mantidos como estão ao salvar).
+              Histórico: {historico} {historico === 1 ? "registro guardado" : "registros guardados"}{" "}
+              (mantidos como estão ao salvar).
             </p>
           )}
         </SectionCard>
 
-        <SectionCard titulo="Pauta padrão" descricao="Itens carregados na pauta de cada edital novo que usar este modelo. Podem ser editados no edital.">
+        <SectionCard
+          titulo="Pauta padrão"
+          descricao="Itens carregados na pauta de cada edital novo que usar este modelo. Podem ser editados no edital."
+        >
           <RepeatableList<{ texto: string }>
             itens={m.pautaOrdinaria.map((texto) => ({ texto }))}
             onChange={(l) => mudar({ pautaOrdinaria: l.map((i) => i.texto) })}
@@ -181,8 +216,14 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
             vazio="Nenhum item na pauta padrão."
             render={(item, up, i) => (
               <>
-                <span className="num flex h-9 items-center justify-end text-sm text-muted-foreground">{i + 1}.</span>
-                <Input aria-label={`Item ${i + 1} da pauta padrão`} value={item.texto} onChange={(e) => up({ texto: e.target.value })} />
+                <span className="num flex h-9 items-center justify-end text-sm text-muted-foreground">
+                  {i + 1}.
+                </span>
+                <Input
+                  aria-label={`Item ${i + 1} da pauta padrão`}
+                  value={item.texto}
+                  onChange={(e) => up({ texto: e.target.value })}
+                />
               </>
             )}
           />
@@ -194,15 +235,33 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
         >
           <div className="mb-4 rounded-md border border-dashed bg-muted/40 px-3 py-2.5 text-xs leading-relaxed text-muted-foreground">
             <p>
-              <span className="font-medium text-foreground">Dados do edital no texto:</span> escreva entre chaves duplas, por exemplo{" "}
-              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">{"{{condominio.nome}}"}</code>, <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">{"{{assembleia.data}}"}</code>,{" "}
-              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">{"{{assembleia.modalidade}}"}</code>. Datas saem em dd/mm/aaaa e tipo, modalidade e entrega das contas saem por extenso.
+              <span className="font-medium text-foreground">Dados do edital no texto:</span> escreva
+              entre chaves duplas, por exemplo{" "}
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">
+                {"{{condominio.nome}}"}
+              </code>
+              ,{" "}
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">
+                {"{{assembleia.data}}"}
+              </code>
+              ,{" "}
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">
+                {"{{assembleia.modalidade}}"}
+              </code>
+              . Datas saem em dd/mm/aaaa e tipo, modalidade e entrega das contas saem por extenso.
             </p>
             <p className="mt-1">
-              <span className="font-medium text-foreground">Condição:</span> o bloco só aparece quando ela é verdadeira, por exemplo{" "}
-              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">assembleia.modalidade != online</code>. Combine com “e” / “ou”:{" "}
-              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">assembleia.modalidade == online e assembleia.tipo == extraordinaria</code>. Compare sempre com o código
-              (ordinaria, extraordinaria, presencial, online, hibrida, email, administracao, aplicativo). Em branco, aparece sempre.
+              <span className="font-medium text-foreground">Condição:</span> o bloco só aparece
+              quando ela é verdadeira, por exemplo{" "}
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">
+                assembleia.modalidade != online
+              </code>
+              . Combine com “e” / “ou”:{" "}
+              <code className="rounded bg-card px-1 [overflow-wrap:anywhere]">
+                assembleia.modalidade == online e assembleia.tipo == extraordinaria
+              </code>
+              . Compare sempre com o código (ordinaria, extraordinaria, presencial, online, hibrida,
+              email, administracao, aplicativo). Em branco, aparece sempre.
             </p>
           </div>
           <RepeatableList<Bloco>
@@ -215,8 +274,15 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
             render={(b, up, i) => (
               <div className="grid gap-2 rounded-md border bg-card p-3 sm:grid-cols-[11rem_minmax(0,1fr)]">
                 <div className="grid grid-cols-1 content-start gap-2">
-                  <span className="num text-xs font-medium text-muted-foreground">Bloco {i + 1}</span>
-                  <Selecao aria-label={`Tipo do bloco ${i + 1}`} value={b.tipo} onChange={(tipo) => up({ tipo })} opcoes={TIPOS_BLOCO} />
+                  <span className="num text-xs font-medium text-muted-foreground">
+                    Bloco {i + 1}
+                  </span>
+                  <Selecao
+                    aria-label={`Tipo do bloco ${i + 1}`}
+                    value={b.tipo}
+                    onChange={(tipo) => up({ tipo })}
+                    opcoes={TIPOS_BLOCO}
+                  />
                   <Input
                     aria-label={`Condição do bloco ${i + 1}`}
                     placeholder="Condição (opcional)"
@@ -227,11 +293,25 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
                 </div>
                 <Textarea
                   aria-label={`Texto do bloco ${i + 1}`}
-                  placeholder={b.tipo === "pauta" ? "Texto antes da pauta (opcional)" : "Texto do bloco"}
+                  placeholder={
+                    b.tipo === "pauta" ? "Texto antes da pauta (opcional)" : "Texto do bloco"
+                  }
                   value={b.texto}
                   onChange={(e) => up({ texto: e.target.value })}
-                  rows={b.tipo === "titulo" || b.tipo === "subtitulo" ? 1 : b.tipo === "pauta" || b.tipo === "item" ? 2 : 4}
-                  className={b.tipo === "titulo" ? "min-h-9 font-semibold" : b.tipo === "subtitulo" ? "min-h-9 font-medium" : ""}
+                  rows={
+                    b.tipo === "titulo" || b.tipo === "subtitulo"
+                      ? 1
+                      : b.tipo === "pauta" || b.tipo === "item"
+                        ? 2
+                        : 4
+                  }
+                  className={
+                    b.tipo === "titulo"
+                      ? "min-h-9 font-semibold"
+                      : b.tipo === "subtitulo"
+                        ? "min-h-9 font-medium"
+                        : ""
+                  }
                 />
               </div>
             )}

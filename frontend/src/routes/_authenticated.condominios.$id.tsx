@@ -2,7 +2,18 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, CalendarPlus, ChevronsDownUp, ChevronsUpDown, Loader2, Megaphone, RefreshCw, Save, TriangleAlert, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarPlus,
+  ChevronsDownUp,
+  ChevronsUpDown,
+  Loader2,
+  Megaphone,
+  RefreshCw,
+  Save,
+  TriangleAlert,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,7 +46,13 @@ import { useUsuario } from "@/lib/auth";
 import { validarIndicesCondominio } from "@/domain/indicesCondominio";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
 import { consultarCnpjReceita, divergenciasCnpj, enderecoDaReceita } from "@/lib/receitaCnpj";
-import type { Condominio, Exercicio, IndiceCorrecao, ModoRegra, UnidadeCondominio } from "@/domain/types";
+import type {
+  Condominio,
+  Exercicio,
+  IndiceCorrecao,
+  ModoRegra,
+  UnidadeCondominio,
+} from "@/domain/types";
 import { ARREDONDAMENTOS, VARIACAO_METODOS } from "@/domain/previsaoCriterios";
 
 export const Route = createFileRoute("/_authenticated/condominios/$id")({
@@ -59,7 +76,8 @@ export const Route = createFileRoute("/_authenticated/condominios/$id")({
 
 function PaginaCondominio() {
   const { id } = Route.useParams();
-  if (id === "novo") return <FormCondominio key="novo" inicial={{ ...condominioPadrao(), id: "" }} />;
+  if (id === "novo")
+    return <FormCondominio key="novo" inicial={{ ...condominioPadrao(), id: "" }} />;
   return <CondominioExistente key={id} id={id} />;
 }
 
@@ -69,8 +87,17 @@ function CondominioExistente({ id }: { id: string }) {
   const historicoIndices = exercicios
     .filter((e) => e.condoId === id && (e.consid?.indices?.length ?? 0) > 0)
     .sort((a, b) => Number(a.ano) - Number(b.ano))
-    .map((e) => ({ ano: e.ano, ...(e.demonstrativo?.periodo ? { periodo: e.demonstrativo.periodo } : {}), indices: e.consid.indices }));
-  return <FormCondominio inicial={normalizarCondominio(data ?? { id })} historicoIndices={historicoIndices} />;
+    .map((e) => ({
+      ano: e.ano,
+      ...(e.demonstrativo?.periodo ? { periodo: e.demonstrativo.periodo } : {}),
+      indices: e.consid.indices,
+    }));
+  return (
+    <FormCondominio
+      inicial={normalizarCondominio(data ?? { id })}
+      historicoIndices={historicoIndices}
+    />
+  );
 }
 
 // Mesmos rótulos da tela de Previsão orçamentária e do relatório final (domain/previsaoCriterios.ts).
@@ -81,9 +108,20 @@ const MODO_REGRA: { valor: ModoRegra; rotulo: string }[] = [
   { valor: "ultimo+12", rotulo: "Último valor × 12" },
 ];
 
-const SECOES = ["unidades", "administracao", "seguro", "manutencoes", "documentos", "indices", "automacoes", "regras", "depara"] as const;
+const SECOES = [
+  "unidades",
+  "administracao",
+  "seguro",
+  "manutencoes",
+  "documentos",
+  "indices",
+  "automacoes",
+  "regras",
+  "depara",
+] as const;
 type Secao = (typeof SECOES)[number];
-const todas = (v: boolean) => Object.fromEntries(SECOES.map((k) => [k, v])) as Record<Secao, boolean>;
+const todas = (v: boolean) =>
+  Object.fromEntries(SECOES.map((k) => [k, v])) as Record<Secao, boolean>;
 const TITULOS: Record<Secao, string> = {
   unidades: "Unidades e frações",
   administracao: "Administração",
@@ -100,17 +138,33 @@ const idSecao = (k: Secao) => `secao-${k}`;
 /** Resumo de uma linha para cada seção recolhível (só contagem do que está preenchido). */
 function resumos(c: Condominio): Record<Secao, string> {
   const preenchido = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== "";
-  const datas = [c.vigenciaExtintores, c.ultGordura, c.ultDedetizacao, c.ultCaixaDagua, c.vistoriaAno].filter(preenchido).length;
-  const anos = c.indices.map((i) => i.ano).filter((a): a is number => typeof a === "number").sort((a, b) => a - b);
+  const datas = [
+    c.vigenciaExtintores,
+    c.ultGordura,
+    c.ultDedetizacao,
+    c.ultCaixaDagua,
+    c.vistoriaAno,
+  ].filter(preenchido).length;
+  const anos = c.indices
+    .map((i) => i.ano)
+    .filter((a): a is number => typeof a === "number")
+    .sort((a, b) => a - b);
   const metodo = VARIACAO.find((v) => v.valor === c.variacaoMetodo)?.rotulo ?? c.variacaoMetodo;
-  const arred = ARREDONDAMENTO.find((v) => v.valor === c.arredondamento)?.rotulo ?? c.arredondamento;
+  const arred =
+    ARREDONDAMENTO.find((v) => v.valor === c.arredondamento)?.rotulo ?? c.arredondamento;
   return {
-    unidades: c.fracaoUnidades?.length ? `${c.fracaoUnidades.length} unidades · fração prevista ${c.fracaoUnidades.reduce((s, u) => s + u.fracaoPrevista, 0).toFixed(6)}` : "Nenhuma fração cadastrada",
-    administracao: c.administracao.length ? contagem(c.administracao.length, "membro informado", "membros informados") : "Ninguém informado",
+    unidades: c.fracaoUnidades?.length
+      ? `${c.fracaoUnidades.length} unidades · fração prevista ${c.fracaoUnidades.reduce((s, u) => s + u.fracaoPrevista, 0).toFixed(6)}`
+      : "Nenhuma fração cadastrada",
+    administracao: c.administracao.length
+      ? contagem(c.administracao.length, "membro informado", "membros informados")
+      : "Ninguém informado",
     seguro: [
       c.seguradora || "Seguradora não informada",
       c.vigenciaSeguro ? `vigente até ${c.vigenciaSeguro}` : "sem vigência",
-      c.seguro.coberturas.length ? contagem(c.seguro.coberturas.length, "cobertura", "coberturas") : "nenhuma cobertura",
+      c.seguro.coberturas.length
+        ? contagem(c.seguro.coberturas.length, "cobertura", "coberturas")
+        : "nenhuma cobertura",
     ].join(" · "),
     manutencoes: `${datas} de 5 datas informadas`,
     documentos: c.documentosObrigatorios.length
@@ -127,17 +181,31 @@ function resumos(c: Condominio): Record<Secao, string> {
       c.regras.length ? contagem(c.regras.length, "regra", "regras") : "nenhuma regra",
     ].join(" · "),
     regras: `${arred}${c.deducaoRegex ? ` · dedução: “${c.deducaoRegex}”` : " · sem dedução"}`,
-    depara: c.mapeamento.length ? contagem(c.mapeamento.length, "substituição", "substituições") : "Nenhuma substituição",
+    depara: c.mapeamento.length
+      ? contagem(c.mapeamento.length, "substituição", "substituições")
+      : "Nenhuma substituição",
   };
 }
 
-function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condominio; historicoIndices?: { ano: number | string; periodo?: { ini: string; fim: string }; indices: IndiceCorrecao[] }[] }) {
+function FormCondominio({
+  inicial,
+  historicoIndices = [],
+}: {
+  inicial: Condominio;
+  historicoIndices?: {
+    ano: number | string;
+    periodo?: { ini: string; fim: string };
+    indices: IndiceCorrecao[];
+  }[];
+}) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const usuario = useUsuario();
   const novo = !inicial.id;
   const [c, setC] = useState<Condominio>(inicial);
-  const [apoliceSelecionada, setApoliceSelecionada] = useState<string>(inicial.historicoApolices?.at(-1)?.id ?? "");
+  const [apoliceSelecionada, setApoliceSelecionada] = useState<string>(
+    inicial.historicoApolices?.at(-1)?.id ?? "",
+  );
   const [erroNome, setErroNome] = useState<string | null>(null);
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const refNome = useRef<HTMLInputElement>(null);
@@ -147,7 +215,9 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
   const res = resumos(c);
   const irPara = (k: Secao) => {
     setAbertas((a) => ({ ...a, [k]: true }));
-    requestAnimationFrame(() => document.getElementById(idSecao(k))?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    requestAnimationFrame(() =>
+      document.getElementById(idSecao(k))?.scrollIntoView({ behavior: "smooth", block: "start" }),
+    );
   };
 
   const set = <K extends keyof Condominio>(campo: K, valor: Condominio[K]) =>
@@ -164,13 +234,17 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
     try {
       const dados = await consultarCnpjReceita(digitos);
       if (!dados) {
-        toast.error("Não foi possível consultar esse CNPJ agora. Verifique o número ou tente novamente em alguns segundos.");
+        toast.error(
+          "Não foi possível consultar esse CNPJ agora. Verifique o número ou tente novamente em alguns segundos.",
+        );
         return;
       }
       set("enderecoEdital", enderecoDaReceita(dados));
       const avisos = divergenciasCnpj(dados, c.nome);
       if (avisos.length) {
-        toast.warning(`Endereço atualizado. Atenção: ${avisos.join("; ")}. Revise antes de salvar.`);
+        toast.warning(
+          `Endereço atualizado. Atenção: ${avisos.join("; ")}. Revise antes de salvar.`,
+        );
       } else {
         toast.success("Endereço atualizado a partir da Receita Federal. Revise e salve.");
       }
@@ -180,7 +254,8 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
   }
 
   const salvar = useMutation({
-    mutationFn: (dados: Condominio) => api.salvar("condominios", { ...dados, indices: validarIndicesCondominio(dados.indices) }),
+    mutationFn: (dados: Condominio) =>
+      api.salvar("condominios", { ...dados, indices: validarIndicesCondominio(dados.indices) }),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
       queryClient.setQueryData(chaves.item("condominios", salvo.id), salvo);
@@ -213,11 +288,20 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
     // Só grava atualizadoEm/atualizadoPor no que é enviado pro servidor — não no estado local
     // imediato: se o salvamento falhar, "Atualizado em" não deve passar a impressão de que
     // salvou (o `onSuccess` abaixo é quem reflete o registro confirmado de volta na tela).
-    salvar.mutate({ ...r.valor, atualizadoEm: new Date().toISOString(), atualizadoPor: usuario?.nome || usuario?.login || "" });
+    salvar.mutate({
+      ...r.valor,
+      atualizadoEm: new Date().toISOString(),
+      atualizadoPor: usuario?.nome || usuario?.login || "",
+    });
   }
 
   const botaoSalvar = (
-    <Button permissao="condominios.editar" type="submit" form="form-condominio" disabled={salvar.isPending}>
+    <Button
+      permissao="condominios.editar"
+      type="submit"
+      form="form-condominio"
+      disabled={salvar.isPending}
+    >
       {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
       Salvar
     </Button>
@@ -265,7 +349,13 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
               </Button>
             )}
             {!novo && (
-              <Button permissao="condominios.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+              <Button
+                permissao="condominios.editar"
+                variant="outline"
+                type="button"
+                onClick={() => setConfirmarExclusao(true)}
+                className="text-destructive hover:text-destructive"
+              >
                 <Trash2 /> Excluir
               </Button>
             )}
@@ -280,7 +370,12 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           <AlertDescription>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span>{c.alertaCadastro}</span>
-              <Button type="button" size="sm" variant="outline" onClick={() => set("alertaCadastro", null)}>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => set("alertaCadastro", null)}
+              >
                 Dispensar alerta
               </Button>
             </div>
@@ -289,7 +384,10 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
       )}
 
       <form id="form-condominio" onSubmit={enviar} className="space-y-6" noValidate>
-        <SectionCard titulo="Dados gerais" descricao="O essencial para começar. O nome é obrigatório; o resto pode ser completado depois.">
+        <SectionCard
+          titulo="Dados gerais"
+          descricao="O essencial para começar. O nome é obrigatório; o resto pode ser completado depois."
+        >
           <div className="grid gap-4 sm:grid-cols-6">
             <Field rotulo="Código" className="sm:col-span-1">
               <Input value={c.codigo} onChange={(e) => set("codigo", e.target.value)} />
@@ -304,8 +402,16 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
                 ref={refNome}
               />
             </Field>
-            <Field rotulo="Nome no relatório" dica="Se ficar vazio, será usado o nome." className="sm:col-span-4">
-              <Input value={c.nomeRelatorio} onChange={(e) => set("nomeRelatorio", e.target.value)} placeholder={c.nome} />
+            <Field
+              rotulo="Nome no relatório"
+              dica="Se ficar vazio, será usado o nome."
+              className="sm:col-span-4"
+            >
+              <Input
+                value={c.nomeRelatorio}
+                onChange={(e) => set("nomeRelatorio", e.target.value)}
+                placeholder={c.nome}
+              />
             </Field>
             <Field rotulo="CNPJ" className="sm:col-span-2">
               <Input
@@ -322,7 +428,11 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
             <Field rotulo="Rateio mensal atual" className="sm:col-span-2">
               <DinheiroInput value={c.rateioAtual} onChange={(v) => set("rateioAtual", v)} />
             </Field>
-            <Field rotulo="Área total (m²)" dica="Informativo, lido da Listagem de Condomínios." className="sm:col-span-2">
+            <Field
+              rotulo="Área total (m²)"
+              dica="Informativo, lido da Listagem de Condomínios."
+              className="sm:col-span-2"
+            >
               <NumeroInput value={c.areaTotalM2 ?? null} onChange={(v) => set("areaTotalM2", v)} />
             </Field>
             <Field
@@ -331,8 +441,17 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
               className="sm:col-span-6"
             >
               <div className="flex gap-2">
-                <Input value={c.enderecoEdital} onChange={(e) => set("enderecoEdital", e.target.value)} className="flex-1" />
-                <Button type="button" variant="outline" onClick={atualizarPelaReceita} disabled={buscandoReceita}>
+                <Input
+                  value={c.enderecoEdital}
+                  onChange={(e) => set("enderecoEdital", e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={atualizarPelaReceita}
+                  disabled={buscandoReceita}
+                >
                   {buscandoReceita ? <Loader2 className="animate-spin" /> : <RefreshCw />}
                   Atualizar pela Receita
                 </Button>
@@ -349,11 +468,21 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
                 placeholder="\\servidor\condominios\Nome do Condomínio"
               />
             </Field>
-            <Field rotulo="Termo da administradora" dica="Como a administradora é citada nos documentos." className="sm:col-span-3">
-              <Input value={c.administradoraTermo} onChange={(e) => set("administradoraTermo", e.target.value)} />
+            <Field
+              rotulo="Termo da administradora"
+              dica="Como a administradora é citada nos documentos."
+              className="sm:col-span-3"
+            >
+              <Input
+                value={c.administradoraTermo}
+                onChange={(e) => set("administradoraTermo", e.target.value)}
+              />
             </Field>
             <Field rotulo="Prazo de convocação (dias)" className="sm:col-span-1">
-              <InteiroInput value={c.prazoConvocacao} onChange={(v) => set("prazoConvocacao", v ?? 0)} />
+              <InteiroInput
+                value={c.prazoConvocacao}
+                onChange={(v) => set("prazoConvocacao", v ?? 0)}
+              />
             </Field>
             <Field rotulo="Quórum" className="sm:col-span-2">
               <Input value={c.quorum} onChange={(e) => set("quorum", e.target.value)} />
@@ -365,10 +494,16 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-foreground">Demais informações</h2>
             <p className="text-xs text-muted-foreground">
-              Abra cada parte quando precisar. Tudo o que estiver preenchido é salvo junto, aberto ou recolhido.
+              Abra cada parte quando precisar. Tudo o que estiver preenchido é salvo junto, aberto
+              ou recolhido.
             </p>
           </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => setAbertas(todas(!todasAbertas))}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setAbertas(todas(!todasAbertas))}
+          >
             {todasAbertas ? <ChevronsDownUp /> : <ChevronsUpDown />}
             {todasAbertas ? "Recolher todas" : "Abrir todas"}
           </Button>
@@ -376,7 +511,14 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
 
         <nav aria-label="Ir direto para uma seção" className="flex flex-wrap gap-1.5">
           {SECOES.map((k) => (
-            <Button key={k} type="button" variant="ghost" size="sm" className="h-7 rounded-full px-3 text-xs" onClick={() => irPara(k)}>
+            <Button
+              key={k}
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 rounded-full px-3 text-xs"
+              onClick={() => irPara(k)}
+            >
               {TITULOS[k]}
             </Button>
           ))}
@@ -393,23 +535,80 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           <RepeatableList
             itens={c.fracaoUnidades ?? []}
             onChange={(v) => set("fracaoUnidades", v as UnidadeCondominio[])}
-            novo={() => ({ unidade: "", fracaoUnidade: 0, fracaoBox: 0, fracaoTotal: 0, fracaoPrevista: 0, tipo: "unidade" as const })}
+            novo={() => ({
+              unidade: "",
+              fracaoUnidade: 0,
+              fracaoBox: 0,
+              fracaoTotal: 0,
+              fracaoPrevista: 0,
+              tipo: "unidade" as const,
+            })}
             colunas="grid-cols-[6rem_8rem_8rem_8rem_8rem_7rem]"
-            cabecalhos={["Unidade", "Fração unidade", "Fração box", "Fração total", "Fração prevista", "Tipo"]}
+            cabecalhos={[
+              "Unidade",
+              "Fração unidade",
+              "Fração box",
+              "Fração total",
+              "Fração prevista",
+              "Tipo",
+            ]}
             rotuloAdicionar="Adicionar unidade"
             vazio="Nenhuma unidade ou fração cadastrada."
             render={(u, up) => (
               <>
-                <Input aria-label="Unidade" value={u.unidade} onChange={(e) => up({ unidade: e.target.value })} />
-                <NumeroInput aria-label="Fração da unidade" value={u.fracaoUnidade} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoUnidade: v ?? 0 })} />
-                <NumeroInput aria-label="Fração do box" value={u.fracaoBox} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoBox: v ?? 0 })} />
-                <NumeroInput aria-label="Fração total" value={u.fracaoTotal} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoTotal: v ?? 0 })} />
-                <NumeroInput aria-label="Fração prevista" value={u.fracaoPrevista} casas={6} placeholder="0,000000" onChange={(v) => up({ fracaoPrevista: v ?? 0 })} />
-                <Selecao aria-label="Tipo" value={u.tipo ?? "unidade"} opcoes={[{ valor: "unidade", rotulo: "Unidade" }, { valor: "deposito", rotulo: "Depósito" }, { valor: "garagem", rotulo: "Garagem" }]} onChange={(v) => up({ tipo: v })} />
+                <Input
+                  aria-label="Unidade"
+                  value={u.unidade}
+                  onChange={(e) => up({ unidade: e.target.value })}
+                />
+                <NumeroInput
+                  aria-label="Fração da unidade"
+                  value={u.fracaoUnidade}
+                  casas={6}
+                  placeholder="0,000000"
+                  onChange={(v) => up({ fracaoUnidade: v ?? 0 })}
+                />
+                <NumeroInput
+                  aria-label="Fração do box"
+                  value={u.fracaoBox}
+                  casas={6}
+                  placeholder="0,000000"
+                  onChange={(v) => up({ fracaoBox: v ?? 0 })}
+                />
+                <NumeroInput
+                  aria-label="Fração total"
+                  value={u.fracaoTotal}
+                  casas={6}
+                  placeholder="0,000000"
+                  onChange={(v) => up({ fracaoTotal: v ?? 0 })}
+                />
+                <NumeroInput
+                  aria-label="Fração prevista"
+                  value={u.fracaoPrevista}
+                  casas={6}
+                  placeholder="0,000000"
+                  onChange={(v) => up({ fracaoPrevista: v ?? 0 })}
+                />
+                <Selecao
+                  aria-label="Tipo"
+                  value={u.tipo ?? "unidade"}
+                  opcoes={[
+                    { valor: "unidade", rotulo: "Unidade" },
+                    { valor: "deposito", rotulo: "Depósito" },
+                    { valor: "garagem", rotulo: "Garagem" },
+                  ]}
+                  onChange={(v) => up({ tipo: v })}
+                />
               </>
             )}
           />
-          <p className="mt-3 text-xs text-muted-foreground">Fração prevista cadastrada: {(c.fracaoUnidades ?? []).reduce((s, u) => s + (Number(u.fracaoPrevista) || 0), 0).toFixed(6)}. O uso dessa fração no rateio será tratado em etapa própria.</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Fração prevista cadastrada:{" "}
+            {(c.fracaoUnidades ?? [])
+              .reduce((s, u) => s + (Number(u.fracaoPrevista) || 0), 0)
+              .toFixed(6)}
+            . O uso dessa fração no rateio será tratado em etapa própria.
+          </p>
         </SecaoRecolhivel>
 
         <SecaoRecolhivel
@@ -423,25 +622,62 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           <RepeatableList
             itens={c.administracao}
             onChange={(v) => set("administracao", v)}
-            novo={() => ({ cargo: "", nome: "", mandatoFim: "", identificacao: "", telefone: "", noRelatorio: true })}
+            novo={() => ({
+              cargo: "",
+              nome: "",
+              mandatoFim: "",
+              identificacao: "",
+              telefone: "",
+              noRelatorio: true,
+            })}
             colunas="grid-cols-1 @2xl:grid-cols-[8rem_7rem_minmax(0,1fr)_10rem_8rem_7rem]"
-            cabecalhos={["Cargo", "Identificação", "Nome", "Telefone", "Fim do mandato", "No relatório"]}
+            cabecalhos={[
+              "Cargo",
+              "Identificação",
+              "Nome",
+              "Telefone",
+              "Fim do mandato",
+              "No relatório",
+            ]}
             rotuloAdicionar="Adicionar membro"
             vazio="Nenhum membro da administração informado."
             render={(m, up) => (
               <>
-                <Input aria-label="Cargo" placeholder="Cargo" value={m.cargo} onChange={(e) => up({ cargo: e.target.value })} />
+                <Input
+                  aria-label="Cargo"
+                  placeholder="Cargo"
+                  value={m.cargo}
+                  onChange={(e) => up({ cargo: e.target.value })}
+                />
                 <Input
                   aria-label="Identificação"
                   placeholder="Unidade, sala, box..."
                   value={m.identificacao ?? ""}
                   onChange={(e) => up({ identificacao: e.target.value })}
                 />
-                <Input aria-label="Nome" placeholder="Nome" value={m.nome} onChange={(e) => up({ nome: e.target.value })} />
-                <Input aria-label="Telefone" placeholder="Telefone" value={m.telefone ?? ""} onChange={(e) => up({ telefone: e.target.value })} />
-                <MesAnoInput aria-label="Fim do mandato" value={m.mandatoFim} onChange={(v) => up({ mandatoFim: v })} />
+                <Input
+                  aria-label="Nome"
+                  placeholder="Nome"
+                  value={m.nome}
+                  onChange={(e) => up({ nome: e.target.value })}
+                />
+                <Input
+                  aria-label="Telefone"
+                  placeholder="Telefone"
+                  value={m.telefone ?? ""}
+                  onChange={(e) => up({ telefone: e.target.value })}
+                />
+                <MesAnoInput
+                  aria-label="Fim do mandato"
+                  value={m.mandatoFim}
+                  onChange={(v) => up({ mandatoFim: v })}
+                />
                 <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                  <Switch checked={m.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <Switch
+                    checked={m.noRelatorio !== false}
+                    onCheckedChange={(v) => up({ noRelatorio: v })}
+                    aria-label="Incluir no relatório"
+                  />
                   <span className="@2xl:hidden">Incluir nas Considerações finais</span>
                 </label>
               </>
@@ -451,16 +687,28 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
             <div className="mt-5 space-y-3 rounded-md border border-dashed p-3">
               <div>
                 <h4 className="font-medium">Histórico por prestação de contas</h4>
-                <p className="text-xs text-muted-foreground">Índices preservados nas prestações importadas ou cadastradas.</p>
+                <p className="text-xs text-muted-foreground">
+                  Índices preservados nas prestações importadas ou cadastradas.
+                </p>
               </div>
               {historicoIndices.map((h) => (
-                <div key={`${h.ano}-${h.periodo?.ini ?? ""}`} className="rounded-md border bg-muted/20 p-3 text-sm">
+                <div
+                  key={`${h.ano}-${h.periodo?.ini ?? ""}`}
+                  className="rounded-md border bg-muted/20 p-3 text-sm"
+                >
                   <p className="font-medium">
                     Prestação de contas de {h.ano}
-                    {h.periodo?.ini && h.periodo?.fim ? ` · ${h.periodo.ini} a ${h.periodo.fim}` : ""}
+                    {h.periodo?.ini && h.periodo?.fim
+                      ? ` · ${h.periodo.ini} a ${h.periodo.fim}`
+                      : ""}
                   </p>
                   <p className="mt-1 text-muted-foreground">
-                    {h.indices.map((i) => `${i.ano ?? "—"}: ${i.pct == null ? "—" : `${i.pct.toFixed(2).replace(".", ",")}%`}`).join(" · ")}
+                    {h.indices
+                      .map(
+                        (i) =>
+                          `${i.ano ?? "—"}: ${i.pct == null ? "—" : `${i.pct.toFixed(2).replace(".", ",")}%`}`,
+                      )
+                      .join(" · ")}
                   </p>
                 </div>
               ))}
@@ -468,17 +716,39 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           )}
         </SecaoRecolhivel>
 
-        <SecaoRecolhivel id={idSecao("seguro")} titulo="Seguro" resumo={res.seguro} aberta={abertas.seguro} aoMudar={abrir("seguro")}>
+        <SecaoRecolhivel
+          id={idSecao("seguro")}
+          titulo="Seguro"
+          resumo={res.seguro}
+          aberta={abertas.seguro}
+          aoMudar={abrir("seguro")}
+        >
           {(c.historicoApolices?.length ?? 0) > 0 && (
             <div className="mb-5 rounded-md border bg-muted/20 p-3">
               <Field rotulo="Apólice cadastrada">
                 <Selecao
                   value={apoliceSelecionada}
-                  onChange={(id) => { setApoliceSelecionada(id); const a = c.historicoApolices?.find((x) => x.id === id); if (a) setC((atual) => ({ ...atual, seguradora: a.seguradora, vigenciaSeguro: a.vigenciaFim, seguro: { riscoAbsoluto: a.riscoAbsoluto, coberturas: a.coberturas } })); }}
-                  opcoes={(c.historicoApolices ?? []).map((a) => ({ valor: a.id, rotulo: `${a.seguradora || "Seguradora não informada"} · ${a.vigenciaIni || "—"} a ${a.vigenciaFim || "—"}` }))}
+                  onChange={(id) => {
+                    setApoliceSelecionada(id);
+                    const a = c.historicoApolices?.find((x) => x.id === id);
+                    if (a)
+                      setC((atual) => ({
+                        ...atual,
+                        seguradora: a.seguradora,
+                        vigenciaSeguro: a.vigenciaFim,
+                        seguro: { riscoAbsoluto: a.riscoAbsoluto, coberturas: a.coberturas },
+                      }));
+                  }}
+                  opcoes={(c.historicoApolices ?? []).map((a) => ({
+                    valor: a.id,
+                    rotulo: `${a.seguradora || "Seguradora não informada"} · ${a.vigenciaIni || "—"} a ${a.vigenciaFim || "—"}`,
+                  }))}
                 />
               </Field>
-              <p className="mt-2 text-xs text-muted-foreground">Selecione uma apólice para consultar a vigência, o risco e as coberturas importadas. A apólice escolhida não altera o histórico.</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Selecione uma apólice para consultar a vigência, o risco e as coberturas importadas.
+                A apólice escolhida não altera o histórico.
+              </p>
             </div>
           )}
           <div className="mb-5 grid gap-4 sm:grid-cols-3">
@@ -506,10 +776,23 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
             vazio="Nenhuma cobertura informada."
             render={(cob, up) => (
               <>
-                <Input aria-label="Descrição" placeholder="Descrição da cobertura" value={cob.desc} onChange={(e) => up({ desc: e.target.value })} />
-                <DinheiroInput aria-label="Valor" value={cob.valor} onChange={(v) => up({ valor: v })} />
+                <Input
+                  aria-label="Descrição"
+                  placeholder="Descrição da cobertura"
+                  value={cob.desc}
+                  onChange={(e) => up({ desc: e.target.value })}
+                />
+                <DinheiroInput
+                  aria-label="Valor"
+                  value={cob.valor}
+                  onChange={(v) => up({ valor: v })}
+                />
                 <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                  <Switch checked={cob.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <Switch
+                    checked={cob.noRelatorio !== false}
+                    onCheckedChange={(v) => up({ noRelatorio: v })}
+                    aria-label="Incluir no relatório"
+                  />
                   <span className="@2xl:hidden">Incluir nas Considerações finais</span>
                 </label>
               </>
@@ -517,10 +800,19 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           />
         </SecaoRecolhivel>
 
-        <SecaoRecolhivel id={idSecao("manutencoes")} titulo="Manutenções e vistorias" resumo={res.manutencoes} aberta={abertas.manutencoes} aoMudar={abrir("manutencoes")}>
+        <SecaoRecolhivel
+          id={idSecao("manutencoes")}
+          titulo="Manutenções e vistorias"
+          resumo={res.manutencoes}
+          aberta={abertas.manutencoes}
+          aoMudar={abrir("manutencoes")}
+        >
           <div className="grid gap-4 sm:grid-cols-4">
             <Field rotulo="Recarga de extintores (vence em)">
-              <DataInput value={c.vigenciaExtintores} onChange={(v) => set("vigenciaExtintores", v)} />
+              <DataInput
+                value={c.vigenciaExtintores}
+                onChange={(v) => set("vigenciaExtintores", v)}
+              />
             </Field>
             <Field rotulo="Última limpeza da caixa de gordura">
               <DataInput value={c.ultGordura} onChange={(v) => set("ultGordura", v)} />
@@ -532,13 +824,25 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
               <DataInput value={c.ultCaixaDagua} onChange={(v) => set("ultCaixaDagua", v)} />
             </Field>
             <Field rotulo="Ano da última vistoria técnica">
-              <InteiroInput value={c.vistoriaAno} onChange={(v) => set("vistoriaAno", v)} maxLength={4} placeholder="aaaa" />
+              <InteiroInput
+                value={c.vistoriaAno}
+                onChange={(v) => set("vistoriaAno", v)}
+                maxLength={4}
+                placeholder="aaaa"
+              />
             </Field>
             <Field rotulo="Intervalo da vistoria (anos)">
-              <InteiroInput value={c.vistoriaIntervalo} onChange={(v) => set("vistoriaIntervalo", v ?? 3)} />
+              <InteiroInput
+                value={c.vistoriaIntervalo}
+                onChange={(v) => set("vistoriaIntervalo", v ?? 3)}
+              />
             </Field>
             <Field rotulo="Lei da vistoria" className="sm:col-span-2">
-              <Input value={c.vistoriaLei} onChange={(e) => set("vistoriaLei", e.target.value)} placeholder="Ex.: Lei municipal nº …" />
+              <Input
+                value={c.vistoriaLei}
+                onChange={(e) => set("vistoriaLei", e.target.value)}
+                placeholder="Ex.: Lei municipal nº …"
+              />
             </Field>
           </div>
         </SecaoRecolhivel>
@@ -554,14 +858,25 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           <RepeatableList
             itens={c.documentosObrigatorios}
             onChange={(v) => set("documentosObrigatorios", v)}
-            novo={() => ({ nome: "", status: "pendente" as const, informacao: "", observacao: "", noRelatorio: true })}
+            novo={() => ({
+              nome: "",
+              status: "pendente" as const,
+              informacao: "",
+              observacao: "",
+              noRelatorio: true,
+            })}
             colunas="grid-cols-[minmax(0,1fr)_7rem] @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
             cabecalhos={["Item", "Status", "Vencimento / informação", "No relatório", "Observação"]}
             rotuloAdicionar="Adicionar item"
             vazio="Nenhum item cadastrado."
             render={(d, up) => (
               <>
-                <Input aria-label="Item" placeholder="Nome do item" value={d.nome} onChange={(e) => up({ nome: e.target.value })} />
+                <Input
+                  aria-label="Item"
+                  placeholder="Nome do item"
+                  value={d.nome}
+                  onChange={(e) => up({ nome: e.target.value })}
+                />
                 <Button
                   type="button"
                   variant="outline"
@@ -583,7 +898,11 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
                   onChange={(e) => up({ informacao: e.target.value })}
                 />
                 <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground @2xl:col-span-1 @2xl:justify-self-center">
-                  <Switch checked={d.noRelatorio} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <Switch
+                    checked={d.noRelatorio}
+                    onCheckedChange={(v) => up({ noRelatorio: v })}
+                    aria-label="Incluir no relatório"
+                  />
                   <span className="@2xl:hidden">Incluir nas Considerações finais</span>
                 </label>
                 <Input
@@ -598,8 +917,18 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           />
         </SecaoRecolhivel>
 
-        <SecaoRecolhivel id={idSecao("indices")} titulo="Índices de correção aplicados" resumo={res.indices} aberta={abertas.indices} aoMudar={abrir("indices")}>
-          <p className="mb-3 text-sm text-muted-foreground">Histórico exclusivo deste condomínio. A primeira importação preenche os índices; alterações e exclusões são gravadas ao salvar o cadastro. Relatórios fechados preservam seu histórico original.</p>
+        <SecaoRecolhivel
+          id={idSecao("indices")}
+          titulo="Índices de correção aplicados"
+          resumo={res.indices}
+          aberta={abertas.indices}
+          aoMudar={abrir("indices")}
+        >
+          <p className="mb-3 text-sm text-muted-foreground">
+            Histórico exclusivo deste condomínio. A primeira importação preenche os índices;
+            alterações e exclusões são gravadas ao salvar o cadastro. Relatórios fechados preservam
+            seu histórico original.
+          </p>
           <RepeatableList
             itens={c.indices}
             onChange={(v) => set("indices", v)}
@@ -610,10 +939,23 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
             vazio="Nenhum índice informado."
             render={(ind, up) => (
               <>
-                <InteiroInput aria-label="Ano" maxLength={4} value={ind.ano} onChange={(v) => up({ ano: v })} />
-                <PercentualInput aria-label="Percentual" value={ind.pct} onChange={(v) => up({ pct: v })} />
+                <InteiroInput
+                  aria-label="Ano"
+                  maxLength={4}
+                  value={ind.ano}
+                  onChange={(v) => up({ ano: v })}
+                />
+                <PercentualInput
+                  aria-label="Percentual"
+                  value={ind.pct}
+                  onChange={(v) => up({ pct: v })}
+                />
                 <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                  <Switch checked={ind.noRelatorio !== false} onCheckedChange={(v) => up({ noRelatorio: v })} aria-label="Incluir no relatório" />
+                  <Switch
+                    checked={ind.noRelatorio !== false}
+                    onCheckedChange={(v) => up({ noRelatorio: v })}
+                    aria-label="Incluir no relatório"
+                  />
                   <span className="@2xl:hidden">Incluir nas Considerações finais</span>
                 </label>
               </>
@@ -629,41 +971,89 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
           aoMudar={abrir("automacoes")}
         >
           <div className="mb-5 flex items-center gap-3">
-            <Switch id="somente-anual" checked={c.somenteAnual} onCheckedChange={(v) => set("somenteAnual", v)} />
+            <Switch
+              id="somente-anual"
+              checked={c.somenteAnual}
+              onCheckedChange={(v) => set("somenteAnual", v)}
+            />
             <Label htmlFor="somente-anual" className="text-sm">
               Somente prestação de contas anual (sem histórico mensal)
             </Label>
           </div>
           <div className="mb-5 grid gap-4 sm:grid-cols-3">
             <Field rotulo="Método da variação">
-              <Selecao value={c.variacaoMetodo} onChange={(v) => set("variacaoMetodo", v)} opcoes={VARIACAO} />
+              <Selecao
+                value={c.variacaoMetodo}
+                onChange={(v) => set("variacaoMetodo", v)}
+                opcoes={VARIACAO}
+              />
             </Field>
             {c.variacaoMetodo === "valor" ? (
-              <Field rotulo="Variação (R$)" dica="Valor fixo somado à base, positivo ou negativo — não é percentual.">
+              <Field
+                rotulo="Variação (R$)"
+                dica="Valor fixo somado à base, positivo ou negativo — não é percentual."
+              >
                 <DinheiroInput value={c.variacaoParam} onChange={(v) => set("variacaoParam", v)} />
               </Field>
             ) : (
-              <Field rotulo="Parâmetro da variação" dica="Percentual ou quantidade de índices, conforme o método.">
+              <Field
+                rotulo="Parâmetro da variação"
+                dica="Percentual ou quantidade de índices, conforme o método."
+              >
                 <NumeroInput value={c.variacaoParam} onChange={(v) => set("variacaoParam", v)} />
               </Field>
             )}
           </div>
-          <Label className="mb-2 block text-xs font-medium text-muted-foreground">Regras de preenchimento automático</Label>
+          <Label className="mb-2 block text-xs font-medium text-muted-foreground">
+            Regras de preenchimento automático
+          </Label>
           <RepeatableList
             itens={c.regras}
             onChange={(v) => set("regras", v)}
-            novo={() => ({ campo: "", rotulo: "", fonte: "", regex: "", modo: "ultimo" as ModoRegra })}
+            novo={() => ({
+              campo: "",
+              rotulo: "",
+              fonte: "",
+              regex: "",
+              modo: "ultimo" as ModoRegra,
+            })}
             colunas="@2xl:grid-cols-[1fr_1fr_1fr_1.4fr_10rem]"
             cabecalhos={["Campo", "Rótulo", "Fonte", "Expressão de busca", "Modo"]}
             rotuloAdicionar="Adicionar regra"
             vazio="Nenhuma regra de preenchimento automático."
             render={(r, up) => (
               <>
-                <Input aria-label="Campo" placeholder="Campo" value={r.campo} onChange={(e) => up({ campo: e.target.value })} />
-                <Input aria-label="Rótulo" placeholder="Rótulo" value={r.rotulo} onChange={(e) => up({ rotulo: e.target.value })} />
-                <Input aria-label="Fonte" placeholder="Fonte" value={r.fonte} onChange={(e) => up({ fonte: e.target.value })} />
-                <Input aria-label="Expressão de busca" placeholder="^energia" className="font-mono text-xs" value={r.regex} onChange={(e) => up({ regex: e.target.value })} />
-                <Selecao aria-label="Modo" value={r.modo} onChange={(v) => up({ modo: v })} opcoes={MODO_REGRA} />
+                <Input
+                  aria-label="Campo"
+                  placeholder="Campo"
+                  value={r.campo}
+                  onChange={(e) => up({ campo: e.target.value })}
+                />
+                <Input
+                  aria-label="Rótulo"
+                  placeholder="Rótulo"
+                  value={r.rotulo}
+                  onChange={(e) => up({ rotulo: e.target.value })}
+                />
+                <Input
+                  aria-label="Fonte"
+                  placeholder="Fonte"
+                  value={r.fonte}
+                  onChange={(e) => up({ fonte: e.target.value })}
+                />
+                <Input
+                  aria-label="Expressão de busca"
+                  placeholder="^energia"
+                  className="font-mono text-xs"
+                  value={r.regex}
+                  onChange={(e) => up({ regex: e.target.value })}
+                />
+                <Selecao
+                  aria-label="Modo"
+                  value={r.modo}
+                  onChange={(v) => up({ modo: v })}
+                  opcoes={MODO_REGRA}
+                />
               </>
             )}
           />
@@ -705,11 +1095,21 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
               value={c.elevadorRubrica}
               onChange={(v) => set("elevadorRubrica", v)}
             />
-            <Field rotulo="Fornecedor dos elevadores" dica="Texto livre, impresso junto da linha Elevadores no relatório final.">
-              <Input value={c.elevadorFornecedor} onChange={(e) => set("elevadorFornecedor", e.target.value)} />
+            <Field
+              rotulo="Fornecedor dos elevadores"
+              dica="Texto livre, impresso junto da linha Elevadores no relatório final."
+            >
+              <Input
+                value={c.elevadorFornecedor}
+                onChange={(e) => set("elevadorFornecedor", e.target.value)}
+              />
             </Field>
             <Field rotulo="Arredondamento do rateio">
-              <Selecao value={c.arredondamento} onChange={(v) => set("arredondamento", v)} opcoes={ARREDONDAMENTO} />
+              <Selecao
+                value={c.arredondamento}
+                onChange={(v) => set("arredondamento", v)}
+                opcoes={ARREDONDAMENTO}
+              />
             </Field>
           </div>
           <div className="mt-5">
@@ -739,7 +1139,11 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
             render={(m, up) => (
               <>
                 <Input aria-label="De" value={m.de} onChange={(e) => up({ de: e.target.value })} />
-                <Input aria-label="Para" value={m.para} onChange={(e) => up({ para: e.target.value })} />
+                <Input
+                  aria-label="Para"
+                  value={m.para}
+                  onChange={(e) => up({ para: e.target.value })}
+                />
               </>
             )}
           />
@@ -754,8 +1158,8 @@ function FormCondominio({ inicial, historicoIndices = [] }: { inicial: Condomini
         titulo="Excluir condomínio?"
         descricao={
           <>
-            <strong>{c.nome}</strong> será excluído definitivamente. Prestações de contas, editais e atas
-            vinculados não serão apagados automaticamente.
+            <strong>{c.nome}</strong> será excluído definitivamente. Prestações de contas, editais e
+            atas vinculados não serão apagados automaticamente.
           </>
         }
         rotuloConfirmar="Excluir"

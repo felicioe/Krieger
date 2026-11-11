@@ -65,11 +65,19 @@ export function ConfirmDialog({
       >
         <AlertDialogHeader>
           <AlertDialogTitle>{titulo}</AlertDialogTitle>
-          {descricao && <AlertDialogDescription asChild><div>{descricao}</div></AlertDialogDescription>}
+          {descricao && (
+            <AlertDialogDescription asChild>
+              <div>{descricao}</div>
+            </AlertDialogDescription>
+          )}
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={ocupado}>{rotuloCancelar}</AlertDialogCancel>
-          <Button variant={destrutivo ? "destructive" : "default"} onClick={confirmar} disabled={ocupado}>
+          <Button
+            variant={destrutivo ? "destructive" : "default"}
+            onClick={confirmar}
+            disabled={ocupado}
+          >
             {ocupado && <Loader2 className="animate-spin" />}
             {rotuloConfirmar}
           </Button>

@@ -8,7 +8,8 @@ import type { ResultadoComparativo } from "@/domain/previstoRealizado";
  */
 export const semRealizado = (r: ResultadoComparativo) => r.relatoriosUsados === 0;
 
-export const periodoComparacao = (r: ResultadoComparativo) => `${r.meses[0]?.rotulo ?? "—"} a ${r.mesAte.rotulo}`;
+export const periodoComparacao = (r: ResultadoComparativo) =>
+  `${r.meses[0]?.rotulo ?? "—"} a ${r.mesAte.rotulo}`;
 
 export const textoSemRealizado = (r: ResultadoComparativo) =>
   `Ainda não há relatório mensal importado ou lançado para o período de comparação (${periodoComparacao(r)}). A comparação aparece assim que o primeiro relatório mensal desse período entrar no sistema.`;

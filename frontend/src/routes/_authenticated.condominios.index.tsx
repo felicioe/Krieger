@@ -16,7 +16,8 @@ import { contagem } from "@/components/app/textos";
 
 export const Route = createFileRoute("/_authenticated/condominios/")({
   head: () => cabecalho("Condomínios", "Cadastro dos condomínios atendidos."),
-  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
   component: ListaCondominios,
 });
 
@@ -27,12 +28,18 @@ function ListaCondominios() {
 
   const filtrados = useMemo(() => {
     const q = busca.trim().toLowerCase();
-    const ordenados = [...data].sort((a, b) =>
-      String(a.codigo || "").localeCompare(String(b.codigo || ""), "pt-BR", { numeric: true }) || a.nome.localeCompare(b.nome, "pt-BR"),
+    const ordenados = [...data].sort(
+      (a, b) =>
+        String(a.codigo || "").localeCompare(String(b.codigo || ""), "pt-BR", { numeric: true }) ||
+        a.nome.localeCompare(b.nome, "pt-BR"),
     );
     if (!q) return ordenados;
     return ordenados.filter((c) =>
-      [c.codigo, c.nome, c.nomeRelatorio, c.cnpj].some((v) => String(v ?? "").toLowerCase().includes(q)),
+      [c.codigo, c.nome, c.nomeRelatorio, c.cnpj].some((v) =>
+        String(v ?? "")
+          .toLowerCase()
+          .includes(q),
+      ),
     );
   }, [data, busca]);
 

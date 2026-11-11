@@ -51,13 +51,21 @@ export function CampoRubrica({
           onChange={(e) => setPalavra(e.target.value)}
           onKeyDown={aoTeclar}
         />
-        <Button type="button" variant="outline" size="icon" onClick={adicionar} aria-label={`Adicionar palavra-chave a ${rotulo}`}>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          onClick={adicionar}
+          aria-label={`Adicionar palavra-chave a ${rotulo}`}
+        >
           <Plus />
         </Button>
       </div>
       {dica && <p className="text-xs text-muted-foreground">{dica}</p>}
       <details className="text-xs text-muted-foreground">
-        <summary className="cursor-pointer select-none">Expressão técnica (normalmente não precisa mexer aqui)</summary>
+        <summary className="cursor-pointer select-none">
+          Expressão técnica (normalmente não precisa mexer aqui)
+        </summary>
         <Input
           aria-label={`Expressão técnica — ${rotulo}`}
           className="mt-1.5 font-mono text-xs"

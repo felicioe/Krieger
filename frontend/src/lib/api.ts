@@ -3,14 +3,31 @@
  * Em produção usa a API PHP (api.php / auth.php). No preview do Lovable e em
  * localhost usa automaticamente o adaptador mock (localStorage).
  */
-import type { Backup, DocumentoDriveRegistro, Perfil, Store, TipoDocumentoConsulta, UsuarioSalvar } from "@/domain/types";
+import type {
+  Backup,
+  DocumentoDriveRegistro,
+  Perfil,
+  Store,
+  TipoDocumentoConsulta,
+  UsuarioSalvar,
+} from "@/domain/types";
 import { novoId } from "./id";
-import { ApiError, type AlvoLimpeza, type ApiAdapter, type ConfirmarImportacaoPedido } from "./apiTypes";
+import {
+  ApiError,
+  type AlvoLimpeza,
+  type ApiAdapter,
+  type ConfirmarImportacaoPedido,
+} from "./apiTypes";
 import { realApi } from "./realApi";
 import { mockApi } from "./mockApi";
 
 export { ApiError } from "./apiTypes";
-export type { AlvoLimpeza, ConfirmarImportacaoPedido, ConfirmarImportacaoResposta, ContagensLimpeza } from "./apiTypes";
+export type {
+  AlvoLimpeza,
+  ConfirmarImportacaoPedido,
+  ConfirmarImportacaoResposta,
+  ContagensLimpeza,
+} from "./apiTypes";
 
 export function usandoMock(): boolean {
   if (typeof window === "undefined") return false;
@@ -49,7 +66,8 @@ export function mensagemErro(e: unknown): string {
 }
 
 export const api = {
-  fechamentoExercicio: (id: string, fechar: boolean, motivo: string, versao: string | null) => guarda(() => impl().fechamentoExercicio(id, fechar, motivo, versao)),
+  fechamentoExercicio: (id: string, fechar: boolean, motivo: string, versao: string | null) =>
+    guarda(() => impl().fechamentoExercicio(id, fechar, motivo, versao)),
   anexos: {
     listar: (exercicioId: string) => guarda(() => impl().anexos.listar(exercicioId)),
   },
@@ -59,13 +77,16 @@ export const api = {
     guarda(() => impl().salvar<T>(store, { ...o, id: o.id || novoId() })),
   excluir: (store: Store, id: string) => guarda(() => impl().excluir(store, id)),
   exportar: () => guarda(() => impl().exportar()),
-  importar: (dados: Backup, substituir: boolean) => guarda(() => impl().importar(dados, substituir)),
-  confirmarImportacao: (pedido: ConfirmarImportacaoPedido) => guarda(() => impl().confirmarImportacao(pedido)),
+  importar: (dados: Backup, substituir: boolean) =>
+    guarda(() => impl().importar(dados, substituir)),
+  confirmarImportacao: (pedido: ConfirmarImportacaoPedido) =>
+    guarda(() => impl().confirmarImportacao(pedido)),
   backup: {
     criar: () => guarda(() => impl().backup.criar()),
     listar: () => guarda(() => impl().backup.listar()),
     baixar: (id: string) => guarda(() => impl().backup.baixar(id)),
-    restaurar: (id: string, substituir: boolean) => guarda(() => impl().backup.restaurar(id, substituir)),
+    restaurar: (id: string, substituir: boolean) =>
+      guarda(() => impl().backup.restaurar(id, substituir)),
     excluir: (id: string) => guarda(() => impl().backup.excluir(id)),
   },
   manutencao: {
@@ -81,17 +102,24 @@ export const api = {
     usuarioSalvar: (u: UsuarioSalvar) => guarda(() => impl().auth.usuarioSalvar(u)),
     usuarioExcluir: (id: string) => guarda(() => impl().auth.usuarioExcluir(id)),
     permissoes: () => guarda(() => impl().auth.permissoes()),
-    permissaoSalvar: (usuarioId: string, chave: string, efeito: "permitir" | "negar" | "remover") => guarda(() => impl().auth.permissaoSalvar(usuarioId, chave, efeito)),
+    permissaoSalvar: (usuarioId: string, chave: string, efeito: "permitir" | "negar" | "remover") =>
+      guarda(() => impl().auth.permissaoSalvar(usuarioId, chave, efeito)),
     perfis: () => guarda(() => impl().auth.perfis()),
-    perfilPermissaoSalvar: (perfil: Perfil, chave: string, permitida: boolean) => guarda(() => impl().auth.perfilPermissaoSalvar(perfil, chave, permitida)),
+    perfilPermissaoSalvar: (perfil: Perfil, chave: string, permitida: boolean) =>
+      guarda(() => impl().auth.perfilPermissaoSalvar(perfil, chave, permitida)),
   },
   documentos: {
     listar: (condoId: string) => guarda(() => impl().documentos.listar(condoId)),
     resumo: () => guarda(() => impl().documentos.resumo()),
     registrar: (doc: DocumentoDriveRegistro) => guarda(() => impl().documentos.registrar(doc)),
     conteudo: (id: string) => guarda(() => impl().documentos.conteudo(id)),
-    atualizar: (dados: { id: string; nomeArquivo?: string; tipo?: TipoDocumentoConsulta; caminhoRelativo?: string; dataDocumento?: string }) =>
-      guarda(() => impl().documentos.atualizar(dados)),
+    atualizar: (dados: {
+      id: string;
+      nomeArquivo?: string;
+      tipo?: TipoDocumentoConsulta;
+      caminhoRelativo?: string;
+      dataDocumento?: string;
+    }) => guarda(() => impl().documentos.atualizar(dados)),
     excluir: (id: string) => guarda(() => impl().documentos.excluir(id)),
     perguntar: (condoId: string, pergunta: string, documentoId?: string) =>
       guarda(() => impl().documentos.perguntar(condoId, pergunta, documentoId)),

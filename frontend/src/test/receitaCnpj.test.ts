@@ -15,7 +15,9 @@ const base: DadosCnpjReceita = {
 
 describe("enderecoDaReceita", () => {
   it("monta o endereço completo numa linha, com CEP formatado", () => {
-    expect(enderecoDaReceita(base)).toBe("ALMIRANTE TAMANDARE, 300 - CENTRO - ITAJAI/SC - CEP 88301-430");
+    expect(enderecoDaReceita(base)).toBe(
+      "ALMIRANTE TAMANDARE, 300 - CENTRO - ITAJAI/SC - CEP 88301-430",
+    );
   });
 
   it("inclui o complemento quando existir", () => {
@@ -25,7 +27,9 @@ describe("enderecoDaReceita", () => {
   });
 
   it("omite partes vazias sem deixar separadores soltos", () => {
-    expect(enderecoDaReceita({ ...base, bairro: "", cep: "" })).toBe("ALMIRANTE TAMANDARE, 300 - ITAJAI/SC");
+    expect(enderecoDaReceita({ ...base, bairro: "", cep: "" })).toBe(
+      "ALMIRANTE TAMANDARE, 300 - ITAJAI/SC",
+    );
   });
 
   it("devolve string vazia quando não há nenhum dado de endereço", () => {
@@ -52,7 +56,9 @@ describe("divergenciasCnpj", () => {
 
   it("tolera nome cadastrado mais curto/longo que a razão social (um contém o outro)", () => {
     expect(divergenciasCnpj(base, "Urban Classic")).toEqual([]);
-    expect(divergenciasCnpj({ ...base, razaoSocial: "URBAN CLASSIC" }, "Condomínio Urban Classic")).toEqual([]);
+    expect(
+      divergenciasCnpj({ ...base, razaoSocial: "URBAN CLASSIC" }, "Condomínio Urban Classic"),
+    ).toEqual([]);
   });
 
   it("avisa quando a razão social diverge de verdade", () => {
@@ -62,12 +68,18 @@ describe("divergenciasCnpj", () => {
   });
 
   it("avisa quando a situação cadastral não é ativa", () => {
-    const avisos = divergenciasCnpj({ ...base, situacaoCadastral: "BAIXADA" }, "Condomínio Urban Classic");
+    const avisos = divergenciasCnpj(
+      { ...base, situacaoCadastral: "BAIXADA" },
+      "Condomínio Urban Classic",
+    );
     expect(avisos).toEqual(["situação cadastral na Receita: BAIXADA"]);
   });
 
   it("pode acumular os dois avisos ao mesmo tempo", () => {
-    const avisos = divergenciasCnpj({ ...base, situacaoCadastral: "SUSPENSA" }, "Outro Nome Qualquer");
+    const avisos = divergenciasCnpj(
+      { ...base, situacaoCadastral: "SUSPENSA" },
+      "Outro Nome Qualquer",
+    );
     expect(avisos).toHaveLength(2);
   });
 });

@@ -1,9 +1,30 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { forwardRef, useEffect, useId, useMemo, useRef, useState, type ComponentPropsWithoutRef, type InputHTMLAttributes } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type ComponentPropsWithoutRef,
+  type InputHTMLAttributes,
+} from "react";
 import { Check, ChevronDown, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { formatNumeroBR, mascaraData, mascaraHora, mascaraMesAno, parseNumeroBR } from "@/lib/format";
+import {
+  formatNumeroBR,
+  mascaraData,
+  mascaraHora,
+  mascaraMesAno,
+  parseNumeroBR,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Condominio } from "@/domain/types";
 
@@ -112,18 +133,20 @@ interface TextoMascaraProps extends BaseProps {
 }
 
 function criarMascara(mascara: (s: string) => string, placeholder: string, nome: string) {
-  const C = forwardRef<HTMLInputElement, TextoMascaraProps>(({ value, onChange, className, ...props }, ref) => (
-    <Input
-      ref={ref}
-      inputMode="numeric"
-      autoComplete="off"
-      placeholder={placeholder}
-      {...props}
-      className={cn("num", className)}
-      value={value ?? ""}
-      onChange={(e) => onChange(mascara(e.target.value))}
-    />
-  ));
+  const C = forwardRef<HTMLInputElement, TextoMascaraProps>(
+    ({ value, onChange, className, ...props }, ref) => (
+      <Input
+        ref={ref}
+        inputMode="numeric"
+        autoComplete="off"
+        placeholder={placeholder}
+        {...props}
+        className={cn("num", className)}
+        value={value ?? ""}
+        onChange={(e) => onChange(mascara(e.target.value))}
+      />
+    ),
+  );
   C.displayName = nome;
   return C;
 }
@@ -139,7 +162,14 @@ export const HoraInput = criarMascara(mascaraHora, "hh:mm", "HoraInput");
 
 type AtributosTrigger = Pick<
   ComponentPropsWithoutRef<typeof SelectTrigger>,
-  "aria-invalid" | "aria-describedby" | "aria-required" | "aria-label" | "aria-labelledby" | "disabled" | "name" | "title"
+  | "aria-invalid"
+  | "aria-describedby"
+  | "aria-required"
+  | "aria-label"
+  | "aria-labelledby"
+  | "disabled"
+  | "name"
+  | "title"
 >;
 
 /**
@@ -164,7 +194,11 @@ export function Selecao<V extends string>({
   className?: string;
 } & AtributosTrigger) {
   return (
-    <Select {...(value ? { value } : {})} onValueChange={(v) => onChange(v as V)} {...(atributos.disabled ? { disabled: true } : {})}>
+    <Select
+      {...(value ? { value } : {})}
+      onValueChange={(v) => onChange(v as V)}
+      {...(atributos.disabled ? { disabled: true } : {})}
+    >
       <SelectTrigger id={id} className={className} {...atributos}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
@@ -329,7 +363,9 @@ export function SelecaoBusca<V extends string>({
               <span className="min-w-0 break-words">{selecionada.rotulo}</span>
             </span>
           ) : (
-            <span className="min-w-0 break-words text-left text-muted-foreground">{placeholder}</span>
+            <span className="min-w-0 break-words text-left text-muted-foreground">
+              {placeholder}
+            </span>
           )}
           <span className="flex shrink-0 items-center gap-1 text-muted-foreground">
             <Search className="h-3.5 w-3.5 opacity-70" aria-hidden="true" />

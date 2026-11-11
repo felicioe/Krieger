@@ -25,7 +25,12 @@ import {
   valorPorExtensoBRL,
   type ModalidadeNotificacao,
 } from "@/domain/notificacao";
-import type { Condominio, ConfigEscritorio, ConsultaOrigem, ConsultaResposta } from "@/domain/types";
+import type {
+  Condominio,
+  ConfigEscritorio,
+  ConsultaOrigem,
+  ConsultaResposta,
+} from "@/domain/types";
 import { api, mensagemErro } from "@/lib/api";
 import { baixarNotificacaoDocx } from "@/lib/documento/notificacao";
 import { dataParaBR } from "@/lib/format";
@@ -51,7 +56,8 @@ export const Route = createFileRoute("/_authenticated/consulta-documentos")({
     const docId = typeof s["docId"] === "string" && s["docId"] ? s["docId"] : undefined;
     return { ...(condoId ? { condoId } : {}), ...(docId ? { docId } : {}) };
   },
-  loader: ({ context: { queryClient } }) => queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
   component: PaginaConsultaDocumentos,
 });
 
@@ -68,15 +74,32 @@ const ORIGEM_VARIANTE: Record<ConsultaOrigem, "secondary" | "outline" | "success
 
 /** Estilo do parecer da IA (markdown vindo do Claude) — texto corrido, listas e negrito de verdade, sem "*" soltos. */
 const COMPONENTES_PARECER: Components = {
-  h1: ({ children }) => <h3 className="mb-2 mt-4 text-sm font-semibold uppercase tracking-wide text-primary first:mt-0">{children}</h3>,
-  h2: ({ children }) => <h3 className="mb-2 mt-4 text-sm font-semibold uppercase tracking-wide text-primary first:mt-0">{children}</h3>,
-  h3: ({ children }) => <h4 className="mb-1.5 mt-3 text-sm font-semibold text-foreground first:mt-0">{children}</h4>,
+  h1: ({ children }) => (
+    <h3 className="mb-2 mt-4 text-sm font-semibold uppercase tracking-wide text-primary first:mt-0">
+      {children}
+    </h3>
+  ),
+  h2: ({ children }) => (
+    <h3 className="mb-2 mt-4 text-sm font-semibold uppercase tracking-wide text-primary first:mt-0">
+      {children}
+    </h3>
+  ),
+  h3: ({ children }) => (
+    <h4 className="mb-1.5 mt-3 text-sm font-semibold text-foreground first:mt-0">{children}</h4>
+  ),
   p: ({ children }) => <p className="mb-3 text-sm leading-relaxed last:mb-0">{children}</p>,
   strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
-  ul: ({ children }) => <ul className="mb-3 list-disc space-y-1 pl-5 text-sm marker:text-primary last:mb-0">{children}</ul>,
+  ul: ({ children }) => (
+    <ul className="mb-3 list-disc space-y-1 pl-5 text-sm marker:text-primary last:mb-0">
+      {children}
+    </ul>
+  ),
   ol: ({ children, start }) => (
-    <ol start={start} className="mb-3 list-decimal space-y-1 pl-5 text-sm marker:text-primary last:mb-0">
+    <ol
+      start={start}
+      className="mb-3 list-decimal space-y-1 pl-5 text-sm marker:text-primary last:mb-0"
+    >
       {children}
     </ol>
   ),
@@ -87,7 +110,12 @@ const COMPONENTES_PARECER: Components = {
     </blockquote>
   ),
   a: ({ children, href }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="text-primary underline underline-offset-2">
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="text-primary underline underline-offset-2"
+    >
       {children}
     </a>
   ),
@@ -97,7 +125,9 @@ const COMPONENTES_PARECER: Components = {
       <table className="w-full text-left text-xs">{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead className="border-b bg-muted/50 text-muted-foreground">{children}</thead>,
+  thead: ({ children }) => (
+    <thead className="border-b bg-muted/50 text-muted-foreground">{children}</thead>
+  ),
   th: ({ children }) => <th className="px-2.5 py-1.5 font-semibold">{children}</th>,
   td: ({ children }) => <td className="px-2.5 py-1.5">{children}</td>,
 };
@@ -110,7 +140,10 @@ function PaginaConsultaDocumentos() {
   const resumoDocsQuery = useQuery(documentosResumoQuery());
 
   const ordenados = useMemo(
-    () => [...condominios].sort((a, b) => (a.nomeRelatorio || a.nome).localeCompare(b.nomeRelatorio || b.nome, "pt-BR")),
+    () =>
+      [...condominios].sort((a, b) =>
+        (a.nomeRelatorio || a.nome).localeCompare(b.nomeRelatorio || b.nome, "pt-BR"),
+      ),
     [condominios],
   );
 
@@ -128,7 +161,9 @@ function PaginaConsultaDocumentos() {
 
   // Estado do gerador de Notificação / Multa (.DOCX)
   const [emitirNotificacao, setEmitirNotificacao] = useState(false);
-  const [condoNotifId, setCondoNotifId] = useState<string>(escopoId !== "*" ? escopoId : (ordenados[0]?.id ?? ""));
+  const [condoNotifId, setCondoNotifId] = useState<string>(
+    escopoId !== "*" ? escopoId : (ordenados[0]?.id ?? ""),
+  );
   const [modalidade, setModalidade] = useState<ModalidadeNotificacao>("notificacao_multa");
   const [cidadeNotif, setCidadeNotif] = useState("Camboriú");
   const [dataEmissaoNotif, setDataEmissaoNotif] = useState(() => dataParaBR(new Date()));
@@ -194,11 +229,13 @@ function PaginaConsultaDocumentos() {
       ),
     onSuccess: (r) => {
       setResposta(r);
-      setParagrafoBaseLegal(
-        `De acordo com as disposições do condomínio: ${r.texto.trim()}`,
-      );
+      setParagrafoBaseLegal(`De acordo com as disposições do condomínio: ${r.texto.trim()}`);
       const primeiraFonteCondo = r.fontes.find((f) => f.condoId)?.condoId;
-      if (escopoId === "*" && primeiraFonteCondo && ordenados.some((c) => c.id === primeiraFonteCondo)) {
+      if (
+        escopoId === "*" &&
+        primeiraFonteCondo &&
+        ordenados.some((c) => c.id === primeiraFonteCondo)
+      ) {
         setCondoNotifId(primeiraFonteCondo);
       }
       void historico.refetch();
@@ -214,7 +251,9 @@ function PaginaConsultaDocumentos() {
       const qtd = mapa[op.valor] ?? 0;
       return {
         ...op,
-        detalhe: [op.detalhe, qtd > 0 ? `${qtd} doc(s) na base` : "Sem docs na base"].filter(Boolean).join(" • "),
+        detalhe: [op.detalhe, qtd > 0 ? `${qtd} doc(s) na base` : "Sem docs na base"]
+          .filter(Boolean)
+          .join(" • "),
       };
     });
     return [
@@ -275,9 +314,11 @@ function PaginaConsultaDocumentos() {
           paragrafoProvidencia: paragrafoProvidencia.trim(),
           enquadramentoMulta: enquadramentoMulta.trim(),
           valorMulta: valorMultaNumero,
-          assinanteCargo: cargoAssinatura.trim().toUpperCase().includes("SÍNDIC") || cargoAssinatura.trim().toUpperCase().includes("SINDIC")
-            ? "sindico_condominio"
-            : "apenas_condominio",
+          assinanteCargo:
+            cargoAssinatura.trim().toUpperCase().includes("SÍNDIC") ||
+            cargoAssinatura.trim().toUpperCase().includes("SINDIC")
+              ? "sindico_condominio"
+              : "apenas_condominio",
         },
       });
       toast.success("Documento Word (.DOCX) gerado com sucesso!");
@@ -296,7 +337,9 @@ function PaginaConsultaDocumentos() {
           descricao="Pesquisa por IA em convenções, regimentos, atas, contratos e demais documentos."
         />
         <SectionCard titulo="Nenhum condomínio cadastrado">
-          <p className="text-sm text-muted-foreground">Cadastre um condomínio para utilizar a Consulta Inteligente.</p>
+          <p className="text-sm text-muted-foreground">
+            Cadastre um condomínio para utilizar a Consulta Inteligente.
+          </p>
         </SectionCard>
       </>
     );
@@ -357,7 +400,10 @@ function PaginaConsultaDocumentos() {
                 placeholder="Todos os documentos do escopo"
                 opcoes={[
                   { valor: "todos", rotulo: `Todos os documentos (${docsDisponiveis.length})` },
-                  ...docsDisponiveis.map((d) => ({ valor: d.id, rotulo: `${d.nomeArquivo} (${rotuloCategoriaDocumento(d.tipo)})` })),
+                  ...docsDisponiveis.map((d) => ({
+                    valor: d.id,
+                    rotulo: `${d.nomeArquivo} (${rotuloCategoriaDocumento(d.tipo)})`,
+                  })),
                 ]}
               />
             </Field>
@@ -380,11 +426,16 @@ function PaginaConsultaDocumentos() {
           </Field>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <Button type="submit" disabled={perguntar.isPending || !pergunta.trim()}>
-              {perguntar.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              {perguntar.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
               Consultar Base e Analisar
             </Button>
             <span className="text-xs text-muted-foreground">
-              Economia inteligente de tokens: pré-filtragem local + cache automático de perguntas repetidas.
+              Economia inteligente de tokens: pré-filtragem local + cache automático de perguntas
+              repetidas.
             </span>
           </div>
         </form>
@@ -401,8 +452,12 @@ function PaginaConsultaDocumentos() {
           }
         >
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <Badge variant={ORIGEM_VARIANTE[resposta.origem]}>{ORIGEM_ROTULO[resposta.origem]}</Badge>
-            {resposta.semEvidencia && <Badge variant="warning">Sem evidência direta nos documentos</Badge>}
+            <Badge variant={ORIGEM_VARIANTE[resposta.origem]}>
+              {ORIGEM_ROTULO[resposta.origem]}
+            </Badge>
+            {resposta.semEvidencia && (
+              <Badge variant="warning">Sem evidência direta nos documentos</Badge>
+            )}
           </div>
 
           <div className="rounded-lg border bg-muted/20 p-4">
@@ -423,7 +478,9 @@ function PaginaConsultaDocumentos() {
                     className="flex flex-wrap items-center justify-between gap-2 rounded border bg-card px-3 py-1.5"
                   >
                     <div>
-                      {f.condoNome && <strong className="mr-1.5 text-primary">[{f.condoNome}]</strong>}
+                      {f.condoNome && (
+                        <strong className="mr-1.5 text-primary">[{f.condoNome}]</strong>
+                      )}
                       <span className="font-medium">{f.arquivo}</span>{" "}
                       <span className="text-muted-foreground">
                         ({rotuloCategoriaDocumento(f.tipo)}) — pág.{" "}
@@ -440,7 +497,11 @@ function PaginaConsultaDocumentos() {
                         navigate({
                           to: "/drive-documentos",
                           search: {
-                            ...(f.condoId ? { condoId: f.condoId } : escopoId !== "*" ? { condoId: escopoId } : {}),
+                            ...(f.condoId
+                              ? { condoId: f.condoId }
+                              : escopoId !== "*"
+                                ? { condoId: escopoId }
+                                : {}),
                             docId: f.documentoId,
                           },
                         })
@@ -466,8 +527,9 @@ function PaginaConsultaDocumentos() {
               Emitir Notificação / Multa em Word (.DOCX) a partir desta base legal
             </label>
             <p className="mt-1 pl-7 text-xs text-muted-foreground">
-              Gera o documento `.DOCX` formatado no padrão oficial do escritório (Times New Roman 12pt, cabeçalho do
-              condomínio, valor por extenso e rodapé), pronto para edição ou envio.
+              Gera o documento `.DOCX` formatado no padrão oficial do escritório (Times New Roman
+              12pt, cabeçalho do condomínio, valor por extenso e rodapé), pronto para edição ou
+              envio.
             </p>
 
             {emitirNotificacao && (
@@ -499,7 +561,10 @@ function PaginaConsultaDocumentos() {
                         placeholder="Camboriú"
                       />
                     </Field>
-                    <Field rotulo="Data de emissão (dd/mm/aaaa)" dica={`${cidadeNotif}, ${dataPorExtenso(dataEmissaoNotif)}.`}>
+                    <Field
+                      rotulo="Data de emissão (dd/mm/aaaa)"
+                      dica={`${cidadeNotif}, ${dataPorExtenso(dataEmissaoNotif)}.`}
+                    >
                       <Input
                         value={dataEmissaoNotif}
                         onChange={(e) => setDataEmissaoNotif(e.target.value)}
@@ -607,7 +672,11 @@ function PaginaConsultaDocumentos() {
                     onClick={() => void gerarDocxNotificacao()}
                     disabled={gerandoDocx}
                   >
-                    {gerandoDocx ? <Loader2 className="size-4 animate-spin" /> : <FileDown className="size-4" />}
+                    {gerandoDocx ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <FileDown className="size-4" />
+                    )}
                     Baixar Notificação Editável (.DOCX)
                   </Button>
                 </div>
@@ -638,7 +707,9 @@ function PaginaConsultaDocumentos() {
                   className="min-w-0 flex-1 text-left hover:underline"
                   title="Clique para reutilizar esta pergunta"
                 >
-                  {h.condoNome && <strong className="mr-1.5 text-xs text-primary">[{h.condoNome}]</strong>}
+                  {h.condoNome && (
+                    <strong className="mr-1.5 text-xs text-primary">[{h.condoNome}]</strong>
+                  )}
                   {h.pergunta}
                 </button>
                 <Badge variant={ORIGEM_VARIANTE[h.origem]}>{ORIGEM_ROTULO[h.origem]}</Badge>
@@ -646,7 +717,9 @@ function PaginaConsultaDocumentos() {
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">Nenhuma pergunta realizada ainda para este escopo.</p>
+          <p className="text-sm text-muted-foreground">
+            Nenhuma pergunta realizada ainda para este escopo.
+          </p>
         )}
       </SecaoRecolhivel>
     </>

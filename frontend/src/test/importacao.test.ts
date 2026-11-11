@@ -70,7 +70,12 @@ describe("importação do PDF Systemar — período único", () => {
   it("preenche o demonstrativo com os valores do PDF e o saldo fecha", () => {
     const d = demonstrativoDoRelatorio(rel, null, "Estrelas do Mar");
     expect(d.periodo).toEqual({ ini: "01/08/2026", fim: "31/08/2026" });
-    expect(d.totais).toEqual({ saldoAnterior: 15000, receitas: 20500, despesas: 11000, saldoAtual: 24500 });
+    expect(d.totais).toEqual({
+      saldoAnterior: 15000,
+      receitas: 20500,
+      despesas: 11000,
+      saldoAtual: 24500,
+    });
     expect(d.despesas.grupos.map((g) => g.nome)).toEqual(["PESSOAL", "CONSUMO"]);
     expect(d.avisos).toEqual([]);
   });
@@ -94,14 +99,32 @@ describe("importação do PDF Systemar — comparativo", () => {
   it("usa o mês escolhido", () => {
     const d = demonstrativoDoRelatorio(rel, "08/2026");
     expect(d.periodo).toEqual({ ini: "01/08/2026", fim: "31/08/2026" });
-    expect(d.totais).toEqual({ saldoAnterior: 2000, receitas: 10500, despesas: 9500, saldoAtual: 3000 });
-    expect(d.despesas.grupos).toEqual([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 8000 }, { nome: "INSS", valor: 1500 }] }]);
+    expect(d.totais).toEqual({
+      saldoAnterior: 2000,
+      receitas: 10500,
+      despesas: 9500,
+      saldoAtual: 3000,
+    });
+    expect(d.despesas.grupos).toEqual([
+      {
+        nome: "Pessoal",
+        itens: [
+          { nome: "Salários", valor: 8000 },
+          { nome: "INSS", valor: 1500 },
+        ],
+      },
+    ]);
   });
 
   it("no total do período: Total nas receitas/despesas, saldo anterior do 1º mês e saldo atual do último", () => {
     const d = demonstrativoDoRelatorio(rel, COLUNA_TOTAL);
     expect(d.periodo).toEqual({ ini: "01/07/2026", fim: "31/08/2026" });
-    expect(d.totais).toEqual({ saldoAnterior: 1000, receitas: 20500, despesas: 18500, saldoAtual: 3000 });
+    expect(d.totais).toEqual({
+      saldoAnterior: 1000,
+      receitas: 20500,
+      despesas: 18500,
+      saldoAtual: 3000,
+    });
   });
 
   it("sugere o último mês no relatório mensal e o total na prestação de contas", () => {
@@ -112,8 +135,15 @@ describe("importação do PDF Systemar — comparativo", () => {
 
 describe("texto com layout a partir dos itens do pdf.js", () => {
   // Largura de 5 pt por caractere no texto e 5,5 pt nos números (fontes reais variam).
-  const t = (str: string, x: number, y: number, cw = 5): ItemTexto => ({ str, x, y, largura: str.length * cw, altura: 9 });
-  const fim = (str: string, xFim: number, y: number, cw = 5.5): ItemTexto => t(str, xFim - str.length * cw, y, cw);
+  const t = (str: string, x: number, y: number, cw = 5): ItemTexto => ({
+    str,
+    x,
+    y,
+    largura: str.length * cw,
+    altura: 9,
+  });
+  const fim = (str: string, xFim: number, y: number, cw = 5.5): ItemTexto =>
+    t(str, xFim - str.length * cw, y, cw);
   const paginas: ItemTexto[][] = [
     [
       t("Condomínio: (73) - Estrelas do Mar - CNPJ: 12.345.678/0001-90", 40, 800),
@@ -149,12 +179,20 @@ describe("condomínio do relatório", () => {
   ];
 
   it("sem código nem CNPJ no PDF, encontra pelo nome completo (sem acento/maiúscula)", () => {
-    expect(encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "RESIDENCIAL  URBAN CLÁSSIC" })?.id).toBe("c");
-    expect(encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "residencial urban classic" })?.id).toBe("c");
+    expect(
+      encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "RESIDENCIAL  URBAN CLÁSSIC" })
+        ?.id,
+    ).toBe("c");
+    expect(
+      encontrarCondominio(condos, { codigo: null, cnpj: null, nome: "residencial urban classic" })
+        ?.id,
+    ).toBe("c");
   });
 
   it("com código informado que não bate, não tenta pelo nome", () => {
-    expect(encontrarCondominio(condos, { codigo: "999", cnpj: null, nome: "Residencial Urban Classic" })).toBeNull();
+    expect(
+      encontrarCondominio(condos, { codigo: "999", cnpj: null, nome: "Residencial Urban Classic" }),
+    ).toBeNull();
   });
 
   it("encontra pelo mesmo código (com ou sem zeros à esquerda)", () => {
@@ -168,8 +206,20 @@ describe("condomínio do relatório", () => {
   it("sem correspondência, vai para o staging como pendente", () => {
     const rel = lerRelatorio(periodoUnico.replace(/^Condomínio:.*$/m, "Demonstrativo"));
     expect(encontrarCondominio(condos, rel.condominio)).toBeNull();
-    const imp = novaImportacao(rel, "x.pdf", "mensais", null, null, new Date("2026-10-20T00:00:00Z"));
-    expect(imp).toMatchObject({ status: "pendente", arquivo: "x.pdf", importadoEm: "2026-10-20T00:00:00.000Z", condominioId: null });
+    const imp = novaImportacao(
+      rel,
+      "x.pdf",
+      "mensais",
+      null,
+      null,
+      new Date("2026-10-20T00:00:00Z"),
+    );
+    expect(imp).toMatchObject({
+      status: "pendente",
+      arquivo: "x.pdf",
+      importadoEm: "2026-10-20T00:00:00.000Z",
+      condominioId: null,
+    });
     expect(imp.cadastro.revisar).toBe(true);
     expect(camposFaltando(imp.cadastro)).toEqual(["codigo", "nome", "cnpj"]);
   });

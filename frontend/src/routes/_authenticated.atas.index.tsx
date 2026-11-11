@@ -59,14 +59,22 @@ function ListaAtas() {
     const nomeCondo = new Map(condominios.map((c) => [c.id, c.nome]));
     return normalizadas
       .map((a) => ({ ...a, condoNome: nomeCondo.get(a.condoId) ?? "—" }))
-      .filter((a) => (condo === TODOS || a.condoId === condo) && (status === TODOS || a.status === status))
-      .sort((a, b) => b.data.localeCompare(a.data) || a.condoNome.localeCompare(b.condoNome, "pt-BR"));
+      .filter(
+        (a) =>
+          (condo === TODOS || a.condoId === condo) && (status === TODOS || a.status === status),
+      )
+      .sort(
+        (a, b) => b.data.localeCompare(a.data) || a.condoNome.localeCompare(b.condoNome, "pt-BR"),
+      );
   }, [normalizadas, condominios, condo, status]);
 
   const filtrar = (parcial: { condo?: string; status?: string }) => {
     const c = parcial.condo ?? condo;
     const st = parcial.status ?? status;
-    navigate({ search: { ...(c !== TODOS ? { condo: c } : {}), ...(st !== TODOS ? { status: st } : {}) }, replace: true });
+    navigate({
+      search: { ...(c !== TODOS ? { condo: c } : {}), ...(st !== TODOS ? { status: st } : {}) },
+      replace: true,
+    });
   };
   const abrirNovo = (v: boolean) => {
     navigate({
@@ -84,7 +92,11 @@ function ListaAtas() {
         titulo="Atas"
         descricao="Atas das assembleias, digitadas durante a reunião."
         acoes={
-          <Button permissao="atas.editar" onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
+          <Button
+            permissao="atas.editar"
+            onClick={() => abrirNovo(true)}
+            disabled={condominios.length === 0}
+          >
             <Plus /> Nova ata
           </Button>
         }
@@ -94,7 +106,10 @@ function ListaAtas() {
           aria-label="Filtrar por condomínio"
           value={condo}
           onChange={(v) => filtrar({ condo: v })}
-          opcoes={[{ valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" }, ...opcoesCondominio(condominios)]}
+          opcoes={[
+            { valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" },
+            ...opcoesCondominio(condominios),
+          ]}
           placeholderBusca="Pesquisar condomínio por nome, código ou CNPJ..."
           className="bg-card"
         />
@@ -123,14 +138,20 @@ function ListaAtas() {
               </span>
             ),
           },
-          { chave: "condoNome", titulo: "Condomínio", render: (a) => <span className="font-medium text-foreground">{a.condoNome}</span> },
+          {
+            chave: "condoNome",
+            titulo: "Condomínio",
+            render: (a) => <span className="font-medium text-foreground">{a.condoNome}</span>,
+          },
           {
             chave: "tipo",
             titulo: "Assembleia",
             render: (a) => (
               <span>
                 {rotuloTipo(a.tipo)}
-                <span className="block text-xs text-muted-foreground">{rotuloModalidade(a.modalidade)}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {rotuloModalidade(a.modalidade)}
+                </span>
               </span>
             ),
           },
@@ -144,12 +165,22 @@ function ListaAtas() {
                 ? `${a.quorum.unidadesPresentes} de ${a.quorum.totalUnidades} un.`
                 : "—",
           },
-          { chave: "itens", titulo: "Itens", alinhar: "direita", className: "num w-16", render: (a) => a.itens.length || "—" },
+          {
+            chave: "itens",
+            titulo: "Itens",
+            alinhar: "direita",
+            className: "num w-16",
+            render: (a) => a.itens.length || "—",
+          },
           {
             chave: "status",
             titulo: "Situação",
             className: "w-28",
-            render: (a) => <Badge variant={a.status === "finalizada" ? "success" : "warning"}>{rotuloStatus(a.status)}</Badge>,
+            render: (a) => (
+              <Badge variant={a.status === "finalizada" ? "success" : "warning"}>
+                {rotuloStatus(a.status)}
+              </Badge>
+            ),
           },
         ]}
         dados={linhas}

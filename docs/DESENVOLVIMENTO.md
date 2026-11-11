@@ -15,6 +15,7 @@ git switch main
 git pull --ff-only
 git switch -c issue-N-descricao
 npm ci
+npm run lint
 npm test
 npm run typecheck
 npm run docs:check
@@ -34,7 +35,7 @@ com package.json próprio e scripts dev/build/test/lint. O npm usa o
 package-lock.json versionado; bun.lock foi removido do repositório no PR #51.
 Ler o AGENTS.md local antes de editar. O CI valida o domínio, documentação e
 sintaxe PHP, instala o frontend com npm ci, compila e gera o pacote integrado.
-O workflow também executa os testes e o typecheck do frontend antes do build,
+O workflow também executa lint, testes e typecheck do frontend antes do build,
 evitando publicar uma versão que apenas compila, mas falha nessas verificações.
 O orçamento de JavaScript também é conferido após o build; ver
 [PERFORMANCE.md](PERFORMANCE.md) para escopo e limites da medição.
@@ -61,15 +62,16 @@ Não inserir PDFs reais ou dados do ambiente em issue, PR ou fixtures.
 
 ## Validações
 
-| Comando | O que comprova |
-| --- | --- |
-| `npm test` | Regras do domínio e utilitários cobertos pelos testes |
-| `npm run typecheck` | Tipagem de domain/lib/configuração Vitest |
-| `npm run docs:check` | Presença dos documentos essenciais e destinos de links locais Markdown |
-| `npm run changelog:check` | Versão atual e CHANGELOG.md consistentes com a fonte única pública |
-| `npm run package:hostinger` | Arquivos obrigatórios e referências diretas do index disponíveis |
-| `php -l ARQUIVO.php` | Sintaxe de cada PHP; não acessa MySQL |
-| `npm audit` | Alertas conhecidos das dependências npm instaladas; não audita assets compilados |
+| Comando                       | O que comprova                                                                   |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| `npm test`                    | Regras do domínio e utilitários cobertos pelos testes                            |
+| `npm run typecheck`           | Tipagem de domain/lib/configuração Vitest                                        |
+| `npm run docs:check`          | Presença dos documentos essenciais e destinos de links locais Markdown           |
+| `npm run changelog:check`     | Versão atual e CHANGELOG.md consistentes com a fonte única pública               |
+| `cd frontend && npm run lint` | Formatação e regras estáticas do frontend                                        |
+| `npm run package:hostinger`   | Arquivos obrigatórios e referências diretas do index disponíveis                 |
+| `php -l ARQUIVO.php`          | Sintaxe de cada PHP; não acessa MySQL                                            |
+| `npm audit`                   | Alertas conhecidos das dependências npm instaladas; não audita assets compilados |
 
 No PowerShell, se `npm` não estiver no PATH, localize `npm.cmd` da instalação
 Node e invoque-o pelo caminho completo; não altere credenciais para resolver isso.

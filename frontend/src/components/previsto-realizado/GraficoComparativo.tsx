@@ -75,7 +75,14 @@ function RotuloGrupo(props: {
   const passo = fonte + 2;
   const inicio = y - ((linhas.length - 1) * passo) / 2;
   return (
-    <text x={x - 6} y={inicio} textAnchor="end" dominantBaseline="central" fontSize={fonte} className="fill-foreground">
+    <text
+      x={x - 6}
+      y={inicio}
+      textAnchor="end"
+      dominantBaseline="central"
+      fontSize={fonte}
+      className="fill-foreground"
+    >
       <title>{nome}</title>
       {linhas.map((l, i) => (
         <tspan key={i} x={x - 6} dy={i === 0 ? 0 : passo}>
@@ -87,7 +94,13 @@ function RotuloGrupo(props: {
 }
 
 /** Valor curto na ponta da barra (zero aparece como "0", não como vazio); o exato fica no tooltip e na tabela. */
-function ValorNaBarra(props: { x?: number | string; y?: number | string; width?: number | string; height?: number | string; value?: number | string }) {
+function ValorNaBarra(props: {
+  x?: number | string;
+  y?: number | string;
+  width?: number | string;
+  height?: number | string;
+  value?: number | string;
+}) {
   const x = Number(props.x ?? 0);
   const y = Number(props.y ?? 0);
   const w = Number(props.width ?? 0);
@@ -96,7 +109,14 @@ function ValorNaBarra(props: { x?: number | string; y?: number | string; width?:
   // Ponta direita da barra: o fim, se positiva; o eixo zero, se negativa (não invade os nomes dos grupos).
   const pos = Math.max(x, x + w) + 4;
   return (
-    <text x={pos} y={y + h / 2} dominantBaseline="central" fontSize={11} className="fill-foreground num" aria-hidden>
+    <text
+      x={pos}
+      y={y + h / 2}
+      dominantBaseline="central"
+      fontSize={11}
+      className="fill-foreground num"
+      aria-hidden
+    >
       {formatValorCurto(v)}
     </text>
   );
@@ -161,12 +181,7 @@ export function GraficoComparativo({ r }: { r: ResultadoComparativo }) {
           }
         />
         <ChartLegend content={<ChartLegendContent />} />
-        <Bar
-          dataKey="previsto"
-          fill="var(--color-previsto)"
-          radius={[0, 3, 3, 0]}
-          maxBarSize={16}
-        >
+        <Bar dataKey="previsto" fill="var(--color-previsto)" radius={[0, 3, 3, 0]} maxBarSize={16}>
           <LabelList dataKey="previsto" content={<ValorNaBarra />} />
         </Bar>
         <Bar

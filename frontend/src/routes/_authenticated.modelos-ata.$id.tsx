@@ -95,28 +95,55 @@ function RouteComponent() {
 
   return (
     <>
-      <PageHeader titulo="Editar modelo de ata" acoes={
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => navigate({ to: "/modelos-ata" })}>Voltar</Button>
-          <Button variant="destructive" onClick={() => excluir.mutate()} disabled={excluir.isPending}>
-            <Trash2 className="mr-2 h-4 w-4" /> Excluir
-          </Button>
-          <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>
-            <Save className="mr-2 h-4 w-4" /> Salvar
-          </Button>
-        </div>
-      } />
+      <PageHeader
+        titulo="Editar modelo de ata"
+        acoes={
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => navigate({ to: "/modelos-ata" })}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => excluir.mutate()}
+              disabled={excluir.isPending}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+            </Button>
+            <Button onClick={() => salvar.mutate()} disabled={salvar.isPending}>
+              <Save className="mr-2 h-4 w-4" /> Salvar
+            </Button>
+          </div>
+        }
+      />
       <div className="space-y-4 max-w-3xl">
         <Field rotulo="Nome do modelo" obrigatorio>
-          <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} placeholder="Ex.: Ata padrão Florianópolis" />
+          <Input
+            value={form.nome}
+            onChange={(e) => setForm({ ...form, nome: e.target.value })}
+            placeholder="Ex.: Ata padrão Florianópolis"
+          />
         </Field>
         <Field rotulo="Cidade (opcional)" dica="Deixe em branco para um modelo geral.">
-          <Input value={form.cidade ?? ""} onChange={(e) => setForm({ ...form, cidade: e.target.value })} placeholder="Ex.: Florianópolis" />
+          <Input
+            value={form.cidade ?? ""}
+            onChange={(e) => setForm({ ...form, cidade: e.target.value })}
+            placeholder="Ex.: Florianópolis"
+          />
         </Field>
-        <Field rotulo="Cartório (opcional)" dica="Deixe em branco para valer em qualquer cartório da cidade.">
-          <Input value={form.cartorio ?? ""} onChange={(e) => setForm({ ...form, cartorio: e.target.value })} placeholder="Ex.: 1º Ofício" />
+        <Field
+          rotulo="Cartório (opcional)"
+          dica="Deixe em branco para valer em qualquer cartório da cidade."
+        >
+          <Input
+            value={form.cartorio ?? ""}
+            onChange={(e) => setForm({ ...form, cartorio: e.target.value })}
+            placeholder="Ex.: 1º Ofício"
+          />
         </Field>
-        <Field rotulo="Tipo de assembleia" dica="Separe o modelo de ordinária do de extraordinária. Vazio = serve aos dois.">
+        <Field
+          rotulo="Tipo de assembleia"
+          dica="Separe o modelo de ordinária do de extraordinária. Vazio = serve aos dois."
+        >
           <Selecao
             value={form.tipo ?? ""}
             onChange={(v) => setForm({ ...form, tipo: v })}
@@ -126,7 +153,11 @@ function RouteComponent() {
             ]}
           />
         </Field>
-        <Field rotulo="Texto da ata" dica="Use variáveis como {{ata.tipo}}, {{ata.data}}, {{condominio.nomeRelatorio}}. Pressione Ctrl+/ para ver todas." obrigatorio>
+        <Field
+          rotulo="Texto da ata"
+          dica="Use variáveis como {{ata.tipo}}, {{ata.data}}, {{condominio.nomeRelatorio}}. Pressione Ctrl+/ para ver todas."
+          obrigatorio
+        >
           <div className="relative">
             <textarea
               className="min-h-[320px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring pr-24"

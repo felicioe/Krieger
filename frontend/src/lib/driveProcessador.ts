@@ -1,4 +1,8 @@
-import type { DocumentoDriveRegistro, FormatoArquivoDrive, TipoDocumentoConsulta } from "@/domain/types";
+import type {
+  DocumentoDriveRegistro,
+  FormatoArquivoDrive,
+  TipoDocumentoConsulta,
+} from "@/domain/types";
 import { classificarDocumentoPorNome } from "@/domain/notificacao";
 import { salvarArquivo } from "./documento/baixar";
 import { gerarPdf } from "./documento/pdf";
@@ -52,7 +56,11 @@ export function base64ParaBlobUrl(base64OuDataUrl: string, mimePadrao = "applica
   return URL.createObjectURL(base64ParaBlob(base64OuDataUrl, mimePadrao));
 }
 
-export function baixarBase64(base64OuDataUrl: string, nomeArquivo: string, mimePadrao = "application/pdf"): void {
+export function baixarBase64(
+  base64OuDataUrl: string,
+  nomeArquivo: string,
+  mimePadrao = "application/pdf",
+): void {
   const blob = base64ParaBlob(base64OuDataUrl, mimePadrao);
   salvarArquivo(blob, nomeArquivo);
 }
@@ -260,8 +268,17 @@ export async function processarArquivoParaDrive(opcoes: {
     const tituloBase = arquivo.name.replace(/\.docx?$/i, "");
     const blocos =
       paragrafos.length > 0
-        ? paragrafos.map((p) => ({ tipo: "paragrafo" as const, texto: p, alinhamento: "justificado" as const }))
-        : [{ tipo: "paragrafo" as const, texto: `Documento Word: ${arquivo.name}. ${descricaoExtra}`.trim() }];
+        ? paragrafos.map((p) => ({
+            tipo: "paragrafo" as const,
+            texto: p,
+            alinhamento: "justificado" as const,
+          }))
+        : [
+            {
+              tipo: "paragrafo" as const,
+              texto: `Documento Word: ${arquivo.name}. ${descricaoExtra}`.trim(),
+            },
+          ];
 
     const pdfBlob = await gerarPdf({
       titulo: tituloBase,
@@ -317,7 +334,13 @@ export async function processarArquivoParaDrive(opcoes: {
         { tipo: "titulo", texto: tituloBase, nivel: 2, alinhamento: "centro" },
         { tipo: "imagem", dataUrl: dataUrlBruto, largura: 460, altura: 640, alinhamento: "centro" },
         ...(descricaoExtra.trim()
-          ? [{ tipo: "paragrafo" as const, texto: descricaoExtra.trim(), alinhamento: "esquerda" as const }]
+          ? [
+              {
+                tipo: "paragrafo" as const,
+                texto: descricaoExtra.trim(),
+                alinhamento: "esquerda" as const,
+              },
+            ]
           : []),
       ],
     });
@@ -336,7 +359,8 @@ export async function processarArquivoParaDrive(opcoes: {
         {
           paginaInicial: 1,
           paginaFinal: 1,
-          texto: `Imagem/Documento digitalizado: ${arquivo.name} (Categoria: ${tipo}). ${descricaoExtra}`.trim(),
+          texto:
+            `Imagem/Documento digitalizado: ${arquivo.name} (Categoria: ${tipo}). ${descricaoExtra}`.trim(),
         },
       ],
     };
@@ -349,7 +373,10 @@ export async function processarArquivoParaDrive(opcoes: {
     timbre: null,
     blocos: [
       { tipo: "titulo", texto: tituloBase, nivel: 2 },
-      { tipo: "paragrafo", texto: descricaoExtra.trim() || `Arquivo armazenado no Drive: ${arquivo.name}` },
+      {
+        tipo: "paragrafo",
+        texto: descricaoExtra.trim() || `Arquivo armazenado no Drive: ${arquivo.name}`,
+      },
     ],
   });
   const pdfDataUrl = await blobParaDataUrl(pdfBlob);

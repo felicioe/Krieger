@@ -191,8 +191,18 @@ describe("#31 Field: dica, erro e obrigatoriedade ligadas ao campo", () => {
           value="c1"
           onChange={aoMudar}
           opcoes={[
-            { valor: "c1", rotulo: "COND. ED. PAOLA GABRIELA", detalhe: "006", busca: "006 COND. ED. PAOLA GABRIELA 00.356.681/0001-25" },
-            { valor: "c2", rotulo: "CONDOMÍNIO CALEDÔNIA", detalhe: "042", busca: "042 CONDOMÍNIO CALEDÔNIA 76.706.944/0001-40" },
+            {
+              valor: "c1",
+              rotulo: "COND. ED. PAOLA GABRIELA",
+              detalhe: "006",
+              busca: "006 COND. ED. PAOLA GABRIELA 00.356.681/0001-25",
+            },
+            {
+              valor: "c2",
+              rotulo: "CONDOMÍNIO CALEDÔNIA",
+              detalhe: "042",
+              busca: "042 CONDOMÍNIO CALEDÔNIA 76.706.944/0001-40",
+            },
           ]}
         />
       </Field>,
@@ -274,7 +284,13 @@ describe("#47 Menu do celular: teclado e retorno do foco", () => {
   });
 });
 
-function ListaDeTeste({ inicial, reordenavel = true }: { inicial: string[]; reordenavel?: boolean }) {
+function ListaDeTeste({
+  inicial,
+  reordenavel = true,
+}: {
+  inicial: string[];
+  reordenavel?: boolean;
+}) {
   const [itens, setItens] = useState(inicial.map((texto) => ({ texto })));
   return (
     <>
@@ -284,7 +300,11 @@ function ListaDeTeste({ inicial, reordenavel = true }: { inicial: string[]; reor
         novo={() => ({ texto: "" })}
         reordenavel={reordenavel}
         render={(it, up, i) => (
-          <input aria-label={`Texto ${i + 1}`} value={it.texto} onChange={(e) => up({ texto: e.target.value })} />
+          <input
+            aria-label={`Texto ${i + 1}`}
+            value={it.texto}
+            onChange={(e) => up({ texto: e.target.value })}
+          />
         )}
       />
       <output data-testid="ordem">{itens.map((i) => i.texto).join(",")}</output>

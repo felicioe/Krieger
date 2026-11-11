@@ -5,7 +5,14 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Field } from "@/components/app/Field";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
@@ -45,7 +52,8 @@ export function DialogoNovoModelo({
   }, [aberto]);
 
   const criar = useMutation({
-    mutationFn: (dados: Omit<Modelo, "id">) => api.salvar<Omit<Modelo, "id"> & { id?: string }>("modelos", dados),
+    mutationFn: (dados: Omit<Modelo, "id">) =>
+      api.salvar<Omit<Modelo, "id"> & { id?: string }>("modelos", dados),
     onSuccess: (salvo) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("modelos") });
       queryClient.setQueryData(chaves.item("modelos", salvo.id), salvo);
@@ -55,13 +63,22 @@ export function DialogoNovoModelo({
     },
   });
 
-  const opcoesCondo = [{ valor: GERAL, rotulo: "Geral (todos os condomínios)", busca: "geral todos" }, ...opcoesCondominio(condominios)];
+  const opcoesCondo = [
+    { valor: GERAL, rotulo: "Geral (todos os condomínios)", busca: "geral todos" },
+    ...opcoesCondominio(condominios),
+  ];
 
   function enviar(e: FormEvent) {
     e.preventDefault();
     const msg = validarModelo({ nome });
     if (msg) return setErro(msg);
-    criar.mutate(modeloPadrao(nome, modelos.find((m) => m.id === base) ?? null, condoId === GERAL ? "" : condoId));
+    criar.mutate(
+      modeloPadrao(
+        nome,
+        modelos.find((m) => m.id === base) ?? null,
+        condoId === GERAL ? "" : condoId,
+      ),
+    );
   }
 
   return (
@@ -69,7 +86,10 @@ export function DialogoNovoModelo({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Novo modelo de edital</DialogTitle>
-          <DialogDescription>Comece em branco ou copie os blocos e a pauta de um modelo existente. O condomínio define a quem o modelo se aplica.</DialogDescription>
+          <DialogDescription>
+            Comece em branco ou copie os blocos e a pauta de um modelo existente. O condomínio
+            define a quem o modelo se aplica.
+          </DialogDescription>
         </DialogHeader>
         <form id="form-novo-modelo" onSubmit={enviar} className="grid gap-4" noValidate>
           <Field rotulo="Nome do modelo" obrigatorio erro={erro}>
@@ -83,19 +103,35 @@ export function DialogoNovoModelo({
               autoFocus
             />
           </Field>
-          <Field rotulo="Condomínio" dica="O modelo fica disponível para este condomínio; “Geral” serve a todos.">
-            <SelecaoBusca value={condoId} onChange={setCondoId} opcoes={opcoesCondo} placeholder="Escolha o condomínio" />
+          <Field
+            rotulo="Condomínio"
+            dica="O modelo fica disponível para este condomínio; “Geral” serve a todos."
+          >
+            <SelecaoBusca
+              value={condoId}
+              onChange={setCondoId}
+              opcoes={opcoesCondo}
+              placeholder="Escolha o condomínio"
+            />
           </Field>
           <Field rotulo="Começar a partir de">
             <Selecao
               value={base}
               onChange={setBase}
-              opcoes={[{ valor: EM_BRANCO, rotulo: "Modelo em branco" }, ...modelos.map((m) => ({ valor: m.id, rotulo: `Cópia de ${m.nome}` }))]}
+              opcoes={[
+                { valor: EM_BRANCO, rotulo: "Modelo em branco" },
+                ...modelos.map((m) => ({ valor: m.id, rotulo: `Cópia de ${m.nome}` })),
+              ]}
             />
           </Field>
         </form>
         <DialogFooter>
-          <Button variant="outline" type="button" onClick={() => aoMudar(false)} disabled={criar.isPending}>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => aoMudar(false)}
+            disabled={criar.isPending}
+          >
             Cancelar
           </Button>
           <Button type="submit" form="form-novo-modelo" disabled={criar.isPending}>

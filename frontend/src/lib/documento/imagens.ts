@@ -36,7 +36,9 @@ export function carregarPng(dataUrl: string): Promise<Png> {
   let p = cache.get(dataUrl);
   if (!p) {
     p = carregar(dataUrl).then((img) => ({
-      dataUrl: dataUrl.startsWith("data:image/png") ? dataUrl : desenhar(img, img.naturalWidth, img.naturalHeight, false),
+      dataUrl: dataUrl.startsWith("data:image/png")
+        ? dataUrl
+        : desenhar(img, img.naturalWidth, img.naturalHeight, false),
       largura: img.naturalWidth,
       altura: img.naturalHeight,
     }));
@@ -57,7 +59,12 @@ export function bytesDe(dataUrl: string): Uint8Array {
 }
 
 /** Rasteriza um SVG (gráficos) em PNG nítido, com fundo branco. */
-export async function svgParaPng(svg: string, largura: number, altura: number, escala = 3): Promise<string> {
+export async function svgParaPng(
+  svg: string,
+  largura: number,
+  altura: number,
+  escala = 3,
+): Promise<string> {
   const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
   try {
     const img = await carregar(url);

@@ -20,7 +20,10 @@ function resposta(d: Record<string, unknown>): DadosCnpjReceita {
   const texto = (k: string) => (typeof d[k] === "string" ? (d[k] as string) : "");
   return {
     razaoSocial: typeof d["razao_social"] === "string" ? (d["razao_social"] as string) : null,
-    situacaoCadastral: typeof d["descricao_situacao_cadastral"] === "string" ? (d["descricao_situacao_cadastral"] as string) : null,
+    situacaoCadastral:
+      typeof d["descricao_situacao_cadastral"] === "string"
+        ? (d["descricao_situacao_cadastral"] as string)
+        : null,
     logradouro: texto("logradouro"),
     numero: texto("numero"),
     complemento: texto("complemento"),
@@ -48,12 +51,7 @@ function respostaReceitaWs(d: Record<string, unknown>): DadosCnpjReceita {
 
 /** Sem acento, maiúsculo, espaços únicos — pra comparar nome do cadastro com razão social sem falso positivo por acentuação/caixa. */
 function normalizarNome(s: string): string {
-  return s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toUpperCase()
-    .replace(/\s+/g, " ")
-    .trim();
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -64,7 +62,12 @@ export function divergenciasCnpj(dados: DadosCnpjReceita, nomeAtual: string): st
   const avisos: string[] = [];
   const nomeReceita = normalizarNome(dados.razaoSocial ?? "");
   const nomeCadastro = normalizarNome(nomeAtual);
-  if (nomeReceita && nomeCadastro && !nomeReceita.includes(nomeCadastro) && !nomeCadastro.includes(nomeReceita)) {
+  if (
+    nomeReceita &&
+    nomeCadastro &&
+    !nomeReceita.includes(nomeCadastro) &&
+    !nomeCadastro.includes(nomeReceita)
+  ) {
     avisos.push(`razão social na Receita é "${dados.razaoSocial}", diferente do nome cadastrado`);
   }
   if (dados.situacaoCadastral && !/^ativa$/i.test(dados.situacaoCadastral.trim())) {
@@ -74,7 +77,9 @@ export function divergenciasCnpj(dados: DadosCnpjReceita, nomeAtual: string): st
 }
 
 /** null quando o CNPJ não existe na base ou a consulta falha (rede, serviço fora do ar etc.). */
-export async function consultarCnpjReceita(cnpjSomenteDigitos: string): Promise<DadosCnpjReceita | null> {
+export async function consultarCnpjReceita(
+  cnpjSomenteDigitos: string,
+): Promise<DadosCnpjReceita | null> {
   if (!/^\d{14}$/.test(cnpjSomenteDigitos)) return null;
   const endpoints = [
     { url: `https://brasilapi.com.br/api/cnpj/v1/${cnpjSomenteDigitos}`, ler: resposta },
@@ -111,7 +116,9 @@ export async function consultarCnpjsEmLote(
   aoProgresso?: (feito: number, total: number) => void,
   atrasoMs = 350,
 ): Promise<Map<string, DadosCnpjReceita | null>> {
-  const unicos = [...new Set(cnpjs.map((c) => c.replace(/\D/g, "")).filter((c) => c.length === 14))];
+  const unicos = [
+    ...new Set(cnpjs.map((c) => c.replace(/\D/g, "")).filter((c) => c.length === 14)),
+  ];
   const resultado = new Map<string, DadosCnpjReceita | null>();
   for (let i = 0; i < unicos.length; i++) {
     const cnpj = unicos[i]!;
@@ -125,7 +132,8 @@ export async function consultarCnpjsEmLote(
 /** Endereço completo numa linha só, pronto para o campo "Endereço (edital)". */
 export function enderecoDaReceita(d: DadosCnpjReceita): string {
   const partes = [
-    [d.logradouro, d.numero].filter(Boolean).join(", ") + (d.complemento ? ` - ${d.complemento}` : ""),
+    [d.logradouro, d.numero].filter(Boolean).join(", ") +
+      (d.complemento ? ` - ${d.complemento}` : ""),
     d.bairro,
     d.municipio && d.uf ? `${d.municipio}/${d.uf}` : d.municipio || d.uf,
     d.cep ? `CEP ${d.cep.replace(/(\d{5})(\d{3})/, "$1-$2")}` : "",

@@ -41,7 +41,8 @@ export function Field({
   const idAviso = `${id}-aviso`;
   const descricao = erro ? idErro : dica ? idDica : undefined;
   const descricaoFilho = children.props["aria-describedby"];
-  const describedBy = [descricaoFilho, descricao, aviso ? idAviso : undefined].filter(Boolean).join(" ") || undefined;
+  const describedBy =
+    [descricaoFilho, descricao, aviso ? idAviso : undefined].filter(Boolean).join(" ") || undefined;
 
   return (
     <div className={cn("grid min-w-0 content-start gap-1.5", className)}>
@@ -69,7 +70,10 @@ export function Field({
         </p>
       ) : null}
       {aviso && (
-        <p id={idAviso} className="flex items-start gap-1 rounded-sm bg-warning/15 px-1.5 py-1 text-xs text-warning-foreground">
+        <p
+          id={idAviso}
+          className="flex items-start gap-1 rounded-sm bg-warning/15 px-1.5 py-1 text-xs text-warning-foreground"
+        >
           <TriangleAlert className="mt-px size-3.5 shrink-0" aria-hidden="true" />
           <span>{aviso}</span>
         </p>

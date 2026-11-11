@@ -16,7 +16,10 @@ export function HistoricoConflitosImportacao({ registroId }: { registroId: strin
   const [aberta, setAberta] = useState(false);
   const { data: decisoes = [] } = useQuery({
     ...listaQuery<DecisaoConflitoImportacao>("decisoes_importacao"),
-    select: (d) => d.filter((x) => x.registroId === registroId).sort((a, b) => (a.decididoEm < b.decididoEm ? 1 : -1)),
+    select: (d) =>
+      d
+        .filter((x) => x.registroId === registroId)
+        .sort((a, b) => (a.decididoEm < b.decididoEm ? 1 : -1)),
   });
 
   if (decisoes.length === 0) return null;
@@ -32,8 +35,8 @@ export function HistoricoConflitosImportacao({ registroId }: { registroId: strin
         {decisoes.map((d) => (
           <li key={d.id} className="rounded-md border p-3">
             <p className="text-xs text-muted-foreground">
-              <span className="break-words font-medium text-foreground">{d.arquivo}</span> — decidido por{" "}
-              {d.decididoPorNome || "—"} em {formatDataHora(d.decididoEm)}
+              <span className="break-words font-medium text-foreground">{d.arquivo}</span> —
+              decidido por {d.decididoPorNome || "—"} em {formatDataHora(d.decididoEm)}
             </p>
             <ul className="mt-2 list-disc space-y-0.5 pl-4">
               {d.itens.map((i, idx) => (

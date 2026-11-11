@@ -2,10 +2,10 @@
 
 Duas famílias, escolhidas por documento no campo `Documento.fonte`:
 
-| Família | Uso | Arquivos |
-| --- | --- | --- |
-| **Source Sans 3** (padrão, `fonte` ausente ou `"interface"`) | edital, relatórios, previsto × realizado, presença, mensal | `SourceSans3-*.ttf` |
-| **Liberation Sans** (`fonte: "documento"`) | modelos de ata de cartório, corpo 12 pt | `LiberationSans-*.ttf` |
+| Família                                                      | Uso                                                        | Arquivos               |
+| ------------------------------------------------------------ | ---------------------------------------------------------- | ---------------------- |
+| **Source Sans 3** (padrão, `fonte` ausente ou `"interface"`) | edital, relatórios, previsto × realizado, presença, mensal | `SourceSans3-*.ttf`    |
+| **Liberation Sans** (`fonte: "documento"`)                   | modelos de ata de cartório, corpo 12 pt                    | `LiberationSans-*.ttf` |
 
 A Source Sans 3 é a mesma da interface (`--font-sans` em `src/styles.css`), para o
 documento não trocar de tipografia em relação à tela. A Liberation Sans é

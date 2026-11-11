@@ -2,7 +2,16 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
-import { ArrowLeft, CheckCircle2, FileText, Loader2, LockOpen, Save, Trash2, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  FileText,
+  Loader2,
+  LockOpen,
+  Save,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +50,8 @@ import { documentoAta } from "@/documentos/ata";
 import type { Assembleia, Ata, Condominio, ConfigEscritorio, ModeloAta } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/atas/$id")({
-  head: () => cabecalho("Ata", "Ata da assembleia: mesa, presentes, itens da pauta e deliberações."),
+  head: () =>
+    cabecalho("Ata", "Ata da assembleia: mesa, presentes, itens da pauta e deliberações."),
   loader: async ({ params, context: { queryClient } }) => {
     const [a] = await Promise.all([
       queryClient.ensureQueryData(itemQuery<Ata>("atas", params.id)),
@@ -86,7 +96,9 @@ function FormAta({ inicial }: { inicial: Ata }) {
   const queryClient = useQueryClient();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: assembleias } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
-  const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
+  const { data: escritorio } = useSuspenseQuery(
+    itemQuery<ConfigEscritorio>("config", "escritorio"),
+  );
   const { data: modelosAta } = useSuspenseQuery(listaQuery<ModeloAta>("modelos_ata"));
   const [a, setA] = useState<Ata>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
@@ -104,7 +116,8 @@ function FormAta({ inicial }: { inicial: Ata }) {
   const mudar = (parcial: Partial<Ata>) => {
     setA((x) => ({ ...x, ...parcial }));
     const mudadas = Object.keys(parcial);
-    if (mudadas.some((k) => k in erros)) setErros((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !mudadas.includes(k))));
+    if (mudadas.some((k) => k in erros))
+      setErros((e) => Object.fromEntries(Object.entries(e).filter(([k]) => !mudadas.includes(k))));
   };
 
   const sujoRef = useRef(sujo);
@@ -112,7 +125,9 @@ function FormAta({ inicial }: { inicial: Ata }) {
   const liberado = useRef(false);
   useBlocker({
     shouldBlockFn: () =>
-      !liberado.current && sujoRef.current && !window.confirm("Há alterações não salvas nesta ata. Sair mesmo assim?"),
+      !liberado.current &&
+      sujoRef.current &&
+      !window.confirm("Há alterações não salvas nesta ata. Sair mesmo assim?"),
     enableBeforeUnload: () => !liberado.current && sujoRef.current,
   });
 
@@ -164,7 +179,11 @@ function FormAta({ inicial }: { inicial: Ata }) {
       cidade,
       escritorio,
       modelo: modeloAtaSelecionado
-        ? { texto: modeloAtaSelecionado.texto, logoEscritorio: modeloAtaSelecionado.logoEscritorio, bordaPagina: modeloAtaSelecionado.bordaPagina }
+        ? {
+            texto: modeloAtaSelecionado.texto,
+            logoEscritorio: modeloAtaSelecionado.logoEscritorio,
+            bordaPagina: modeloAtaSelecionado.bordaPagina,
+          }
         : null,
     });
 
@@ -174,7 +193,9 @@ function FormAta({ inicial }: { inicial: Ata }) {
   ];
 
   const titulo = `Ata · Assembleia ${rotuloTipo(a.tipo)}`;
-  const descricao = [condo?.nome, cidade, parseData(a.data) ? formatData(a.data) : null].filter(Boolean).join(" · ");
+  const descricao = [condo?.nome, cidade, parseData(a.data) ? formatData(a.data) : null]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <>
@@ -198,19 +219,41 @@ function FormAta({ inicial }: { inicial: Ata }) {
               rotulo={travada ? "Gerar ata" : "Gerar rascunho"}
             />
             {travada ? (
-              <Button permissao="atas.editar" variant="outline" type="button" onClick={() => setAcao("reabrir")} disabled={salvar.isPending}>
+              <Button
+                permissao="atas.editar"
+                variant="outline"
+                type="button"
+                onClick={() => setAcao("reabrir")}
+                disabled={salvar.isPending}
+              >
                 <LockOpen /> Reabrir
               </Button>
             ) : (
               <>
-                <Button variant="outline" type="button" onClick={() => setAcao("excluir")} className="text-destructive hover:text-destructive">
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={() => setAcao("excluir")}
+                  className="text-destructive hover:text-destructive"
+                >
                   <Trash2 /> Excluir
                 </Button>
-                <Button permissao="atas.editar" variant="outline" type="submit" form="form-ata" disabled={salvar.isPending}>
+                <Button
+                  permissao="atas.editar"
+                  variant="outline"
+                  type="submit"
+                  form="form-ata"
+                  disabled={salvar.isPending}
+                >
                   {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
                   Salvar
                 </Button>
-                <Button permissao="atas.editar" type="button" onClick={() => pronta() && setAcao("finalizar")} disabled={salvar.isPending}>
+                <Button
+                  permissao="atas.editar"
+                  type="button"
+                  onClick={() => pronta() && setAcao("finalizar")}
+                  disabled={salvar.isPending}
+                >
                   <CheckCircle2 /> Finalizar
                 </Button>
               </>
@@ -221,7 +264,9 @@ function FormAta({ inicial }: { inicial: Ata }) {
 
       {travada && (
         <Alert className="mb-6">
-          <AlertDescription>Ata finalizada: a edição está travada. Use “Reabrir” se precisar corrigir algo.</AlertDescription>
+          <AlertDescription>
+            Ata finalizada: a edição está travada. Use “Reabrir” se precisar corrigir algo.
+          </AlertDescription>
         </Alert>
       )}
 
@@ -247,16 +292,35 @@ function FormAta({ inicial }: { inicial: Ata }) {
               </div>
               <div>
                 <dt className="text-xs font-medium text-muted-foreground">Cidade</dt>
-                <dd className="mt-1">{cidade || <span className="text-muted-foreground">Não informada no edital nem no escritório</span>}</dd>
+                <dd className="mt-1">
+                  {cidade || (
+                    <span className="text-muted-foreground">
+                      Não informada no edital nem no escritório
+                    </span>
+                  )}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs font-medium text-muted-foreground">Edital</dt>
-                <dd className="mt-1">{edital ? `${formatData(edital.data)} · ${rotuloTipo(edital.tipo)}` : <span className="text-muted-foreground">Sem edital vinculado</span>}</dd>
+                <dd className="mt-1">
+                  {edital ? (
+                    `${formatData(edital.data)} · ${rotuloTipo(edital.tipo)}`
+                  ) : (
+                    <span className="text-muted-foreground">Sem edital vinculado</span>
+                  )}
+                </dd>
               </div>
             </dl>
             <div className="mt-4 max-w-xs">
-              <Field rotulo="Modelo de ata" dica="Escolha um layout por cartório/cidade ou use o padrão.">
-                <Selecao value={a.modeloAtaId ?? ""} onChange={(v) => mudar({ modeloAtaId: v || null })} opcoes={opcoesModeloAta} />
+              <Field
+                rotulo="Modelo de ata"
+                dica="Escolha um layout por cartório/cidade ou use o padrão."
+              >
+                <Selecao
+                  value={a.modeloAtaId ?? ""}
+                  onChange={(v) => mudar({ modeloAtaId: v || null })}
+                  opcoes={opcoesModeloAta}
+                />
               </Field>
             </div>
           </SectionCard>
@@ -267,22 +331,36 @@ function FormAta({ inicial }: { inicial: Ata }) {
                 <Selecao value={a.tipo} onChange={(v) => mudar({ tipo: v })} opcoes={OPCOES_TIPO} />
               </Field>
               <Field rotulo="Modalidade">
-                <Selecao value={a.modalidade} onChange={(v) => mudar({ modalidade: v })} opcoes={OPCOES_MODALIDADE} />
+                <Selecao
+                  value={a.modalidade}
+                  onChange={(v) => mudar({ modalidade: v })}
+                  opcoes={OPCOES_MODALIDADE}
+                />
               </Field>
               <Field rotulo="Data" obrigatorio erro={erros.data ?? null}>
                 <DataInput value={a.data} onChange={(v) => mudar({ data: v })} />
               </Field>
-              <Field rotulo="Horário" erro={erros.hora ?? null} {...(edital?.hora2 ? { dica: `Edital: ${edital.hora1} / ${edital.hora2}.` } : {})}>
+              <Field
+                rotulo="Horário"
+                erro={erros.hora ?? null}
+                {...(edital?.hora2 ? { dica: `Edital: ${edital.hora1} / ${edital.hora2}.` } : {})}
+              >
                 <HoraInput value={a.hora} onChange={(v) => mudar({ hora: v })} />
               </Field>
               <Field rotulo="Local" className="sm:col-span-2 lg:col-span-4">
                 <Input value={a.local} onChange={(e) => mudar({ local: e.target.value })} />
               </Field>
               <Field rotulo="Presidente da mesa" className="lg:col-span-2">
-                <Input value={a.mesa.presidente} onChange={(e) => mudar({ mesa: { ...a.mesa, presidente: e.target.value } })} />
+                <Input
+                  value={a.mesa.presidente}
+                  onChange={(e) => mudar({ mesa: { ...a.mesa, presidente: e.target.value } })}
+                />
               </Field>
               <Field rotulo="Secretário(a)" className="lg:col-span-2">
-                <Input value={a.mesa.secretario} onChange={(e) => mudar({ mesa: { ...a.mesa, secretario: e.target.value } })} />
+                <Input
+                  value={a.mesa.secretario}
+                  onChange={(e) => mudar({ mesa: { ...a.mesa, secretario: e.target.value } })}
+                />
               </Field>
             </div>
           </SectionCard>
@@ -302,10 +380,24 @@ function FormAta({ inicial }: { inicial: Ata }) {
               reordenavel={false}
               render={(p, up, i) => (
                 <>
-                  <Input aria-label={`Unidade do presente ${i + 1}`} placeholder="Unidade" value={p.unidade} onChange={(e) => up({ unidade: e.target.value })} />
-                  <Input aria-label={`Nome do presente ${i + 1}`} placeholder="Nome" value={p.nome} onChange={(e) => up({ nome: e.target.value })} />
+                  <Input
+                    aria-label={`Unidade do presente ${i + 1}`}
+                    placeholder="Unidade"
+                    value={p.unidade}
+                    onChange={(e) => up({ unidade: e.target.value })}
+                  />
+                  <Input
+                    aria-label={`Nome do presente ${i + 1}`}
+                    placeholder="Nome"
+                    value={p.nome}
+                    onChange={(e) => up({ nome: e.target.value })}
+                  />
                   <label className="col-span-full flex min-h-9 min-w-0 items-center gap-2 pl-1.5 text-sm max-md:min-h-11 max-md:gap-3 pointer-coarse:min-h-11 pointer-coarse:gap-3 @min-[12rem]:col-span-1 @min-[12rem]:col-start-2 @2xl:col-start-auto">
-                    <Checkbox checked={p.procurador} onCheckedChange={(v) => up({ procurador: v === true })} aria-label={`Presente ${i + 1} é procurador`} />
+                    <Checkbox
+                      checked={p.procurador}
+                      onCheckedChange={(v) => up({ procurador: v === true })}
+                      aria-label={`Presente ${i + 1} é procurador`}
+                    />
                     <span className="min-w-0 break-words">Procurador</span>
                   </label>
                 </>
@@ -316,30 +408,47 @@ function FormAta({ inicial }: { inicial: Ata }) {
           <SectionCard titulo="Quórum">
             <div className="grid items-end gap-4 sm:grid-cols-[10rem_10rem_minmax(0,1fr)]">
               <Field rotulo="Unidades presentes">
-                <InteiroInput value={a.quorum.unidadesPresentes} onChange={(v) => mudar({ quorum: { ...a.quorum, unidadesPresentes: v ?? 0 } })} />
+                <InteiroInput
+                  value={a.quorum.unidadesPresentes}
+                  onChange={(v) => mudar({ quorum: { ...a.quorum, unidadesPresentes: v ?? 0 } })}
+                />
               </Field>
               <Field rotulo="Total de unidades">
-                <InteiroInput value={a.quorum.totalUnidades} onChange={(v) => mudar({ quorum: { ...a.quorum, totalUnidades: v ?? 0 } })} />
+                <InteiroInput
+                  value={a.quorum.totalUnidades}
+                  onChange={(v) => mudar({ quorum: { ...a.quorum, totalUnidades: v ?? 0 } })}
+                />
               </Field>
               <div className="flex flex-wrap items-center gap-3 pb-1">
                 <span className="num text-sm">
                   {pct === null ? "—" : `${formatNumeroBR(pct, 2)}% das unidades`}
                 </span>
-                {!travada && unidadesNaLista !== a.quorum.unidadesPresentes && unidadesNaLista > 0 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => mudar({ quorum: { ...a.quorum, unidadesPresentes: unidadesNaLista } })}
-                  >
-                    <Users /> Usar contagem da lista ({unidadesNaLista})
-                  </Button>
-                )}
+                {!travada &&
+                  unidadesNaLista !== a.quorum.unidadesPresentes &&
+                  unidadesNaLista > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        mudar({ quorum: { ...a.quorum, unidadesPresentes: unidadesNaLista } })
+                      }
+                    >
+                      <Users /> Usar contagem da lista ({unidadesNaLista})
+                    </Button>
+                  )}
               </div>
             </div>
           </SectionCard>
 
-          <SectionCard titulo="Itens da pauta" descricao={edital ? "Carregados da pauta do edital. Registre a discussão, a deliberação e os votos de cada item." : "Registre a discussão, a deliberação e os votos de cada item."}>
+          <SectionCard
+            titulo="Itens da pauta"
+            descricao={
+              edital
+                ? "Carregados da pauta do edital. Registre a discussão, a deliberação e os votos de cada item."
+                : "Registre a discussão, a deliberação e os votos de cada item."
+            }
+          >
             <RepeatableList<ItemAta>
               itens={a.itens}
               onChange={(itens) => mudar({ itens })}
@@ -352,27 +461,50 @@ function FormAta({ inicial }: { inicial: Ata }) {
                 return (
                   <div className="grid grid-cols-1 gap-3 rounded-md border bg-card p-3 @max-[10rem]:p-2">
                     <Field rotulo={`Item ${i + 1}`}>
-                      <Input value={item.titulo} onChange={(e) => up({ titulo: e.target.value })} className="font-medium" />
+                      <Input
+                        value={item.titulo}
+                        onChange={(e) => up({ titulo: e.target.value })}
+                        className="font-medium"
+                      />
                     </Field>
                     <div className="grid grid-cols-1 gap-3 @2xl:grid-cols-2">
                       <Field rotulo="Discussão">
-                        <Textarea value={item.discussao} onChange={(e) => up({ discussao: e.target.value })} rows={3} />
+                        <Textarea
+                          value={item.discussao}
+                          onChange={(e) => up({ discussao: e.target.value })}
+                          rows={3}
+                        />
                       </Field>
                       <Field rotulo="Deliberação">
-                        <Textarea value={item.deliberacao} onChange={(e) => up({ deliberacao: e.target.value })} rows={3} />
+                        <Textarea
+                          value={item.deliberacao}
+                          onChange={(e) => up({ deliberacao: e.target.value })}
+                          rows={3}
+                        />
                       </Field>
                     </div>
                     <div className="grid grid-cols-1 items-end gap-3 @min-[14rem]:grid-cols-3 @2xl:grid-cols-[8rem_8rem_8rem_minmax(0,1fr)]">
                       <Field rotulo="A favor">
-                        <InteiroInput value={item.votos.favor} onChange={(v) => up({ votos: { ...item.votos, favor: v ?? 0 } })} />
+                        <InteiroInput
+                          value={item.votos.favor}
+                          onChange={(v) => up({ votos: { ...item.votos, favor: v ?? 0 } })}
+                        />
                       </Field>
                       <Field rotulo="Contra">
-                        <InteiroInput value={item.votos.contra} onChange={(v) => up({ votos: { ...item.votos, contra: v ?? 0 } })} />
+                        <InteiroInput
+                          value={item.votos.contra}
+                          onChange={(v) => up({ votos: { ...item.votos, contra: v ?? 0 } })}
+                        />
                       </Field>
                       <Field rotulo="Abstenções">
-                        <InteiroInput value={item.votos.abstencao} onChange={(v) => up({ votos: { ...item.votos, abstencao: v ?? 0 } })} />
+                        <InteiroInput
+                          value={item.votos.abstencao}
+                          onChange={(v) => up({ votos: { ...item.votos, abstencao: v ?? 0 } })}
+                        />
                       </Field>
-                      <p className="num col-span-full pb-2 text-xs text-muted-foreground @2xl:col-span-1">{total ? `${total} votos` : "Sem votação registrada"}</p>
+                      <p className="num col-span-full pb-2 text-xs text-muted-foreground @2xl:col-span-1">
+                        {total ? `${total} votos` : "Sem votação registrada"}
+                      </p>
                     </div>
                   </div>
                 );
@@ -382,10 +514,20 @@ function FormAta({ inicial }: { inicial: Ata }) {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             <SectionCard titulo="Encerramento">
-              <Textarea aria-label="Encerramento" value={a.encerramento} onChange={(e) => mudar({ encerramento: e.target.value })} rows={5} />
+              <Textarea
+                aria-label="Encerramento"
+                value={a.encerramento}
+                onChange={(e) => mudar({ encerramento: e.target.value })}
+                rows={5}
+              />
             </SectionCard>
             <SectionCard titulo="Observações">
-              <Textarea aria-label="Observações" value={a.observacoes} onChange={(e) => mudar({ observacoes: e.target.value })} rows={5} />
+              <Textarea
+                aria-label="Observações"
+                value={a.observacoes}
+                onChange={(e) => mudar({ observacoes: e.target.value })}
+                rows={5}
+              />
             </SectionCard>
           </div>
         </fieldset>
@@ -399,7 +541,11 @@ function FormAta({ inicial }: { inicial: Ata }) {
         rotuloConfirmar="Finalizar"
         aoConfirmar={async () => {
           const p = pronta();
-          if (p) await salvar.mutateAsync({ ata: { ...p, status: "finalizada" }, mensagem: "Ata finalizada." });
+          if (p)
+            await salvar.mutateAsync({
+              ata: { ...p, status: "finalizada" },
+              mensagem: "Ata finalizada.",
+            });
         }}
       />
       <ConfirmDialog
@@ -408,7 +554,12 @@ function FormAta({ inicial }: { inicial: Ata }) {
         titulo="Reabrir a ata?"
         descricao="A ata volta a ser rascunho e poderá ser editada."
         rotuloConfirmar="Reabrir"
-        aoConfirmar={() => salvar.mutateAsync({ ata: { ...paraGravar(a), status: "rascunho" }, mensagem: "Ata reaberta para edição." })}
+        aoConfirmar={() =>
+          salvar.mutateAsync({
+            ata: { ...paraGravar(a), status: "rascunho" },
+            mensagem: "Ata reaberta para edição.",
+          })
+        }
       />
       <ConfirmDialog
         aberto={acao === "excluir"}

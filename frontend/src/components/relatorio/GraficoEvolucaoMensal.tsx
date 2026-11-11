@@ -16,7 +16,8 @@ const config = {
   saldo: { label: "Saldo atual", color: "var(--chart-3)" },
 } satisfies ChartConfig;
 
-const eixo = (v: number) => (Math.abs(v) >= 1000 ? `${formatNumeroBR(v / 1000, 0)} mil` : formatNumeroBR(v, 0));
+const eixo = (v: number) =>
+  Math.abs(v) >= 1000 ? `${formatNumeroBR(v / 1000, 0)} mil` : formatNumeroBR(v, 0);
 
 /** Evolução mensal de receitas, despesas e saldo ao longo do exercício. */
 export function GraficoEvolucaoMensal({ pontos }: { pontos: PontoEvolucaoMensal[] }) {
@@ -32,17 +33,39 @@ export function GraficoEvolucaoMensal({ pontos }: { pontos: PontoEvolucaoMensal[
             <ChartTooltipContent
               formatter={(valor, nome) => (
                 <div className="flex w-full items-center justify-between gap-4">
-                  <span className="text-muted-foreground">{config[nome as keyof typeof config]?.label ?? nome}</span>
-                  <span className="num font-medium text-foreground">{formatBRL(Number(valor))}</span>
+                  <span className="text-muted-foreground">
+                    {config[nome as keyof typeof config]?.label ?? nome}
+                  </span>
+                  <span className="num font-medium text-foreground">
+                    {formatBRL(Number(valor))}
+                  </span>
                 </div>
               )}
             />
           }
         />
         <ChartLegend content={<ChartLegendContent />} />
-        <Line type="monotone" dataKey="receitas" stroke="var(--color-receitas)" strokeWidth={2} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="despesas" stroke="var(--color-despesas)" strokeWidth={2} dot={{ r: 3 }} />
-        <Line type="monotone" dataKey="saldo" stroke="var(--color-saldo)" strokeWidth={2} dot={{ r: 3 }} />
+        <Line
+          type="monotone"
+          dataKey="receitas"
+          stroke="var(--color-receitas)"
+          strokeWidth={2}
+          dot={{ r: 3 }}
+        />
+        <Line
+          type="monotone"
+          dataKey="despesas"
+          stroke="var(--color-despesas)"
+          strokeWidth={2}
+          dot={{ r: 3 }}
+        />
+        <Line
+          type="monotone"
+          dataKey="saldo"
+          stroke="var(--color-saldo)"
+          strokeWidth={2}
+          dot={{ r: 3 }}
+        />
       </LineChart>
     </ChartContainer>
   );

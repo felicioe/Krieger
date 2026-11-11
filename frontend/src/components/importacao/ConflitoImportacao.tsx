@@ -3,14 +3,26 @@ import type { QueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { contagem } from "@/components/app/textos";
 import { api, mensagemErro } from "@/lib/api";
 import { novoId } from "@/lib/id";
 import { formatBRL } from "@/lib/format";
 import { chaves } from "@/lib/queries";
 import { aplicarDecisoesImportacao, compararDemonstrativos } from "@/domain/importacao";
-import type { Demonstrativo, DecisaoConflitoImportacao, ItemDivergenteImportacao, Usuario } from "@/domain/types";
+import type {
+  Demonstrativo,
+  DecisaoConflitoImportacao,
+  ItemDivergenteImportacao,
+  Usuario,
+} from "@/domain/types";
 
 type EscolhaItem = ItemDivergenteImportacao & { escolha: "manter" | "atualizar" };
 
@@ -39,7 +51,10 @@ type ContextoConflito = {
 };
 
 /** A decisão já tomada, pronta pra gravar — falta só o `id` e quem/quando (ver `persistirDecisaoConflito`). */
-export type DecisaoConflitoPendente = Omit<DecisaoConflitoImportacao, "id" | "decididoPor" | "decididoPorNome" | "decididoEm">;
+export type DecisaoConflitoPendente = Omit<
+  DecisaoConflitoImportacao,
+  "id" | "decididoPor" | "decididoPorNome" | "decididoEm"
+>;
 
 type Pendente = {
   itens: ItemDivergenteImportacao[];
@@ -62,7 +77,9 @@ type Pendente = {
 export function useConflitoImportacao() {
   const [pendente, setPendente] = useState<Pendente | null>(null);
 
-  function resolver(contexto: ContextoConflito): Promise<{ demonstrativo: Demonstrativo; decisao: DecisaoConflitoPendente | null }> {
+  function resolver(
+    contexto: ContextoConflito,
+  ): Promise<{ demonstrativo: Demonstrativo; decisao: DecisaoConflitoPendente | null }> {
     const itens = compararDemonstrativos(contexto.atual, contexto.novo);
     if (itens.length === 0) return Promise.resolve({ demonstrativo: contexto.novo, decisao: null });
     return new Promise((resolve, reject) => setPendente({ itens, contexto, resolve, reject }));
@@ -70,7 +87,11 @@ export function useConflitoImportacao() {
 
   function confirmar(escolhas: EscolhaItem[]) {
     if (!pendente) return;
-    const demonstrativo = aplicarDecisoesImportacao(pendente.contexto.atual, pendente.contexto.novo, escolhas);
+    const demonstrativo = aplicarDecisoesImportacao(
+      pendente.contexto.atual,
+      pendente.contexto.novo,
+      escolhas,
+    );
     const decisao: DecisaoConflitoPendente = {
       condoId: pendente.contexto.condoId,
       condoNome: pendente.contexto.condoNome,
@@ -105,7 +126,11 @@ export function useConflitoImportacao() {
  * registro que ela descreve foi efetivamente salvo, nunca antes. Falha de gravação não é lançada:
  * é só o registro de auditoria que não vai pra frente, igual ao padrão já usado em `decisoes_previsao`.
  */
-export async function persistirDecisaoConflito(usuario: Usuario | null, queryClient: QueryClient, decisao: DecisaoConflitoPendente): Promise<void> {
+export async function persistirDecisaoConflito(
+  usuario: Usuario | null,
+  queryClient: QueryClient,
+  decisao: DecisaoConflitoPendente,
+): Promise<void> {
   if (!usuario) return;
   try {
     await api.salvar<DecisaoConflitoImportacao>("decisoes_importacao", {
@@ -151,8 +176,9 @@ export function ConflitoImportacaoDialog({
         <DialogHeader>
           <DialogTitle>Valores divergentes na reimportação</DialogTitle>
           <DialogDescription>
-            Este relatório já tinha dados gravados. {contagem(itens.length, "conta ficou diferente", "contas ficaram diferentes")}{" "}
-            do que veio no PDF agora — escolha, uma a uma, se mantém o valor gravado ou usa o valor novo.
+            Este relatório já tinha dados gravados.{" "}
+            {contagem(itens.length, "conta ficou diferente", "contas ficaram diferentes")} do que
+            veio no PDF agora — escolha, uma a uma, se mantém o valor gravado ou usa o valor novo.
           </DialogDescription>
         </DialogHeader>
         <ul className="grid gap-3 rounded-md border p-3">
@@ -163,25 +189,40 @@ export function ConflitoImportacaoDialog({
                 <p className="text-sm font-medium">
                   {ROTULO_SECAO[i.secao]}
                   {i.grupo ? ` / ${i.grupo}` : ""} — {i.nome}
-                  {i.ocorrencia > 0 && <span className="font-normal text-muted-foreground"> ({i.ocorrencia + 1}ª conta com esse nome)</span>}
+                  {i.ocorrencia > 0 && (
+                    <span className="font-normal text-muted-foreground">
+                      {" "}
+                      ({i.ocorrencia + 1}ª conta com esse nome)
+                    </span>
+                  )}
                 </p>
                 <RadioGroup
                   value={escolhas[k] ?? ""}
-                  onValueChange={(v) => setEscolhas((s) => ({ ...s, [k]: v as "manter" | "atualizar" }))}
+                  onValueChange={(v) =>
+                    setEscolhas((s) => ({ ...s, [k]: v as "manter" | "atualizar" }))
+                  }
                   className="gap-2 sm:grid-cols-2"
                 >
                   <div className="flex items-start gap-2">
                     <RadioGroupItem value="manter" id={`${k}-manter`} className="mt-0.5" />
                     <Label htmlFor={`${k}-manter`} className="grid gap-0.5 font-normal">
-                      <span className="text-xs text-muted-foreground">Manter o que está gravado</span>
-                      <span className="num font-medium">{i.valorAtual !== null ? formatBRL(i.valorAtual) : "Não incluir este item"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Manter o que está gravado
+                      </span>
+                      <span className="num font-medium">
+                        {i.valorAtual !== null ? formatBRL(i.valorAtual) : "Não incluir este item"}
+                      </span>
                     </Label>
                   </div>
                   <div className="flex items-start gap-2">
                     <RadioGroupItem value="atualizar" id={`${k}-atualizar`} className="mt-0.5" />
                     <Label htmlFor={`${k}-atualizar`} className="grid gap-0.5 font-normal">
-                      <span className="text-xs text-muted-foreground">Usar o valor do PDF novo</span>
-                      <span className="num font-medium">{i.valorNovo !== null ? formatBRL(i.valorNovo) : "Remover este item"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        Usar o valor do PDF novo
+                      </span>
+                      <span className="num font-medium">
+                        {i.valorNovo !== null ? formatBRL(i.valorNovo) : "Remover este item"}
+                      </span>
                     </Label>
                   </div>
                 </RadioGroup>
@@ -193,7 +234,12 @@ export function ConflitoImportacaoDialog({
           <Button variant="outline" onClick={aoCancelar}>
             Cancelar importação
           </Button>
-          <Button disabled={!todasFeitas} onClick={() => aoConfirmar(itens.map((i) => ({ ...i, escolha: escolhas[chaveItem(i)]! })))}>
+          <Button
+            disabled={!todasFeitas}
+            onClick={() =>
+              aoConfirmar(itens.map((i) => ({ ...i, escolha: escolhas[chaveItem(i)]! })))
+            }
+          >
             Confirmar e aplicar
           </Button>
         </DialogFooter>

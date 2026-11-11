@@ -19,7 +19,10 @@ import { EditorDemonstrativo } from "@/components/demonstrativo/EditorDemonstrat
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { DialogoDivergencia } from "@/components/importacao/DialogoDivergencia";
 import { HistoricoConflitosImportacao } from "@/components/importacao/HistoricoConflitosImportacao";
-import { persistirDecisaoConflito, type DecisaoConflitoPendente } from "@/components/importacao/ConflitoImportacao";
+import {
+  persistirDecisaoConflito,
+  type DecisaoConflitoPendente,
+} from "@/components/importacao/ConflitoImportacao";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
 import { api } from "@/lib/api";
@@ -28,13 +31,20 @@ import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import { origemComArquivo } from "@/domain/importacao";
-import { competenciaMensal, normalizarMensal, prepararMensal, rotuloCompetencia, validarMensal } from "@/domain/mensal";
+import {
+  competenciaMensal,
+  normalizarMensal,
+  prepararMensal,
+  rotuloCompetencia,
+  validarMensal,
+} from "@/domain/mensal";
 import { normalizarCondominio } from "@/domain/condominio";
 import { documentoMensal } from "@/documentos/mensal";
 import type { Condominio, ConfigEscritorio, Mensal } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/relatorio-mensal/$id")({
-  head: () => cabecalho("Relatório mensal", "Demonstrativo do mês, contas a receber e notas explicativas."),
+  head: () =>
+    cabecalho("Relatório mensal", "Demonstrativo do mês, contas a receber e notas explicativas."),
   loader: async ({ params, context: { queryClient } }) => {
     const [m] = await Promise.all([
       queryClient.ensureQueryData(itemQuery<Mensal>("mensais", params.id)),
@@ -70,7 +80,9 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
   const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
-  const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
+  const { data: escritorio } = useSuspenseQuery(
+    itemQuery<ConfigEscritorio>("config", "escritorio"),
+  );
   const [m, setM] = useState<Mensal>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
@@ -89,10 +101,12 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
 
   // Rubricas do demonstrativo, sugeridas nas notas explicativas.
   const rubricas = [
-    ...new Set([
-      ...demonstrativo.receitas.itens.map((i) => i.nome),
-      ...demonstrativo.despesas.grupos.flatMap((g) => g.itens.map((i) => i.nome)),
-    ].filter(Boolean)),
+    ...new Set(
+      [
+        ...demonstrativo.receitas.itens.map((i) => i.nome),
+        ...demonstrativo.despesas.grupos.flatMap((g) => g.itens.map((i) => i.nome)),
+      ].filter(Boolean),
+    ),
   ];
 
   const sujoRef = useRef(sujo);
@@ -140,7 +154,9 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
       setAba("demonstrativo");
       return;
     }
-    trava.salvar(m.demonstrativo ?? demonstrativoVazio(m.condoNome), () => salvar.mutateAsync(prepararMensal(m)));
+    trava.salvar(m.demonstrativo ?? demonstrativoVazio(m.condoNome), () =>
+      salvar.mutateAsync(prepararMensal(m)),
+    );
   }
 
   const nomeCondo = m.condoNome || condo?.nome || "";
@@ -161,7 +177,13 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
             <BotaoDocumento
-              gerar={() => documentoMensal({ mensal: m, condominio: condo ? normalizarCondominio(condo) : null, escritorio })}
+              gerar={() =>
+                documentoMensal({
+                  mensal: m,
+                  condominio: condo ? normalizarCondominio(condo) : null,
+                  escritorio,
+                })
+              }
               bloqueio={sujo ? "Salve o relatório antes de gerar o documento." : null}
               rotulo="Gerar relatório"
             />
@@ -184,10 +206,21 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
                 setAba("demonstrativo");
               }}
             />
-            <Button permissao="relatorio_mensal.editar" variant="outline" type="button" onClick={() => setConfirmarExclusao(true)} className="text-destructive hover:text-destructive">
+            <Button
+              permissao="relatorio_mensal.editar"
+              variant="outline"
+              type="button"
+              onClick={() => setConfirmarExclusao(true)}
+              className="text-destructive hover:text-destructive"
+            >
               <Trash2 /> Excluir
             </Button>
-            <Button permissao="relatorio_mensal.editar" type="submit" form="form-mensal" disabled={salvar.isPending}>
+            <Button
+              permissao="relatorio_mensal.editar"
+              type="submit"
+              form="form-mensal"
+              disabled={salvar.isPending}
+            >
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
             </Button>
@@ -198,11 +231,17 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
       <form id="form-mensal" onSubmit={enviar} noValidate>
         <Tabs value={aba} onValueChange={setAba}>
           <TabsList className="h-10 bg-secondary">
-            <TabsTrigger value="demonstrativo" className="px-4">Demonstrativo</TabsTrigger>
-            <TabsTrigger value="receber" className="px-4">Contas a receber</TabsTrigger>
+            <TabsTrigger value="demonstrativo" className="px-4">
+              Demonstrativo
+            </TabsTrigger>
+            <TabsTrigger value="receber" className="px-4">
+              Contas a receber
+            </TabsTrigger>
             <TabsTrigger value="notas" className="px-4">
               Notas explicativas
-              {m.notas.length > 0 && <span className="num ml-1.5 text-xs text-muted-foreground">({m.notas.length})</span>}
+              {m.notas.length > 0 && (
+                <span className="num ml-1.5 text-xs text-muted-foreground">({m.notas.length})</span>
+              )}
             </TabsTrigger>
           </TabsList>
 
@@ -215,23 +254,35 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
           </TabsContent>
 
           <TabsContent value="receber" className="mt-4">
-            <SectionCard titulo="Contas a receber" descricao={`Inadimplência do condomínio ao fim de ${rotuloCompetencia(competencia)}.`}>
+            <SectionCard
+              titulo="Contas a receber"
+              descricao={`Inadimplência do condomínio ao fim de ${rotuloCompetencia(competencia)}.`}
+            >
               <div className="grid grid-cols-1 max-w-lg gap-4 sm:grid-cols-2">
-                <Field rotulo="Unidades inadimplentes" {...(condo?.unidades ? { dica: `De ${condo.unidades} unidades.` } : {})}>
+                <Field
+                  rotulo="Unidades inadimplentes"
+                  {...(condo?.unidades ? { dica: `De ${condo.unidades} unidades.` } : {})}
+                >
                   <InteiroInput
                     value={m.receber.unidades}
                     onChange={(v) => mudar({ receber: { ...m.receber, unidades: v } })}
                   />
                 </Field>
                 <Field rotulo="Valor total a receber">
-                  <DinheiroInput value={m.receber.valor} onChange={(v) => mudar({ receber: { ...m.receber, valor: v } })} />
+                  <DinheiroInput
+                    value={m.receber.valor}
+                    onChange={(v) => mudar({ receber: { ...m.receber, valor: v } })}
+                  />
                 </Field>
               </div>
             </SectionCard>
           </TabsContent>
 
           <TabsContent value="notas" className="mt-4">
-            <SectionCard titulo="Notas explicativas" descricao="Esclarecimentos sobre rubricas do mês (reajustes, despesas extraordinárias etc.).">
+            <SectionCard
+              titulo="Notas explicativas"
+              descricao="Esclarecimentos sobre rubricas do mês (reajustes, despesas extraordinárias etc.)."
+            >
               <datalist id="rubricas-mes">
                 {rubricas.map((r) => (
                   <option key={r} value={r} />
@@ -254,7 +305,11 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
                       value={n.rubrica}
                       onChange={(e) => up({ rubrica: e.target.value })}
                     />
-                    <DinheiroInput aria-label="Valor" value={n.valor} onChange={(v) => up({ valor: v })} />
+                    <DinheiroInput
+                      aria-label="Valor"
+                      value={n.valor}
+                      onChange={(v) => up({ valor: v })}
+                    />
                     <Textarea
                       aria-label="Texto da nota"
                       placeholder="Texto da nota explicativa"

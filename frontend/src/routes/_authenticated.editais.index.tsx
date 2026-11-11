@@ -49,7 +49,9 @@ function ListaEditais() {
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: modelos } = useSuspenseQuery(listaQuery<Modelo>("modelos"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
-  const { data: escritorio } = useSuspenseQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
+  const { data: escritorio } = useSuspenseQuery(
+    itemQuery<ConfigEscritorio>("config", "escritorio"),
+  );
   const [condo, setCondo] = useState(busca.condo ?? TODOS);
   const novoAberto = busca.novo !== undefined;
 
@@ -68,13 +70,24 @@ function ListaEditais() {
         };
       })
       .filter((a) => condo === TODOS || a.condoId === condo)
-      .sort((a, b) => b.data.localeCompare(a.data) || a.condoNome.localeCompare(b.condoNome, "pt-BR"));
+      .sort(
+        (a, b) => b.data.localeCompare(a.data) || a.condoNome.localeCompare(b.condoNome, "pt-BR"),
+      );
   }, [assembleias, condominios, modelos, condo]);
 
-  const opcoesCondo = [{ valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" }, ...opcoesCondominio(condominios)];
+  const opcoesCondo = [
+    { valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" },
+    ...opcoesCondominio(condominios),
+  ];
 
   const abrirNovo = (v: boolean) =>
-    navigate({ search: (s) => (v ? { ...s, novo: condo === TODOS ? "" : condo } : { ...(s.condo ? { condo: s.condo } : {}) }), replace: true });
+    navigate({
+      search: (s) =>
+        v
+          ? { ...s, novo: condo === TODOS ? "" : condo }
+          : { ...(s.condo ? { condo: s.condo } : {}) },
+      replace: true,
+    });
 
   return (
     <>
@@ -82,7 +95,11 @@ function ListaEditais() {
         titulo="Editais"
         descricao="Editais de convocação das assembleias ordinárias e extraordinárias."
         acoes={
-          <Button permissao="editais.editar" onClick={() => abrirNovo(true)} disabled={condominios.length === 0}>
+          <Button
+            permissao="editais.editar"
+            onClick={() => abrirNovo(true)}
+            disabled={condominios.length === 0}
+          >
             <Plus /> Novo edital
           </Button>
         }
@@ -109,7 +126,12 @@ function ListaEditais() {
             render: (a) => (
               <span className="num">
                 {formatData(a.data)}
-                {a.hora1 && <span className="block text-xs text-muted-foreground">{a.hora1}{a.hora2 ? ` / ${a.hora2}` : ""}</span>}
+                {a.hora1 && (
+                  <span className="block text-xs text-muted-foreground">
+                    {a.hora1}
+                    {a.hora2 ? ` / ${a.hora2}` : ""}
+                  </span>
+                )}
               </span>
             ),
           },
@@ -133,18 +155,28 @@ function ListaEditais() {
             render: (a) => (
               <span>
                 {rotuloTipo(a.tipo)}
-                <span className="block text-xs text-muted-foreground">{rotuloModalidade(a.modalidade)}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {rotuloModalidade(a.modalidade)}
+                </span>
               </span>
             ),
           },
-          { chave: "pauta", titulo: "Pauta", alinhar: "direita", className: "num w-20", render: (a) => (a.pauta.length ? `${a.pauta.length} itens` : "—") },
+          {
+            chave: "pauta",
+            titulo: "Pauta",
+            alinhar: "direita",
+            className: "num w-20",
+            render: (a) => (a.pauta.length ? `${a.pauta.length} itens` : "—"),
+          },
           { chave: "modeloNome", titulo: "Modelo", className: "text-muted-foreground" },
         ]}
         dados={linhas}
         chaveLinha={(a) => a.id}
         aoClicar={(a) => navigate({ to: "/editais/$id", params: { id: a.id } })}
         colunaAcao="condoNome"
-        rotuloAcao={(a) => `Abrir edital de ${a.condoNome}${a.futura ? " (agendada)" : ""}, ${formatData(a.data)}`}
+        rotuloAcao={(a) =>
+          `Abrir edital de ${a.condoNome}${a.futura ? " (agendada)" : ""}, ${formatData(a.data)}`
+        }
         vazio={
           condominios.length === 0
             ? "Cadastre um condomínio antes de criar editais."

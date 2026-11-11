@@ -13,7 +13,8 @@ import { normalizarModelo } from "@/domain/modelo";
 import type { Assembleia, Condominio, Modelo } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/modelos/")({
-  head: () => cabecalho("Modelos de edital", "Modelos de texto e pauta padrão dos editais de convocação."),
+  head: () =>
+    cabecalho("Modelos de edital", "Modelos de texto e pauta padrão dos editais de convocação."),
   loader: ({ context: { queryClient } }) =>
     Promise.all([
       queryClient.ensureQueryData(listaQuery<Modelo>("modelos")),
@@ -38,21 +39,27 @@ function ListaModelos() {
   const normalizados = useMemo(() => modelos.map((m) => normalizarModelo(m)), [modelos]);
   const linhas = useMemo<Linha[]>(() => {
     const nomeCondo = new Map(condominios.map((c) => [c.id, c.nome]));
-    return normalizados
-      .map((m) => ({
-        ...m,
-        usos: assembleias.filter((a) => a.modeloId === m.id).length,
-        condoNome: m.condoId ? (nomeCondo.get(m.condoId) ?? "(condomínio excluído)") : "Geral",
-      }))
-      // O filtro mostra o que serve ao condomínio escolhido: o modelo dele e os gerais.
-      .filter((m) => condo === TODOS || !m.condoId || m.condoId === condo)
-      .sort(
-        (a, b) =>
-          a.condoNome.localeCompare(b.condoNome, "pt-BR") || a.nome.localeCompare(b.nome, "pt-BR"),
-      );
+    return (
+      normalizados
+        .map((m) => ({
+          ...m,
+          usos: assembleias.filter((a) => a.modeloId === m.id).length,
+          condoNome: m.condoId ? (nomeCondo.get(m.condoId) ?? "(condomínio excluído)") : "Geral",
+        }))
+        // O filtro mostra o que serve ao condomínio escolhido: o modelo dele e os gerais.
+        .filter((m) => condo === TODOS || !m.condoId || m.condoId === condo)
+        .sort(
+          (a, b) =>
+            a.condoNome.localeCompare(b.condoNome, "pt-BR") ||
+            a.nome.localeCompare(b.nome, "pt-BR"),
+        )
+    );
   }, [normalizados, assembleias, condominios, condo]);
 
-  const opcoesCondo = [{ valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" }, ...opcoesCondominio(condominios)];
+  const opcoesCondo = [
+    { valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" },
+    ...opcoesCondominio(condominios),
+  ];
 
   return (
     <>
@@ -77,12 +84,47 @@ function ListaModelos() {
       </div>
       <DataTable<Linha>
         colunas={[
-          { chave: "nome", titulo: "Nome", render: (m) => <span className="font-medium text-foreground">{m.nome || "(sem nome)"}</span> },
-          { chave: "condoNome", titulo: "Condomínio", render: (m) => <span className={m.condoId ? "" : "text-muted-foreground"}>{m.condoNome}</span> },
-          { chave: "versao", titulo: "Versão", className: "num w-24", render: (m) => String(m.versao) },
-          { chave: "blocos", titulo: "Blocos", alinhar: "direita", className: "num w-24", render: (m) => m.blocos.length },
-          { chave: "pauta", titulo: "Itens da pauta", alinhar: "direita", className: "num w-32", render: (m) => m.pautaOrdinaria.length },
-          { chave: "usos", titulo: "Editais", alinhar: "direita", className: "num w-24", render: (m) => m.usos || "—" },
+          {
+            chave: "nome",
+            titulo: "Nome",
+            render: (m) => (
+              <span className="font-medium text-foreground">{m.nome || "(sem nome)"}</span>
+            ),
+          },
+          {
+            chave: "condoNome",
+            titulo: "Condomínio",
+            render: (m) => (
+              <span className={m.condoId ? "" : "text-muted-foreground"}>{m.condoNome}</span>
+            ),
+          },
+          {
+            chave: "versao",
+            titulo: "Versão",
+            className: "num w-24",
+            render: (m) => String(m.versao),
+          },
+          {
+            chave: "blocos",
+            titulo: "Blocos",
+            alinhar: "direita",
+            className: "num w-24",
+            render: (m) => m.blocos.length,
+          },
+          {
+            chave: "pauta",
+            titulo: "Itens da pauta",
+            alinhar: "direita",
+            className: "num w-32",
+            render: (m) => m.pautaOrdinaria.length,
+          },
+          {
+            chave: "usos",
+            titulo: "Editais",
+            alinhar: "direita",
+            className: "num w-24",
+            render: (m) => m.usos || "—",
+          },
         ]}
         dados={linhas}
         chaveLinha={(m) => m.id}
@@ -95,7 +137,12 @@ function ListaModelos() {
             : "Nenhum modelo deste condomínio. Crie um modelo para ele ou use um modelo geral."
         }
       />
-      <DialogoNovoModelo aberto={novo} aoMudar={setNovo} modelos={normalizados} condominios={condominios} />
+      <DialogoNovoModelo
+        aberto={novo}
+        aoMudar={setNovo}
+        modelos={normalizados}
+        condominios={condominios}
+      />
     </>
   );
 }
