@@ -20,8 +20,10 @@ confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
 Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
 `deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
-referência Git observada: 205d3e0, cuja mensagem declara origem main 59ba487.
-O runtime observado index-Doxn9lA8.js coincide com seu index.html; isso não é
+publicação: `deploy-hostinger` `3fec48f`, com o artefato `krieger-hostinger` do CI
+no commit `bbdd720` (main); o runtime `index-DkxdpG1f.js` no ar coincide com o
+`index.html` publicado. A publicação anterior, `a603045` (main `c3b75df`), teve os
+176 arquivos da branch conferidos byte a byte contra o artefato. Isso não é
 atestado criptográfico do artefato nem comprova todos os fluxos da aplicação.
 
 O CI instala/compila frontend antes do pacote desde o PR #51. Não há workflow
