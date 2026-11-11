@@ -1,7 +1,0 @@
-config.php
-config.local.php
-.claude/*
-!.claude/agents/
-node_modules/
-dist/
-resultado-build.log
