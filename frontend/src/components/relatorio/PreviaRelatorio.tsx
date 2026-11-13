@@ -17,7 +17,7 @@ import type {
   ResultadoPrevisaoSugerida,
   ResultadoPrevisaoSugeridaPorUnidade,
 } from "@/domain/previsaoSugerida";
-import { criteriosDaPrevisao } from "@/domain/previsaoCriterios";
+import { exercicioPorExtenso, montarFolhaPrevisao } from "@/domain/previsaoFolha";
 import type {
   Condominio,
   ConfigEscritorio,
@@ -169,168 +169,23 @@ export function PreviaRelatorio({
       {rel.secoes.previsao && (
         <Secao
           n={numero("previsao")}
-          titulo={`Previsão orçamentária — Exercício ${e.ano}`}
-          {...(d?.periodo.ini && d.periodo.fim
-            ? { sub: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.` }
-            : {})}
+          titulo={`Previsão orçamentária — Exercício ${exercicioPorExtenso(e)}`}
         >
-          <p className="mb-3 text-sm">Previsão calculada pelo Krieger. {rel.origemBasePrevisao}</p>
+          {/* Mesma folha que sai no PDF/Word (decisão de 13/11/2026): rateio atual → histórico →
+              dedução → total ordinário → variação → rateio anual e mensal → índice. O cálculo do
+              Krieger não é repetido aqui, para não haver dois demonstrativos concorrentes. */}
           {rel.avisoRateioAprovado && (
             <Alert variant="warning" className="mb-3">
               <AlertDescription>{rel.avisoRateioAprovado}</AlertDescription>
             </Alert>
           )}
-          {/* Mesmos critérios que a tela de manutenção mostra como parâmetros. */}
-          <dl className="mb-4 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
-            {criteriosDaPrevisao(rel.previsao).map((c) => (
-              <div key={c.rotulo} className="contents">
-                <dt className="text-muted-foreground">{c.rotulo}</dt>
-                <dd>{c.valor}</dd>
-              </div>
-            ))}
-          </dl>
-          <h4 className="mb-1 font-semibold">
-            {rel.previsao.modo === "detalhado"
-              ? "Despesas previstas por item"
-              : "Despesas previstas por grupo"}
-          </h4>
-          {/* Mesma tabela da tela de Previsão orçamentária: realizado x média prevista mensal. */}
-          <RolagemTabela className="">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="py-1 text-left font-semibold">
-                    {rel.previsao.modo === "detalhado" ? "Rubrica" : "Grupo"}
-                  </th>
-                  <th className="py-1 text-right font-semibold">Realizado</th>
-                  <th className="py-1 text-right font-semibold">Média prevista dos grupos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rel.previsao.linhas.map((l, i) => (
-                  <tr key={i} className="border-b border-dashed last:border-0">
-                    <td className="py-1">
-                      {l.nome}
-                      {rel.previsao.modo === "detalhado" && (
-                        <span className="text-xs text-muted-foreground"> · {l.grupo}</span>
-                      )}
-                      {l.deduzida && (
-                        <span className="text-xs text-muted-foreground"> (com dedução)</span>
-                      )}
-                    </td>
-                    <td className="num py-1 text-right text-muted-foreground">
-                      {formatBRL(l.realizado)}
-                    </td>
-                    <td className="num py-1 text-right">
-                      {formatBRL(l.previsto / rel.previsao.mesesAnalisados)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="border-t font-semibold">
-                  <td className="py-1">Total dos grupos</td>
-                  <td className="num py-1 text-right">{formatBRL(rel.previsao.base)}</td>
-                  <td className="num py-1 text-right">
-                    {formatBRL(
-                      rel.previsao.linhas.reduce((s, l) => s + l.previsto, 0) /
-                        rel.previsao.mesesAnalisados,
-                    )}
-                  </td>
-                </tr>
-              </tfoot>
-            </table>
-          </RolagemTabela>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Valores mensais por grupo; o anual ajustado está no resumo abaixo.
-          </p>
-          {rel.previsao.ajustes.length > 0 && (
-            <div className="mt-4">
-              <h4 className="mb-1 font-semibold">Ajustes</h4>
-              <RolagemTabela className="">
-                <table className="w-full">
-                  <tbody>
-                    {rel.previsao.ajustes.map((a) => (
-                      <Linha
-                        key={a.id}
-                        nome={`${a.sinal === "-" ? "(−)" : "(+)"} ${a.descricao || "Ajuste"}${a.grupo ? ` · ${a.grupo}` : ""}`}
-                        valor={a.valor}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </RolagemTabela>
-            </div>
-          )}
-          <RolagemTabela className="mt-4">
-            <table className="w-full rounded-sm bg-muted/50">
-              <tbody>
-                <Linha nome="Base (despesas realizadas)" valor={rel.previsao.base} />
-                <Linha nome="(−) Dedução" valor={rel.previsao.deducao} />
-                <Linha
-                  nome={
-                    e.variacaoMetodo === "valor"
-                      ? "(+) Variação"
-                      : `(+) Variação ${formatNumeroBR(rel.previsao.variacaoPct)}%`
-                  }
-                  valor={rel.previsao.variacaoValor}
-                />
-                <Linha
-                  nome="Variação de despesas sugeridas (+/−)"
-                  valor={rel.previsao.variacaoDespesasValor}
-                />
-                <Linha nome="(+) Ajustes" valor={rel.previsao.ajustesMais} />
-                <Linha nome="(−) Ajustes" valor={rel.previsao.ajustesMenos} />
-                <Linha nome="Anual ajustado" valor={rel.previsao.totalAnual} forte />
-                <Linha
-                  nome={`Total mensal do condomínio (÷ ${rel.previsao.mesesAnalisados} meses)`}
-                  valor={rel.previsao.mensal}
-                />
-                {e.mostrarPrevisaoPorUnidade !== false && rel.previsao.unidades !== null && (
-                  <>
-                    <Linha
-                      nome={`Cota por unidade (÷ ${rel.previsao.unidades} unidades)`}
-                      valor={rel.previsao.cotaUnidade}
-                    />
-                    <Linha
-                      nome={`(+) Reserva por unidade ${formatNumeroBR(rel.previsao.fundoReservaPct)}%`}
-                      valor={rel.previsao.reservaUnidade}
-                    />
-                    <Linha
-                      nome="Valor sugerido por unidade"
-                      valor={rel.previsao.rateioSugerido}
-                      forte
-                    />
-                  </>
-                )}
-                <Linha nome="Rateio atual por unidade" valor={rel.previsao.rateioAtual} />
-                <tr>
-                  <td className="px-3 py-1">Índice de reajuste</td>
-                  <td className="num px-3 py-1 text-right">{pctTexto(rel.previsao.indice)}</td>
-                </tr>
-                {e.rateioAprovado != null && (
-                  <Linha
-                    nome="Rateio aprovado por unidade (informado)"
-                    valor={e.rateioAprovado}
-                    forte
-                  />
-                )}
-              </tbody>
-            </table>
-          </RolagemTabela>
-          {e.previsaoSugerida && rel.previsaoSugerida && rel.previsaoSugeridaPorUnidade && (
-            <div className="mt-6 border-t pt-4">
-              <h4 className="font-semibold">Referência histórica importada do Systemar</h4>
-              <p className="mb-3 text-sm">
-                Dados de origem preservados, sem substituir o cálculo do Krieger acima.
-              </p>
-              <PrevisaoSugeridaPrevia
-                e={e}
-                previsao={e.previsaoSugerida}
-                r={rel.previsaoSugerida}
-                u={rel.previsaoSugeridaPorUnidade}
-              />
-            </div>
+          {e.previsaoSugerida && rel.previsaoSugerida ? (
+            <FolhaPrevisaoPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Este exercício não tem a previsão orçamentária sugerida importada do Systemar. Importe
+              o PDF do balanço na prestação de contas para que a folha da previsão apareça aqui.
+            </p>
           )}
         </Secao>
       )}
@@ -800,98 +655,71 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
   );
 }
 
-/** Previsão orçamentária sugerida pelo Systemar (com as edições do usuário) e o quadro por unidade. */
-function PrevisaoSugeridaPrevia({
+/**
+ * A folha da previsão no padrão do Systemar, espelhando o PDF/Word: título em duas linhas, rateio
+ * atual, histórico por categoria, dedução, total ordinário, variação e rateios sugeridos, com o
+ * pontilhado condutor entre rótulo e valor.
+ */
+function FolhaPrevisaoPrevia({
   e,
   previsao: p,
   r,
-  u,
 }: {
   e: Exercicio;
   previsao: PrevisaoSugeridaExercicio;
   r: ResultadoPrevisaoSugerida;
-  u: ResultadoPrevisaoSugeridaPorUnidade;
 }) {
-  const fundo = e.prev?.fundoReservaPct ?? 0;
-  const mostrarPorUnidade = e.mostrarPrevisaoPorUnidade !== false && u.unidades !== null;
-  const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
+  const f = montarFolhaPrevisao(e, p, r);
   return (
-    <>
+    <div className="text-sm">
+      <div className="mb-4 text-center font-semibold uppercase tracking-wide">
+        {f.titulo.map((linha, i) => (
+          <p key={i}>{linha}</p>
+        ))}
+      </div>
+      {f.rateioAtual && (
+        <p className="mb-4 flex items-baseline gap-2">
+          <span>{f.rateioAtual.rotulo}</span>
+          <span className="min-w-8 flex-1 border-b border-dotted border-muted-foreground/60" />
+          <span className="num font-semibold">{f.rateioAtual.valor}</span>
+        </p>
+      )}
+      <p className="mb-2 whitespace-pre-line">{f.aberturaHistorico.join("\n")}</p>
       <RolagemTabela className="">
         <table className="w-full">
           <thead>
             <tr className="border-b text-xs uppercase tracking-wide text-muted-foreground">
-              <th className="py-1 text-left font-semibold">Categoria de despesa</th>
-              <th className="py-1 text-right font-semibold">Anual</th>
-              <th className="py-1 text-right font-semibold">Média mês</th>
+              <th className="py-1 text-left font-semibold">{f.colunas[0]}</th>
+              <th className="py-1 text-right font-semibold">{f.colunas[1]}</th>
+              <th className="py-1 text-right font-semibold">{f.colunas[2]}</th>
             </tr>
           </thead>
           <tbody>
-            {p.categorias.map((c, i) => (
+            {f.categorias.map((c, i) => (
               <tr key={i} className="border-b border-dashed last:border-0">
                 <td className="py-1">{c.nome}</td>
-                <td className="num py-1 text-right">{formatBRL(c.anual)}</td>
-                <td className="num py-1 text-right text-muted-foreground">{formatBRL(c.media)}</td>
+                <td className="num py-1 text-right">{c.anual}</td>
+                <td className="num py-1 text-right text-muted-foreground">{c.media}</td>
               </tr>
             ))}
             <tr className="font-semibold">
-              <td className="py-1">Total das despesas</td>
-              <td className="num py-1 text-right">{formatBRL(r.totalDespesasAno)}</td>
-              <td className="num py-1 text-right">{formatBRL(r.totalDespesasMedia)}</td>
+              <td className="py-1">{f.totalCategorias.nome}</td>
+              <td className="num py-1 text-right">{f.totalCategorias.anual}</td>
+              <td className="num py-1 text-right">{f.totalCategorias.media}</td>
             </tr>
           </tbody>
         </table>
       </RolagemTabela>
-      <RolagemTabela className="mt-4">
-        <table className="w-full rounded-sm bg-muted/50">
-          <tbody>
-            <Linha nome="Total das despesas do ano" valor={r.totalDespesasAno} />
-            {p.deducoes.map((x) => (
-              <Linha
-                key={x.id}
-                nome={`${sinal(x.sinal)} ${x.descricao || "Dedução"}`}
-                valor={Math.abs(x.valor)}
-              />
-            ))}
-            <Linha nome="Total ordinário" valor={r.totalOrdinario} forte />
-            <Linha
-              nome={`${sinal(p.variacao.sinal)} Variação de despesas sugeridas`}
-              valor={Math.abs(p.variacao.valor)}
-            />
-            <Linha nome="Total final (anual)" valor={r.totalFinal} forte />
-            <Linha nome="Rateio mensal sugerido (÷ 12)" valor={r.rateioMensalSugerido} forte />
-            <Linha nome="Rateio mensal atual" valor={r.rateioMensalAtual} />
-            <tr>
-              <td className="px-3 py-1">Índice sugerido para correção</td>
-              <td className="num px-3 py-1 text-right">{pctTexto(r.indiceSugerido)}</td>
-            </tr>
-            {e.rateioAprovado != null && (
-              <Linha nome="Rateio aprovado" valor={e.rateioAprovado} forte />
-            )}
-          </tbody>
-        </table>
-      </RolagemTabela>
-      {mostrarPorUnidade && (
-        <>
-          <h4 className="mb-1 mt-5 font-semibold">Previsão orçamentária por unidade</h4>
-          <RolagemTabela className="">
-            <table className="w-full rounded-sm bg-muted/50">
-              <tbody>
-                <tr>
-                  <td className="px-3 py-1">Unidades</td>
-                  <td className="num px-3 py-1 text-right">{u.unidades}</td>
-                </tr>
-                <Linha nome="Cota por unidade" valor={u.cotaUnidade} />
-                <Linha
-                  nome={`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`}
-                  valor={u.reservaUnidade}
-                />
-                <Linha nome="Valor por unidade" valor={u.valorUnidade} forte />
-              </tbody>
-            </table>
-          </RolagemTabela>
-        </>
-      )}
-    </>
+      <dl className="mt-4 space-y-1">
+        {f.fechamento.map((linha, i) => (
+          <div key={i} className={`flex items-baseline gap-2 ${linha.espacoAntes ? "pt-2" : ""}`}>
+            <dt className={linha.forte ? "font-semibold" : undefined}>{linha.rotulo}</dt>
+            <span className="min-w-8 flex-1 border-b border-dotted border-muted-foreground/60" />
+            <dd className={`num ${linha.forte ? "font-semibold" : ""}`}>{linha.valor}</dd>
+          </div>
+        ))}
+      </dl>
+      {f.localData && <p className="mt-6 text-center font-semibold">{f.localData}</p>}
+    </div>
   );
 }

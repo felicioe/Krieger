@@ -21,7 +21,7 @@ import type {
   ResultadoPrevisaoSugerida,
   ResultadoPrevisaoSugeridaPorUnidade,
 } from "@/domain/previsaoSugerida";
-import { criteriosDaPrevisao } from "@/domain/previsaoCriterios";
+import { montarFolhaPrevisao } from "@/domain/previsaoFolha";
 import type {
   Condominio,
   ConfigEscritorio,
@@ -145,136 +145,28 @@ export async function documentoRelatorioFinal(o: {
   }
 
   if (rel.secoes.previsao) {
-    const p = rel.previsao;
-    b.push(titulo("previsao", `Previsão orçamentária — Exercício ${e.ano}`));
-    if (d?.periodo.ini && d.periodo.fim)
+    // A seção é a folha do Systemar, como o escritório a entrega (decisão de 13/11/2026): rateio
+    // atual → histórico por categoria → dedução → total ordinário → variação → rateio anual e
+    // mensal → índice. O cálculo do Krieger continua nos menus de manutenção e não é impresso
+    // aqui, para não haver dois demonstrativos concorrentes no mesmo relatório.
+    if (e.previsaoSugerida && rel.previsaoSugerida) {
+      b.push(
+        ...folhaPrevisao(
+          e,
+          e.previsaoSugerida,
+          rel.previsaoSugerida,
+          titulo("previsao", "Previsão orçamentária"),
+        ),
+      );
+    } else {
+      b.push(titulo("previsao", "Previsão orçamentária"));
       b.push({
         tipo: "paragrafo",
-        texto: `Período do exercício: ${d.periodo.ini} a ${d.periodo.fim}.`,
+        texto:
+          "Este exercício não tem a previsão orçamentária sugerida importada do Systemar. Importe o PDF do balanço na prestação de contas para que a folha da previsão seja impressa aqui.",
         suave: true,
-        tamanho: "pequeno",
-      });
-    b.push({
-      tipo: "paragrafo",
-      texto: `Previsão calculada pelo Krieger. ${rel.origemBasePrevisao}`,
-    });
-    if (rel.avisoRateioAprovado)
-      b.push({ tipo: "paragrafo", texto: rel.avisoRateioAprovado, negrito: true });
-    // Mesmos critérios que a tela de manutenção mostra como parâmetros: sem eles o valor impresso
-    // não pode ser conferido contra o que a tela calcula.
-    b.push({
-      tipo: "pares",
-      itens: criteriosDaPrevisao(p).map((c) => ({ rotulo: c.rotulo, valor: c.valor })),
-    });
-    b.push({
-      tipo: "titulo",
-      nivel: 3,
-      texto:
-        p.modo === "detalhado" ? "Despesas previstas por item" : "Despesas previstas por grupo",
-    });
-    // Tabela idêntica à da tela de Previsão orçamentária: realizado x média prevista mensal de
-    // cada grupo, com o total dos grupos no rodapé — os mesmos números que o usuário confere lá.
-    b.push({
-      tipo: "tabela",
-      colunas: [
-        { titulo: p.modo === "detalhado" ? "Rubrica" : "Grupo", largura: "*" },
-        { titulo: "Realizado", largura: 100, alinhamento: "direita" },
-        { titulo: "Média prevista dos grupos", largura: 100, alinhamento: "direita" },
-      ],
-      linhas: [
-        ...p.linhas.map((x) => ({
-          celulas: [
-            [
-              { texto: x.nome },
-              ...(p.modo === "detalhado" ? [{ texto: ` · ${x.grupo}`, suave: true }] : []),
-              ...(x.deduzida ? [{ texto: " (com dedução)", suave: true }] : []),
-            ],
-            [{ texto: formatBRL(x.realizado), suave: true }],
-            formatBRL(x.previsto / p.mesesAnalisados),
-          ],
-        })),
-        {
-          celulas: [
-            "Total dos grupos",
-            formatBRL(p.base),
-            formatBRL(p.linhas.reduce((s, x) => s + x.previsto, 0) / p.mesesAnalisados),
-          ],
-          estilo: "total",
-        },
-      ],
-    });
-    b.push({
-      tipo: "paragrafo",
-      texto: "Valores mensais por grupo; o anual ajustado está no resumo abaixo.",
-      suave: true,
-      tamanho: "pequeno",
-    });
-    if (p.ajustes.length) {
-      b.push({ tipo: "titulo", nivel: 3, texto: "Ajustes" });
-      b.push({
-        tipo: "tabela",
-        semCabecalho: true,
-        colunas: [{ titulo: "", largura: "*" }, VALOR],
-        linhas: p.ajustes.map((a) =>
-          l(
-            `${a.sinal === "-" ? "(−)" : "(+)"} ${a.descricao || "Ajuste"}${a.grupo ? ` · ${a.grupo}` : ""}`,
-            a.valor,
-          ),
-        ),
       });
     }
-    const mostrarPorUnidadeTrad = e.mostrarPrevisaoPorUnidade !== false && p.unidades !== null;
-    b.push(
-      resumo([
-        l("Base (despesas realizadas)", p.base),
-        l("(−) Dedução", p.deducao),
-        l(
-          e.variacaoMetodo === "valor"
-            ? "(+) Variação"
-            : `(+) Variação ${formatNumeroBR(p.variacaoPct)}%`,
-          p.variacaoValor,
-        ),
-        l("Variação de despesas sugeridas (+/−)", p.variacaoDespesasValor),
-        l("(+) Ajustes", p.ajustesMais),
-        l("(−) Ajustes", p.ajustesMenos),
-        l("Anual ajustado", p.totalAnual, { estilo: "total" }),
-        l(`Total mensal do condomínio (÷ ${p.mesesAnalisados} meses)`, p.mensal),
-        ...(mostrarPorUnidadeTrad
-          ? [
-              l(`Cota por unidade (÷ ${p.unidades} unidades)`, p.cotaUnidade),
-              l(`(+) Reserva por unidade ${formatNumeroBR(p.fundoReservaPct)}%`, p.reservaUnidade),
-              l("Valor sugerido por unidade", p.rateioSugerido, { estilo: "total" }),
-            ]
-          : []),
-        l("Rateio atual por unidade", p.rateioAtual),
-        { celulas: ["Índice de reajuste", pctTexto(p.indice)] },
-        ...(e.rateioAprovado != null
-          ? [l("Rateio aprovado por unidade (informado)", e.rateioAprovado, { estilo: "total" })]
-          : []),
-      ]),
-    );
-  }
-
-  if (
-    rel.secoes.previsao &&
-    e.previsaoSugerida &&
-    rel.previsaoSugerida &&
-    rel.previsaoSugeridaPorUnidade
-  ) {
-    b.push({ tipo: "titulo", nivel: 3, texto: "Referência histórica importada do Systemar" });
-    b.push({
-      tipo: "paragrafo",
-      texto: "Dados de origem preservados, sem substituir o cálculo do Krieger acima.",
-      suave: true,
-    });
-    b.push(
-      ...blocosPrevisaoSugerida(
-        e,
-        e.previsaoSugerida,
-        rel.previsaoSugerida,
-        rel.previsaoSugeridaPorUnidade,
-      ),
-    );
   }
 
   const c = rel.comparativo;
@@ -670,63 +562,74 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
   return out;
 }
 
-/** Previsão orçamentária sugerida pelo Systemar (com as edições do usuário) e o quadro por unidade. */
-function blocosPrevisaoSugerida(
+/**
+ * A folha da previsão orçamentária no padrão do Systemar: título em duas linhas centralizado,
+ * rateio atual, histórico de despesas por categoria, dedução, total ordinário, variação e os
+ * rateios sugeridos com o índice. Rótulo e valor são ligados por pontilhado condutor
+ * (`linhaGuiada`), como no documento do escritório.
+ */
+function folhaPrevisao(
   e: Exercicio,
   p: PrevisaoSugeridaExercicio,
   r: ResultadoPrevisaoSugerida,
-  u: ResultadoPrevisaoSugeridaPorUnidade,
+  tituloSecao: Bloco,
 ): Bloco[] {
-  const fundo = e.prev?.fundoReservaPct ?? 0;
-  const mostrarPorUnidade = e.mostrarPrevisaoPorUnidade !== false && u.unidades !== null;
-  const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
-  return [
+  const f = montarFolhaPrevisao(e, p, r);
+  const out: Bloco[] = [tituloSecao];
+  for (const linha of f.titulo) {
+    out.push({
+      tipo: "paragrafo",
+      texto: linha,
+      alinhamento: "centro",
+      negrito: true,
+      tamanho: "pequeno",
+    });
+  }
+  if (f.rateioAtual) {
+    out.push({
+      tipo: "linhaGuiada",
+      itens: [{ ...f.rateioAtual, espacoAntes: 10 }],
+      larguraValor: 110,
+    });
+  }
+  out.push(
+    {
+      tipo: "paragrafo",
+      texto: f.aberturaHistorico.join("\n"),
+      tamanho: "pequeno",
+      suave: false,
+    },
     {
       tipo: "tabela",
+      semCabecalho: false,
+      pequena: true,
       colunas: [
-        { titulo: "Categoria de despesa", largura: "*" },
-        { titulo: "Anual", largura: 100, alinhamento: "direita" },
-        { titulo: "Média mês", largura: 100, alinhamento: "direita" },
+        { titulo: f.colunas[0], largura: "*" },
+        { titulo: f.colunas[1], largura: 95, alinhamento: "direita" },
+        { titulo: f.colunas[2], largura: 95, alinhamento: "direita" },
       ],
       linhas: [
-        ...p.categorias.map((c) => ({
-          celulas: [c.nome, formatBRL(c.anual), [{ texto: formatBRL(c.media), suave: true }]],
-        })),
+        ...f.categorias.map((c) => ({ celulas: [c.nome, c.anual, c.media] })),
         {
-          celulas: [
-            "Total das despesas",
-            formatBRL(r.totalDespesasAno),
-            formatBRL(r.totalDespesasMedia),
-          ],
+          celulas: [f.totalCategorias.nome, f.totalCategorias.anual, f.totalCategorias.media],
           estilo: "total",
         },
       ] as LinhaTabela[],
     },
-    resumo([
-      l("Total das despesas do ano", r.totalDespesasAno),
-      ...p.deducoes.map((x) =>
-        l(`${sinal(x.sinal)} ${x.descricao || "Dedução"}`, Math.abs(x.valor)),
-      ),
-      l("Total ordinário", r.totalOrdinario, { estilo: "total" }),
-      l(`${sinal(p.variacao.sinal)} Variação de despesas sugeridas`, Math.abs(p.variacao.valor)),
-      l("Total final (anual)", r.totalFinal, { estilo: "total" }),
-      l("Rateio mensal sugerido (÷ 12)", r.rateioMensalSugerido, { estilo: "total" }),
-      l("Rateio mensal atual", r.rateioMensalAtual),
-      { celulas: ["Índice sugerido para correção", pctTexto(r.indiceSugerido)] },
-      ...(e.rateioAprovado != null
-        ? [l("Rateio aprovado", e.rateioAprovado, { estilo: "total" })]
-        : []),
-    ]),
-    ...(mostrarPorUnidade
-      ? [
-          { tipo: "titulo", nivel: 3, texto: "Previsão orçamentária por unidade" } as Bloco,
-          resumo([
-            { celulas: ["Unidades", String(u.unidades)] },
-            l("Cota por unidade", u.cotaUnidade),
-            l(`(+) Reserva por unidade ${formatNumeroBR(fundo)}%`, u.reservaUnidade),
-            l("Valor por unidade", u.valorUnidade, { estilo: "total" }),
-          ]),
-        ]
-      : []),
-  ];
+    {
+      tipo: "linhaGuiada",
+      itens: f.fechamento,
+      larguraValor: 110,
+    },
+  );
+  if (f.localData) {
+    out.push({
+      tipo: "paragrafo",
+      texto: f.localData,
+      alinhamento: "centro",
+      tamanho: "pequeno",
+      negrito: true,
+    });
+  }
+  return out;
 }

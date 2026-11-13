@@ -1,5 +1,40 @@
 # Estado atual e passagem de contexto
 
+## Previsão orçamentária do relatório final — 13/11/2026
+
+A seção de previsão do relatório final virou **a folha do Systemar**, como o escritório a entrega
+(decisão em `docs/DECISOES.md`, substituindo a de 2026-11-08): rateio atual → histórico de despesas
+por categoria → dedução → total ordinário → variação → rateio anual e mensal sugeridos → índice,
+com pontilhado condutor entre rótulo e valor, título em duas linhas centralizado e cidade/data ao
+final. O cálculo do Krieger **não é mais impresso** nessa seção (continua nos menus de Previsão
+orçamentária e Previsto × Realizado).
+
+**Fonte única.** `domain/previsaoFolha.ts` (`montarFolhaPrevisao`, `exercicioPorExtenso`,
+`periodoHistorico`) monta a folha; o PDF/Word (`frontend/src/documentos/relatorioFinal.ts`,
+`folhaPrevisao`) e a prévia (`PreviaRelatorio.tsx`, `FolhaPrevisaoPrevia`) só desenham o que ela
+devolve. O pontilhado é `guiar` em `frontend/src/lib/documento/guias.ts`, usado pelos dois formatos
+com a mesma tabela de larguras — o bloco novo é `linhaGuiada` (`lib/documento/tipos.ts`), desenhado
+em `pdf.ts` e `word.ts`.
+
+**Conferido com os PDFs reais.** Urban Classic: a folha sai idêntica ao print — 776.531,36 de
+despesas, dedução −215.592,88, ordinário 560.938,48, variação 30.000,00, anual 590.938,48, mensal
+**49.244,00** (truncado, como o PDF) e índice **8,93%**. Lago Negro: o parser lê a folha inteira
+(851.955,11 · −189.700,00 · 662.255,11 · 692.255,11 · 57.687,00) e a variante "valor por unidade
+(156 lotes) R$ 321,00", que não gera índice por não ser o total mensal.
+
+**Arredondamento.** `calcularPrevisaoSugerida` passou a receber o `arredondamento` do condomínio
+(padrão `truncar`) e aplica em `arredondarValor` ao rateio mensal. A conferência contra os totais do
+PDF tolera R$ 1,00 nesse campo, porque truncar é legítimo.
+
+**Testes.** `domain/previsaoFolha.test.ts` (folha do Urban linha a linha, variante por unidade,
+assinatura, notação de exercício), `frontend/src/test/linhaGuiada.test.ts` (pontilhado),
+`linhaGuiadaDocumento.test.ts` (bloco no PDF) e `relatorioFinalPrevisaoCriterios.test.ts` reescrito
+para a nova decisão. Versão **1.13**.
+
+**Não verificado:** a geração do PDF no navegador autenticado (o teste de documento confere a
+definição do pdfmake, não o binário) e a leitura da folha do Lago Negro pelo fluxo de importação
+completo na tela.
+
 ## Importação da prestação de contas — 13/11/2026
 
 **Causa raiz das 77 divergências (provada com os PDFs reais do Lago Negro).** A tela do exercício

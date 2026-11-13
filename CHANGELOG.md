@@ -2,7 +2,16 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.12**.
+Versão atual: **1.13**.
+
+## 1.13 — Previsão orçamentária do relatório final no padrão da folha do Systemar
+
+- A seção de previsão do relatório final passa a ser a folha do Systemar, como o escritório a entrega: rateio atual, histórico de despesas por categoria, dedução, total ordinário, variação, rateio anual e mensal sugeridos e índice sugerido.
+- Rótulo e valor são ligados por pontilhado condutor, no PDF e no Word, com o título em duas linhas centralizado e a cidade/data ao final.
+- O cálculo do Krieger deixa de ser impresso nessa seção, para não haver dois demonstrativos concorrentes; ele continua nos menus de Previsão orçamentária e Previsto × Realizado.
+- O rateio mensal sugerido passa a respeitar o arredondamento do condomínio (padrão truncar), como a folha: 590.938,48 ÷ 12 sai 49.244,00, não 49.244,87.
+- A folha lê as duas variantes do rateio atual: o total mensal do condomínio (que gera o índice) e o valor por unidade com o número de lotes.
+- A notação de exercício passa a usar o ano fiscal cruzado do período (2024/2025) em vez do campo ano.
 
 ## 1.12 — Importação da prestação de contas corrigida e decisão em bloco das divergências
 

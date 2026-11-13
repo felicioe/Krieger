@@ -108,7 +108,7 @@ export function calcularPendenciasAjuste(condominios: Condominio[], exercicios: 
   for (const e of exercicios) {
     const p = e.previsaoSugerida;
     if (!p) continue;
-    const divergencias = compararComTotaisPdf(calcularPrevisaoSugerida(p), p.totaisPdf);
+    const divergencias = compararComTotaisPdf(calcularPrevisaoSugerida(p, e.arredondamento), p.totaisPdf);
     if (divergencias.length === 0) continue;
     const decisao = p.decisaoDivergencia;
     const resolvida = decisao?.chave === chaveDivergencia(divergencias) && decisao.status === "confirmado";

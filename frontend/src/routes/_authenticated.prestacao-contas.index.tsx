@@ -63,7 +63,7 @@ type Linha = Exercicio & { previsto: number | null; despesas: number; emConferen
 function temDivergenciaEmConferencia(e: Exercicio): boolean {
   if (!e.previsaoSugerida) return false;
   const divergencias = compararComTotaisPdf(
-    calcularPrevisaoSugerida(e.previsaoSugerida),
+    calcularPrevisaoSugerida(e.previsaoSugerida, e.arredondamento),
     e.previsaoSugerida.totaisPdf,
   );
   if (divergencias.length === 0) return false;

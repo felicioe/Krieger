@@ -296,7 +296,9 @@ export function montarRelatorioFinal(entrada: {
   const unidades = condominio?.unidades ?? null;
   const demonstrativoBase = demonstrativoBasePrevisao(e, entrada.exercicioAnterior);
   const previsao = calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades);
-  const previsaoSugerida = e.previsaoSugerida ? calcularPrevisaoSugerida(e.previsaoSugerida) : null;
+  const previsaoSugerida = e.previsaoSugerida
+    ? calcularPrevisaoSugerida(e.previsaoSugerida, e.arredondamento)
+    : null;
   const previsaoSugeridaPorUnidade = previsaoSugerida
     ? calcularPrevisaoSugeridaPorUnidade(previsaoSugerida.rateioMensalSugerido, unidades, e.prev?.fundoReservaPct ?? 0, e.arredondamento)
     : null;

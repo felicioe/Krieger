@@ -10,12 +10,14 @@ import {
   type Bloco,
   type Coluna,
   type Documento,
+  type LinhaGuiada,
   type LinhaTabela,
   type Texto,
 } from "./tipos";
 import { carregarPng, paraPng } from "./imagens";
 import { FONTES, FONTES_DOCUMENTO, vfsFonte, vfsFonteDocumento } from "./fontes";
 import { tipografia, type Tipografia } from "./tipografia";
+import { guiar } from "./guias";
 
 /** Desenha o documento em PDF (pdfmake, carregado sob demanda). */
 export async function gerarPdf(doc: Documento): Promise<Blob> {
@@ -232,6 +234,8 @@ async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promi
           margin: [0, 0, 0, 8],
         } as Content,
       ];
+    case "linhaGuiada":
+      return [linhasGuiadas(b.itens, b.larguraValor ?? 110, t.corpo, util)];
     case "tabela":
       return [tabela(b.colunas, b.linhas, b)];
     case "imagem": {
@@ -307,6 +311,48 @@ async function bloco(b: Bloco, t: Tipografia, util: number = PAGINA.util): Promi
       ];
     }
   }
+}
+
+/**
+ * "Rótulo ......... valor": tabela de duas colunas sem borda, com o pontilhado condutor como
+ * texto. O pdfmake não tem leader de tabulação, então os pontos são calculados pela largura que
+ * sobra entre o rótulo e o valor — a mesma conta que o Word usa (`guiar` em `guias.ts`), para os
+ * dois formatos saírem iguais.
+ */
+function linhasGuiadas(
+  itens: LinhaGuiada[],
+  larguraValor: number,
+  corpo: number,
+  util: number,
+): Content {
+  return {
+    table: {
+      widths: ["*", larguraValor],
+      body: itens.map((i) => [
+        {
+          text: guiar(i.rotulo, util - larguraValor, corpo),
+          fontSize: corpo,
+          ...(i.forte ? { bold: true } : {}),
+          margin: [0, i.espacoAntes ?? 0, 0, 0],
+        },
+        {
+          text: i.valor,
+          fontSize: corpo,
+          alignment: "right",
+          ...(i.forte ? { bold: true } : {}),
+          margin: [0, i.espacoAntes ?? 0, 0, 0],
+        },
+      ]),
+    },
+    layout: {
+      defaultBorder: false,
+      paddingLeft: () => 0,
+      paddingRight: () => 0,
+      paddingTop: () => 1.5,
+      paddingBottom: () => 1.5,
+    },
+    margin: [0, 0, 0, 8],
+  } as Content;
 }
 
 function tabela(

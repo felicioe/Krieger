@@ -625,6 +625,14 @@ export interface CategoriaPrevisaoSugerida {
 
 export interface PrevisaoSugeridaLida {
   rateioMensalAtual: number | null;
+  /**
+   * Variante "Valor cobrado atualmente por unidade (N lotes) ... R$ X": o PDF informa o valor por
+   * unidade, não o total mensal do condomínio. Guardado à parte para não comparar maçã com laranja;
+   * `rateioMensalAtual` só é preenchido a partir dele quando o número de unidades é conhecido.
+   */
+  rateioUnidadeAtual: number | null;
+  /** Unidades do rótulo "por unidade (N lotes)", quando o PDF as informa. */
+  unidadesRateio: number | null;
   categorias: CategoriaPrevisaoSugerida[];
   totalDespesasAno: number | null;
   totalDespesasMedia: number | null;
@@ -666,8 +674,26 @@ export function lerPrevisaoSugerida(texto: string): PrevisaoSugeridaLida | null 
     }
   }
 
+  // Duas variantes reais do rótulo do rateio atual:
+  // 1) "Valor total do rateio ordinário mensal utilizado atualmente ... R$ 45.206,00" (total do
+  //    condomínio) — é o que permite calcular o índice.
+  // 2) "Valor cobrado atualmente por unidade (156 lotes) ... R$ 321,00" (valor por unidade). Nesse
+  //    caso o número pode vir no cabeçalho da página, antes do título, então a busca parte do
+  //    texto inteiro e não só do bloco da previsão.
+  const totalMensal = campoValor(
+    bloco,
+    /Valor total do rateio ordin[áa]rio mensal utilizado atualmente[\s\S]*?R\$\s*(-?[\d.]+,\d{2})/i,
+  );
+  const porUnidade = texto.match(
+    /Valor cobrado atualmente por unidade\s*\((\d+)\s*lotes?\)[^\n]*?R\$\s*(-?[\d.]+,\d{2})/i,
+  );
+  const rateioUnidadeAtual = porUnidade ? paraNumero(porUnidade[2]!) : null;
+  const unidadesRateio = porUnidade ? Number(porUnidade[1]) : null;
+
   return {
-    rateioMensalAtual: campoValor(bloco, /Valor total do rateio ordin[áa]rio mensal utilizado atualmente[\s\S]*?R\$\s*(-?[\d.]+,\d{2})/i),
+    rateioMensalAtual: totalMensal,
+    rateioUnidadeAtual,
+    unidadesRateio,
     categorias,
     totalDespesasAno,
     totalDespesasMedia,
