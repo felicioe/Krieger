@@ -165,6 +165,24 @@ export function ConflitoImportacaoDialog({
 
   const todasFeitas = itens.length > 0 && itens.every((i) => escolhas[chaveItem(i)]);
 
+  /** Preenche todas as escolhas de uma vez, deixando o usuário ajustar item a item por cima. */
+  function escolherTodos(escolha: "manter" | "atualizar") {
+    const todas: Record<string, "manter" | "atualizar"> = {};
+    for (const i of itens) todas[chaveItem(i)] = escolha;
+    setEscolhas(todas);
+  }
+
+  const resumo = itens.reduce(
+    (acc, i) => {
+      const e = escolhas[chaveItem(i)];
+      if (e === "manter") acc.manter++;
+      else if (e === "atualizar") acc.atualizar++;
+      else acc.pendentes++;
+      return acc;
+    },
+    { manter: 0, atualizar: 0, pendentes: 0 },
+  );
+
   return (
     <Dialog
       open={aberto}
@@ -178,9 +196,35 @@ export function ConflitoImportacaoDialog({
           <DialogDescription>
             Este relatório já tinha dados gravados.{" "}
             {contagem(itens.length, "conta ficou diferente", "contas ficaram diferentes")} do que
-            veio no PDF agora — escolha, uma a uma, se mantém o valor gravado ou usa o valor novo.
+            veio no PDF agora — decida em bloco abaixo ou ajuste item a item.
           </DialogDescription>
         </DialogHeader>
+        {/* Decisão em bloco: 77 itens um a um é inviável e leva a esquecer algum. Preenche todas
+            as escolhas, sem travar o ajuste individual por cima (o rádio de cada item continua
+            mandando no que vai ser aplicado). */}
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 p-3">
+          <span className="text-sm font-medium">Decidir todos:</span>
+          <Button variant="outline" size="sm" onClick={() => escolherTodos("manter")}>
+            Manter os gravados
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => escolherTodos("atualizar")}>
+            Usar todos do PDF
+          </Button>
+          <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
+            {resumo.manter} manter · {resumo.atualizar} do PDF
+            {resumo.pendentes > 0 ? ` · ${resumo.pendentes} sem decidir` : ""}
+          </span>
+        </div>
+        {resumo.pendentes > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {contagem(
+              resumo.pendentes,
+              "item ainda precisa de decisão",
+              "itens ainda precisam de decisão",
+            )}
+            .
+          </p>
+        )}
         <ul className="grid gap-3 rounded-md border p-3">
           {itens.map((i) => {
             const k = chaveItem(i);
