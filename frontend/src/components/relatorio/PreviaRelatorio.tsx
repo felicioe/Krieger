@@ -679,7 +679,7 @@ function FolhaPrevisaoPrevia({
       </div>
       {f.rateioAtual && (
         <p className="mb-4 flex items-baseline gap-2">
-          <span>{f.rateioAtual.rotulo}</span>
+          <span>{f.rateioAtual?.rotulo}</span>
           <span className="min-w-8 flex-1 border-b border-dotted border-muted-foreground/60" />
           <span className="num font-semibold">{f.rateioAtual.valor}</span>
         </p>
