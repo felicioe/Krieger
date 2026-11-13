@@ -27,9 +27,12 @@ Testes: `domain/demonstrativoDinamico.test.ts` cobre o caso Lago Negro (1 mensal
 mantém o salvo) e a série completa de 12 meses; `frontend/src/test/conflito-importacao-todos.test.tsx`
 cobre as duas decisões em bloco, o resumo e o ajuste individual posterior. Versão **1.12**.
 
-**Não verificado:** a reimportação do `balanço 2025.pdf` no navegador autenticado contra o
-exercício de produção (o demonstrativo gravado em produção ainda é o consolidado errado e precisa
-ser regravado pelo balanço depois desta publicação).
+**Publicado** em 13/11/2026 no deploy `fc45795` (main `c09bcdd`, PR #278, versão 1.12): runtime
+`assets/index-CnJmmVcJ.js` no ar, `ImportarPdf-De0uZ7Gm.js` servindo "Manter os gravados" e
+`_authenticated.prestacao-contas._id-p1lc2kiF.js` com o aviso de cobertura; PHP idêntico ao deploy
+anterior, sem migration. **Pendente:** reimportar o `balanço 2025.pdf` no exercício do Lago Negro —
+o demonstrativo gravado em produção continua sendo o consolidado errado, e as 77 divergências
+aparecem uma última vez contra esse dado velho (agora resolvíveis com "Usar todos do PDF").
 
 ## Modelos de edital por cidade — 11/11/2026
 
