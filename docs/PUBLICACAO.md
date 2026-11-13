@@ -20,11 +20,12 @@ confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
 Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
 `deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
-publicação: `deploy-hostinger` `fc45795`, com o pacote do CI no commit `c09bcdd`
-(main, versão 1.12 — correção da importação da prestação de contas); o runtime
-`index-CnJmmVcJ.js` no ar coincide com o `index.html` publicado. A publicação
-anterior, `c2eb968` (`92f853b`, versão 1.11), servia `index-DFi-oqfk.js`; antes
-dela, `3fec48f` (main
+publicação: `deploy-hostinger` `846bd02`, com o pacote do CI no commit `6221467`
+(main, versão 1.13 — previsão orçamentária no padrão da folha do Systemar); o
+runtime `index-B5URdVya.js` no ar coincide com o `index.html` publicado. A
+publicação anterior, `fc45795` (`c09bcdd`, versão 1.12), servia
+`index-CnJmmVcJ.js`; antes dela, `c2eb968` (`92f853b`, versão 1.11), servia
+`index-DFi-oqfk.js`; antes dela, `3fec48f` (main
 `bbdd720`), teve os arquivos da branch conferidos contra o artefato. As
 publicações `a603045` e `3fec48f` saíram nos minutos seguintes uma da outra
 porque outro trabalho foi mesclado em main no intervalo: vale sempre conferir o

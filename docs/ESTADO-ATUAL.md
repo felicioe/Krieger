@@ -31,9 +31,14 @@ assinatura, notação de exercício), `frontend/src/test/linhaGuiada.test.ts` (p
 `linhaGuiadaDocumento.test.ts` (bloco no PDF) e `relatorioFinalPrevisaoCriterios.test.ts` reescrito
 para a nova decisão. Versão **1.13**.
 
+**Publicado** em 13/11/2026 no deploy `846bd02` (main `6221467`, PR #279, versão 1.13): runtime
+`index-B5URdVya.js` no ar, com `relatorioFinal-D0LOFtKE.js` servindo a folha, `pdf-C1M79WtE.js` e
+`word-DuRjGUap.js` com o bloco `linhaGuiada`; PHP idêntico ao deploy anterior, sem migration.
+
 **Não verificado:** a geração do PDF no navegador autenticado (o teste de documento confere a
 definição do pdfmake, não o binário) e a leitura da folha do Lago Negro pelo fluxo de importação
-completo na tela.
+completo na tela. Falta gerar o relatório final de um exercício com previsão importada e conferir a
+folha impressa — o Urban Classic é a referência (49.244,00 e 8,93%).
 
 ## Importação da prestação de contas — 13/11/2026
 
