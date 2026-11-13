@@ -622,14 +622,5 @@ function folhaPrevisao(
       larguraValor: 110,
     },
   );
-  if (f.localData) {
-    out.push({
-      tipo: "paragrafo",
-      texto: f.localData,
-      alinhamento: "centro",
-      tamanho: "pequeno",
-      negrito: true,
-    });
-  }
   return out;
 }

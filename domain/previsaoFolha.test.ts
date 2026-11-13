@@ -83,13 +83,14 @@ describe("montarFolhaPrevisao — a folha do Systemar", () => {
     expect(f.rateioAtual).toBeNull();
   });
 
-  it("assina com a cidade do exercício e a data de emissão por extenso", () => {
+  it("não assina a folha com cidade/data (decisão de 13/11/2026)", () => {
     const f = montarFolhaPrevisao(
       exercicio({ cidade: "Rancho Queimado", dataEmissao: "30/11/2025" }),
       urban,
       calcularPrevisaoSugerida(urban),
     );
-    expect(f.localData).toBe("Rancho Queimado, 30 de novembro de 2025.");
+    expect(f).not.toHaveProperty("localData");
+    expect(JSON.stringify(f)).not.toContain("Rancho Queimado");
   });
 });
 

@@ -5,8 +5,8 @@
 A seção de previsão do relatório final virou **a folha do Systemar**, como o escritório a entrega
 (decisão em `docs/DECISOES.md`, substituindo a de 2026-11-08): rateio atual → histórico de despesas
 por categoria → dedução → total ordinário → variação → rateio anual e mensal sugeridos → índice,
-com pontilhado condutor entre rótulo e valor, título em duas linhas centralizado e cidade/data ao
-final. O cálculo do Krieger **não é mais impresso** nessa seção (continua nos menus de Previsão
+com pontilhado condutor entre rótulo e valor e título em duas linhas centralizado. A folha
+não imprime cidade/data ao final, conforme correção posterior. O cálculo do Krieger **não é mais impresso** nessa seção (continua nos menus de Previsão
 orçamentária e Previsto × Realizado).
 
 **Fonte única.** `domain/previsaoFolha.ts` (`montarFolhaPrevisao`, `exercicioPorExtenso`,
@@ -27,7 +27,7 @@ despesas, dedução −215.592,88, ordinário 560.938,48, variação 30.000,00, 
 PDF tolera R$ 1,00 nesse campo, porque truncar é legítimo.
 
 **Testes.** `domain/previsaoFolha.test.ts` (folha do Urban linha a linha, variante por unidade,
-assinatura, notação de exercício), `frontend/src/test/linhaGuiada.test.ts` (pontilhado),
+ausência de cidade/data, notação de exercício), `frontend/src/test/linhaGuiada.test.ts` (pontilhado),
 `linhaGuiadaDocumento.test.ts` (bloco no PDF) e `relatorioFinalPrevisaoCriterios.test.ts` reescrito
 para a nova decisão. Versão **1.13**.
 
