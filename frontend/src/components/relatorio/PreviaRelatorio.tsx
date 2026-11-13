@@ -719,7 +719,6 @@ function FolhaPrevisaoPrevia({
           </div>
         ))}
       </dl>
-      {f.localData && <p className="mt-6 text-center font-semibold">{f.localData}</p>}
     </div>
   );
 }

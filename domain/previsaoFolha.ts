@@ -54,20 +54,6 @@ export interface FolhaPrevisao {
   totalCategorias: { nome: string; anual: string; media: string };
   /** Dedução, total ordinário, variação, rateio anual, rateio mensal e índice. */
   fechamento: LinhaFolha[];
-  /** "Rancho Queimado, 30 de novembro de 2025." */
-  localData: string | null;
-}
-
-const MESES = [
-  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
-];
-
-/** "30/11/2025" → "30 de novembro de 2025". */
-function dataExtenso(dataBR: string | null | undefined): string | null {
-  const d = parseData(dataBR);
-  if (!d) return null;
-  return `${String(d.getDate()).padStart(2, "0")} de ${MESES[d.getMonth()]} de ${d.getFullYear()}`;
 }
 
 const sinal = (s: "+" | "-") => (s === "-" ? "(−)" : "(+)");
@@ -83,8 +69,6 @@ export function montarFolhaPrevisao(
 ): FolhaPrevisao {
   const exercicio = exercicioPorExtenso(e);
   const historico = periodoHistorico(e);
-  const cidade = (e.cidade || "").trim();
-  const data = dataExtenso(e.dataEmissao);
 
   // Rateio atual: a folha traz uma das duas grandezas. O total mensal é o que permite o índice;
   // o valor por unidade é o que alguns condomínios usam, e vai com o número de lotes no rótulo.
@@ -138,7 +122,6 @@ export function montarFolhaPrevisao(
       media: formatBRL(r.totalDespesasMedia),
     },
     fechamento,
-    localData: cidade && data ? `${cidade}, ${data}.` : data,
   };
 }
 

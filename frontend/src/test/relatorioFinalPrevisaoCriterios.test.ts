@@ -110,6 +110,40 @@ describe("Previsão orçamentária no relatório final: a folha do Systemar", ()
     expect(titulos).toContain("SUGERIDA PARA O EXERCÍCIO DE 2024/2025.");
   });
 
+  it("não imprime cidade/data após a folha de previsão", async () => {
+    const { documentoRelatorioFinal } = await import("@/documentos/relatorioFinal");
+    const e = {
+      id: "e1",
+      ...exercicioPadrao(condo, 2025, "Balneário Camboriú"),
+      previsaoSugerida: sugerida,
+      dataEmissao: "13/11/2026",
+    } as Exercicio;
+    e.relatorioFinal = { ...e.relatorioFinal, secoes: { previsao: true } };
+    const rel = montarRelatorioFinal({
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+      mensais: [],
+    });
+    const doc = await documentoRelatorioFinal({
+      rel,
+      exercicio: e,
+      condominio: condo,
+      escritorio: null,
+    });
+    const indicePrevisao = doc.blocos.findIndex(
+      (b) => b.tipo === "titulo" && b.texto.includes("Previsão orçamentária"),
+    );
+    expect(indicePrevisao).toBeGreaterThanOrEqual(0);
+    const secao = doc.blocos.slice(indicePrevisao + 1);
+    expect(secao.some((b) => b.tipo === "linhaGuiada")).toBe(true);
+    expect(
+      secao.some(
+        (b) => b.tipo === "paragrafo" && String(b.texto).includes("13 de novembro de 2026"),
+      ),
+    ).toBe(false);
+  });
+
   it("sem previsão sugerida importada, explica em vez de imprimir números inventados", async () => {
     const { doc } = await gerar({ previsaoSugerida: null });
     const texto = doc.blocos

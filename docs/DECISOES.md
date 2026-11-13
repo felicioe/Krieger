@@ -108,7 +108,7 @@ decisão de 2026-11-08 (que exigia imprimir os critérios do cálculo):
 
 - A seção de previsão do relatório final é **uma só**, no layout da folha: rateio atual → histórico
   por categoria → dedução → total ordinário → variação → rateio anual e mensal → índice, com
-  pontilhado condutor entre rótulo e valor e assinatura cidade/data ao final.
+  pontilhado condutor entre rótulo e valor. A pedido posterior, a folha não imprime cidade/data ao final.
 - O **cálculo do Krieger não é impresso** nessa seção. Ele continua existindo e sendo editável nos
   menus de Previsão orçamentária e Previsto × Realizado; o que saiu foi a impressão duplicada.
 - A folha é montada por `domain/previsaoFolha.ts` (`montarFolhaPrevisao`), fonte única dos textos e
