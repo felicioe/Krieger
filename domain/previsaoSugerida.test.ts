@@ -162,12 +162,18 @@ describe("calcularPrevisaoSugerida", () => {
     expect(r.totalOrdinario).toBe(255900); // 279900 - 24000
     expect(r.variacaoValor).toBe(17587.05);
     expect(r.totalFinal).toBeCloseTo(273487.05, 2);
-    expect(r.rateioMensalSugerido).toBeCloseTo(22790.59, 2); // ÷12
+    // Padrão do condomínio: truncar (a folha do Systemar imprime 22.790,00, não 22.790,59).
+    expect(r.rateioMensalSugerido).toBe(22790);
+  });
+
+  it("respeita o arredondamento do condomínio no rateio mensal sugerido", () => {
+    expect(calcularPrevisaoSugerida(base, "arredondar").rateioMensalSugerido).toBe(22791);
+    expect(calcularPrevisaoSugerida(base, "centavos").rateioMensalSugerido).toBeCloseTo(22790.59, 2);
   });
 
   it("índice sugerido compara o rateio mensal sugerido com o rateio mensal atual (ano anterior)", () => {
     const r = calcularPrevisaoSugerida(base);
-    // 22790.59 / 48000 - 1 ≈ -52,52%
+    // 22790 / 48000 - 1 ≈ -52,52%
     expect(r.indiceSugerido).toBeCloseTo(-52.52, 1);
   });
 

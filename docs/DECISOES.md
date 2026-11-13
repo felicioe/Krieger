@@ -100,6 +100,33 @@ novo viaja no JSON. Uma cláusula compartilhada entre condomínios continua send
 de um modelo para outro, não herança — decisão revista se a manutenção de cópias se mostrar
 custosa.
 
+## 2026-11-13 — a previsão do relatório final é a folha do Systemar, sem o cálculo do Krieger
+
+O responsável reclamou do bloco "Referência histórica importada do Systemar" e mandou o print da
+folha 7 do balanço: *"deixa essa parte do relatório final igual ao print"*. Decidido, substituindo a
+decisão de 2026-11-08 (que exigia imprimir os critérios do cálculo):
+
+- A seção de previsão do relatório final é **uma só**, no layout da folha: rateio atual → histórico
+  por categoria → dedução → total ordinário → variação → rateio anual e mensal → índice, com
+  pontilhado condutor entre rótulo e valor e assinatura cidade/data ao final.
+- O **cálculo do Krieger não é impresso** nessa seção. Ele continua existindo e sendo editável nos
+  menus de Previsão orçamentária e Previsto × Realizado; o que saiu foi a impressão duplicada.
+- A folha é montada por `domain/previsaoFolha.ts` (`montarFolhaPrevisao`), fonte única dos textos e
+  da ordem das linhas para o PDF/Word (`frontend/src/documentos/relatorioFinal.ts`) e para a prévia
+  na tela (`PreviaRelatorio.tsx`). Nenhum dos dois reescreve rótulo por conta própria.
+- Os dados de origem continuam salvos (`Exercicio.previsaoSugerida`) e a importação/divergências não
+  mudou.
+
+**Arredondamento.** O rateio mensal sugerido passa a respeitar `Exercicio.arredondamento` (padrão
+`truncar`), como o resto do sistema e como a folha: 590.938,48 ÷ 12 = 49.244,87, impresso 49.244,00.
+A conferência contra os totais do PDF usa tolerância de R$ 1,00 nesse campo justamente porque o
+truncamento é legítimo, não erro de leitura.
+
+**Duas variantes do rateio atual.** A folha ora traz o total mensal do condomínio (única forma que
+permite o índice), ora o valor por unidade com o número de lotes. As duas são lidas
+(`rateioMensalAtual` e `rateioUnidadeAtual`/`unidadesRateio`), sem misturar as grandezas: o índice só
+aparece quando existe o total mensal.
+
 ## 2026-11-13 — consolidar pelos mensais é ação explícita, não efeito de abrir a tela
 
 A prestação de contas do Lago Negro 2025 foi gravada com o demonstrativo errado porque a tela somava

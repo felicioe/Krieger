@@ -71,7 +71,7 @@ export function PainelPrevisaoSugerida({
   condoId: string;
   onChange: (parcial: Partial<Exercicio>) => void;
 }) {
-  const r = useMemo(() => calcularPrevisaoSugerida(p), [p]);
+  const r = useMemo(() => calcularPrevisaoSugerida(p, e.arredondamento), [p, e.arredondamento]);
   const divergencias = useMemo(() => compararComTotaisPdf(r, p.totaisPdf), [r, p.totaisPdf]);
   const fundoReservaPct = e.prev?.fundoReservaPct ?? null;
   const u = useMemo(

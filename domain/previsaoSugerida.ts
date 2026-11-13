@@ -71,6 +71,8 @@ export function previsaoSugeridaDoPdf(pv: PrevisaoSugeridaLida): PrevisaoSugerid
   }
   return {
     rateioMensalAtual: pv.rateioMensalAtual,
+    rateioUnidadeAtual: pv.rateioUnidadeAtual,
+    unidadesRateio: pv.unidadesRateio,
     categorias: pv.categorias.map((c) => ({ ...c })),
     deducoes,
     variacao: { sinal: (pv.variacaoSugerida ?? 0) < 0 ? "-" : "+", valor: Math.abs(pv.variacaoSugerida ?? 0) },
@@ -78,14 +80,22 @@ export function previsaoSugeridaDoPdf(pv: PrevisaoSugeridaLida): PrevisaoSugerid
   };
 }
 
-export function calcularPrevisaoSugerida(p: PrevisaoSugeridaExercicio): ResultadoPrevisaoSugerida {
+export function calcularPrevisaoSugerida(
+  p: PrevisaoSugeridaExercicio,
+  /**
+   * Arredondamento aplicado ao rateio mensal sugerido, igual ao que o resto do sistema usa para o
+   * valor por unidade. A folha do Systemar trunca (590.938,48 ÷ 12 = 49.244,87 → imprime
+   * 49.244,00), e é esse o padrão do condomínio quando ele não escolhe outro.
+   */
+  arredondamento: Arredondamento = "truncar",
+): ResultadoPrevisaoSugerida {
   const totalDespesasAno = centavos(p.categorias.reduce((s, c) => s + c.anual, 0));
   const totalDespesasMedia = centavos(totalDespesasAno / 12);
   const deducoesTotal = centavos(p.deducoes.reduce((s, d) => s + assinado(d), 0));
   const totalOrdinario = centavos(totalDespesasAno + deducoesTotal);
   const variacaoValor = centavos(assinado(p.variacao));
   const totalFinal = centavos(totalOrdinario + variacaoValor);
-  const rateioMensalSugerido = centavos(totalFinal / 12);
+  const rateioMensalSugerido = arredondarValor(totalFinal / 12, arredondamento);
   const rateioMensalAtual = p.rateioMensalAtual;
   const indiceSugerido =
     rateioMensalAtual && rateioMensalAtual > 0 ? Math.round((rateioMensalSugerido / rateioMensalAtual - 1) * 1000000) / 10000 : null;
@@ -116,7 +126,10 @@ export function compararComTotaisPdf(
   cmp("Total das despesas do ano", totaisPdf.totalDespesasAno, r.totalDespesasAno, 0.02);
   cmp("Total ordinário", totaisPdf.totalOrdinario, r.totalOrdinario, 0.02);
   cmp("Sugestão de rateio anual ordinário", totaisPdf.rateioAnualSugerido, r.totalFinal, 0.02);
-  cmp("Sugestão de rateio mensal ordinário", totaisPdf.rateioMensalSugerido, r.rateioMensalSugerido, 0.02);
+  // O rateio mensal é o único campo em que o PDF e o sistema podem divergir por arredondamento
+  // legítimo: a folha trunca os centavos (49.244,87 → 49.244,00) e o condomínio pode escolher
+  // arredondar. Diferença de menos de R$ 1,00 é a mesma conta, não erro de leitura.
+  cmp("Sugestão de rateio mensal ordinário", totaisPdf.rateioMensalSugerido, r.rateioMensalSugerido, 1);
   cmp("Índice sugerido para correção", totaisPdf.indiceSugerido, r.indiceSugerido, 0.05);
   return divergencias;
 }

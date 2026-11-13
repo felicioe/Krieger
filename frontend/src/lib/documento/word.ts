@@ -2,6 +2,7 @@ import type { Bloco, Coluna, Documento, LinhaTabela, Texto, Alinhamento } from "
 import { COR, MARGEM_CELULA, PAGINA, RECUO_CELULA, TAMANHO_TABELA, areaPagina } from "./tipos";
 import { bytesDe, carregarPng } from "./imagens";
 import { tipografia } from "./tipografia";
+import { guiar } from "./guias";
 
 /** Desenha o documento em Word (.docx, biblioteca docx carregada sob demanda). */
 export async function gerarWord(doc: Documento): Promise<Blob> {
@@ -297,6 +298,37 @@ export async function gerarWord(doc: Documento): Promise<Blob> {
           ),
         );
         filhos.push(new Paragraph({ spacing: { after: tw(4) }, children: [] }));
+        return;
+      }
+      case "linhaGuiada": {
+        const larguraValor = tw(b.larguraValor ?? 110);
+        const ws = [UTIL - larguraValor, larguraValor];
+        filhos.push(
+          new Table({
+            width: { size: UTIL, type: WidthType.DXA },
+            columnWidths: ws,
+            layout: TableLayoutType.FIXED,
+            borders: semBordas,
+            rows: b.itens.map(
+              (i) =>
+                new TableRow({
+                  cantSplit: true,
+                  children: [
+                    celula(guiar(i.rotulo, folha.util - (b.larguraValor ?? 110), tip.corpo), {
+                      largura: ws[0]!,
+                      ...(i.forte ? { negrito: true } : {}),
+                    }),
+                    celula(i.valor, {
+                      largura: ws[1]!,
+                      alinhamento: "direita",
+                      ...(i.forte ? { negrito: true } : {}),
+                    }),
+                  ],
+                }),
+            ),
+          }),
+          espacoDepois(),
+        );
         return;
       }
       case "pares": {

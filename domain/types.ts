@@ -281,6 +281,14 @@ export interface DecisaoDivergenciaPrevisaoSugerida {
 export interface PrevisaoSugeridaExercicio {
   /** Rateio mensal utilizado no ano anterior, lido do PDF — referência para o índice sugerido. */
   rateioMensalAtual: number | null;
+  /**
+   * Variante do PDF que informa o valor **por unidade** ("Valor cobrado atualmente por unidade
+   * (156 lotes) ... R$ 321,00") em vez do total mensal do condomínio. Guardado separado para não
+   * misturar as duas grandezas; `rateioMensalAtual` continua null nesse caso.
+   */
+  rateioUnidadeAtual?: number | null;
+  /** Unidades do rótulo "por unidade (N lotes)", quando o PDF as informa. */
+  unidadesRateio?: number | null;
   /** Despesas realizadas por categoria (como o Systemar agrupa), com a média mensal ao lado. */
   categorias: { nome: string; anual: number; media: number }[];
   /** Linhas de dedução (ex.: "Parte água e gás"), + ou -. Uma ou mais, editáveis. */

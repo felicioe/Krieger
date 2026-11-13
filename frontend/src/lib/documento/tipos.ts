@@ -28,6 +28,16 @@ export interface Coluna {
 
 export type EstiloLinha = "normal" | "grupo" | "subtotal" | "total";
 
+/** Item de `linhaGuiada`: rótulo à esquerda, valor à direita, pontilhado no meio. */
+export interface LinhaGuiada {
+  rotulo: string;
+  valor: string;
+  /** destaca o valor (totais) */
+  forte?: boolean;
+  /** espaço extra antes da linha (separa blocos) */
+  espacoAntes?: number;
+}
+
 export interface LinhaTabela {
   celulas: Texto[];
   /** "grupo" ocupa a linha toda com a primeira célula. */
@@ -63,6 +73,17 @@ export type Bloco =
       tipo: "pares";
       itens: { rotulo: string; valor: Texto }[];
       alinhamento?: "esquerda" | "direita";
+    }
+  /**
+   * Linha "rótulo ......... valor" com pontilhado condutor entre os dois, no espírito dos
+   * relatórios do Systemar (folha da previsão orçamentária). O rótulo pode quebrar em mais de uma
+   * linha; o pontilhado continua na última, sempre alinhado ao valor à direita.
+   */
+  | {
+      tipo: "linhaGuiada";
+      itens: LinhaGuiada[];
+      /** largura reservada ao valor, em pt (padrão 110) */
+      larguraValor?: number;
     }
   | { tipo: "imagem"; dataUrl: string; largura: number; altura: number; alinhamento?: Alinhamento }
   | { tipo: "espaco"; altura: number }

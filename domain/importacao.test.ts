@@ -381,6 +381,8 @@ describe("condomínio do relatório", () => {
     };
     const pv: PrevisaoSugeridaLida = {
       rateioMensalAtual: 500,
+      rateioUnidadeAtual: null,
+      unidadesRateio: null,
       categorias: [],
       totalDespesasAno: 6000,
       totalDespesasMedia: 500,

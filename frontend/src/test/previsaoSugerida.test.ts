@@ -8,6 +8,8 @@ import type { PrevisaoSugeridaLida } from "@/domain/pdfParser";
 
 const lida: PrevisaoSugeridaLida = {
   rateioMensalAtual: 10000,
+  rateioUnidadeAtual: null,
+  unidadesRateio: null,
   categorias: [
     { nome: "Pessoal", anual: 120000, media: 10000 },
     { nome: "Consumo", anual: 24000, media: 2000 },
