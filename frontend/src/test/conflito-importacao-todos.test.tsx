@@ -12,7 +12,6 @@ const itens: ItemDivergenteImportacao[] = [
     ocorrencia: 0,
     valorAtual: 6723.04,
     valorNovo: 117178.28,
-    diferencaPct: 1643.1,
   },
   {
     secao: "despesas",
@@ -21,7 +20,6 @@ const itens: ItemDivergenteImportacao[] = [
     ocorrencia: 0,
     valorAtual: null,
     valorNovo: 820.8,
-    diferencaPct: null,
   },
   {
     secao: "receitas",
@@ -29,7 +27,6 @@ const itens: ItemDivergenteImportacao[] = [
     ocorrencia: 0,
     valorAtual: 515174.99,
     valorNovo: 515174.99,
-    diferencaPct: 0,
   },
 ];
 
