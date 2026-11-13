@@ -1,7 +1,7 @@
 import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useMemo, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   Calculator,
@@ -38,7 +38,7 @@ import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { demonstrativoVazio, mesesNoPeriodo } from "@/domain/demonstrativo";
-import { demonstrativoDoPeriodo } from "@/domain/demonstrativoDinamico";
+import { consolidarPeriodo } from "@/domain/demonstrativoDinamico";
 import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
 import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
@@ -79,11 +79,9 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
-  const {
-    data: mensais,
-    refetch: atualizarMensais,
-    isFetching: atualizandoMensais,
-  } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
+  const { refetch: atualizarMensais, isFetching: atualizandoMensais } = useSuspenseQuery(
+    listaQuery<Mensal>("mensais"),
+  );
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
@@ -98,18 +96,35 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
 
   const condo = condominios.find((c) => c.id === e.condoId);
   const demonstrativoSalvo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
-  const demonstrativo = useMemo(
-    () =>
-      e.fechado
-        ? demonstrativoSalvo
-        : demonstrativoDoPeriodo(demonstrativoSalvo, mensais, e.condoId),
-    [demonstrativoSalvo, mensais, e.condoId, e.fechado],
-  );
+  // A tela mostra exatamente o que está gravado (ou o que o usuário acabou de editar). A
+  // consolidação pelos relatórios mensais virou ação explícita ("Atualizar dados"), porque somar
+  // uma série parcial de meses por cima do saldo gravado troca as contas do exercício sem avisar —
+  // foi o que apagou as despesas do balanço na reimportação do Lago Negro 2025.
+  const demonstrativo = demonstrativoSalvo;
   const sujo = JSON.stringify(e) !== salvoJson;
   const mesesPeriodo = mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim);
 
   const mudar = (parcial: Partial<Exercicio>) =>
     setE((x) => (x.fechado ? x : { ...x, ...parcial }));
+
+  /**
+   * "Atualizar dados" consolida o demonstrativo pelos relatórios mensais do período. Só substitui
+   * o demonstrativo gravado quando a cobertura é completa (um mensal por mês do período); com
+   * cobertura parcial, avisa e mantém o que está gravado — somar poucos meses por cima do saldo
+   * apaga as contas que só o balanço tem.
+   */
+  async function atualizarPeloPeriodo() {
+    const novos = await atualizarMensais().then((r) => r.data ?? []);
+    const resultado = consolidarPeriodo(demonstrativoSalvo, novos, e.condoId);
+    if (resultado.estado !== "completa") {
+      toast.error(resultado.aviso ?? "Não foi possível consolidar os relatórios mensais.");
+      return;
+    }
+    mudar({ demonstrativo: resultado.demonstrativo });
+    toast.success(
+      `Demonstrativo consolidado com ${resultado.usados} ${resultado.usados === 1 ? "relatório mensal" : "relatórios mensais"}. Salve para gravar.`,
+    );
+  }
 
   // Avisa antes de sair com alterações não salvas (refs para ler o estado mais recente).
   const sujoRef = useRef(sujo);
@@ -210,11 +225,9 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
             <Button
               variant="outline"
               type="button"
-              onClick={() =>
-                void atualizarMensais().then(() => toast.success("Dados mensais atualizados."))
-              }
+              onClick={() => void atualizarPeloPeriodo()}
               disabled={atualizandoMensais || e.fechado}
-              title="Ler novamente os relatórios mensais e recalcular esta prestação"
+              title="Somar os relatórios mensais do período neste demonstrativo"
             >
               {atualizandoMensais ? <Loader2 className="animate-spin" /> : <RefreshCw />}
               Atualizar dados

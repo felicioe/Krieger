@@ -1,5 +1,36 @@
 # Estado atual e passagem de contexto
 
+## Importação da prestação de contas — 13/11/2026
+
+**Causa raiz das 77 divergências (provada com os PDFs reais do Lago Negro).** A tela do exercício
+consolidava o demonstrativo pelos relatórios mensais no próprio `useMemo` de render e o Salvar
+gravava essa versão consolidada. O exercício 2025 do Lago Negro tem período de 11 meses
+(01/01/2025 a 30/11/2025) e **um único** mensal dentro dele (11/2025, vindo do comparativo), então
+`somarMensais` trocava as 53 despesas e as 2 contas de saldo do balanço pelas 22 despesas e 3 contas
+daquele mês — o demonstrativo gravado ficou com saldo anterior 207.495,37 (comparativo) no lugar dos
+122.778,61 do balanço, e as contas que só o balanço tem apareciam como `null` na comparação.
+
+**Correção.** `frontend/src/domain/demonstrativoDinamico.ts` passou de `demonstrativoDoPeriodo`
+(que sempre somava) para **`consolidarPeriodo`**, que devolve o demonstrativo **e o diagnóstico de
+cobertura** (`completa`/`parcial`/`vazia`, `usados`, `meses`, `aviso`). Nada é somado quando a
+cobertura é parcial. A rota
+(`frontend/src/routes/_authenticated.prestacao-contas.$id.tsx`) não consolida mais no render: mostra
+e grava o demonstrativo do exercício, e o botão **Atualizar dados** é a ação explícita que consolida
+— avisando e mantendo o salvo quando a série não cobre o período.
+
+**Decisão em bloco nas divergências.** `frontend/src/components/importacao/ConflitoImportacao.tsx`
+ganhou **Manter os gravados** / **Usar todos do PDF**, que preenchem todas as escolhas de uma vez
+(sem pré-marcar nada ao abrir, como decidido no PR #124) e mostram um resumo ao vivo
+("N manter · M do PDF · P sem decidir"). O ajuste item a item continua valendo por cima.
+
+Testes: `domain/demonstrativoDinamico.test.ts` cobre o caso Lago Negro (1 mensal em 11 meses
+mantém o salvo) e a série completa de 12 meses; `frontend/src/test/conflito-importacao-todos.test.tsx`
+cobre as duas decisões em bloco, o resumo e o ajuste individual posterior. Versão **1.12**.
+
+**Não verificado:** a reimportação do `balanço 2025.pdf` no navegador autenticado contra o
+exercício de produção (o demonstrativo gravado em produção ainda é o consolidado errado e precisa
+ser regravado pelo balanço depois desta publicação).
+
 ## Modelos de edital por cidade — 11/11/2026
 
 Os **44 editais** do acervo `OneDrive/.../krieger/editais` foram lidos e agrupados: **Balneário

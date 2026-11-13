@@ -100,6 +100,20 @@ novo viaja no JSON. Uma cláusula compartilhada entre condomínios continua send
 de um modelo para outro, não herança — decisão revista se a manutenção de cópias se mostrar
 custosa.
 
+## 2026-11-13 — consolidar pelos mensais é ação explícita, não efeito de abrir a tela
+
+A prestação de contas do Lago Negro 2025 foi gravada com o demonstrativo errado porque a tela somava
+os relatórios mensais do período no próprio render e o Salvar gravava essa soma. O exercício tinha
+11 meses e um único mensal dentro dele (o primeiro mês de um comparativo): a soma representava um mês
+e substituiu as contas do balanço, gerando 77 divergências na reimportação.
+
+Decidido: **o demonstrativo gravado é a fonte da prestação**. Uma série de mensais só substitui o
+salvo quando cobre o período inteiro (um relatório por mês); com cobertura parcial a consolidação é
+recusada e o usuário é avisado. Consolidar é a ação do botão **Atualizar dados**, com o resultado
+passando pelo Salvar como qualquer edição — nunca um efeito colateral de abrir a tela. O diagnóstico
+de cobertura vem de `consolidarPeriodo` (`frontend/src/domain/demonstrativoDinamico.ts`), que também
+é o que a tela usa para explicar por que não consolidou.
+
 ## 2026-11-08 — relatório final repete os critérios da previsão, não só os números
 
 O responsável apontou que o relatório final divergia dos menus de manutenção da previsão

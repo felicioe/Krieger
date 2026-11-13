@@ -2,7 +2,14 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.11**.
+Versão atual: **1.12**.
+
+## 1.12 — Importação da prestação de contas corrigida e decisão em bloco das divergências
+
+- A prestação de contas volta a mostrar e gravar o demonstrativo do exercício: a soma dos relatórios mensais não substitui mais as contas do balanço ao abrir a tela.
+- O botão Atualizar dados consolida pelos relatórios mensais só quando há um mês para cada mês do período; com cobertura parcial ele avisa e mantém o demonstrativo gravado.
+- No diálogo de valores divergentes da reimportação, dois botões decidem tudo de uma vez: Manter os gravados e Usar todos do PDF, com o resumo de quantos ficaram em cada lado e quantos ainda faltam.
+- Ainda é possível ajustar item a item depois da decisão em bloco.
 
 ## 1.11 — Modelos de edital por cidade, escolhidos pelo endereço do condomínio
 
