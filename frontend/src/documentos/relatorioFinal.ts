@@ -149,12 +149,17 @@ export async function documentoRelatorioFinal(o: {
     // atual → histórico por categoria → dedução → total ordinário → variação → rateio anual e
     // mensal → índice. O cálculo do Krieger continua nos menus de manutenção e não é impresso
     // aqui, para não haver dois demonstrativos concorrentes no mesmo relatório.
-    if (e.previsaoSugerida && rel.previsaoSugerida) {
+    const temPrevisaoCompleta =
+      e.previsaoSugerida != null &&
+      rel.previsaoSugerida != null &&
+      Array.isArray(e.previsaoSugerida.categorias) &&
+      e.previsaoSugerida.categorias.length > 0;
+    if (temPrevisaoCompleta) {
       b.push(
         ...folhaPrevisao(
           e,
-          e.previsaoSugerida,
-          rel.previsaoSugerida,
+          e.previsaoSugerida!,
+          rel.previsaoSugerida!,
           titulo("previsao", "Previsão orçamentária"),
         ),
       );

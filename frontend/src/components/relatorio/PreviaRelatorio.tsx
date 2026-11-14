@@ -179,7 +179,9 @@ export function PreviaRelatorio({
               <AlertDescription>{rel.avisoRateioAprovado}</AlertDescription>
             </Alert>
           )}
-          {e.previsaoSugerida && rel.previsaoSugerida ? (
+          {e.previsaoSugerida &&
+          rel.previsaoSugerida &&
+          e.previsaoSugerida.categorias?.length > 0 ? (
             <FolhaPrevisaoPrevia e={e} previsao={e.previsaoSugerida} r={rel.previsaoSugerida} />
           ) : (
             <p className="text-sm text-muted-foreground">
