@@ -524,7 +524,6 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
   const servicos = [
     linhaServico("Água", rel.agua),
     linhaServico("Energia elétrica", rel.energia),
-    linhaServico("Elevadores", rel.elevador, c.elevadorFornecedor),
   ].filter((l): l is LinhaTabela => l !== null);
   if (servicos.length) {
     out.push(
@@ -554,6 +553,11 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
       .map((i) => ({ rotulo: String(i.ano ?? "—"), valor: `${formatNumeroBR(i.pct)}%` })),
   );
   for (const x of c.extras.filter((x) => String(x.rotulo).trim() || String(x.valor).trim())) {
+    // Ignora observações de Alvará estrutural e elevadores
+    const rotuloLower = String(x.rotulo).toLowerCase();
+    if (rotuloLower.includes("alvará") || rotuloLower.includes("alvara") || rotuloLower.includes("elevador")) {
+      continue;
+    }
     out.push({
       tipo: "paragrafo",
       alinhamento: "justificado",

@@ -474,7 +474,6 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
   const servicos = [
     { nome: "Água", consumo: rel.agua },
     { nome: "Energia elétrica", consumo: rel.energia },
-    { nome: "Elevadores", consumo: rel.elevador, fornecedor: c.elevadorFornecedor },
   ].filter((s) => s.consumo.valor > 0);
   return (
     <div className="space-y-5">
@@ -599,10 +598,7 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
                           {s.consumo.rubricas.join(", ")}
                         </span>
                       )}
-                      {s.fornecedor && (
-                        <span className="block text-xs text-muted-foreground">{s.fornecedor}</span>
-                      )}
-                    </td>
+                                          </td>
                     <td className="num py-1 text-right">{formatBRL(s.consumo.valor)}</td>
                     <td className="num py-1 text-right text-muted-foreground">
                       {formatBRL(s.consumo.valor / 12)}

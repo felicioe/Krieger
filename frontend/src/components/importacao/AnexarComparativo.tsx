@@ -464,6 +464,27 @@ function PassoAnexar({
             mensal de verdade, usado no Previsto × Realizado, na inadimplência e nos gráficos — não
             depende da prestação de contas escolhida acima.
           </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelecionados(
+                Object.fromEntries(mesesComparativo.map(m => [m.mes, true]))
+              )}
+            >
+              Aprovar todos
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelecionados({})}
+            >
+              Desmarcar todos
+            </Button>
+            <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
+              {mesesComparativo.filter(estaSelecionado).length} de {mesesComparativo.length} selecionados
+            </span>
+          </div>
           <ul className="grid gap-1.5">
             {mesesComparativo.map((m) => {
               const id = `mes-comparativo-${m.mes.replace("/", "-")}`;

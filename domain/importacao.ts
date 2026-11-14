@@ -50,17 +50,15 @@ export const ROTULO_LAYOUT: Record<RelatorioLido["layout"], string> = {
 /** Colunas que o usuário pode escolher (só no comparativo). */
 export function colunasDoRelatorio(rel: RelatorioLido): { valor: string; rotulo: string }[] {
   if (rel.layout !== "comparativo") return [];
-  return [
-    ...(rel.meses ?? []).map((m) => ({ valor: m, rotulo: m })),
-    { valor: COLUNA_TOTAL, rotulo: "Total do período" },
-  ];
+  return (rel.meses ?? []).map((m) => ({ valor: m, rotulo: m }));
 }
 
-/** Sugestão inicial: último mês no relatório mensal; total do período na prestação de contas. */
+/** Sugestão inicial: último mês no relatório mensal; primeiro mês no comparativo (sempre mês a mês). */
 export function colunaPadrao(rel: RelatorioLido, destino: DestinoImportacao): string | null {
   if (rel.layout !== "comparativo") return null;
   const meses = rel.meses ?? [];
-  return destino === "mensais" && meses.length ? meses[meses.length - 1]! : COLUNA_TOTAL;
+  if (meses.length === 0) return null;
+  return destino === "mensais" ? meses[meses.length - 1]! : meses[0]!;
 }
 
 const isoParaBR = (iso: string) => {
@@ -99,7 +97,7 @@ function valorDoItem(item: ItemLido, rel: RelatorioLido, coluna: string | null, 
   if (rel.layout !== "comparativo") return item.valor ?? null;
   const meses = rel.meses ?? [];
   const v = item.valores ?? {};
-  if (coluna && coluna !== COLUNA_TOTAL) return v[coluna] ?? null;
+  if (coluna) return v[coluna] ?? null;
   if (secao === "saldoAnterior") return meses.length ? (v[meses[0]!] ?? null) : null;
   if (secao === "saldoAtual") return meses.length ? (v[meses[meses.length - 1]!] ?? null) : null;
   if (item.total != null) return item.total;
