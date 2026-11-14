@@ -294,7 +294,7 @@ export function montarRelatorioFinal(entrada: {
   // condomínio — não serve de alternativa aqui. A única fonte do total é o cadastro (achado do
   // Codex no PR #108, que pegou uma leitura errada desse campo antes de publicar).
   const unidades = condominio?.unidades ?? null;
-  const demonstrativoBase = demonstrativoBasePrevisao(e, entrada.exercicioAnterior);
+  const demonstrativoBase = demonstrativoBasePrevisao(e, entrada.exercicioAnterior) ?? e.demonstrativo;
   const previsao = calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades);
   const previsaoSugerida = e.previsaoSugerida
     ? calcularPrevisaoSugerida(e.previsaoSugerida, e.arredondamento)

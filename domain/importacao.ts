@@ -53,12 +53,12 @@ export function colunasDoRelatorio(rel: RelatorioLido): { valor: string; rotulo:
   return (rel.meses ?? []).map((m) => ({ valor: m, rotulo: m }));
 }
 
-/** Sugestão inicial: último mês no relatório mensal; primeiro mês no comparativo (sempre mês a mês). */
+/** Sugestão inicial: último mês no relatório mensal; total do período na prestação de contas. */
 export function colunaPadrao(rel: RelatorioLido, destino: DestinoImportacao): string | null {
   if (rel.layout !== "comparativo") return null;
   const meses = rel.meses ?? [];
   if (meses.length === 0) return null;
-  return destino === "mensais" ? meses[meses.length - 1]! : meses[0]!;
+  return destino === "mensais" ? meses[meses.length - 1]! : COLUNA_TOTAL;
 }
 
 const isoParaBR = (iso: string) => {
@@ -97,6 +97,11 @@ function valorDoItem(item: ItemLido, rel: RelatorioLido, coluna: string | null, 
   if (rel.layout !== "comparativo") return item.valor ?? null;
   const meses = rel.meses ?? [];
   const v = item.valores ?? {};
+  if (coluna === COLUNA_TOTAL) {
+    // Total do período: soma todos os meses
+    const vs = Object.values(v);
+    return vs.length ? centavos(vs.reduce((a, b) => a + b, 0)) : null;
+  }
   if (coluna) return v[coluna] ?? null;
   if (secao === "saldoAnterior") return meses.length ? (v[meses[0]!] ?? null) : null;
   if (secao === "saldoAtual") return meses.length ? (v[meses[meses.length - 1]!] ?? null) : null;

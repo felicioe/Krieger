@@ -145,12 +145,13 @@ export function demonstrativoBasePrevisao(
 ): Demonstrativo | null {
   // Exercício fechado: usa o snapshot do anterior gravado no fechamento; se não houver,
   // cai no próprio demonstrativo (o exercício já foi consolidado com esses dados).
-  if (exercicio.fechado && exercicio.fechamento) {
-    return exercicio.fechamento.exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
+  if (exercicio.fechado) {
+    return exercicio.fechamento?.exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
   }
-  // Exercício aberto: só usa o anterior se existir; sem anterior, retorna null pra evitar
-  // que o demonstrativo do próprio exercício (possivelmente incompleto ou de outro ano) vaze
-  // como base da previsão — foi o caso do Urban/Lago Negro com valores duplicados na lista.
+  // Exercício aberto: usa o anterior se existir; se não houver anterior,
+  // retorna null para evitar que o demonstrativo do próprio exercício vaze como base
+  // (foi o caso do Urban/Lago Negro com valores duplicados na lista).
+  // A lista de exercícios vai lidar com null usando o próprio demonstrativo como fallback.
   return exercicioAnterior?.demonstrativo ?? null;
 }
 

@@ -85,12 +85,18 @@ function ListaExercicios() {
     return todos
       .map((e) => {
         const condo = porId.get(e.condoId);
-        // Mesma base do editor de previsão: o realizado do exercício anterior, nunca o
-        // demonstrativo do próprio — pra esta lista nunca divergir da previsão aprovada ali.
-        const demonstrativoBase = demonstrativoBasePrevisao(
+        // Despesas realizadas na lista: usa o demonstrativo GRAVADO no exercício (subtotal de
+        // despesas). O balanço anual traz o acumulado diretamente no demonstrativo; DRE mensal e
+        // comparativo também gravam o subtotal correto. Não usa a base de previsão, que pode vir
+        // do exercício anterior e mascarar o valor real do período.
+        const despesasRealizadas = e.demonstrativo?.despesas?.subtotal ?? 0;
+        // Previsão: continua usando a base do exercício anterior para não divergir da previsão
+        // aprovada no editor.
+        const baseAnterior = demonstrativoBasePrevisao(
           e,
           encontrarExercicioAnterior(todos, e),
         );
+        const demonstrativoBase = baseAnterior ?? e.demonstrativo;
         const r = calcularPrevisao(
           demonstrativoBase,
           { ...e, indices: e.consid.indices },
@@ -100,7 +106,7 @@ function ListaExercicios() {
           ...e,
           condoNome: e.condoNome || condo?.nome || "",
           previsto: r.rateioSugerido,
-          despesas: r.base,
+          despesas: despesasRealizadas,
           emConferencia: temDivergenciaEmConferencia(e),
         };
       })
