@@ -143,8 +143,15 @@ export function demonstrativoBasePrevisao(
   exercicio: Pick<Exercicio, "demonstrativo" | "fechado" | "fechamento">,
   exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null | undefined,
 ): Demonstrativo | null {
-  if (exercicio.fechado && exercicio.fechamento) return exercicio.fechamento.exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
-  return exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
+  // Exercício fechado: usa o snapshot do anterior gravado no fechamento; se não houver,
+  // cai no próprio demonstrativo (o exercício já foi consolidado com esses dados).
+  if (exercicio.fechado && exercicio.fechamento) {
+    return exercicio.fechamento.exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
+  }
+  // Exercício aberto: só usa o anterior se existir; sem anterior, retorna null pra evitar
+  // que o demonstrativo do próprio exercício (possivelmente incompleto ou de outro ano) vaze
+  // como base da previsão — foi o caso do Urban/Lago Negro com valores duplicados na lista.
+  return exercicioAnterior?.demonstrativo ?? null;
 }
 
 export function calcularPrevisao(
