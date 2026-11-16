@@ -1,5 +1,30 @@
 # Estado atual e passagem de contexto
 
+## Histórico de rateios e documentos por cidade — 16/11/2026
+
+**Histórico de rateios (versão 1.14).** Cada exercício cujo rateio foi travado gera uma linha em
+`kr_historico_rateios` (chave única `condo_id` + `ano`), com o valor por unidade, o sugerido, a
+variação % e a fonte (`importacao` ou `calculo`). A lógica pura está em `domain/historicoRateio.ts`
+(`calcularVariacao`, `historicoDoExercicio`, `rateioBaseDoAno`, `aplicarRateioBase`,
+`historicoOrdenado`, `historicoDoAno`), com 13 testes. Dois caminhos gravam: o botão **Travar
+rateio no histórico** em `PainelPrevisao` (tela de previsão orçamentária) e a importação do
+Systemar na prestação de contas, que registra uma vez por ano sem depender de clique. O exercício
+seguinte herda `rateioAtual` do aprovado do ano anterior quando o campo está vazio.
+
+**Migration pendente.** `migrations/20261116_historico_rateios.sql` cria a tabela; `schema.sql` já
+traz a mesma definição. Aplicar no banco de produção **antes** de publicar o pacote — sem a tabela,
+o store `historico_rateios` responde erro e o botão de travar falha.
+
+**Documentos obrigatórios por cidade.** `documentosObrigatoriosPadrao(cidade?)` e
+`filtrarDocumentosPorCidade` (`domain/condominio.ts`) mantêm o "Alvará Estrutural" só em Balneário
+Camboriú, onde é exigência municipal. O filtro vale no cadastro, na prévia e no PDF/Word, inclusive
+para condomínios que já tinham o item gravado no `consid`.
+
+**Correção do relatório final.** `compararPrevistoRealizado` limitava `posAte` a 12, mas a janela
+tem o tamanho do período da prestação. Com período menor que um ano, `meses[posAte - 1]` ficava
+indefinido e a tela quebrava em `mesAte.rotulo`. O teto agora é `meses.length`, com três casos de
+regressão em `domain/previstoRealizado.test.ts`.
+
 ## Previsão orçamentária do relatório final — 13/11/2026
 
 A seção de previsão do relatório final virou **a folha do Systemar**, como o escritório a entrega

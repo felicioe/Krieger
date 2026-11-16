@@ -2,7 +2,15 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.13**.
+Versão atual: **1.14**.
+
+## 1.14 — Histórico de rateios e documentos obrigatórios por cidade
+
+- Cada exercício com rateio travado passa a guardar uma linha em um histórico por condomínio e ano: o relatório final mostra o rateio do ano anterior e o exercício seguinte já abre com ele preenchido, sem redigitação.
+- Na tela de previsão orçamentária, o botão Travar rateio no histórico grava o valor aprovado do exercício; a importação do Systemar na prestação de contas também registra o rateio, uma vez por ano.
+- O checklist de documentos obrigatórios deixa de trazer o Alvará Estrutural fora de Balneário Camboriú: o item só entra para condomínios dessa cidade, tanto no cadastro quanto no relatório final.
+- No comparativo importado do Systemar, os saldos do período não são mais somados mês a mês: o saldo anterior vem do primeiro mês e o saldo atual do último.
+- Correção: o relatório final não quebra mais quando o período da prestação tem menos de 12 meses.
 
 ## 1.13 — Previsão orçamentária do relatório final no padrão da folha do Systemar
 
