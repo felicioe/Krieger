@@ -15,9 +15,20 @@
  */
 import { condominioPadrao, nomeParaRelatorio } from "./condominio";
 import { exercicioPadrao } from "./exercicio";
-import { centavos, demonstrativoVazio, recalcularDemonstrativo, temLancamentos } from "./demonstrativo";
+import {
+  centavos,
+  demonstrativoVazio,
+  recalcularDemonstrativo,
+  temLancamentos,
+} from "./demonstrativo";
 import { formatBRL } from "../lib/format";
-import { competenciaMensal, mensalPadrao, ordemCompetencia, periodoDoMes, type Competencia } from "./mensal";
+import {
+  competenciaMensal,
+  mensalPadrao,
+  ordemCompetencia,
+  periodoDoMes,
+  type Competencia,
+} from "./mensal";
 import {
   cadastroBasico,
   type ConsideracoesFinaisLidas,
@@ -48,13 +59,18 @@ export const ROTULO_LAYOUT: Record<RelatorioLido["layout"], string> = {
 };
 
 /** Colunas que o usuário pode escolher (só no comparativo). */
-export function colunasDoRelatorio(rel: RelatorioLido): { valor: string; rotulo: string }[] {
+export function colunasDoRelatorio(
+  rel: RelatorioLido,
+): { valor: string; rotulo: string }[] {
   if (rel.layout !== "comparativo") return [];
   return (rel.meses ?? []).map((m) => ({ valor: m, rotulo: m }));
 }
 
 /** Sugestão inicial: último mês no relatório mensal; total do período na prestação de contas. */
-export function colunaPadrao(rel: RelatorioLido, destino: DestinoImportacao): string | null {
+export function colunaPadrao(
+  rel: RelatorioLido,
+  destino: DestinoImportacao,
+): string | null {
   if (rel.layout !== "comparativo") return null;
   const meses = rel.meses ?? [];
   if (meses.length === 0) return null;
@@ -72,48 +88,76 @@ function mesAno(t: string | undefined): { mes: number; ano: number } | null {
 }
 
 /** Período (dd/mm/aaaa) correspondente à coluna escolhida. */
-export function periodoImportado(rel: RelatorioLido, coluna: string | null): { ini: string; fim: string } {
+export function periodoImportado(
+  rel: RelatorioLido,
+  coluna: string | null,
+): { ini: string; fim: string } {
   const p = rel.periodo;
-  if (p && "inicio" in p) return { ini: isoParaBR(p.inicio), fim: isoParaBR(p.fim) };
+  if (p && "inicio" in p)
+    return { ini: isoParaBR(p.inicio), fim: isoParaBR(p.fim) };
   const meses = rel.meses ?? [];
   if (coluna && coluna !== COLUNA_TOTAL) {
     const c = mesAno(coluna);
     return c ? periodoDoMes(c) : { ini: "", fim: "" };
   }
-  const ini = mesAno(p && "competenciaInicio" in p ? p.competenciaInicio : meses[0]);
-  const fim = mesAno(p && "competenciaFim" in p ? p.competenciaFim : meses[meses.length - 1]);
-  return { ini: ini ? periodoDoMes(ini).ini : "", fim: fim ? periodoDoMes(fim).fim : "" };
+  const ini = mesAno(
+    p && "competenciaInicio" in p ? p.competenciaInicio : meses[0],
+  );
+  const fim = mesAno(
+    p && "competenciaFim" in p ? p.competenciaFim : meses[meses.length - 1],
+  );
+  return {
+    ini: ini ? periodoDoMes(ini).ini : "",
+    fim: fim ? periodoDoMes(fim).fim : "",
+  };
 }
 
 /** Ano do fim do período (sugestão para o exercício). */
-export function anoDoRelatorio(rel: RelatorioLido, coluna: string | null): number | null {
+export function anoDoRelatorio(
+  rel: RelatorioLido,
+  coluna: string | null,
+): number | null {
   const m = /\/(\d{4})$/.exec(periodoImportado(rel, coluna).fim);
   return m ? Number(m[1]) : null;
 }
 
 type NomeSecao = "saldoAnterior" | "receitas" | "despesas" | "saldoAtual";
 
-function valorDoItem(item: ItemLido, rel: RelatorioLido, coluna: string | null, secao: NomeSecao): number | null {
+function valorDoItem(
+  item: ItemLido,
+  rel: RelatorioLido,
+  coluna: string | null,
+  secao: NomeSecao,
+): number | null {
   if (rel.layout !== "comparativo") return item.valor ?? null;
   const meses = rel.meses ?? [];
   const v = item.valores ?? {};
   if (coluna === COLUNA_TOTAL) {
     // Total do período: receitas e despesas somam os meses; saldos NÃO somam — o saldo anterior
     // é o do primeiro mês e o saldo atual o do último (somar saldos não significa nada).
-    if (secao === "saldoAnterior") return meses.length ? (v[meses[0]!] ?? null) : null;
-    if (secao === "saldoAtual") return meses.length ? (v[meses[meses.length - 1]!] ?? null) : null;
+    if (secao === "saldoAnterior")
+      return meses.length ? (v[meses[0]!] ?? null) : null;
+    if (secao === "saldoAtual")
+      return meses.length ? (v[meses[meses.length - 1]!] ?? null) : null;
     const vs = Object.values(v);
     return vs.length ? centavos(vs.reduce((a, b) => a + b, 0)) : null;
   }
   if (coluna) return v[coluna] ?? null;
-  if (secao === "saldoAnterior") return meses.length ? (v[meses[0]!] ?? null) : null;
-  if (secao === "saldoAtual") return meses.length ? (v[meses[meses.length - 1]!] ?? null) : null;
+  if (secao === "saldoAnterior")
+    return meses.length ? (v[meses[0]!] ?? null) : null;
+  if (secao === "saldoAtual")
+    return meses.length ? (v[meses[meses.length - 1]!] ?? null) : null;
   if (item.total != null) return item.total;
   const vs = Object.values(v);
   return vs.length ? centavos(vs.reduce((a, b) => a + b, 0)) : null;
 }
 
-function linhas(secao: SecaoLida | undefined, rel: RelatorioLido, coluna: string | null, nome: NomeSecao) {
+function linhas(
+  secao: SecaoLida | undefined,
+  rel: RelatorioLido,
+  coluna: string | null,
+  nome: NomeSecao,
+) {
   return (secao?.itens ?? [])
     .filter((i) => !i.subtotal)
     .map((i) => ({ item: i, valor: valorDoItem(i, rel, coluna, nome) }))
@@ -124,12 +168,18 @@ const comoLinhas = (l: { item: ItemLido; valor: number }[]): LinhaValor[] =>
   l.map((x) => ({ nome: x.item.descricao, valor: x.valor }));
 
 /** Agrupa as despesas pelo caminho de grupos, omitindo os níveis comuns a todas. */
-function gruposDeDespesas(l: { item: ItemLido; valor: number }[]): Demonstrativo["despesas"]["grupos"] {
+function gruposDeDespesas(
+  l: { item: ItemLido; valor: number }[],
+): Demonstrativo["despesas"]["grupos"] {
   const caminhos = l.map((x) => x.item.grupo);
   let comum = 0;
   if (caminhos.length) {
     const menor = Math.min(...caminhos.map((c) => c.length));
-    while (comum < menor && caminhos.every((c) => c[comum] === caminhos[0]![comum])) comum++;
+    while (
+      comum < menor &&
+      caminhos.every((c) => c[comum] === caminhos[0]![comum])
+    )
+      comum++;
   }
   // Se todos os itens ficariam sem grupo, mantém o último nível comum como nome.
   if (comum > 0 && caminhos.every((c) => c.length === comum)) comum--;
@@ -144,36 +194,93 @@ function gruposDeDespesas(l: { item: ItemLido; valor: number }[]): Demonstrativo
 }
 
 /** Demonstrativo do editor a partir do relatório lido (e da coluna escolhida, no comparativo). */
-export function demonstrativoDoRelatorio(rel: RelatorioLido, coluna: string | null, condominio = ""): Demonstrativo {
+export function demonstrativoDoRelatorio(
+  rel: RelatorioLido,
+  coluna: string | null,
+  condominio = "",
+): Demonstrativo {
   const v = demonstrativoVazio(condominio);
   return recalcularDemonstrativo({
     ...v,
     periodo: periodoImportado(rel, coluna),
-    saldoAnterior: { contas: comoLinhas(linhas(rel.saldoAnterior, rel, coluna, "saldoAnterior")), total: 0 },
-    receitas: { itens: comoLinhas(linhas(rel.receitas, rel, coluna, "receitas")), subtotal: 0, totalComSaldo: 0 },
-    despesas: { grupos: gruposDeDespesas(linhas(rel.despesas, rel, coluna, "despesas")), subtotal: 0, saldoRestante: 0 },
-    saldoAtual: { contas: comoLinhas(linhas(rel.saldoAtual, rel, coluna, "saldoAtual")), total: 0 },
+    saldoAnterior: {
+      contas: comoLinhas(
+        linhas(rel.saldoAnterior, rel, coluna, "saldoAnterior"),
+      ),
+      total: 0,
+    },
+    receitas: {
+      itens: comoLinhas(linhas(rel.receitas, rel, coluna, "receitas")),
+      subtotal: 0,
+      totalComSaldo: 0,
+    },
+    despesas: {
+      grupos: gruposDeDespesas(linhas(rel.despesas, rel, coluna, "despesas")),
+      subtotal: 0,
+      saldoRestante: 0,
+    },
+    saldoAtual: {
+      contas: comoLinhas(linhas(rel.saldoAtual, rel, coluna, "saldoAtual")),
+      total: 0,
+    },
   });
 }
 
 /** Resultado da conferência automática do parser, em frases. */
-export type EstadoConferencia = "nao_verificado" | "parcial" | "verificado" | "divergente";
+export type EstadoConferencia =
+  "nao_verificado" | "parcial" | "verificado" | "divergente";
 export function resumoConferencia(rel: RelatorioLido): {
-  ok: boolean; estado: EstadoConferencia; comparacoes: number; esperadas: number; mensagens: string[];
+  ok: boolean;
+  estado: EstadoConferencia;
+  comparacoes: number;
+  esperadas: number;
+  mensagens: string[];
 } {
   const c = rel.conferencia;
-  const finalizar = (comparacoes: number, esperadas: number, mensagens: string[]) => {
-    const estado: EstadoConferencia = mensagens.length ? "divergente"
-      : comparacoes === 0 ? "nao_verificado" : comparacoes < esperadas ? "parcial" : "verificado";
-    return { ok: estado === "verificado", estado, comparacoes, esperadas, mensagens };
+  const finalizar = (
+    comparacoes: number,
+    esperadas: number,
+    mensagens: string[],
+  ) => {
+    const estado: EstadoConferencia = mensagens.length
+      ? "divergente"
+      : comparacoes === 0
+        ? "nao_verificado"
+        : comparacoes < esperadas
+          ? "parcial"
+          : "verificado";
+    return {
+      ok: estado === "verificado",
+      estado,
+      comparacoes,
+      esperadas,
+      mensagens,
+    };
   };
-  const esperadasComparativo = [rel.receitas, rel.despesas].reduce((s, secao) => s + (secao?.itens.length ?? 0), 0);
-  if (!c) return finalizar(0, rel.layout === "comparativo" ? esperadasComparativo : 4, []);
-  const fmt = (n: number) => n.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const esperadasComparativo = [rel.receitas, rel.despesas].reduce(
+    (s, secao) => s + (secao?.itens.length ?? 0),
+    0,
+  );
+  if (!c)
+    return finalizar(
+      0,
+      rel.layout === "comparativo" ? esperadasComparativo : 4,
+      [],
+    );
+  const fmt = (n: number) =>
+    n.toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
   if ("divergentes" in c) {
-    return finalizar(c.linhasConferidas, Math.max(c.linhasConferidas, esperadasComparativo), c.divergentes.map(
-        (d) => `${d.secao === "receitas" ? "Receita" : "Despesa"} "${d.descricao}": soma dos meses R$ ${fmt(d.somaMeses)} × total R$ ${fmt(d.total)}.`,
-      ));
+    return finalizar(
+      c.linhasConferidas,
+      Math.max(c.linhasConferidas, esperadasComparativo),
+      c.divergentes.map(
+        (d) =>
+          `${d.secao === "receitas" ? "Receita" : "Despesa"} "${d.descricao}": soma dos meses R$ ${fmt(d.somaMeses)} × total R$ ${fmt(d.total)}.`,
+      ),
+    );
   }
   const nomes: Record<NomeSecao, string> = {
     saldoAnterior: "Saldo anterior",
@@ -184,7 +291,10 @@ export function resumoConferencia(rel: RelatorioLido): {
   const mensagens: string[] = [];
   for (const k of Object.keys(nomes) as NomeSecao[]) {
     const x = c[k];
-    if (x && !x.confere) mensagens.push(`${nomes[k]}: soma dos itens R$ ${fmt(x.somaItens)} × total do relatório R$ ${fmt(x.totalRelatorio)}.`);
+    if (x && !x.confere)
+      mensagens.push(
+        `${nomes[k]}: soma dos itens R$ ${fmt(x.somaItens)} × total do relatório R$ ${fmt(x.totalRelatorio)}.`,
+      );
   }
   return finalizar(Object.values(c).filter(Boolean).length, 4, mensagens);
 }
@@ -198,11 +308,23 @@ export interface DivergenciaImportacao {
   diferencaPct: number | null;
 }
 
-const CAMPOS_DIVERGENCIA: { campo: DivergenciaImportacao["campo"]; rotulo: string; valor: (d: Demonstrativo) => number }[] = [
-  { campo: "saldoAnterior", rotulo: "Saldo anterior", valor: (d) => d.saldoAnterior.total },
+const CAMPOS_DIVERGENCIA: {
+  campo: DivergenciaImportacao["campo"];
+  rotulo: string;
+  valor: (d: Demonstrativo) => number;
+}[] = [
+  {
+    campo: "saldoAnterior",
+    rotulo: "Saldo anterior",
+    valor: (d) => d.saldoAnterior.total,
+  },
   { campo: "receitas", rotulo: "Receitas", valor: (d) => d.receitas.subtotal },
   { campo: "despesas", rotulo: "Despesas", valor: (d) => d.despesas.subtotal },
-  { campo: "saldoAtual", rotulo: "Saldo atual", valor: (d) => d.saldoAtual.total },
+  {
+    campo: "saldoAtual",
+    rotulo: "Saldo atual",
+    valor: (d) => d.saldoAtual.total,
+  },
 ];
 
 /**
@@ -212,7 +334,10 @@ const CAMPOS_DIVERGENCIA: { campo: DivergenciaImportacao["campo"]; rotulo: strin
  * momento de salvar logo após uma importação — não a cada edição subsequente do registro já salvo,
  * que são alterações legítimas e não "divergências da importação".
  */
-export function divergenciasImportacao(original: Demonstrativo, atual: Demonstrativo): DivergenciaImportacao[] {
+export function divergenciasImportacao(
+  original: Demonstrativo,
+  atual: Demonstrativo,
+): DivergenciaImportacao[] {
   const divergencias: DivergenciaImportacao[] = [];
   for (const c of CAMPOS_DIVERGENCIA) {
     const importado = c.valor(original);
@@ -223,7 +348,10 @@ export function divergenciasImportacao(original: Demonstrativo, atual: Demonstra
         rotulo: c.rotulo,
         importado,
         atual: valorAtual,
-        diferencaPct: importado !== 0 ? Math.round(((valorAtual - importado) / importado) * 1000) / 10 : null,
+        diferencaPct:
+          importado !== 0
+            ? Math.round(((valorAtual - importado) / importado) * 1000) / 10
+            : null,
       });
     }
   }
@@ -250,7 +378,9 @@ const chaveNome = (s: string | null | undefined) =>
  * arriscar confundir dois condomínios parecidos quando dá pra identificar com segurança por
  * código/CNPJ.
  */
-export function encontrarCondominio<C extends Pick<Condominio, "codigo" | "cnpj" | "nome" | "nomeRelatorio">>(
+export function encontrarCondominio<
+  C extends Pick<Condominio, "codigo" | "cnpj" | "nome" | "nomeRelatorio">,
+>(
   condominios: C[],
   dados: { codigo: string | null; cnpj: string | null; nome?: string | null },
 ): C | null {
@@ -258,15 +388,25 @@ export function encontrarCondominio<C extends Pick<Condominio, "codigo" | "cnpj"
   const cnpj = digitos(dados.cnpj);
   const nome = !cod && !cnpj ? chaveNome(dados.nome) : "";
   return (
-    (cod ? condominios.find((c) => codigoNormal(c.codigo) === cod) : undefined) ??
+    (cod
+      ? condominios.find((c) => codigoNormal(c.codigo) === cod)
+      : undefined) ??
     (cnpj ? condominios.find((c) => digitos(c.cnpj) === cnpj) : undefined) ??
-    (nome ? condominios.find((c) => chaveNome(c.nomeRelatorio) === nome || chaveNome(c.nome) === nome) : undefined) ??
+    (nome
+      ? condominios.find(
+          (c) =>
+            chaveNome(c.nomeRelatorio) === nome || chaveNome(c.nome) === nome,
+        )
+      : undefined) ??
     null
   );
 }
 
 const PALAVRAS_IGNORADAS = new Set(["de", "da", "do", "das", "dos", "e"]);
-const tokensNome = (s: string) => chaveNome(s).split(" ").filter((t) => t.length > 2 && !PALAVRAS_IGNORADAS.has(t));
+const tokensNome = (s: string) =>
+  chaveNome(s)
+    .split(" ")
+    .filter((t) => t.length > 2 && !PALAVRAS_IGNORADAS.has(t));
 
 /** Proporção de palavras em comum entre dois nomes (Jaccard sobre tokens), tolerante a ordem/formatação diferentes. */
 function semelhancaNomes(a: string, b: string): number {
@@ -290,7 +430,9 @@ export interface CondominioParecido<C> {
  * código/CNPJ com erro de digitação/OCR. Limiar padrão de 0,4 (ex.: "Residencial Urban Classic" vs
  * "Urban Classic" bate 2 de 2 palavras relevantes em comum = 1,0; nomes sem nada em comum ficam de fora).
  */
-export function condominiosParecidos<C extends Pick<Condominio, "codigo" | "cnpj" | "nome" | "nomeRelatorio">>(
+export function condominiosParecidos<
+  C extends Pick<Condominio, "codigo" | "cnpj" | "nome" | "nomeRelatorio">,
+>(
   condominios: C[],
   dados: { nome?: string | null },
   limiar = 0.4,
@@ -300,7 +442,10 @@ export function condominiosParecidos<C extends Pick<Condominio, "codigo" | "cnpj
   return condominios
     .map((c) => ({
       condominio: c,
-      pontuacao: Math.max(semelhancaNomes(nome, c.nome), semelhancaNomes(nome, c.nomeRelatorio)),
+      pontuacao: Math.max(
+        semelhancaNomes(nome, c.nome),
+        semelhancaNomes(nome, c.nomeRelatorio),
+      ),
     }))
     .filter((x) => x.pontuacao >= limiar)
     .sort((a, b) => b.pontuacao - a.pontuacao);
@@ -334,14 +479,30 @@ export function novaImportacao(
 }
 
 /** Campos do cadastro básico que o PDF não trouxe. */
-export function camposFaltando(c: { codigo: string | null; nome: string | null; cnpj: string | null }) {
-  return (["codigo", "nome", "cnpj"] as const).filter((k) => !(c[k] ?? "").trim());
+export function camposFaltando(c: {
+  codigo: string | null;
+  nome: string | null;
+  cnpj: string | null;
+}) {
+  return (["codigo", "nome", "cnpj"] as const).filter(
+    (k) => !(c[k] ?? "").trim(),
+  );
 }
 
 /** Condomínio novo com o cadastro básico conferido; o resto fica com os padrões. */
-export function condominioDoCadastro(c: { codigo: string | null; nome: string | null; cnpj: string | null }): Omit<Condominio, "id"> {
+export function condominioDoCadastro(c: {
+  codigo: string | null;
+  nome: string | null;
+  cnpj: string | null;
+}): Omit<Condominio, "id"> {
   const nome = (c.nome ?? "").trim();
-  return { ...condominioPadrao(), codigo: (c.codigo ?? "").trim(), nome, nomeRelatorio: nome, cnpj: (c.cnpj ?? "").trim() };
+  return {
+    ...condominioPadrao(),
+    codigo: (c.codigo ?? "").trim(),
+    nome,
+    nomeRelatorio: nome,
+    cnpj: (c.cnpj ?? "").trim(),
+  };
 }
 
 /**
@@ -351,22 +512,34 @@ export function condominioDoCadastro(c: { codigo: string | null; nome: string | 
  * correto já cadastrado. Quem usa isto pede confirmação explícita antes de gravar.
  */
 export function camposComplementares(
-  existente: { codigo?: string | null; nome?: string | null; cnpj?: string | null },
+  existente: {
+    codigo?: string | null;
+    nome?: string | null;
+    cnpj?: string | null;
+  },
   cad: { codigo: string | null; nome: string | null; cnpj: string | null },
 ): ("codigo" | "nome" | "cnpj")[] {
   // Um condomínio restaurado de backup pode não ter código/CNPJ (api.php só exige id+nome) —
   // trata ausente como vazio, não lança ao tentar completar esse cadastro.
-  return (["codigo", "nome", "cnpj"] as const).filter((k) => !(existente[k] ?? "").trim() && (cad[k] ?? "").trim());
+  return (["codigo", "nome", "cnpj"] as const).filter(
+    (k) => !(existente[k] ?? "").trim() && (cad[k] ?? "").trim(),
+  );
 }
 
 /** Acrescenta o arquivo à origem do relatório, sem repetir. */
-export function origemComArquivo(origem: string[] | string | null | undefined, arquivo: string): string[] {
+export function origemComArquivo(
+  origem: string[] | string | null | undefined,
+  arquivo: string,
+): string[] {
   const lista = Array.isArray(origem) ? origem : origem ? [origem] : [];
   return lista.includes(arquivo) ? lista : [...lista, arquivo];
 }
 
 /** Contas a receber do PDF, só quando a data delas cai dentro do período importado. */
-export function receberDoRelatorio(rel: RelatorioLido, coluna: string | null): Mensal["receber"] | null {
+export function receberDoRelatorio(
+  rel: RelatorioLido,
+  coluna: string | null,
+): Mensal["receber"] | null {
   const cr = rel.contasAReceber;
   if (!cr) return null;
   const p = periodoImportado(rel, coluna);
@@ -383,7 +556,11 @@ export function mensalImportado(
   coluna: string | null,
   arquivo: string,
 ): { registro: Omit<Mensal, "id">; competencia: Competencia | null } {
-  const demonstrativo = demonstrativoDoRelatorio(rel, coluna, nomeParaRelatorio(condo));
+  const demonstrativo = demonstrativoDoRelatorio(
+    rel,
+    coluna,
+    nomeParaRelatorio(condo),
+  );
   const competencia = competenciaMensal({ demonstrativo });
   const base = mensalPadrao(condo, competencia ?? { mes: 1, ano: 1900 });
   return {
@@ -420,7 +597,10 @@ export function mensaisDoComparativo(
     const existente =
       competencia &&
       mensaisExistentes.find(
-        (m) => m.condoId === condo.id && ordemCompetencia(competenciaMensal(m)) === ordemCompetencia(competencia),
+        (m) =>
+          m.condoId === condo.id &&
+          ordemCompetencia(competenciaMensal(m)) ===
+            ordemCompetencia(competencia),
       );
     return { mes, competencia, registro, existente: existente || null };
   });
@@ -451,12 +631,24 @@ function comparaItens(
   for (const nome of nomes) {
     const as = mAtual.get(nome) ?? [];
     const ns = mNovo.get(nome) ?? [];
-    for (let ocorrencia = 0; ocorrencia < Math.max(as.length, ns.length); ocorrencia++) {
+    for (
+      let ocorrencia = 0;
+      ocorrencia < Math.max(as.length, ns.length);
+      ocorrencia++
+    ) {
       const a = as[ocorrencia];
       const n = ns[ocorrencia];
       const valorAtual = a ? centavos(Number(a.valor) || 0) : null;
       const valorNovo = n ? centavos(Number(n.valor) || 0) : null;
-      if (valorAtual !== valorNovo) out.push({ secao, ...(grupo !== undefined ? { grupo } : {}), nome, ocorrencia, valorAtual, valorNovo });
+      if (valorAtual !== valorNovo)
+        out.push({
+          secao,
+          ...(grupo !== undefined ? { grupo } : {}),
+          nome,
+          ocorrencia,
+          valorAtual,
+          valorNovo,
+        });
     }
   }
   return out;
@@ -472,11 +664,17 @@ function comparaItens(
  * `atual` em branco (registro novo, nunca importado antes) não é conflito — devolve lista vazia:
  * não há nada gravado para divergir do que está vindo agora.
  */
-export function compararDemonstrativos(atual: Demonstrativo | null, novo: Demonstrativo): ItemDivergenteImportacao[] {
+export function compararDemonstrativos(
+  atual: Demonstrativo | null,
+  novo: Demonstrativo,
+): ItemDivergenteImportacao[] {
   if (!temLancamentos(atual)) return [];
   const gruposAtual = atual?.despesas.grupos ?? [];
   const gruposNovo = novo.despesas.grupos;
-  const nomesGrupo = new Set([...gruposAtual.map((g) => g.nome), ...gruposNovo.map((g) => g.nome)]);
+  const nomesGrupo = new Set([
+    ...gruposAtual.map((g) => g.nome),
+    ...gruposNovo.map((g) => g.nome),
+  ]);
   const despesas = [...nomesGrupo].flatMap((grupo) =>
     comparaItens(
       "despesas",
@@ -486,10 +684,22 @@ export function compararDemonstrativos(atual: Demonstrativo | null, novo: Demons
     ),
   );
   return [
-    ...comparaItens("saldoAnterior", atual?.saldoAnterior.contas ?? [], novo.saldoAnterior.contas),
-    ...comparaItens("receitas", atual?.receitas.itens ?? [], novo.receitas.itens),
+    ...comparaItens(
+      "saldoAnterior",
+      atual?.saldoAnterior.contas ?? [],
+      novo.saldoAnterior.contas,
+    ),
+    ...comparaItens(
+      "receitas",
+      atual?.receitas.itens ?? [],
+      novo.receitas.itens,
+    ),
     ...despesas,
-    ...comparaItens("saldoAtual", atual?.saldoAtual.contas ?? [], novo.saldoAtual.contas),
+    ...comparaItens(
+      "saldoAtual",
+      atual?.saldoAtual.contas ?? [],
+      novo.saldoAtual.contas,
+    ),
   ];
 }
 
@@ -506,12 +716,20 @@ export function aplicarDecisoesImportacao(
   const porManter = decisoes.filter((d) => d.escolha === "manter");
   if (porManter.length === 0) return novo;
 
-  const aplicaLista = (secao: ItemDivergenteImportacao["secao"], lista: LinhaValor[], grupo?: string): LinhaValor[] => {
-    const relevantes = porManter.filter((d) => d.secao === secao && d.grupo === grupo);
+  const aplicaLista = (
+    secao: ItemDivergenteImportacao["secao"],
+    lista: LinhaValor[],
+    grupo?: string,
+  ): LinhaValor[] => {
+    const relevantes = porManter.filter(
+      (d) => d.secao === secao && d.grupo === grupo,
+    );
     if (relevantes.length === 0) return lista;
     // Casa cada decisão com a ocorrência certa (nome + índice dentro do mesmo nome), não só o nome —
     // senão duas contas com o mesmo nome ("Juros", "Juros") se confundem e uma decisão vale pras duas.
-    const decisaoPara = new Map(relevantes.map((d) => [`${d.nome}\u0000${d.ocorrencia}`, d]));
+    const decisaoPara = new Map(
+      relevantes.map((d) => [`${d.nome}\u0000${d.ocorrencia}`, d]),
+    );
     const contagem = new Map<string, number>();
     const out: LinhaValor[] = [];
     for (const item of lista) {
@@ -531,8 +749,14 @@ export function aplicarDecisoesImportacao(
 
   return recalcularDemonstrativo({
     ...novo,
-    saldoAnterior: { ...novo.saldoAnterior, contas: aplicaLista("saldoAnterior", novo.saldoAnterior.contas) },
-    receitas: { ...novo.receitas, itens: aplicaLista("receitas", novo.receitas.itens) },
+    saldoAnterior: {
+      ...novo.saldoAnterior,
+      contas: aplicaLista("saldoAnterior", novo.saldoAnterior.contas),
+    },
+    receitas: {
+      ...novo.receitas,
+      itens: aplicaLista("receitas", novo.receitas.itens),
+    },
     despesas: {
       ...novo.despesas,
       grupos: novo.despesas.grupos
@@ -540,12 +764,17 @@ export function aplicarDecisoesImportacao(
         .concat(
           // Grupo que só existia no demonstrativo gravado (sumiu do PDF novo) e tem item mantido.
           (atual?.despesas.grupos ?? [])
-            .filter((g) => !novo.despesas.grupos.some((ng) => ng.nome === g.nome))
+            .filter(
+              (g) => !novo.despesas.grupos.some((ng) => ng.nome === g.nome),
+            )
             .map((g) => ({ ...g, itens: aplicaLista("despesas", [], g.nome) }))
             .filter((g) => g.itens.length > 0),
         ),
     },
-    saldoAtual: { ...novo.saldoAtual, contas: aplicaLista("saldoAtual", novo.saldoAtual.contas) },
+    saldoAtual: {
+      ...novo.saldoAtual,
+      contas: aplicaLista("saldoAtual", novo.saldoAtual.contas),
+    },
   });
 }
 
@@ -573,7 +802,10 @@ const ROTULOS_EXTRAS_SYSTEMAR = [
  * `Exercicio.previsaoSugerida`, via `previsaoSugeridaDoPdf` (domain/previsaoSugerida.ts), menu
  * próprio e editável, não uma referência estática em `extras`.
  */
-export function aplicarConsideracoesAoExercicio(consid: Exercicio["consid"], cf: ConsideracoesFinaisLidas | null): Exercicio["consid"] {
+export function aplicarConsideracoesAoExercicio(
+  consid: Exercicio["consid"],
+  cf: ConsideracoesFinaisLidas | null,
+): Exercicio["consid"] {
   let out = consid;
   if (cf) {
     out = {
@@ -583,19 +815,32 @@ export function aplicarConsideracoesAoExercicio(consid: Exercicio["consid"], cf:
       contasPagar: cf.contasPagar,
       seguradora: cf.seguradora ?? out.seguradora,
       vigenciaSeguro: cf.vigenciaSeguro ?? out.vigenciaSeguro,
-      seguro: cf.seguro.riscoAbsoluto != null || cf.seguro.coberturas.length ? cf.seguro : out.seguro,
+      seguro:
+        cf.seguro.riscoAbsoluto != null || cf.seguro.coberturas.length
+          ? cf.seguro
+          : out.seguro,
       ultGordura: cf.ultGordura ?? out.ultGordura,
       ultDedetizacao: cf.ultDedetizacao ?? out.ultDedetizacao,
       ultCaixaDagua: cf.ultCaixaDagua ?? out.ultCaixaDagua,
       indices: cf.indices.length ? cf.indices : out.indices,
     };
-    const extras: Exercicio["consid"]["extras"] = out.extras.filter((e) => !ROTULOS_EXTRAS_SYSTEMAR.includes(e.rotulo));
+    const extras: Exercicio["consid"]["extras"] = out.extras.filter(
+      (e) => !ROTULOS_EXTRAS_SYSTEMAR.includes(e.rotulo),
+    );
     const add = (rotulo: string, valor: string | null) => {
       if (valor != null) extras.push({ rotulo, valor });
     };
-    add("Manutenção dos elevadores (Systemar)", cf.manutencaoElevadores != null ? formatBRL(cf.manutencaoElevadores) : null);
+    add(
+      "Manutenção dos elevadores (Systemar)",
+      cf.manutencaoElevadores != null
+        ? formatBRL(cf.manutencaoElevadores)
+        : null,
+    );
     add("Empresa dos elevadores (Systemar)", cf.empresaElevadores);
-    add("Consumo médio de água (Systemar)", cf.consumoAguaMedio != null ? formatBRL(cf.consumoAguaMedio) : null);
+    add(
+      "Consumo médio de água (Systemar)",
+      cf.consumoAguaMedio != null ? formatBRL(cf.consumoAguaMedio) : null,
+    );
     out = { ...out, extras };
   }
   return out;
@@ -614,7 +859,14 @@ export function novoAnexoImportado(
   arquivoDataUrl: string,
   agora = new Date(),
 ): Omit<AnexoImportado, "id"> {
-  return { exercicioId, tipo, arquivo, arquivoDataUrl, importadoEm: agora.toISOString(), relatorio: rel };
+  return {
+    exercicioId,
+    tipo,
+    arquivo,
+    arquivoDataUrl,
+    importadoEm: agora.toISOString(),
+    relatorio: rel,
+  };
 }
 
 /** Prestação de contas nova com o demonstrativo do PDF. */
@@ -628,7 +880,11 @@ export function exercicioImportado(
 ): Omit<Exercicio, "id"> {
   return {
     ...exercicioPadrao(condo, ano, cidade),
-    demonstrativo: demonstrativoDoRelatorio(rel, coluna, nomeParaRelatorio(condo)),
+    demonstrativo: demonstrativoDoRelatorio(
+      rel,
+      coluna,
+      nomeParaRelatorio(condo),
+    ),
     origem: [arquivo],
   };
 }

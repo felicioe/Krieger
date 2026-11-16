@@ -14,14 +14,20 @@ import type { Exercicio, HistoricoRateio } from "./types";
  */
 
 /** Variação % de `atual` sobre `anterior`. `null` quando falta um dos dois. */
-export function calcularVariacao(anterior: number | null, atual: number | null): number | null {
+export function calcularVariacao(
+  anterior: number | null,
+  atual: number | null,
+): number | null {
   if (anterior === null || atual === null || anterior === 0) return null;
   return Math.round((atual / anterior - 1) * 10000) / 100;
 }
 
 /** Linha de histórico a partir de um exercício cujo rateio foi travado. */
 export function historicoDoExercicio(
-  e: Pick<Exercicio, "id" | "condoId" | "condoNome" | "ano" | "rateioAtual" | "rateioAprovado">,
+  e: Pick<
+    Exercicio,
+    "id" | "condoId" | "condoNome" | "ano" | "rateioAtual" | "rateioAprovado"
+  >,
   rateioSugerido: number | null,
   fonte: HistoricoRateio["fonte"],
   travadoEm: string,
@@ -31,7 +37,10 @@ export function historicoDoExercicio(
     condoId: e.condoId,
     condoNome: e.condoNome,
     ano: Number(e.ano),
-    rateioAtual: e.rateioAtual === null || e.rateioAtual === undefined ? null : centavos(e.rateioAtual),
+    rateioAtual:
+      e.rateioAtual === null || e.rateioAtual === undefined
+        ? null
+        : centavos(e.rateioAtual),
     rateioSugerido: rateioSugerido === null ? null : centavos(rateioSugerido),
     variacao: calcularVariacao(e.rateioAtual ?? null, aprovado),
     rateioAprovado: aprovado,
@@ -42,7 +51,10 @@ export function historicoDoExercicio(
 }
 
 /** Histórico de um condomínio, do ano mais antigo para o mais recente. */
-export function historicoOrdenado(linhas: HistoricoRateio[], condoId: string): HistoricoRateio[] {
+export function historicoOrdenado(
+  linhas: HistoricoRateio[],
+  condoId: string,
+): HistoricoRateio[] {
   return linhas
     .filter((l) => l.condoId === condoId)
     .sort((a, b) => Number(a.ano) - Number(b.ano));
@@ -54,7 +66,11 @@ export function historicoDoAno(
   condoId: string,
   ano: number,
 ): HistoricoRateio | null {
-  return linhas.find((l) => l.condoId === condoId && Number(l.ano) === Number(ano)) ?? null;
+  return (
+    linhas.find(
+      (l) => l.condoId === condoId && Number(l.ano) === Number(ano),
+    ) ?? null
+  );
 }
 
 /**
@@ -91,10 +107,9 @@ export function variacaoDoAno(
  * Mescla o histórico com o exercício: devolve o exercício com `rateioAtual` preenchido pelo
  * aprovado do ano anterior quando ele estiver vazio. Não sobrescreve valor já informado.
  */
-export function aplicarRateioBase<T extends Pick<Exercicio, "condoId" | "ano" | "rateioAtual">>(
-  e: T,
-  linhas: HistoricoRateio[],
-): T {
+export function aplicarRateioBase<
+  T extends Pick<Exercicio, "condoId" | "ano" | "rateioAtual">,
+>(e: T, linhas: HistoricoRateio[]): T {
   if (e.rateioAtual !== null && e.rateioAtual !== undefined) return e;
   const base = rateioBaseDoAno(linhas, e.condoId, Number(e.ano));
   return base === null ? e : { ...e, rateioAtual: base };

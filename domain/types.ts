@@ -1,4 +1,9 @@
-import type { CadastroBasico, ConsideracoesFinaisLidas, PrevisaoSugeridaLida, RelatorioLido } from "./pdfParser";
+import type {
+  CadastroBasico,
+  ConsideracoesFinaisLidas,
+  PrevisaoSugeridaLida,
+  RelatorioLido,
+} from "./pdfParser";
 
 /**
  * Tipos de domínio do Sistema Krieger.
@@ -253,7 +258,12 @@ export interface Demonstrativo {
     saldoRestante: number;
   };
   saldoAtual: { contas: LinhaValor[]; total: number };
-  totais: { saldoAnterior: number; receitas: number; despesas: number; saldoAtual: number };
+  totais: {
+    saldoAnterior: number;
+    receitas: number;
+    despesas: number;
+    saldoAtual: number;
+  };
   avisos: string[];
   erros: string[];
 }
@@ -402,7 +412,12 @@ export interface Exercicio extends ComId {
     exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null;
     escritorio: ConfigEscritorio | null;
   };
-  historicoFechamento?: { acao: "fechar" | "reabrir"; em: string; por: string; motivo: string }[];
+  historicoFechamento?: {
+    acao: "fechar" | "reabrir";
+    em: string;
+    por: string;
+    motivo: string;
+  }[];
   deducaoRegex: string;
   arredondamento: Arredondamento;
   confer: unknown;
@@ -516,7 +531,8 @@ export interface Assembleia extends ComId {
 
 // ---------- Modelo de edital ----------
 
-export type TipoBloco = "titulo" | "subtitulo" | "texto" | "item" | "esquerda" | "pauta";
+export type TipoBloco =
+  "titulo" | "subtitulo" | "texto" | "item" | "esquerda" | "pauta";
 
 export interface Modelo extends ComId {
   /** Condomínio dono do modelo; vazio = modelo genérico, válido para todos. */
@@ -662,7 +678,8 @@ export interface BackupRegistro {
 }
 
 /** Conteúdo de um arquivo de backup: um array por store. */
-export type Backup = Partial<Record<Store, unknown[]>> & Record<string, unknown>;
+export type Backup = Partial<Record<Store, unknown[]>> &
+  Record<string, unknown>;
 
 // ---------- Consulta Inteligente de Documentos ----------
 
@@ -676,7 +693,8 @@ export type TipoDocumentoConsulta =
   | "notificacao"
   | "outro";
 
-export type FormatoArquivoDrive = "pdf" | "docx" | "jpg" | "png" | "webp" | "outro";
+export type FormatoArquivoDrive =
+  "pdf" | "docx" | "jpg" | "png" | "webp" | "outro";
 
 export interface CategoriaPastaDrive {
   /** Código identificador da categoria/pasta (ex.: "convencao", "ata", "obras", "outro"). */

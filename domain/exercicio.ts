@@ -1,4 +1,8 @@
-import { cidadeDoCondominio, documentosObrigatoriosPadrao, nomeParaRelatorio } from "./condominio";
+import {
+  cidadeDoCondominio,
+  documentosObrigatoriosPadrao,
+  nomeParaRelatorio,
+} from "./condominio";
 import { demonstrativoVazio, normalizarDemonstrativo } from "./demonstrativo";
 import { resolverVariacao } from "./previsao";
 import { dataParaBR, parseData } from "../lib/format";
@@ -17,7 +21,9 @@ export function considDoCondominio(c: Condominio): Exercicio["consid"] {
     contasPagar: null,
     seguradora: c.seguradora ?? "",
     vigenciaSeguro: c.vigenciaSeguro ?? "",
-    seguro: structuredClone(c.seguro ?? { riscoAbsoluto: null, coberturas: [] }),
+    seguro: structuredClone(
+      c.seguro ?? { riscoAbsoluto: null, coberturas: [] },
+    ),
     vigenciaExtintores: c.vigenciaExtintores ?? "",
     ultGordura: c.ultGordura ?? "",
     ultDedetizacao: c.ultDedetizacao ?? "",
@@ -49,9 +55,16 @@ export function periodoInicialDoExercicio(
   existentes: Pick<Exercicio, "condoId" | "ano" | "demonstrativo">[],
 ): { ini: string; fim: string } {
   const anterior = existentes
-    .filter((e) => e.condoId === condoId && Number(e.ano) < ano && e.demonstrativo?.periodo?.fim)
+    .filter(
+      (e) =>
+        e.condoId === condoId &&
+        Number(e.ano) < ano &&
+        e.demonstrativo?.periodo?.fim,
+    )
     .sort((a, b) => Number(b.ano) - Number(a.ano))[0];
-  const fimAnterior = anterior?.demonstrativo?.periodo.fim ? parseData(anterior.demonstrativo.periodo.fim) : null;
+  const fimAnterior = anterior?.demonstrativo?.periodo.fim
+    ? parseData(anterior.demonstrativo.periodo.fim)
+    : null;
   if (!fimAnterior) return { ini: "", fim: "" };
 
   const inicio = new Date(fimAnterior);
@@ -88,14 +101,21 @@ export function exercicioPadrao(
     arredondamento: c.arredondamento ?? "truncar",
     confer: null,
     consid: considDoCondominio(c),
-    prev: { modo: "tradicional", ajustes: [], variacaoDespesas: { sinal: "+", valor: 0 }, fundoReservaPct: null },
+    prev: {
+      modo: "tradicional",
+      ajustes: [],
+      variacaoDespesas: { sinal: "+", valor: 0 },
+      fundoReservaPct: null,
+    },
     mostrarAnalise: true,
     mostrarPizza: true,
   };
 }
 
 /** Completa um exercício vindo da API/backup, preservando campos extras. */
-export function normalizarExercicio(raw: Partial<Exercicio> & { id?: string }): Exercicio {
+export function normalizarExercicio(
+  raw: Partial<Exercicio> & { id?: string },
+): Exercicio {
   const consid = (raw.consid ?? {}) as Partial<Exercicio["consid"]>;
   return {
     ...raw,
@@ -103,7 +123,10 @@ export function normalizarExercicio(raw: Partial<Exercicio> & { id?: string }): 
     condoId: raw.condoId ?? "",
     condoNome: raw.condoNome ?? "",
     ano: raw.ano ?? "",
-    demonstrativo: normalizarDemonstrativo(raw.demonstrativo, raw.condoNome ?? ""),
+    demonstrativo: normalizarDemonstrativo(
+      raw.demonstrativo,
+      raw.condoNome ?? "",
+    ),
     origem: raw.origem ?? [],
     cidade: raw.cidade ?? "",
     dataEmissao: raw.dataEmissao ?? "",
@@ -151,11 +174,18 @@ export function normalizarExercicio(raw: Partial<Exercicio> & { id?: string }): 
 
 /** O exercício do mesmo condomínio, um ano antes — base pra projetar a previsão deste exercício
  * (o realizado de um exercício em andamento não serve de base, só o de um já fechado). */
-export function encontrarExercicioAnterior<T extends Pick<Exercicio, "id" | "condoId" | "ano">>(
+export function encontrarExercicioAnterior<
+  T extends Pick<Exercicio, "id" | "condoId" | "ano">,
+>(
   exercicios: T[],
   exercicio: Pick<Exercicio, "id" | "condoId" | "ano">,
 ): T | undefined {
-  return exercicios.find((x) => x.id !== exercicio.id && x.condoId === exercicio.condoId && Number(x.ano) === Number(exercicio.ano) - 1);
+  return exercicios.find(
+    (x) =>
+      x.id !== exercicio.id &&
+      x.condoId === exercicio.condoId &&
+      Number(x.ano) === Number(exercicio.ano) - 1,
+  );
 }
 
 export type Validacao = { ok: true } | { ok: false; erro: string };
@@ -168,9 +198,19 @@ export function validarNovoExercicio(
   idAtual?: string,
 ): Validacao {
   if (!condoId) return { ok: false, erro: "Escolha o condomínio." };
-  if (!ano || ano < 1900 || ano > 2999) return { ok: false, erro: "Informe o ano do exercício com 4 dígitos." };
-  const dup = existentes.find((e) => e.condoId === condoId && String(e.ano) === String(ano) && e.id !== idAtual);
-  if (dup) return { ok: false, erro: `Já existe uma prestação de contas de ${ano} para este condomínio.` };
+  if (!ano || ano < 1900 || ano > 2999)
+    return { ok: false, erro: "Informe o ano do exercício com 4 dígitos." };
+  const dup = existentes.find(
+    (e) =>
+      e.condoId === condoId &&
+      String(e.ano) === String(ano) &&
+      e.id !== idAtual,
+  );
+  if (dup)
+    return {
+      ok: false,
+      erro: `Já existe uma prestação de contas de ${ano} para este condomínio.`,
+    };
   return { ok: true };
 }
 
@@ -179,8 +219,12 @@ export function validarNovoExercicio(
  * método de variação não é manual, grava o percentual resolvido em `variacao`.
  */
 export function prepararExercicio(e: Exercicio): Exercicio {
-  const demonstrativo = e.demonstrativo ? normalizarDemonstrativo(e.demonstrativo, e.condoNome) : null;
+  const demonstrativo = e.demonstrativo
+    ? normalizarDemonstrativo(e.demonstrativo, e.condoNome)
+    : null;
   const variacao =
-    e.variacaoMetodo === "manual" ? e.variacao : resolverVariacao({ ...e, indices: e.consid?.indices }).pct;
+    e.variacaoMetodo === "manual"
+      ? e.variacao
+      : resolverVariacao({ ...e, indices: e.consid?.indices }).pct;
   return { ...e, demonstrativo, variacao };
 }

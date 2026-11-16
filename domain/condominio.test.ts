@@ -18,7 +18,9 @@ describe("documentosObrigatoriosPadrao", () => {
       "Alvará Estrutural",
       "Elevador — contrato de manutenção em dia",
     ]);
-    expect(itens.every((i) => i.status === "pendente" && i.noRelatorio === true)).toBe(true);
+    expect(
+      itens.every((i) => i.status === "pendente" && i.noRelatorio === true),
+    ).toBe(true);
     expect(itens.every((i) => i.observacao === "")).toBe(true);
   });
 
@@ -29,19 +31,21 @@ describe("documentosObrigatoriosPadrao", () => {
   });
 
   it('"Camboriú" e outras cidades não recebem o Alvará Estrutural', () => {
-    expect(documentosObrigatoriosPadrao("Camboriú").map((i) => i.nome)).not.toContain(
-      "Alvará Estrutural",
-    );
-    expect(documentosObrigatoriosPadrao("Itajaí").map((i) => i.nome)).not.toContain(
-      "Alvará Estrutural",
-    );
+    expect(
+      documentosObrigatoriosPadrao("Camboriú").map((i) => i.nome),
+    ).not.toContain("Alvará Estrutural");
+    expect(
+      documentosObrigatoriosPadrao("Itajaí").map((i) => i.nome),
+    ).not.toContain("Alvará Estrutural");
   });
 });
 
 describe("cidadeDoCondominio", () => {
   it("extrai a cidade do endereço do edital", () => {
     expect(
-      cidadeDoCondominio({ enderecoEdital: "Avenida Atlântica, 2070, Balneário Camboriú - SC" }),
+      cidadeDoCondominio({
+        enderecoEdital: "Avenida Atlântica, 2070, Balneário Camboriú - SC",
+      }),
     ).toBe("Balneário Camboriú");
     expect(cidadeDoCondominio({ enderecoEdital: "" })).toBe("");
     expect(cidadeDoCondominio(null)).toBe("");
@@ -56,13 +60,14 @@ describe("filtrarDocumentosPorCidade", () => {
   ];
 
   it("mantém o Alvará Estrutural em Balneário Camboriú", () => {
-    expect(filtrarDocumentosPorCidade(comAlvara, "Balneário Camboriú")).toEqual(comAlvara);
+    expect(filtrarDocumentosPorCidade(comAlvara, "Balneário Camboriú")).toEqual(
+      comAlvara,
+    );
   });
 
   it("remove o Alvará Estrutural (mesmo gravado) nas outras cidades", () => {
-    expect(filtrarDocumentosPorCidade(comAlvara, "Camboriú").map((d) => d.nome)).toEqual([
-      "Extintor",
-      "Alvará de Bombeiros",
-    ]);
+    expect(
+      filtrarDocumentosPorCidade(comAlvara, "Camboriú").map((d) => d.nome),
+    ).toEqual(["Extintor", "Alvará de Bombeiros"]);
   });
 });

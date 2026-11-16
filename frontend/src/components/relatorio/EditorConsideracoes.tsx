@@ -356,7 +356,10 @@ export function EditorConsideracoes({
             size="sm"
             className="mt-2"
             onClick={() =>
-              set("documentosObrigatorios", documentosObrigatoriosPadrao(cidadeDoCondominio(condominio)))
+              set(
+                "documentosObrigatorios",
+                documentosObrigatoriosPadrao(cidadeDoCondominio(condominio)),
+              )
             }
           >
             Usar checklist padrão

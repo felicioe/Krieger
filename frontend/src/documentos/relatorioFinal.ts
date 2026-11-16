@@ -9,7 +9,11 @@ import {
   pctTexto,
 } from "@/components/previsto-realizado/TabelaComparativo";
 import { semRealizado, textoSemRealizado } from "@/components/previsto-realizado/semRealizado";
-import { cidadeDoCondominio, filtrarDocumentosPorCidade, nomeParaRelatorio } from "@/domain/condominio";
+import {
+  cidadeDoCondominio,
+  filtrarDocumentosPorCidade,
+  nomeParaRelatorio,
+} from "@/domain/condominio";
 import {
   SECOES,
   type ConsumoServico,
@@ -560,7 +564,11 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal, cidade: string): Bloco
   for (const x of c.extras.filter((x) => String(x.rotulo).trim() || String(x.valor).trim())) {
     // Ignora observações de Alvará estrutural e elevadores
     const rotuloLower = String(x.rotulo).toLowerCase();
-    if (rotuloLower.includes("alvará") || rotuloLower.includes("alvara") || rotuloLower.includes("elevador")) {
+    if (
+      rotuloLower.includes("alvará") ||
+      rotuloLower.includes("alvara") ||
+      rotuloLower.includes("elevador")
+    ) {
       continue;
     }
     out.push({

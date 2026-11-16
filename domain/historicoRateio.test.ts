@@ -10,7 +10,11 @@ import {
 } from "./historicoRateio";
 import type { HistoricoRateio } from "./types";
 
-const linha = (ano: number, aprovado: number, atual: number | null = null): HistoricoRateio => ({
+const linha = (
+  ano: number,
+  aprovado: number,
+  atual: number | null = null,
+): HistoricoRateio => ({
   id: `hr-${ano}`,
   condoId: "c1",
   condoNome: "Urban Classic",
@@ -62,7 +66,14 @@ describe("historicoDoExercicio", () => {
 
   it("usa o sugerido quando o aprovado ainda não foi informado", () => {
     const l = historicoDoExercicio(
-      { id: "e", condoId: "c1", condoNome: "X", ano: 2026, rateioAtual: 370, rateioAprovado: null },
+      {
+        id: "e",
+        condoId: "c1",
+        condoNome: "X",
+        ano: 2026,
+        rateioAtual: 370,
+        rateioAprovado: null,
+      },
       400,
       "importacao",
       "2026-11-15T00:00:00.000Z",
@@ -90,7 +101,9 @@ describe("variacaoDoAno", () => {
   const linhas = [linha(2025, 370, 321)];
 
   it("usa o valor travado do próprio ano quando existe", () => {
-    expect(variacaoDoAno([...linhas, linha(2026, 400, 370)], "c1", 2026, 999)).toBe(8.11);
+    expect(
+      variacaoDoAno([...linhas, linha(2026, 400, 370)], "c1", 2026, 999),
+    ).toBe(8.11);
   });
 
   it("cai no sugerido quando o ano ainda não foi travado", () => {
@@ -117,10 +130,16 @@ describe("aplicarRateioBase", () => {
 });
 
 describe("historicoOrdenado e historicoDoAno", () => {
-  const linhas = [linha(2026, 400, 370), linha(2024, 321), linha(2025, 370, 321)];
+  const linhas = [
+    linha(2026, 400, 370),
+    linha(2024, 321),
+    linha(2025, 370, 321),
+  ];
 
   it("ordena do mais antigo para o mais recente", () => {
-    expect(historicoOrdenado(linhas, "c1").map((l) => l.ano)).toEqual([2024, 2025, 2026]);
+    expect(historicoOrdenado(linhas, "c1").map((l) => l.ano)).toEqual([
+      2024, 2025, 2026,
+    ]);
   });
 
   it("acha a linha do ano pedido", () => {

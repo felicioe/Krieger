@@ -11,7 +11,11 @@ import { dataVistoria } from "@/domain/painel";
 import { cn } from "@/lib/utils";
 import { RolagemTabela } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { cidadeDoCondominio, filtrarDocumentosPorCidade, nomeParaRelatorio } from "@/domain/condominio";
+import {
+  cidadeDoCondominio,
+  filtrarDocumentosPorCidade,
+  nomeParaRelatorio,
+} from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type {
   ResultadoPrevisaoSugerida,
@@ -463,15 +467,7 @@ function Item({
   );
 }
 
-function Consideracoes({
-  e,
-  rel,
-  cidade,
-}: {
-  e: Exercicio;
-  rel: RelatorioFinal;
-  cidade: string;
-}) {
+function Consideracoes({ e, rel, cidade }: { e: Exercicio; rel: RelatorioFinal; cidade: string }) {
   const c = e.consid;
   const proximaVistoria = dataVistoria(c);
   const receber = typeof c.contasReceber === "number" ? c.contasReceber : null;
@@ -610,7 +606,7 @@ function Consideracoes({
                           {s.consumo.rubricas.join(", ")}
                         </span>
                       )}
-                                          </td>
+                    </td>
                     <td className="num py-1 text-right">{formatBRL(s.consumo.valor)}</td>
                     <td className="num py-1 text-right text-muted-foreground">
                       {formatBRL(s.consumo.valor / 12)}

@@ -23,7 +23,9 @@ function ehBalnearioCamboriu(cidade: string): boolean {
  * usuário remove o que não se aplica. Com `cidade`, o "Alvará Estrutural" só entra quando o
  * condomínio é de Balneário Camboriú, onde ele é exigência municipal.
  */
-export function documentosObrigatoriosPadrao(cidade?: string): DocumentoObrigatorio[] {
+export function documentosObrigatoriosPadrao(
+  cidade?: string,
+): DocumentoObrigatorio[] {
   const itens = [
     "Extintor",
     "Seguro",
@@ -35,7 +37,12 @@ export function documentosObrigatoriosPadrao(cidade?: string): DocumentoObrigato
     // serviços — este item é sobre conformidade (contrato em dia), não sobre valor gasto.
     "Elevador — contrato de manutenção em dia",
   ];
-  const filtrados = cidade ? filtrarDocumentosPorCidade(itens.map((nome) => ({ nome })), cidade) : itens.map((nome) => ({ nome }));
+  const filtrados = cidade
+    ? filtrarDocumentosPorCidade(
+        itens.map((nome) => ({ nome })),
+        cidade,
+      )
+    : itens.map((nome) => ({ nome }));
   return filtrados.map(({ nome }) => ({
     nome,
     status: "pendente",
@@ -46,7 +53,9 @@ export function documentosObrigatoriosPadrao(cidade?: string): DocumentoObrigato
 }
 
 /** Cidade do condomínio, extraída do endereço do edital (a mesma fonte dos modelos de ata/edital). */
-export function cidadeDoCondominio(c: Pick<Condominio, "enderecoEdital"> | null | undefined): string {
+export function cidadeDoCondominio(
+  c: Pick<Condominio, "enderecoEdital"> | null | undefined,
+): string {
   return c?.enderecoEdital ? extrairCidadeDoEndereco(c.enderecoEdital, "") : "";
 }
 
@@ -55,12 +64,13 @@ export function cidadeDoCondominio(c: Pick<Condominio, "enderecoEdital"> | null 
  * Aplicado no relatório final para condomínios que já têm o item gravado no `consid` antes
  * desta regra existir. Não mexe no cadastro: lá a lista continua livre.
  */
-export function filtrarDocumentosPorCidade<T extends Pick<DocumentoObrigatorio, "nome">>(
-  documentos: T[],
-  cidade: string,
-): T[] {
+export function filtrarDocumentosPorCidade<
+  T extends Pick<DocumentoObrigatorio, "nome">,
+>(documentos: T[], cidade: string): T[] {
   if (ehBalnearioCamboriu(cidade)) return documentos;
-  return documentos.filter((d) => normalizarCidade(d.nome) !== "alvara estrutural");
+  return documentos.filter(
+    (d) => normalizarCidade(d.nome) !== "alvara estrutural",
+  );
 }
 
 /** Valores padrão de um condomínio novo. */
@@ -114,23 +124,31 @@ export function condominioPadrao(): Omit<Condominio, "id"> {
  * Completa um registro vindo da API/backup com os padrões, preservando
  * quaisquer campos extras que já existam.
  */
-export function normalizarCondominio(raw: Partial<Condominio> & { id?: string }): Condominio {
+export function normalizarCondominio(
+  raw: Partial<Condominio> & { id?: string },
+): Condominio {
   const p = condominioPadrao();
   const historicoExistente = raw.historicoApolices ?? [];
-  const historicoInicial = historicoExistente.length > 0
-    ? historicoExistente
-    : raw.seguradora || raw.vigenciaSeguro || raw.seguro?.riscoAbsoluto != null || (raw.seguro?.coberturas?.length ?? 0) > 0
-      ? [{
-          id: "legado-atual",
-          seguradora: raw.seguradora ?? "",
-          numeroApolice: "",
-          vigenciaIni: "",
-          vigenciaFim: raw.vigenciaSeguro ?? "",
-          riscoAbsoluto: raw.seguro?.riscoAbsoluto ?? null,
-          coberturas: raw.seguro?.coberturas ?? [],
-          importadaEm: "",
-        }]
-      : [];
+  const historicoInicial =
+    historicoExistente.length > 0
+      ? historicoExistente
+      : raw.seguradora ||
+          raw.vigenciaSeguro ||
+          raw.seguro?.riscoAbsoluto != null ||
+          (raw.seguro?.coberturas?.length ?? 0) > 0
+        ? [
+            {
+              id: "legado-atual",
+              seguradora: raw.seguradora ?? "",
+              numeroApolice: "",
+              vigenciaIni: "",
+              vigenciaFim: raw.vigenciaSeguro ?? "",
+              riscoAbsoluto: raw.seguro?.riscoAbsoluto ?? null,
+              coberturas: raw.seguro?.coberturas ?? [],
+              importadaEm: "",
+            },
+          ]
+        : [];
   return {
     ...p,
     ...raw,
@@ -146,23 +164,27 @@ export function normalizarCondominio(raw: Partial<Condominio> & { id?: string })
     conhecidas: raw.conhecidas ?? [],
     regras: raw.regras ?? [],
     fracaoUnidades: raw.fracaoUnidades ?? [],
-    documentosObrigatorios: raw.documentosObrigatorios ?? p.documentosObrigatorios,
+    documentosObrigatorios:
+      raw.documentosObrigatorios ?? p.documentosObrigatorios,
     vistoriaIntervalo: raw.vistoriaIntervalo ?? p.vistoriaIntervalo,
     somenteAnual: raw.somenteAnual ?? p.somenteAnual,
   } as Condominio;
 }
 
 /** Nome usado nos relatórios: nomeRelatorio ou, se vazio, o nome. */
-export function nomeParaRelatorio(c: Pick<Condominio, "nome" | "nomeRelatorio">): string {
+export function nomeParaRelatorio(
+  c: Pick<Condominio, "nome" | "nomeRelatorio">,
+): string {
   return c.nomeRelatorio?.trim() || c.nome?.trim() || "";
 }
 
-export type ResultadoValidacao<T> = { ok: true; valor: T } | { ok: false; erro: string };
+export type ResultadoValidacao<T> =
+  { ok: true; valor: T } | { ok: false; erro: string };
 
 /** Valida e ajusta o condomínio antes de gravar. */
-export function prepararCondominio<T extends Condominio | Omit<Condominio, "id">>(
-  c: T,
-): ResultadoValidacao<T> {
+export function prepararCondominio<
+  T extends Condominio | Omit<Condominio, "id">,
+>(c: T): ResultadoValidacao<T> {
   const nome = c.nome?.trim() ?? "";
   if (!nome) return { ok: false, erro: "Informe o nome do condomínio." };
   return {
