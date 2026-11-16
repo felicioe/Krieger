@@ -20,12 +20,17 @@ confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
 Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
 `deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
-publicação: `deploy-hostinger` `846bd02`, com o pacote do CI no commit `6221467`
-(main, versão 1.13 — previsão orçamentária no padrão da folha do Systemar); o
-runtime `index-B5URdVya.js` no ar coincide com o `index.html` publicado. A
-publicação anterior, `fc45795` (`c09bcdd`, versão 1.12), servia
-`index-CnJmmVcJ.js`; antes dela, `c2eb968` (`92f853b`, versão 1.11), servia
-`index-DFi-oqfk.js`; antes dela, `3fec48f` (main
+publicação: `deploy-hostinger` `b9c1b86`, com o pacote do commit `0b91e83`
+(main, versão 1.14 — histórico de rateios e documentos obrigatórios por cidade);
+o runtime `index-BCbBrELt.js` no ar coincide com o `index.html` publicado e o
+bundle `versoes` responde `versaoAtual: 1.14`. **A migration
+`migrations/20261116_historico_rateios.sql` precisa ser aplicada no banco de
+produção** — sem ela o botão "Travar rateio no histórico" avisa que não gravou
+(a tela não quebra, por causa de `listaQueryTolerante`). A publicação anterior,
+`6f6bada` (`8effdd5`, versão 1.13), servia `index-B5URdVya.js`; antes dela,
+`846bd02` (`6221467`, versão 1.13), e `fc45795` (`c09bcdd`, versão 1.12), que
+servia `index-CnJmmVcJ.js`; antes dela, `c2eb968` (`92f853b`, versão 1.11),
+servia `index-DFi-oqfk.js`; antes dela, `3fec48f` (main
 `bbdd720`), teve os arquivos da branch conferidos contra o artefato. As
 publicações `a603045` e `3fec48f` saíram nos minutos seguintes uma da outra
 porque outro trabalho foi mesclado em main no intervalo: vale sempre conferir o
