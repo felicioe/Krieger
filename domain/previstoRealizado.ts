@@ -205,8 +205,10 @@ export function compararPrevistoRealizado(
     rotulo: `${p2(m.mes)}/${m.ano}`,
     relatorios: porPosicao.get(i + 1)?.length ?? 0,
   }));
-  const ultimoComRelatorio = [...meses].reverse().find((m) => m.relatorios > 0)?.posicao ?? 12;
-  const posAte = Math.min(12, Math.max(1, Math.trunc(opcoes.mesAte ?? ultimoComRelatorio)));
+  // A janela pode ter menos que 12 meses (período da prestação menor que um ano). Limitar a 12
+  // deixava `meses[posAte - 1]` indefinido e quebrava a tela do relatório final ao ler `.rotulo`.
+  const ultimoComRelatorio = [...meses].reverse().find((m) => m.relatorios > 0)?.posicao ?? meses.length;
+  const posAte = Math.min(meses.length, Math.max(1, Math.trunc(opcoes.mesAte ?? ultimoComRelatorio)));
   const mesAte = meses[posAte - 1]!;
 
   if (semPeriodo > 0) avisos.push(`${semPeriodo} relatório(s) mensal(is) sem período informado ficaram de fora.`);

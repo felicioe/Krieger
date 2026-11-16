@@ -137,4 +137,34 @@ describe("previsto × realizado", () => {
     expect(comBase.total.previstoAnual).toBe(999999);
     expect(semBase.total.previstoAnual).toBe(144000); // base do próprio exercício (120000 + 24000)
   });
+
+  // Regressão: a janela pode ter menos de 12 meses (período da prestação menor que um ano).
+  // `posAte` era limitado a 12 e `meses[posAte - 1]` ficava indefinido, quebrando a tela do
+  // relatório final com "Cannot read properties of undefined (reading 'rotulo')".
+  describe("janela menor que 12 meses", () => {
+    const comPeriodo = (ini: string, fim: string): Exercicio => ({
+      ...exercicio(),
+      demonstrativo: demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 120000 }] }], ini, fim),
+    });
+
+    it("sem relatórios, mesAte é o último mês da janela e não estoura", () => {
+      const r = compararPrevistoRealizado(comPeriodo("01/01/2025", "30/06/2025"), []);
+      expect(r.meses).toHaveLength(6);
+      expect(r.mesAte.posicao).toBe(6);
+      expect(r.mesAte.rotulo).toBe("06/2025");
+    });
+
+    it("prAte salvo maior que a janela é limitado ao último mês existente", () => {
+      const r = compararPrevistoRealizado(comPeriodo("01/01/2025", "31/03/2025"), [], { mesAte: 12 });
+      expect(r.meses).toHaveLength(3);
+      expect(r.mesAte.posicao).toBe(3);
+      expect(r.mesAte.rotulo).toBe("03/2025");
+    });
+
+    it("prAte zero cai no primeiro mês", () => {
+      const r = compararPrevistoRealizado(comPeriodo("01/01/2025", "31/03/2025"), [], { mesAte: 0 });
+      expect(r.mesAte.posicao).toBe(1);
+      expect(r.mesAte.rotulo).toBe("01/2025");
+    });
+  });
 });

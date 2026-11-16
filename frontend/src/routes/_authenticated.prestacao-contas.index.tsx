@@ -92,10 +92,7 @@ function ListaExercicios() {
         const despesasRealizadas = e.demonstrativo?.despesas?.subtotal ?? 0;
         // Previsão: continua usando a base do exercício anterior para não divergir da previsão
         // aprovada no editor.
-        const baseAnterior = demonstrativoBasePrevisao(
-          e,
-          encontrarExercicioAnterior(todos, e),
-        );
+        const baseAnterior = demonstrativoBasePrevisao(e, encontrarExercicioAnterior(todos, e));
         const demonstrativoBase = baseAnterior ?? e.demonstrativo;
         const r = calcularPrevisao(
           demonstrativoBase,

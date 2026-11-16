@@ -468,21 +468,18 @@ function PassoAnexar({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setSelecionados(
-                Object.fromEntries(mesesComparativo.map(m => [m.mes, true]))
-              )}
+              onClick={() =>
+                setSelecionados(Object.fromEntries(mesesComparativo.map((m) => [m.mes, true])))
+              }
             >
               Aprovar todos
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelecionados({})}
-            >
+            <Button variant="outline" size="sm" onClick={() => setSelecionados({})}>
               Desmarcar todos
             </Button>
             <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
-              {mesesComparativo.filter(estaSelecionado).length} de {mesesComparativo.length} selecionados
+              {mesesComparativo.filter(estaSelecionado).length} de {mesesComparativo.length}{" "}
+              selecionados
             </span>
           </div>
           <ul className="grid gap-1.5">
