@@ -21,7 +21,7 @@ import { Field } from "@/components/app/Field";
 import { opcoesCondominio, Selecao, SelecaoBusca } from "@/components/app/inputs";
 import { PainelPrevisao } from "@/components/previsao/PainelPrevisao";
 import { api } from "@/lib/api";
-import { chaves, listaQuery } from "@/lib/queries";
+import { chaves, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { demonstrativoVazio } from "@/domain/demonstrativo";
 import {
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
     Promise.all([
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
-      queryClient.ensureQueryData(listaQuery<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
     ]),
   component: PaginaPrevisao,
 });
@@ -71,7 +71,7 @@ function PaginaPrevisao() {
   const { data: exerciciosRaw } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: historicoRateios } = useSuspenseQuery(
-    listaQuery<HistoricoRateio>("historico_rateios"),
+    listaQueryTolerante<HistoricoRateio>("historico_rateios"),
   );
 
   const exercicios = useMemo(
@@ -282,7 +282,13 @@ function EditorPrevisao({
           : `Rateio de ${formatBRL(aprovado)} travado no histórico.`,
       );
     } catch (erro) {
-      toast.error(erro instanceof Error ? erro.message : "Não foi possível travar o rateio.");
+      // O rateio aprovado já foi gravado no exercício antes deste ponto; o que falhou foi o
+      // histórico acumulativo. Dizer isso evita o usuário achar que nada foi salvo.
+      toast.error(
+        `Rateio aprovado salvo no exercício, mas o histórico não gravou: ${
+          erro instanceof Error ? erro.message : "erro desconhecido."
+        }`,
+      );
     }
   }
 

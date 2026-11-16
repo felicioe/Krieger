@@ -20,6 +20,24 @@ export const listaQuery = <T>(store: Store) =>
     queryFn: () => api.listar<T>(store),
   });
 
+/**
+ * Lista de um store que pode ainda não existir no banco (tabela criada por migration posterior
+ * à instalação). Devolve lista vazia em vez de derrubar a tela: o recurso fica sem histórico até
+ * a migration ser aplicada, e o resto da página continua funcionando.
+ */
+export const listaQueryTolerante = <T>(store: Store) =>
+  queryOptions({
+    queryKey: chaves.lista(store),
+    queryFn: async () => {
+      try {
+        return await api.listar<T>(store);
+      } catch (erro) {
+        console.warn(`[krieger] store "${store}" indisponível; seguindo com lista vazia.`, erro);
+        return [] as T[];
+      }
+    },
+  });
+
 export const itemQuery = <T>(store: Store, id: string) =>
   queryOptions({
     queryKey: chaves.item(store, id),
