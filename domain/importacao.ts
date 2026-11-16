@@ -98,7 +98,10 @@ function valorDoItem(item: ItemLido, rel: RelatorioLido, coluna: string | null, 
   const meses = rel.meses ?? [];
   const v = item.valores ?? {};
   if (coluna === COLUNA_TOTAL) {
-    // Total do período: soma todos os meses
+    // Total do período: receitas e despesas somam os meses; saldos NÃO somam — o saldo anterior
+    // é o do primeiro mês e o saldo atual o do último (somar saldos não significa nada).
+    if (secao === "saldoAnterior") return meses.length ? (v[meses[0]!] ?? null) : null;
+    if (secao === "saldoAtual") return meses.length ? (v[meses[meses.length - 1]!] ?? null) : null;
     const vs = Object.values(v);
     return vs.length ? centavos(vs.reduce((a, b) => a + b, 0)) : null;
   }

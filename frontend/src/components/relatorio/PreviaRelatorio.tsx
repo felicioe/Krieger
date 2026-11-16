@@ -11,7 +11,7 @@ import { dataVistoria } from "@/domain/painel";
 import { cn } from "@/lib/utils";
 import { RolagemTabela } from "@/components/ui/table";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { nomeParaRelatorio } from "@/domain/condominio";
+import { cidadeDoCondominio, filtrarDocumentosPorCidade, nomeParaRelatorio } from "@/domain/condominio";
 import { SECOES, type RelatorioFinal, type SecaoId } from "@/domain/relatorioFinal";
 import type {
   ResultadoPrevisaoSugerida,
@@ -45,6 +45,8 @@ export function PreviaRelatorio({
       .filter((s) => s.id !== "capa" && s.id !== "assinatura")
       .findIndex((s) => s.id === id) + 1;
   const nomeCondo = condominio ? nomeParaRelatorio(condominio) : e.condoNome;
+  // Cidade do condomínio (endereço do edital) — decide se o "Alvará Estrutural" entra no relatório.
+  const cidadeCondo = cidadeDoCondominio(condominio);
   const d = rel.demonstrativo;
 
   if (incluidas.length === 0) {
@@ -162,7 +164,7 @@ export function PreviaRelatorio({
 
       {rel.secoes.consideracoes && (
         <Secao n={numero("consideracoes")} titulo="Considerações finais">
-          <Consideracoes e={e} rel={rel} />
+          <Consideracoes e={e} rel={rel} cidade={cidadeCondo} />
         </Secao>
       )}
 
@@ -461,7 +463,15 @@ function Item({
   );
 }
 
-function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
+function Consideracoes({
+  e,
+  rel,
+  cidade,
+}: {
+  e: Exercicio;
+  rel: RelatorioFinal;
+  cidade: string;
+}) {
   const c = e.consid;
   const proximaVistoria = dataVistoria(c);
   const receber = typeof c.contasReceber === "number" ? c.contasReceber : null;
@@ -470,7 +480,9 @@ function Consideracoes({ e, rel }: { e: Exercicio; rel: RelatorioFinal }) {
   const administracao = c.administracao.filter((m) => m.noRelatorio !== false);
   const coberturas = c.seguro.coberturas.filter((cb) => cb.noRelatorio !== false);
   const indices = c.indices.filter((i) => i.pct !== null && i.noRelatorio !== false);
-  const documentos = c.documentosObrigatorios.filter((d) => d.noRelatorio && d.nome.trim());
+  const documentos = filtrarDocumentosPorCidade(c.documentosObrigatorios, cidade).filter(
+    (d) => d.noRelatorio && d.nome.trim(),
+  );
   const servicos = [
     { nome: "Água", consumo: rel.agua },
     { nome: "Energia elétrica", consumo: rel.energia },

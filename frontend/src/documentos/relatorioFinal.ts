@@ -9,7 +9,7 @@ import {
   pctTexto,
 } from "@/components/previsto-realizado/TabelaComparativo";
 import { semRealizado, textoSemRealizado } from "@/components/previsto-realizado/semRealizado";
-import { nomeParaRelatorio } from "@/domain/condominio";
+import { cidadeDoCondominio, filtrarDocumentosPorCidade, nomeParaRelatorio } from "@/domain/condominio";
 import {
   SECOES,
   type ConsumoServico,
@@ -141,7 +141,10 @@ export async function documentoRelatorioFinal(o: {
   }
 
   if (rel.secoes.consideracoes) {
-    b.push(titulo("consideracoes", "Considerações finais"), ...consideracoes(e, rel));
+    b.push(
+      titulo("consideracoes", "Considerações finais"),
+      ...consideracoes(e, rel, cidadeDoCondominio(condominio)),
+    );
   }
 
   if (rel.secoes.previsao) {
@@ -442,7 +445,7 @@ function linhaServico(
 }
 
 /** Considerações finais — mesmos itens da prévia na tela. */
-function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
+function consideracoes(e: Exercicio, rel: RelatorioFinal, cidade: string): Bloco[] {
   const c = e.consid;
   const out: Bloco[] = [];
   const grupo = (
@@ -509,7 +512,9 @@ function consideracoes(e: Exercicio, rel: RelatorioFinal): Bloco[] {
         ]
       : []),
   ]);
-  const documentos = c.documentosObrigatorios.filter((d) => d.noRelatorio && d.nome.trim());
+  const documentos = filtrarDocumentosPorCidade(c.documentosObrigatorios, cidade).filter(
+    (d) => d.noRelatorio && d.nome.trim(),
+  );
   grupo(
     "Documentos obrigatórios",
     documentos.map((d) => ({

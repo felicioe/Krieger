@@ -18,7 +18,8 @@ export type Store =
   | "atas"
   | "anexos_importacao"
   | "decisoes_previsao"
-  | "decisoes_importacao";
+  | "decisoes_importacao"
+  | "historico_rateios";
 
 export const STORES: Store[] = [
   "condominios",
@@ -33,6 +34,7 @@ export const STORES: Store[] = [
   "anexos_importacao",
   "decisoes_previsao",
   "decisoes_importacao",
+  "historico_rateios",
 ];
 
 export interface ComId {
@@ -67,6 +69,32 @@ export interface IndiceCorrecao {
   pct: number | null;
   /** Campo novo (opcional, padrão true): aparece nas Considerações finais do relatório. */
   noRelatorio?: boolean;
+}
+
+/**
+ * Histórico de rateios travados por condomínio/ano (store `historico_rateios`).
+ *
+ * Cada exercício que tem o rateio "travado" gera uma linha aqui. É a fonte acumulativa que
+ * permite: (a) o relatório final mostrar o rateio do ano anterior; (b) o exercício seguinte
+ * herdar `rateioAtual` automaticamente; (c) calcular a variação % entre anos sem depender de
+ * recálculo. `rateioAprovado` é o valor por unidade efetivamente travado.
+ */
+export interface HistoricoRateio extends ComId {
+  condoId: string;
+  condoNome?: string;
+  ano: number;
+  /** Rateio por unidade do exercício anterior (base da variação). */
+  rateioAtual: number | null;
+  /** Rateio por unidade que o cálculo do Krieger sugeriu. */
+  rateioSugerido: number | null;
+  /** Variação % do aprovado sobre o atual (ex.: 15.26 = +15,26%). */
+  variacao: number | null;
+  /** Rateio por unidade travado — o valor que vale para o ano. */
+  rateioAprovado: number;
+  travadoEm: string;
+  /** Origem do valor: importado do Systemar ou calculado na tela de previsão. */
+  fonte: "importacao" | "calculo";
+  exercicioId: string | null;
 }
 
 /** Histórico de índices aplicados por condomínio. */

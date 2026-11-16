@@ -256,6 +256,7 @@ function semente(): Dados {
     modelos_ata: modelosAtaSemente() as unknown as Registro[],
     decisoes_previsao: [],
     decisoes_importacao: [],
+    historico_rateios: [],
   };
 }
 
@@ -1188,6 +1189,7 @@ export const mockApi: ApiAdapter = {
         "anexos_importacao",
         "decisoes_previsao",
         "decisoes_importacao",
+        "historico_rateios",
       ];
       let apagados = 0;
       if (alvo === "tudo") {

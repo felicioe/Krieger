@@ -1,4 +1,4 @@
-import { nomeParaRelatorio } from "./condominio";
+import { cidadeDoCondominio, documentosObrigatoriosPadrao, nomeParaRelatorio } from "./condominio";
 import { demonstrativoVazio, normalizarDemonstrativo } from "./demonstrativo";
 import { resolverVariacao } from "./previsao";
 import { dataParaBR, parseData } from "../lib/format";
@@ -32,7 +32,11 @@ export function considDoCondominio(c: Condominio): Exercicio["consid"] {
     elevadorRubrica: c.elevadorRubrica ?? "",
     consumoElevadorManual: null,
     elevadorFornecedor: c.elevadorFornecedor ?? "",
-    documentosObrigatorios: structuredClone(c.documentosObrigatorios ?? []),
+    documentosObrigatorios: structuredClone(
+      c.documentosObrigatorios?.length
+        ? c.documentosObrigatorios
+        : documentosObrigatoriosPadrao(cidadeDoCondominio(c)),
+    ),
     indices: structuredClone(c.indices ?? []),
     extras: [],
   };

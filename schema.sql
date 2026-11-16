@@ -23,6 +23,25 @@ CREATE TABLE IF NOT EXISTS kr_indices_condominio (
   INDEX idx_condo_ano (condo_id, ano)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Histórico de rateios travados por condomínio/ano. Cada linha registra o rateio aprovado
+-- (calculado ou importado) e a variação em relação ao anterior, servindo como base para o
+-- próximo exercício. Fonte: 'importacao' (PDF do Systemar) ou 'calculo' (tela de previsão).
+CREATE TABLE IF NOT EXISTS kr_historico_rateios (
+  id VARCHAR(64) PRIMARY KEY,
+  condo_id VARCHAR(64) NOT NULL,
+  ano INT NOT NULL,
+  rateio_atual DECIMAL(14,2) NULL,
+  rateio_sugerido DECIMAL(14,2) NULL,
+  variacao DECIMAL(10,6) NULL,
+  rateio_aprovado DECIMAL(14,2) NOT NULL,
+  travado_em DATETIME NOT NULL,
+  fonte VARCHAR(32) NULL,
+  exercicio_id VARCHAR(64) NULL,
+  dados JSON NULL,
+  UNIQUE KEY uk_hist_rateio (condo_id, ano),
+  INDEX idx_condo_ano (condo_id, ano)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS kr_mensais (
   id VARCHAR(64) PRIMARY KEY,
   dados LONGTEXT NOT NULL,

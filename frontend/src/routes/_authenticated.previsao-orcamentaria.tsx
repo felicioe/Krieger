@@ -30,7 +30,9 @@ import {
   prepararExercicio,
 } from "@/domain/exercicio";
 import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
-import type { Condominio, Exercicio } from "@/domain/types";
+import { historicoDoExercicio } from "@/domain/historicoRateio";
+import type { Condominio, Exercicio, HistoricoRateio } from "@/domain/types";
+import { novoId } from "@/lib/id";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { imprimirTabela } from "@/lib/imprimirTabela";
 import { baixarMatrizXlsx } from "@/lib/exportar";
@@ -58,6 +60,7 @@ export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
     Promise.all([
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
+      queryClient.ensureQueryData(listaQuery<HistoricoRateio>("historico_rateios")),
     ]),
   component: PaginaPrevisao,
 });
@@ -67,6 +70,9 @@ function PaginaPrevisao() {
   const navigate = useNavigate({ from: "/previsao-orcamentaria" });
   const { data: exerciciosRaw } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
+  const { data: historicoRateios } = useSuspenseQuery(
+    listaQuery<HistoricoRateio>("historico_rateios"),
+  );
 
   const exercicios = useMemo(
     () =>
@@ -152,6 +158,8 @@ function PaginaPrevisao() {
       inicial={exercicio}
       exercicioAnterior={exercicioAnterior ?? null}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
+      historicoRateios={historicoRateios}
+      exercicios={exercicios}
       seletor={seletor}
       modo={busca.modo ?? "rateio"}
     />
@@ -162,12 +170,16 @@ function EditorPrevisao({
   inicial,
   exercicioAnterior,
   condominio,
+  historicoRateios,
+  exercicios,
   seletor,
   modo,
 }: {
   inicial: Exercicio;
   exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null;
   condominio: Condominio | undefined;
+  historicoRateios: HistoricoRateio[];
+  exercicios: Exercicio[];
   seletor: ReactNode;
   modo: "rateio" | "relatorios";
 }) {
@@ -220,6 +232,58 @@ function EditorPrevisao({
     ev.preventDefault();
     if (e.fechado) return;
     salvar.mutate(prepararExercicio(e));
+  }
+
+  /**
+   * Trava o rateio: grava o valor aprovado no exercício, registra a linha no histórico
+   * acumulativo (`historico_rateios`) e propaga o valor como `rateioAtual` do exercício seguinte,
+   * quando ele existe e ainda não tem um informado.
+   */
+  async function aoTravar() {
+    const aprovado = resultado.rateioSugerido;
+    if (aprovado === null || e.fechado) return;
+    const atualizado = prepararExercicio({ ...e, rateioAprovado: aprovado });
+    setE(atualizado);
+    try {
+      const salvo = await api.salvar("exercicios", atualizado);
+      const n = normalizarExercicio(salvo);
+      setE(n);
+      setSalvoJson(JSON.stringify(n));
+      queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
+      queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
+
+      const linha = historicoDoExercicio(
+        { ...n, rateioAprovado: aprovado },
+        aprovado,
+        "calculo",
+        new Date().toISOString(),
+      );
+      const existente = historicoRateios.find(
+        (h) => h.condoId === linha.condoId && Number(h.ano) === linha.ano,
+      );
+      await api.salvar("historico_rateios", { ...linha, id: existente?.id ?? novoId() });
+      queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
+
+      // Propaga como base do exercício seguinte, se ainda não tiver rateio atual.
+      const proximo = exercicios.find(
+        (x) =>
+          x.condoId === e.condoId &&
+          Number(x.ano) === Number(n.ano) + 1 &&
+          (x.rateioAtual === null || x.rateioAtual === undefined),
+      );
+      if (proximo) {
+        await api.salvar("exercicios", { ...proximo, rateioAtual: aprovado });
+        queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
+      }
+
+      toast.success(
+        proximo
+          ? `Rateio de ${formatBRL(aprovado)} travado. Aplicado como base de ${proximo.ano}.`
+          : `Rateio de ${formatBRL(aprovado)} travado no histórico.`,
+      );
+    } catch (erro) {
+      toast.error(erro instanceof Error ? erro.message : "Não foi possível travar o rateio.");
+    }
   }
 
   const periodo =
@@ -296,6 +360,7 @@ function EditorPrevisao({
             unidades={unidades}
             condoId={e.condoId}
             onChange={mudar}
+            aoTravar={aoTravar}
           />
         </fieldset>
       </form>

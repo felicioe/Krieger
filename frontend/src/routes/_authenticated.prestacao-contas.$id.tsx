@@ -42,7 +42,9 @@ import { consolidarPeriodo } from "@/domain/demonstrativoDinamico";
 import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
 import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
-import type { Condominio, Exercicio, Mensal } from "@/domain/types";
+import { historicoDoExercicio } from "@/domain/historicoRateio";
+import { novoId } from "@/lib/id";
+import type { Condominio, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
   head: () => cabecalho("Prestação de contas", "Dados e demonstrativo do exercício."),
@@ -150,9 +152,50 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         persistirDecisaoConflito(usuario, queryClient, decisaoPendente);
         setDecisaoPendente(null);
       }
+      // Rateio importado do Systemar entra no histórico acumulativo (uma vez por ano), para o
+      // relatório final e o exercício seguinte terem a base mesmo sem ninguém clicar em "Travar".
+      void registrarRateioImportado(n);
       toast.success("Prestação de contas salva.");
     },
   });
+
+  /**
+   * Quando a prestação tem a previsão sugerida importada (rateio por unidade do PDF) e ainda
+   * não existe linha de histórico para esse ano, grava uma. Não sobrescreve: se o rateio já
+   * foi travado/editado pelo usuário, a linha guardada vale mais.
+   */
+  async function registrarRateioImportado(ex: Exercicio) {
+    const pv = ex.previsaoSugerida;
+    const aprovado = ex.rateioAprovado ?? pv?.rateioUnidadeAtual ?? pv?.rateioMensalAtual ?? null;
+    if (aprovado === null) return;
+    try {
+      const existentes = await api.listar<HistoricoRateio>("historico_rateios");
+      const jaTem = existentes.some(
+        (h) => h.condoId === ex.condoId && Number(h.ano) === Number(ex.ano),
+      );
+      if (jaTem) return;
+      const anterior = existentes
+        .filter((h) => h.condoId === ex.condoId && Number(h.ano) < Number(ex.ano))
+        .sort((a, b) => Number(b.ano) - Number(a.ano))[0];
+      const linha = historicoDoExercicio(
+        {
+          id: ex.id,
+          condoId: ex.condoId,
+          condoNome: ex.condoNome,
+          ano: ex.ano,
+          rateioAtual: anterior?.rateioAprovado ?? null,
+          rateioAprovado: aprovado,
+        },
+        pv?.rateioUnidadeAtual ?? pv?.rateioMensalAtual ?? null,
+        "importacao",
+        new Date().toISOString(),
+      );
+      await api.salvar("historico_rateios", { ...linha, id: novoId() });
+      queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
+    } catch {
+      // Silencioso: salvar a prestação não pode falhar por causa do histórico.
+    }
+  }
 
   const fechamento = useMutation({
     mutationFn: () =>

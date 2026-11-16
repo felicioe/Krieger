@@ -1,13 +1,30 @@
 import type { Condominio, DocumentoObrigatorio } from "./types";
+import { extrairCidadeDoEndereco } from "./notificacao";
 
-/** Itens padrão do checklist "Documentos obrigatórios" de um condomínio novo. */
-export function documentosObrigatoriosPadrao(): DocumentoObrigatorio[] {
-  const observacoes: Record<string, string> = {
-    // Nome genérico pra caber em qualquer condomínio; a observação guarda a origem (exigência
-    // municipal de Balneário Camboriú), que não cabe mais no nome.
-    "Alvará Estrutural": "Exigência municipal (Balneário Camboriú) — ajuste o nome/observação se o condomínio for de outra cidade.",
-  };
-  return [
+/** Mesma normalização de cidade usada nos modelos de edital/ata. */
+function normalizarCidade(v: string): string {
+  return v
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/** Mesma cidade: "Balneário Camboriú" = "balneario camboriu" (não casa com só "Camboriú"). */
+function ehBalnearioCamboriu(cidade: string): boolean {
+  return normalizarCidade(cidade) === "balneario camboriu";
+}
+
+/**
+ * Itens padrão do checklist "Documentos obrigatórios".
+ *
+ * Sem `cidade` (cadastro do condomínio), devolve a lista completa — o cadastro é livre e o
+ * usuário remove o que não se aplica. Com `cidade`, o "Alvará Estrutural" só entra quando o
+ * condomínio é de Balneário Camboriú, onde ele é exigência municipal.
+ */
+export function documentosObrigatoriosPadrao(cidade?: string): DocumentoObrigatorio[] {
+  const itens = [
     "Extintor",
     "Seguro",
     "Limpeza de Caixa D'Água",
@@ -17,7 +34,33 @@ export function documentosObrigatoriosPadrao(): DocumentoObrigatorio[] {
     // Nome completo pra não ser confundido com a linha financeira "Elevadores" de Consumo de
     // serviços — este item é sobre conformidade (contrato em dia), não sobre valor gasto.
     "Elevador — contrato de manutenção em dia",
-  ].map((nome) => ({ nome, status: "pendente", informacao: "", observacao: observacoes[nome] ?? "", noRelatorio: true }));
+  ];
+  const filtrados = cidade ? filtrarDocumentosPorCidade(itens.map((nome) => ({ nome })), cidade) : itens.map((nome) => ({ nome }));
+  return filtrados.map(({ nome }) => ({
+    nome,
+    status: "pendente",
+    informacao: "",
+    observacao: "",
+    noRelatorio: true,
+  }));
+}
+
+/** Cidade do condomínio, extraída do endereço do edital (a mesma fonte dos modelos de ata/edital). */
+export function cidadeDoCondominio(c: Pick<Condominio, "enderecoEdital"> | null | undefined): string {
+  return c?.enderecoEdital ? extrairCidadeDoEndereco(c.enderecoEdital, "") : "";
+}
+
+/**
+ * Remove o "Alvará Estrutural" do checklist quando o condomínio não é de Balneário Camboriú.
+ * Aplicado no relatório final para condomínios que já têm o item gravado no `consid` antes
+ * desta regra existir. Não mexe no cadastro: lá a lista continua livre.
+ */
+export function filtrarDocumentosPorCidade<T extends Pick<DocumentoObrigatorio, "nome">>(
+  documentos: T[],
+  cidade: string,
+): T[] {
+  if (ehBalnearioCamboriu(cidade)) return documentos;
+  return documentos.filter((d) => normalizarCidade(d.nome) !== "alvara estrutural");
 }
 
 /** Valores padrão de um condomínio novo. */

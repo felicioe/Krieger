@@ -50,12 +50,15 @@ export function PainelPrevisao({
   unidades,
   condoId,
   onChange,
+  aoTravar,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
   unidades: number | null;
   condoId: string;
   onChange: (parcial: Partial<Exercicio>) => void;
+  /** Grava o rateio no histórico acumulativo (store `historico_rateios`). Sem isso, só aprova. */
+  aoTravar?: (() => void | Promise<void>) | undefined;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
@@ -270,6 +273,7 @@ export function PainelPrevisao({
           semUnidades={semUnidades}
           idQuadro={idQuadro}
           aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })}
+          aoTravar={aoTravar}
         />
       </aside>
     </div>
@@ -428,6 +432,7 @@ function Resumo({
   idQuadro,
   anoAnterior,
   aoAprovar,
+  aoTravar,
 }: {
   r: ResultadoPrevisao;
   arredondamento: Arredondamento;
@@ -437,6 +442,8 @@ function Resumo({
   idQuadro: string;
   anoAnterior?: number | string | undefined;
   aoAprovar: () => void;
+  /** Grava o rateio no histórico acumulativo. Sem isso, o botão não aparece. */
+  aoTravar?: (() => void | Promise<void>) | undefined;
 }) {
   const ausente = (n: number | null, motivo?: string) =>
     n === null ? <SemValor motivo={motivo} /> : formatBRL(n);
@@ -521,15 +528,22 @@ function Resumo({
         </div>
 
         {r.rateioSugerido !== null && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="mt-3 w-full"
-            onClick={aoAprovar}
-          >
-            Usar como rateio aprovado
-          </Button>
+          <div className="mt-3 grid gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={aoAprovar}
+            >
+              Usar como rateio aprovado
+            </Button>
+            {aoTravar && (
+              <Button type="button" size="sm" className="w-full" onClick={() => void aoTravar()}>
+                Travar rateio no histórico
+              </Button>
+            )}
+          </div>
         )}
       </div>
     </section>

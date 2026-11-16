@@ -15,7 +15,7 @@ import { DataInput, DinheiroInput, InteiroInput, MesAnoInput } from "@/component
 import { formatBRL } from "@/lib/format";
 import { mensagemErro } from "@/lib/api";
 import { considDoCondominio } from "@/domain/exercicio";
-import { documentosObrigatoriosPadrao } from "@/domain/condominio";
+import { cidadeDoCondominio, documentosObrigatoriosPadrao } from "@/domain/condominio";
 import { lerApoliceSeguro } from "@/domain/pdfParser";
 import type { ConsumoServico } from "@/domain/relatorioFinal";
 import type { Condominio, Exercicio } from "@/domain/types";
@@ -355,7 +355,9 @@ export function EditorConsideracoes({
             variant="outline"
             size="sm"
             className="mt-2"
-            onClick={() => set("documentosObrigatorios", documentosObrigatoriosPadrao())}
+            onClick={() =>
+              set("documentosObrigatorios", documentosObrigatoriosPadrao(cidadeDoCondominio(condominio)))
+            }
           >
             Usar checklist padrão
           </Button>
