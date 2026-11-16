@@ -28,14 +28,13 @@ describe('"Consumo de serviços" nunca mostra a expressão técnica da rubrica',
     const { documentoRelatorioFinal } = await import("@/documentos/relatorioFinal");
     const e = { id: "e1", ...exercicioPadrao(condo, 2025, "Florianópolis") } as Exercicio;
     e.relatorioFinal = { ...e.relatorioFinal, secoes: {} };
-    e.consid = { ...e.consid, elevadorRubrica: "manuten[çc][ãa]o.*elevador" };
+    // A seção imprime Água e Energia; elevadores saíram do relatório no commit 0bc4f10.
+    e.consid = { ...e.consid, aguaRubrica: "^[áa]gua" };
     e.demonstrativo = recalcularDemonstrativo({
       ...e.demonstrativo!,
       periodo: { ini: "01/01/2025", fim: "31/12/2025" },
       despesas: {
-        grupos: [
-          { nome: "Manutenção", itens: [{ nome: "Manutenção de elevadores", valor: 27784.81 }] },
-        ],
+        grupos: [{ nome: "Consumo", itens: [{ nome: "Água e esgoto", valor: 27784.81 }] }],
         subtotal: 0,
         saldoRestante: 0,
       },
@@ -58,7 +57,7 @@ describe('"Consumo de serviços" nunca mostra a expressão técnica da rubrica',
     expect(i).toBeGreaterThan(-1);
     const texto = textoDaTabela(doc.blocos[i + 1]!);
 
-    expect(texto).toContain("Manutenção de elevadores");
+    expect(texto).toContain("Água e esgoto");
     expect(texto).not.toMatch(/\[[cç]\]|\[[ãa]\]|\.\*/);
   });
 });
