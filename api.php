@@ -60,7 +60,7 @@ function resolver_id_condominio(PDO $pdo, array $o, string $idProposto): string 
 
 $ALVOS_LIMPEZA = [
   'condominios' => ['kr_indices_condominio', 'kr_condominios'],
-  'exercicios' => ['kr_exercicios'],
+  'exercicios' => ['kr_historico_rateios', 'kr_exercicios'],
   'mensais' => ['kr_mensais'],
   'assembleias' => ['kr_assembleias'],
   'atas' => ['kr_atas'],
@@ -82,7 +82,7 @@ function contar_tabela_seguro(PDO $pdo, string $tb): int {
   }
 }
 
-$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'modelos_ata', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao'];
+$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'modelos_ata', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao', 'historico_rateios'];
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try { $pdo = conectar(); }
@@ -110,6 +110,7 @@ $permissaoStore = [
   'anexos_importacao' => 'prestacao_contas',
   'decisoes_previsao' => 'previsao_orcamentaria',
   'decisoes_importacao' => 'importador',
+  'historico_rateios' => 'previsao_orcamentaria',
   'config' => 'escritorio',
 ];
 if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permissaoStore[$s])) {
@@ -119,6 +120,7 @@ if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permi
   $consumidores = [
     'condominios' => ['painel', 'prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'relatorio_mensal', 'editais', 'atas', 'importador', 'drive_documentos', 'consulta_documentos'],
     'exercicios' => ['painel', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
+    'historico_rateios' => ['previsao_orcamentaria'],
     'mensais' => ['prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
     'assembleias' => ['painel', 'atas'],
     'modelos' => ['editais'],
