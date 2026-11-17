@@ -20,13 +20,16 @@ confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
 Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
 `deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
-publicação: `deploy-hostinger` `b9c1b86`, com o pacote do commit `0b91e83`
-(main, versão 1.14 — histórico de rateios e documentos obrigatórios por cidade);
-o runtime `index-BCbBrELt.js` no ar coincide com o `index.html` publicado e o
-bundle `versoes` responde `versaoAtual: 1.14`. **A migration
-`migrations/20261116_historico_rateios.sql` precisa ser aplicada no banco de
-produção** — sem ela o botão "Travar rateio no histórico" avisa que não gravou
-(a tela não quebra, por causa de `listaQueryTolerante`). A publicação anterior,
+publicação: `deploy-hostinger` `5a599e6`, com o pacote do commit `4506ebd`
+(main, versão 1.14 — correção da previsão que calculava R$ 0,00 quando o
+condomínio não tinha exercício anterior); o runtime `index-xstmJ57l.js` no ar
+coincide com o `index.html` publicado, e o chunk
+`_authenticated.previsao-orcamentaria-CdRUT7LY.js` no servidor é idêntico ao
+gerado localmente (mesmo MD5), com a cadeia de fallback
+`anterior ?? próprio demonstrativo ?? vazio` no bundle. A migration
+`migrations/20261116_historico_rateios.sql` **já foi aplicada** em produção
+(16/11/2026). A publicação anterior, `b9c1b86` (`0b91e83`, versão 1.14),
+servia `index-BCbBrELt.js`; antes dela,
 `6f6bada` (`8effdd5`, versão 1.13), servia `index-B5URdVya.js`; antes dela,
 `846bd02` (`6221467`, versão 1.13), e `fc45795` (`c09bcdd`, versão 1.12), que
 servia `index-CnJmmVcJ.js`; antes dela, `c2eb968` (`92f853b`, versão 1.11),
