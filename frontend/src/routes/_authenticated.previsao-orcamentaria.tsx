@@ -30,7 +30,7 @@ import {
   prepararExercicio,
 } from "@/domain/exercicio";
 import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
-import { aplicarVariacaoDoHistorico, historicoDoExercicio } from "@/domain/historicoRateio";
+import { aplicarRateioBase, aplicarVariacaoDoHistorico, historicoDoExercicio } from "@/domain/historicoRateio";
 import type { Condominio, Exercicio, HistoricoRateio } from "@/domain/types";
 import { novoId } from "@/lib/id";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
@@ -202,10 +202,13 @@ function EditorPrevisao({
     demonstrativoBasePrevisao(e, exercicioAnterior) ??
     demonstrativo ??
     demonstrativoVazio(e.condoNome);
+  // Herda o rateioAtual do ano anterior antes de calcular a variação — sem isso, o fallback
+  // de aplicarVariacaoDoHistorico não tem base para comparar com o rateioAprovado e retorna 0%.
+  const eComRateioBase = aplicarRateioBase(e, historicoRateios);
   // Injeta a variação % do histórico de rateios quando o exercício não tem variação explícita.
   // Sem isso, o previsto anual fica igual à base (caso Lago Negro 2026: R$ 851.955,11 sem índice).
   const paramsComHistorico = aplicarVariacaoDoHistorico(
-    { ...e, indices: e.consid.indices },
+    { ...eComRateioBase, indices: eComRateioBase.consid?.indices },
     historicoRateios,
   );
   const resultado = useMemo(
