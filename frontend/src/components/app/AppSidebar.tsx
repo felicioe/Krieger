@@ -6,7 +6,9 @@ import {
   Building2,
   Calculator,
   CalendarRange,
+  ChartColumn,
   ChevronDown,
+  ChevronRight,
   CircleHelp,
   DatabaseBackup,
   FileSearch,
@@ -14,6 +16,7 @@ import {
   FileText,
   FileUp,
   FolderOpen,
+  FolderTree,
   GitCompareArrows,
   History,
   KeyRound,
@@ -21,12 +24,14 @@ import {
   LogOut,
   Megaphone,
   ScrollText,
+  Settings2,
   Trash2,
   UserRound,
   Users,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAbrirRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
@@ -43,11 +48,19 @@ type Item = {
   perigoso?: boolean;
 };
 
+type Grupo = {
+  /** `null` = itens soltos no topo, sem nó de árvore (uso diário). */
+  titulo: string | null;
+  icone?: LucideIcon;
+  itens: Item[];
+};
+
 /**
- * Menu agrupado por rotina do escritório. Painel e Condomínios ficam soltos no topo (uso diário);
- * os demais em três grupos. Todos os itens continuam a um clique — os grupos são só títulos.
+ * Menu em árvore, agrupado por rotina do escritório. Painel e Condomínios ficam soltos no topo
+ * (uso diário); os demais viram nós que abrem e fecham. O grupo da página atual abre sozinho e a
+ * escolha de cada grupo fica guardada no navegador.
  */
-export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
+export const GRUPOS_MENU: Grupo[] = [
   {
     titulo: null,
     itens: [
@@ -62,6 +75,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
   },
   {
     titulo: "Financeiro",
+    icone: Wallet,
     itens: [
       {
         titulo: "Prestação de contas",
@@ -85,6 +99,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
   },
   {
     titulo: "Relatórios",
+    icone: ChartColumn,
     itens: [
       {
         titulo: "Previsto × Realizado",
@@ -108,6 +123,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
   },
   {
     titulo: "Assembleias e documentos",
+    icone: FolderTree,
     itens: [
       { titulo: "Editais", to: "/editais", icone: Megaphone, permissao: "editais.visualizar" },
       { titulo: "Atas", to: "/atas", icone: ScrollText, permissao: "atas.visualizar" },
@@ -139,6 +155,7 @@ export const GRUPOS_MENU: { titulo: string | null; itens: Item[] }[] = [
   },
   {
     titulo: "Administração",
+    icone: Settings2,
     itens: [
       {
         titulo: "Importador",
@@ -172,6 +189,36 @@ const classeItem =
   "flex w-full items-center gap-3 border-l-4 border-transparent px-4 py-2 text-sm max-md:min-h-11 pointer-coarse:min-h-11 text-sidebar-foreground/85 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring";
 const classeAtivo =
   "bg-sidebar-accent border-sidebar-indicator text-sidebar-accent-foreground font-medium";
+
+/** Chave do navegador com os grupos fechados pela pessoa (só os fechados, para o padrão ser aberto). */
+const CHAVE_GRUPOS_FECHADOS = "krieger.menu.grupos-fechados";
+
+function lerGruposFechados(): string[] {
+  try {
+    const bruto = localStorage.getItem(CHAVE_GRUPOS_FECHADOS);
+    if (!bruto) return [];
+    const valor: unknown = JSON.parse(bruto);
+    return Array.isArray(valor) ? valor.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function gravarGruposFechados(fechados: string[]) {
+  try {
+    localStorage.setItem(CHAVE_GRUPOS_FECHADOS, JSON.stringify(fechados));
+  } catch {
+    // Navegador sem armazenamento (modo privado): a árvore só não lembra entre visitas.
+  }
+}
+
+/** Grupo que contém a página atual, para abri-lo sozinho ao navegar. */
+function grupoDaRota(pathname: string): string | null {
+  const grupo = GRUPOS_MENU.find(
+    (g) => g.titulo && g.itens.some((item) => item.to.split("?")[0] === pathname),
+  );
+  return grupo?.titulo ?? null;
+}
 
 function itemMenuAtivo(to: string, pathname: string, searchStr: string) {
   const [itemPath, itemSearch = ""] = to.split("?");
@@ -256,6 +303,41 @@ export function ConteudoMenu({
   const idMenu = useId();
   const abrirRegistro = useAbrirRegistroAlteracoes();
   const [contaAberta, setContaAberta] = useState(false);
+  const [fechados, setFechados] = useState<string[]>(() => lerGruposFechados());
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  // Grupo aberto por causa da página atual. Some quando a pessoa recolhe esse grupo na mão, para ela
+  // poder ver o menu recolhido mesmo estando dentro da página; volta a abrir na próxima navegação.
+  const [abertoDaRota, setAbertoDaRota] = useState<string | null>(() => grupoDaRota(pathname));
+  useEffect(() => {
+    setAbertoDaRota(grupoDaRota(pathname));
+  }, [pathname]);
+
+  function alternarGrupo(titulo: string, aberto: boolean) {
+    if (!aberto && abertoDaRota === titulo) setAbertoDaRota(null);
+    setFechados((atual) => {
+      const proximo = aberto ? atual.filter((t) => t !== titulo) : [...new Set([...atual, titulo])];
+      gravarGruposFechados(proximo);
+      return proximo;
+    });
+  }
+
+  function alternarTodos(abrir: boolean) {
+    const proximo = abrir ? [] : GRUPOS_MENU.flatMap((g) => (g.titulo ? [g.titulo] : []));
+    gravarGruposFechados(proximo);
+    setFechados(proximo);
+    setAbertoDaRota(null);
+  }
+
+  const gruposComTitulo = GRUPOS_MENU.filter((g) => g.titulo);
+  const todosAbertos = gruposComTitulo.every((g) => !fechados.includes(g.titulo!));
+
+  const visiveis = (g: Grupo) =>
+    g.itens.filter(
+      (item) =>
+        (!item.apenasAdmin || usuario?.perfil === "admin") &&
+        (!item.permissao || temPermissao(usuario, item.permissao)),
+    );
 
   async function encerrar() {
     aoNavegar?.();
@@ -274,33 +356,82 @@ export function ConteudoMenu({
         aria-label="Menu principal"
       >
         {GRUPOS_MENU.map((g, i) => {
+          const itens = visiveis(g);
+          if (itens.length === 0) return null;
           const idTitulo = `${idMenu}-grupo-${i}`;
+
+          // Itens soltos no topo (Painel, Condomínios): sem nó de árvore.
+          if (!g.titulo) {
+            return (
+              <ul key="inicio" className="pb-1">
+                {itens.map((item) => (
+                  <li key={item.to}>
+                    <ItemMenu item={item} aoNavegar={aoNavegar} />
+                  </li>
+                ))}
+              </ul>
+            );
+          }
+
+          const aberto = !fechados.includes(g.titulo) || g.titulo === abertoDaRota;
+          const IconeGrupo = g.icone;
           return (
-            <div key={g.titulo ?? "inicio"} className={cn(i > 0 && "mt-3")}>
-              {g.titulo && (
-                <p
-                  id={idTitulo}
-                  className="px-5 pb-1 pt-1 text-[0.6875rem] font-semibold uppercase tracking-wider text-sidebar-muted"
-                >
+            <Collapsible
+              key={g.titulo}
+              open={aberto}
+              onOpenChange={(v) => alternarGrupo(g.titulo!, v)}
+              className="mt-1"
+            >
+              <CollapsibleTrigger
+                className={cn(
+                  classeItem,
+                  "group gap-2 py-2.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-sidebar-muted hover:text-sidebar-accent-foreground",
+                )}
+              >
+                {IconeGrupo && (
+                  <IconeGrupo className="size-4 shrink-0 opacity-80" aria-hidden="true" />
+                )}
+                <span id={idTitulo} className="min-w-0 flex-1 text-left break-words">
                   {g.titulo}
-                </p>
-              )}
-              <ul aria-labelledby={g.titulo ? idTitulo : undefined}>
-                {g.itens
-                  .filter(
-                    (item) =>
-                      (!item.apenasAdmin || usuario?.perfil === "admin") &&
-                      (!item.permissao || temPermissao(usuario, item.permissao)),
-                  )
-                  .map((item) => (
+                </span>
+                <ChevronRight
+                  aria-hidden="true"
+                  className={cn(
+                    "size-4 shrink-0 transition-transform duration-200",
+                    aberto && "rotate-90",
+                  )}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                {/* Guia vertical: mostra que os itens pertencem ao grupo acima. */}
+                <ul
+                  aria-labelledby={idTitulo}
+                  className="ml-5 border-l border-sidebar-border/70 pl-1"
+                >
+                  {itens.map((item) => (
                     <li key={item.to}>
                       <ItemMenu item={item} aoNavegar={aoNavegar} />
                     </li>
                   ))}
-              </ul>
-            </div>
+                </ul>
+              </CollapsibleContent>
+            </Collapsible>
           );
         })}
+        <div className="mt-2 border-t border-sidebar-border/60 px-2 pt-2">
+          <button
+            type="button"
+            onClick={() => alternarTodos(!todosAbertos)}
+            className="flex w-full items-center gap-2 rounded px-3 py-2 text-xs text-sidebar-muted transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring max-md:min-h-11 pointer-coarse:min-h-11"
+          >
+            {todosAbertos ? (
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="size-3.5 shrink-0" aria-hidden="true" />
+            )}
+            {todosAbertos ? "Recolher todos os grupos" : "Expandir todos os grupos"}
+          </button>
+        </div>
       </nav>
       <Collapsible
         open={contaAberta}
