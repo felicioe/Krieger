@@ -195,11 +195,11 @@ function EditorPrevisao({
 
   // A base é o realizado do exercício ANTERIOR (fechado) — nunca o demonstrativo do próprio
   // exercício em edição, que vai sendo preenchido ao longo do ano e não pode servir de base móvel
-  // pra uma previsão que precisa ficar estável. Sem exercício anterior (primeira prestação do
-  // condomínio), cai no próprio demonstrativo. Mesma regra de domain/relatorioFinal.ts e das
-  // demais telas que calculam a previsão de um exercício (docs/ESPECIFICACAO-V2.md).
+  // pra uma previsão que precisa ficar estável. `demonstrativoBasePrevisao` devolve null só para
+  // exercício aberto SEM anterior; aí a regra da primeira prestação (docs/ESPECIFICACAO-V2.md)
+  // manda usar o próprio demonstrativo — base móvel é o preço aceitável de não calcular R$ 0,00.
   const demonstrativoBase =
-    demonstrativoBasePrevisao(e, exercicioAnterior) ?? demonstrativoVazio(e.condoNome);
+    demonstrativoBasePrevisao(e, exercicioAnterior) ?? demonstrativo ?? demonstrativoVazio(e.condoNome);
   const resultado = useMemo(
     () => calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades),
     [demonstrativoBase, e, unidades],
