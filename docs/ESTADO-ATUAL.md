@@ -11,9 +11,9 @@ rateio no histórico** em `PainelPrevisao` (tela de previsão orçamentária) e 
 Systemar na prestação de contas, que registra uma vez por ano sem depender de clique. O exercício
 seguinte herda `rateioAtual` do aprovado do ano anterior quando o campo está vazio.
 
-**Migration pendente.** `migrations/20261116_historico_rateios.sql` cria a tabela; `schema.sql` já
-traz a mesma definição. Aplicar no banco de produção **antes** de publicar o pacote — sem a tabela,
-o store `historico_rateios` responde erro e o botão de travar falha.
+**Migration aplicada.** `migrations/20261116_historico_rateios.sql` cria a tabela `kr_historico_rateios`;
+`schema.sql` traz a mesma definição. Executada no banco de produção em **16/11/2026**, antes da
+publicação do pacote.
 
 **Documentos obrigatórios por cidade.** `documentosObrigatoriosPadrao(cidade?)` e
 `filtrarDocumentosPorCidade` (`domain/condominio.ts`) mantêm o "Alvará Estrutural" só em Balneário
