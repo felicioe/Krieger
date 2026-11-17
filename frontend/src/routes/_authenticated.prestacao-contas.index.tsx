@@ -98,7 +98,7 @@ function ListaExercicios() {
         // Previsão: usa a base do exercício anterior e injeta a variação % do histórico quando existir.
         const baseAnterior = demonstrativoBasePrevisao(e, encontrarExercicioAnterior(todos, e));
         const demonstrativoBase = baseAnterior ?? e.demonstrativo;
-        const eComHistorico = aplicarVariacaoDoHistorico(e, historicos);
+        const eComHistorico = aplicarVariacaoDoHistorico(e, historicoRateios);
         const r = calcularPrevisao(
           demonstrativoBase,
           { ...eComHistorico, indices: eComHistorico.condominio?.indices ?? [] },
