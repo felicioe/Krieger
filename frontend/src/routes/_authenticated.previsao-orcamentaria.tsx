@@ -199,7 +199,9 @@ function EditorPrevisao({
   // exercício aberto SEM anterior; aí a regra da primeira prestação (docs/ESPECIFICACAO-V2.md)
   // manda usar o próprio demonstrativo — base móvel é o preço aceitável de não calcular R$ 0,00.
   const demonstrativoBase =
-    demonstrativoBasePrevisao(e, exercicioAnterior) ?? demonstrativo ?? demonstrativoVazio(e.condoNome);
+    demonstrativoBasePrevisao(e, exercicioAnterior) ??
+    demonstrativo ??
+    demonstrativoVazio(e.condoNome);
   const resultado = useMemo(
     () => calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades),
     [demonstrativoBase, e, unidades],
