@@ -1,7 +1,8 @@
 import { centavos } from "./demonstrativo";
+import { aplicarVariacaoDoHistorico } from "./historicoRateio";
 import { calcularPrevisao, expressaoDeducao } from "./previsao";
 import { competenciaMensal, mesAnoDe } from "./mensal";
-import type { Condominio, DePara, Demonstrativo, Exercicio, Mensal } from "./types";
+import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
 
 /**
  * Comparativo Previsto × Realizado.
@@ -82,6 +83,8 @@ export interface OpcoesComparativo {
   /** Base pra projetar a previsão (ver `demonstrativoBasePrevisao`, em `previsao.ts`) — o realizado
    * do exercício anterior. Sem isso, cai no demonstrativo do próprio `exercicio` (compatibilidade). */
   demonstrativoBase?: Demonstrativo | null;
+  /** Histórico de rateios — fonte do índice anual aprovado quando o exercício não tem variação explícita. */
+  historicoRateios?: HistoricoRateio[];
 }
 
 const p2 = (n: number) => String(n).padStart(2, "0");
@@ -172,12 +175,14 @@ export function compararPrevistoRealizado(
   const re = expressaoDeducao(exercicio.deducaoRegex);
 
   // Previsão do exercício N, aberta por despesa (os totais por grupo são os mesmos do modo tradicional).
+  // Injeta a variação % do histórico (ou do rateioAtual/rateioAprovado) quando não há variação explícita.
+  const exercicioComHistorico = aplicarVariacaoDoHistorico(exercicio, opcoes.historicoRateios ?? []);
   const prev = calcularPrevisao(
-    opcoes.demonstrativoBase ?? exercicio.demonstrativo,
+    opcoes.demonstrativoBase ?? exercicioComHistorico.demonstrativo,
     {
-      ...exercicio,
-      indices: exercicio.consid?.indices,
-      prev: { ...(exercicio.prev ?? { modo: "tradicional" }), modo: "detalhado" },
+      ...exercicioComHistorico,
+      indices: exercicioComHistorico.consid?.indices,
+      prev: { ...(exercicioComHistorico.prev ?? { modo: "tradicional" }), modo: "detalhado" },
     },
     opcoes.condominio?.unidades ?? null,
   );

@@ -21,7 +21,7 @@ import { api } from "@/lib/api";
 import { baixarDocumento, ROTULO_FORMATO, type Formato } from "@/lib/documento/baixar";
 import { documentoRelatorioFinal } from "@/documentos/relatorioFinal";
 import { useUsuario } from "@/lib/auth";
-import { chaves, itemQuery, listaQuery } from "@/lib/queries";
+import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
@@ -31,7 +31,8 @@ import {
   prepararExercicio,
 } from "@/domain/exercicio";
 import { alternarSecao, montarRelatorioFinal, SECOES } from "@/domain/relatorioFinal";
-import type { Condominio, ConfigEscritorio, Exercicio, Mensal } from "@/domain/types";
+import { aplicarVariacaoDoHistorico } from "@/domain/historicoRateio";
+import type { Condominio, ConfigEscritorio, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
 import { contagem, palavra } from "@/components/app/textos";
 
 export const Route = createFileRoute("/_authenticated/relatorio-final/$id")({
@@ -47,6 +48,7 @@ export const Route = createFileRoute("/_authenticated/relatorio-final/$id")({
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
     ]);
     if (!e) throw notFound();
     return null;
@@ -77,6 +79,9 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   const { data: escritorio } = useSuspenseQuery(
     itemQuery<ConfigEscritorio>("config", "escritorio"),
   );
+  const { data: historicoRateios } = useSuspenseQuery(
+    listaQueryTolerante<HistoricoRateio>("historico_rateios"),
+  );
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [aba, setAba] = useState("previa");
@@ -91,16 +96,22 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   // próprio exercício — pra este relatório nunca divergir da previsão aprovada ali.
   const exercicios = useMemo(() => exerciciosRaw.map(normalizarExercicio), [exerciciosRaw]);
   const exercicioAnterior = encontrarExercicioAnterior(exercicios, e);
+  // O índice aprovado do histórico entra como variação quando o exercício não tem uma definida.
+  const eComHistorico = useMemo(
+    () => aplicarVariacaoDoHistorico(e, historicoRateios),
+    [e, historicoRateios],
+  );
   const rel = useMemo(
     () =>
       montarRelatorioFinal({
-        exercicio: e,
+        exercicio: eComHistorico,
         exercicioAnterior: exercicioAnterior ?? null,
         condominio: condo,
         escritorio,
         mensais,
+        historicoRateios,
       }),
-    [e, exercicioAnterior, condo, escritorio, mensais],
+    [eComHistorico, exercicioAnterior, condo, escritorio, mensais, historicoRateios],
   );
   const sujo = JSON.stringify(e) !== salvoJson;
   const mudar = (parcial: Partial<Exercicio>) =>

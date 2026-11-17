@@ -25,7 +25,7 @@ import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportac
 import { Field } from "@/components/app/Field";
 import { DataInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { api } from "@/lib/api";
-import { chaves, itemQuery, listaQuery } from "@/lib/queries";
+import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
@@ -38,6 +38,7 @@ import {
 } from "@/domain/exercicio";
 import { mesesNoPeriodo } from "@/domain/demonstrativo";
 import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
+import { aplicarVariacaoDoHistorico } from "@/domain/historicoRateio";
 import {
   calcularPrevisaoSugerida,
   chaveDivergencia,
@@ -53,6 +54,7 @@ export const Route = createFileRoute("/_authenticated/prestacao-contas/")({
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
     ]),
   component: ListaExercicios,
 });
@@ -75,6 +77,9 @@ function ListaExercicios() {
   const navigate = useNavigate();
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
+  const { data: historicoRateios } = useSuspenseQuery(
+    listaQueryTolerante<HistoricoRateio>("historico_rateios"),
+  );
   const [busca, setBusca] = useState("");
   const [novoAberto, setNovoAberto] = useState(false);
 
@@ -90,13 +95,13 @@ function ListaExercicios() {
         // comparativo também gravam o subtotal correto. Não usa a base de previsão, que pode vir
         // do exercício anterior e mascarar o valor real do período.
         const despesasRealizadas = e.demonstrativo?.despesas?.subtotal ?? 0;
-        // Previsão: continua usando a base do exercício anterior para não divergir da previsão
-        // aprovada no editor.
+        // Previsão: usa a base do exercício anterior e injeta a variação % do histórico quando existir.
         const baseAnterior = demonstrativoBasePrevisao(e, encontrarExercicioAnterior(todos, e));
         const demonstrativoBase = baseAnterior ?? e.demonstrativo;
+        const eComHistorico = aplicarVariacaoDoHistorico(e, historicos);
         const r = calcularPrevisao(
           demonstrativoBase,
-          { ...e, indices: e.consid.indices },
+          { ...eComHistorico, indices: eComHistorico.condominio?.indices ?? [] },
           condo?.unidades ?? null,
         );
         return {

@@ -114,3 +114,46 @@ export function aplicarRateioBase<
   const base = rateioBaseDoAno(linhas, e.condoId, Number(e.ano));
   return base === null ? e : { ...e, rateioAtual: base };
 }
+
+/**
+ * Injeta a variação % nos parâmetros de previsão quando o exercício não tem variação explícita
+ * (variacaoMetodo === "manual" e variacao === 0). Tenta primeiro o histórico de rateios; se não
+ * houver dados suficientes (ex.: primeira prestação do condomínio), usa o rateioAtual e o
+ * rateioAprovado do próprio exercício como fallback — sem isso, o previsto fica igual à base e
+ * ignora o índice aprovado (caso Lago Negro 2026: R$ 851.955,11 sem acréscimo).
+ *
+ * Retorna uma cópia dos parâmetros com variacao/variacaoParam preenchidos; se já houver variação
+ * definida ou não houver base para calcular, devolve os parâmetros originais.
+ */
+export function aplicarVariacaoDoHistorico<T extends {
+  condoId?: string;
+  ano?: number | string;
+  variacao?: number | null;
+  variacaoMetodo?: string;
+  variacaoParam?: number | null;
+  rateioAtual?: number | null;
+  rateioAprovado?: number | null;
+}>(params: T, linhas: HistoricoRateio[]): T {
+  if (!params.condoId || params.ano == null) return params;
+  // Só injeta quando não há variação explícita no exercício (padrão "manual" com zero).
+  if (params.variacaoMetodo && params.variacaoMetodo !== "manual") return params;
+  if (params.variacao && params.variacao !== 0) return params;
+  if (params.variacaoParam && params.variacaoParam !== 0) return params;
+
+  // Tenta o histórico primeiro.
+  let pct = variacaoDoAno(linhas, params.condoId, Number(params.ano), null);
+
+  // Fallback: calcula a variação entre rateioAtual (base herdada) e rateioAprovado do exercício.
+  if ((pct === null || pct === 0) && params.rateioAtual && params.rateioAprovado) {
+    pct = calcularVariacao(params.rateioAtual, params.rateioAprovado);
+  }
+
+  if (pct === null || pct === 0) return params;
+
+  return {
+    ...params,
+    variacao: pct,
+    variacaoMetodo: "percentual",
+    variacaoParam: pct,
+  };
+}

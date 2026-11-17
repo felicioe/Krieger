@@ -23,7 +23,7 @@ import {
 } from "@/components/previsto-realizado/TabelaComparativo";
 import { AvisoSemRealizado } from "@/components/previsto-realizado/AvisoSemRealizado";
 import { periodoComparacao, semRealizado } from "@/components/previsto-realizado/semRealizado";
-import { itemQuery, listaQuery } from "@/lib/queries";
+import { itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
 import { documentoPrevistoRealizado } from "@/documentos/previstoRealizado";
 import { formatBRL } from "@/lib/format";
@@ -36,7 +36,7 @@ import {
   TOLERANCIA_PADRAO,
   type Totais,
 } from "@/domain/previstoRealizado";
-import type { Condominio, ConfigEscritorio, Exercicio, Mensal } from "@/domain/types";
+import type { Condominio, ConfigEscritorio, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
 import { contagem } from "@/components/app/textos";
 
 type Busca = { exercicio?: string; ate?: number };
@@ -58,6 +58,7 @@ export const Route = createFileRoute("/_authenticated/previsto-realizado")({
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
     ]),
   component: PaginaComparativo,
 });
@@ -70,6 +71,10 @@ function PaginaComparativo() {
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const { data: escritorio } = useSuspenseQuery(
     itemQuery<ConfigEscritorio>("config", "escritorio"),
+  );
+  // Tolerante: se a tabela ainda não existir no servidor, a tela continua funcionando.
+  const { data: historicoRateios } = useSuspenseQuery(
+    listaQueryTolerante<HistoricoRateio>("historico_rateios"),
   );
   const [tolerancia, setTolerancia] = useState<number | null>(TOLERANCIA_PADRAO);
   const [mostrarAnaliticas, setMostrarAnaliticas] = useState(true);
@@ -100,9 +105,10 @@ function PaginaComparativo() {
             mesAte: busca.ate ?? null,
             tolerancia,
             demonstrativoBase: demonstrativoBasePrevisao(exercicio, exercicioAnterior),
+            historicoRateios,
           })
         : null,
-    [exercicio, mensais, condo, busca.ate, tolerancia, exercicioAnterior],
+    [exercicio, mensais, condo, busca.ate, tolerancia, exercicioAnterior, historicoRateios],
   );
 
   const cabeca = (

@@ -30,7 +30,7 @@ import {
   prepararExercicio,
 } from "@/domain/exercicio";
 import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
-import { historicoDoExercicio } from "@/domain/historicoRateio";
+import { aplicarVariacaoDoHistorico, historicoDoExercicio } from "@/domain/historicoRateio";
 import type { Condominio, Exercicio, HistoricoRateio } from "@/domain/types";
 import { novoId } from "@/lib/id";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
@@ -202,9 +202,15 @@ function EditorPrevisao({
     demonstrativoBasePrevisao(e, exercicioAnterior) ??
     demonstrativo ??
     demonstrativoVazio(e.condoNome);
+  // Injeta a variação % do histórico de rateios quando o exercício não tem variação explícita.
+  // Sem isso, o previsto anual fica igual à base (caso Lago Negro 2026: R$ 851.955,11 sem índice).
+  const paramsComHistorico = aplicarVariacaoDoHistorico(
+    { ...e, indices: e.consid.indices },
+    historicoRateios,
+  );
   const resultado = useMemo(
-    () => calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades),
-    [demonstrativoBase, e, unidades],
+    () => calcularPrevisao(demonstrativoBase, paramsComHistorico, unidades),
+    [demonstrativoBase, paramsComHistorico, unidades],
   );
 
   const parcial = resultado.rateioSugerido === null;

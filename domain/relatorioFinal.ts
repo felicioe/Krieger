@@ -2,6 +2,7 @@ import { formatBRL } from "../lib/format";
 import { centavos } from "./demonstrativo";
 import { normalizarMensal, competenciaMensal, mesAnoDe, ordemCompetencia, rotuloCompetencia } from "./mensal";
 import { calcularPrevisao, demonstrativoBasePrevisao, expressaoDeducao, type ResultadoPrevisao } from "./previsao";
+import { aplicarVariacaoDoHistorico } from "./historicoRateio";
 import {
   calcularPrevisaoSugerida,
   calcularPrevisaoSugeridaPorUnidade,
@@ -9,7 +10,7 @@ import {
   type ResultadoPrevisaoSugeridaPorUnidade,
 } from "./previsaoSugerida";
 import { compararPrevistoRealizado, type ResultadoComparativo } from "./previstoRealizado";
-import type { Condominio, ConfigEscritorio, Demonstrativo, Exercicio, Mensal } from "./types";
+import type { Condominio, ConfigEscritorio, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
 
 /**
  * Relatório final da prestação de contas: monta, a partir de um exercício, todas as seções
@@ -260,6 +261,8 @@ export function montarRelatorioFinal(entrada: {
   /** Exercício anterior do mesmo condomínio — base da previsão deste (ver `demonstrativoBasePrevisao`,
    * em `previsao.ts`). Sem isso, a previsão cai no demonstrativo do próprio exercício. */
   exercicioAnterior?: Pick<Exercicio, "demonstrativo"> | null;
+  /** Histórico de rateios travados — fonte do índice anual aprovado (ver `aplicarVariacaoDoHistorico`). */
+  historicoRateios?: HistoricoRateio[];
   condominio: Condominio | null;
   escritorio: ConfigEscritorio | null;
   mensais: Mensal[];
@@ -295,7 +298,9 @@ export function montarRelatorioFinal(entrada: {
   // Codex no PR #108, que pegou uma leitura errada desse campo antes de publicar).
   const unidades = condominio?.unidades ?? null;
   const demonstrativoBase = demonstrativoBasePrevisao(e, entrada.exercicioAnterior) ?? e.demonstrativo;
-  const previsao = calcularPrevisao(demonstrativoBase, { ...e, indices: e.consid.indices }, unidades);
+  // Injeta a variação % do histórico (ou do rateioAtual/rateioAprovado) quando não há variação explícita.
+  const eComHistorico = aplicarVariacaoDoHistorico(e, entrada.historicoRateios ?? []);
+  const previsao = calcularPrevisao(demonstrativoBase, { ...eComHistorico, indices: eComHistorico.consid?.indices }, unidades);
   const previsaoSugerida = e.previsaoSugerida
     ? calcularPrevisaoSugerida(e.previsaoSugerida, e.arredondamento)
     : null;
