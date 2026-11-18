@@ -135,13 +135,17 @@ export function aplicarVariacaoDoHistorico<T extends {
   rateioAprovado?: number | null;
 }>(params: T, linhas: HistoricoRateio[]): T {
   if (!params.condoId || params.ano == null) return params;
-  // Só injeta quando não há variação explícita no exercício (padrão "manual" com zero).
-  if (params.variacaoMetodo && params.variacaoMetodo !== "manual") return params;
+  // Só injeta quando não há variação explícita no exercício. Aceita "manual" ou "percentual"
+  // desde que o valor seja zero — caso comum de exercícios recém-criados onde o método já vem
+  // como "percentual" mas sem valor definido.
+  const metodo = params.variacaoMetodo ?? "manual";
+  if (metodo !== "manual" && metodo !== "percentual") return params;
   if (params.variacao && params.variacao !== 0) return params;
   if (params.variacaoParam && params.variacaoParam !== 0) return params;
 
-  // Tenta o histórico primeiro.
-  let pct = variacaoDoAno(linhas, params.condoId, Number(params.ano), null);
+  // Busca a variação apurada no exercício ANTERIOR (ano - 1): é esse índice que se aplica
+  // à previsão do exercício atual. Ex.: previsão de 2026 usa a variação calculada em 2025.
+  let pct = variacaoDoAno(linhas, params.condoId, Number(params.ano) - 1, null);
 
   // Fallback: calcula a variação entre rateioAtual (base herdada) e rateioAprovado do exercício.
   if ((pct === null || pct === 0) && params.rateioAtual && params.rateioAprovado) {
