@@ -149,7 +149,13 @@ export function aplicarVariacaoDoHistorico<T extends {
   const linhaAnterior = historicoDoAno(linhas, params.condoId, Number(params.ano) - 1);
   let pct = linhaAnterior?.variacao ?? null;
 
-  // Fallback: calcula a variação entre rateioAtual (base herdada) e rateioAprovado do exercício.
+  // Quando o campo variacao da linha anterior for null (ex.: primeira prestação sem base),
+  // recalcula a partir dos rateios gravados naquela mesma linha.
+  if ((pct === null || pct === 0) && linhaAnterior?.rateioAtual && linhaAnterior?.rateioAprovado) {
+    pct = calcularVariacao(linhaAnterior.rateioAtual, linhaAnterior.rateioAprovado);
+  }
+
+  // Último fallback: calcula a variação entre rateioAtual e rateioAprovado do próprio exercício.
   if ((pct === null || pct === 0) && params.rateioAtual && params.rateioAprovado) {
     pct = calcularVariacao(params.rateioAtual, params.rateioAprovado);
   }
