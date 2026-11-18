@@ -133,26 +133,16 @@ export function somarAjustes(ajustes: AjustePrevisao[] | undefined) {
   return { mais: centavos(mais), menos: centavos(menos) };
 }
 
-/** Base financeira pra projetar a previsão de um exercício: o realizado do exercício anterior
- * (já fechado) — nunca o demonstrativo do próprio exercício, que vai sendo preenchido ao longo do
- * ano e não pode servir de base móvel pra uma previsão que precisa ficar estável. Sem exercício
- * anterior (primeira prestação do condomínio), cai no demonstrativo do próprio. Usada por todo
- * consumidor da previsão (editor, relatório final, previsto × realizado, listagens) pra nunca
- * divergir sobre de onde ela parte. */
+/** Base financeira pra projetar a previsão de um exercício: o demonstrativo do PRÓPRIO exercício
+ * (despesas realizadas do período em análise). A variação percentual é calculada sobre essa base
+ * para projetar o exercício seguinte. Ex.: previsão de 2026 usa as despesas de 2026 + ajustes
+ * para calcular o valor a aplicar em 2027. Usada por todo consumidor da previsão (editor,
+ * relatório final, previsto × realizado, listagens) pra nunca divergir sobre de onde ela parte. */
 export function demonstrativoBasePrevisao(
   exercicio: Pick<Exercicio, "demonstrativo" | "fechado" | "fechamento">,
-  exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null | undefined,
+  _exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null | undefined,
 ): Demonstrativo | null {
-  // Exercício fechado: usa o snapshot do anterior gravado no fechamento; se não houver,
-  // cai no próprio demonstrativo (o exercício já foi consolidado com esses dados).
-  if (exercicio.fechado) {
-    return exercicio.fechamento?.exercicioAnterior?.demonstrativo ?? exercicio.demonstrativo;
-  }
-  // Exercício aberto: usa o anterior se existir; se não houver anterior,
-  // retorna null para evitar que o demonstrativo do próprio exercício vaze como base
-  // (foi o caso do Urban/Lago Negro com valores duplicados na lista).
-  // A lista de exercícios vai lidar com null usando o próprio demonstrativo como fallback.
-  return exercicioAnterior?.demonstrativo ?? null;
+  return exercicio.demonstrativo ?? null;
 }
 
 export function calcularPrevisao(

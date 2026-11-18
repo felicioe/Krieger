@@ -262,12 +262,15 @@ describe("relatório final", () => {
     expect(item?.detalhe).toMatch(/rateio aprovado ainda não informado/);
   });
 
-  it("previsão usa o realizado do exercicioAnterior como base, não o do próprio exercício (achado do Codex no PR #170: evita divergir do editor)", () => {
+  it("previsão usa o demonstrativo do próprio exercício como base (regra original restaurada)", () => {
     const anterior = exercicio(0);
     anterior.demonstrativo!.despesas = { grupos: [{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 500000 }] }], subtotal: 0, saldoRestante: 0 };
     const semAnterior = montarRelatorioFinal({ exercicio: exercicio(4000), condominio: condo, escritorio: null, mensais: [] });
     const comAnterior = montarRelatorioFinal({ exercicio: exercicio(4000), exercicioAnterior: anterior, condominio: condo, escritorio: null, mensais: [] });
+    // A base é sempre o demonstrativo do próprio exercício (despesas realizadas do período em análise),
+    // independente de existir ou não um exercício anterior. A variação % é aplicada sobre essa base
+    // para projetar o exercício seguinte.
     expect(semAnterior.previsao.base).toBe(2000); // demonstrativo do próprio exercício-base de teste (1200 + 800)
-    expect(comAnterior.previsao.base).toBe(500000); // demonstrativo do exercicioAnterior, não o do próprio
+    expect(comAnterior.previsao.base).toBe(2000); // mesmo valor: base é o próprio exercício, não o anterior
   });
 });
