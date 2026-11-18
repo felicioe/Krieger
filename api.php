@@ -400,10 +400,19 @@ try {
       if ($s === 'anexos_importacao' && $param('metadados') === '1') {
         saida(listar_metadados_anexos($pdo, id_valido($param('exercicioId'))));
       }
+      if ($s === 'historico_rateios') {
+        $linhas = $pdo->query('SELECT id FROM ' . $tb)->fetchAll();
+        saida(array_values(array_filter(array_map(function($r) use ($pdo, $s) {
+          return ler_registro_exercicio($pdo, $s, (string)$r['id']);
+        }, $linhas))));
+      }
       $linhas = $pdo->query('SELECT dados FROM ' . $tb)->fetchAll();
       saida(array_map(function($r) use ($pdo, $s) { $o = json_decode($r['dados'], true); return $s === 'condominios' ? incluir_indices_tabela($pdo, $o) : $o; }, $linhas));
 
     case 'obter':
+      if ($s === 'historico_rateios' || $s === 'exercicios') {
+        saida(ler_registro_exercicio($pdo, $s, id_valido($param('id'))));
+      }
       $stmt = $pdo->prepare('SELECT dados FROM ' . $tb . ' WHERE id = ?');
       $stmt->execute([id_valido($param('id'))]);
       $r = $stmt->fetch();
