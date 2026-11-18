@@ -104,6 +104,7 @@ function PaginaComparativo() {
             condominio: condo ?? null,
             mesAte: busca.ate ?? null,
             tolerancia,
+            // Mantém a mesma base financeira usada na previsão aprovada.
             demonstrativoBase: demonstrativoBasePrevisao(exercicio, exercicioAnterior),
             historicoRateios,
           })
