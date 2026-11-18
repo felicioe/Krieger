@@ -143,9 +143,11 @@ export function aplicarVariacaoDoHistorico<T extends {
   if (params.variacao && params.variacao !== 0) return params;
   if (params.variacaoParam && params.variacaoParam !== 0) return params;
 
-  // Busca a variação apurada no exercício ANTERIOR (ano - 1): é esse índice que se aplica
-  // à previsão do exercício atual. Ex.: previsão de 2026 usa a variação calculada em 2025.
-  let pct = variacaoDoAno(linhas, params.condoId, Number(params.ano) - 1, null);
+  // Busca a variação % já gravada na linha do exercício ANTERIOR (ano - 1). É esse índice
+  // apurado que se aplica à previsão do exercício atual. Ex.: previsão de 2026 usa a variação
+  // de ~15,26% calculada e travada em 2025, não um recálculo entre rateios.
+  const linhaAnterior = historicoDoAno(linhas, params.condoId, Number(params.ano) - 1);
+  let pct = linhaAnterior?.variacao ?? null;
 
   // Fallback: calcula a variação entre rateioAtual (base herdada) e rateioAprovado do exercício.
   if ((pct === null || pct === 0) && params.rateioAtual && params.rateioAprovado) {
