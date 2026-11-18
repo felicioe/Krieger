@@ -263,8 +263,11 @@ function EditorPrevisao({
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
       queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
 
+      // Garante que rateioAtual esteja preenchido (herdado do ano anterior) antes de calcular
+      // a variacao. Sem isso, calcularVariacao(null, 370) retorna null e o historico fica sem %.
+      const nComRateioBase = aplicarRateioBase(n, historicoRateios);
       const linha = historicoDoExercicio(
-        { ...n, rateioAprovado: aprovado },
+        { ...nComRateioBase, rateioAprovado: aprovado },
         aprovado,
         "calculo",
         new Date().toISOString(),
