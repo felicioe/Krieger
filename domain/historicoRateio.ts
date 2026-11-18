@@ -135,11 +135,7 @@ export function aplicarVariacaoDoHistorico<T extends {
   rateioAprovado?: number | null;
 }>(params: T, linhas: HistoricoRateio[]): T {
   if (!params.condoId || params.ano == null) return params;
-  // Só injeta quando não há variação explícita no exercício. Aceita "manual" ou "percentual"
-  // desde que o valor seja zero — caso comum de exercícios recém-criados onde o método já vem
-  // como "percentual" mas sem valor definido.
-  const metodo = params.variacaoMetodo ?? "manual";
-  if (metodo !== "manual" && metodo !== "percentual") return params;
+  // Só injeta quando não há variação explícita no exercício (valor diferente de zero).
   if (params.variacao && params.variacao !== 0) return params;
   if (params.variacaoParam && params.variacaoParam !== 0) return params;
 
