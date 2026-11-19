@@ -420,73 +420,44 @@ function RelatorioPrevisao({
   const exportandoRef = useRef(false);
   // No modo relatórios:
   // - Realizado = despesas do exercício ANTERIOR (2025) → demonstrativoBase
-  // - Previsto = valor já imputado para o exercício ATUAL (2026) → exercicio.demonstrativo
+  // - Previsto = base de 2025 × fator (1 + variação%) → cálculo da previsão
   // - Variação = (Previsto − Realizado) / Realizado × 100
   const demonstrativoRealizado = demonstrativoBase ?? demonstrativoVazio(exercicio.condoNome);
-  const demonstrativoPrevisto = exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
+  const fator = 1 + resultado.variacaoPct / 100;
 
   const gruposRealizado = demonstrativoRealizado.despesas.grupos;
-  const gruposPrevisto = demonstrativoPrevisto.despesas.grupos;
 
-  // Mapeia grupos e itens por NOME normalizado (sem acento/case) para evitar
-  // mismatch por índice quando a ordem ou quantidade difere entre os exercícios.
-  const norm = (s: string) =>
-    (s ?? "")
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .trim();
-
-  const mapaGruposReal = new Map(gruposRealizado.map((g) => [norm(g.nome), g]));
-
-  const linhas = gruposPrevisto.flatMap((grupoPrev) => {
-    // Se o grupo não existia em 2025, realizado = 0 (nova despesa em 2026).
-    const grupoRealEncontrado = mapaGruposReal.get(norm(grupoPrev.nome));
-    const temGrupoReal = grupoRealEncontrado != null;
-    const grupoReal = grupoRealEncontrado ?? { itens: [] as typeof grupoPrev.itens };
-    const mapaItensReal = new Map(
-      grupoReal.itens.map((it) => [norm(it.nome), it]),
-    );
-
+  // Itera sobre os grupos do REALIZADO (2025) e aplica o fator para gerar o PREVISTO.
+  const linhas = gruposRealizado.flatMap((grupoReal) => {
     return detalhado
-      ? grupoPrev.itens.map((itemPrev) => {
-          const itemRealEncontrado = mapaItensReal.get(norm(itemPrev.nome));
-          const previsto = Number(itemPrev.valor) || 0;
-          // Se o item não existia em 2025, realizado = 0.
-          const realizado = itemRealEncontrado
-            ? Number(itemRealEncontrado.valor) || 0
-            : 0;
+      ? grupoReal.itens.map((itemReal) => {
+          const realizado = Number(itemReal.valor) || 0;
+          const previsto = realizado * fator;
           const variacaoPct =
             realizado > 0 ? ((previsto - realizado) / realizado) * 100 : 0;
           return {
-            nome: itemPrev.nome || "Sem nome",
+            nome: itemReal.nome || "Sem nome",
             realizado,
             previsto,
             variacaoPct,
-            grupo: grupoPrev.nome,
+            grupo: grupoReal.nome,
           };
         })
       : [
           (() => {
-            const previsto = grupoPrev.itens.reduce(
+            const realizado = grupoReal.itens.reduce(
               (s, item) => s + (Number(item.valor) || 0),
               0,
             );
-            // Se o grupo inteiro não existia em 2025, realizado = 0.
-            const realizado = temGrupoReal
-              ? grupoReal.itens.reduce(
-                  (s, item) => s + (Number(item.valor) || 0),
-                  0,
-                )
-              : 0;
+            const previsto = realizado * fator;
             const variacaoPct =
               realizado > 0 ? ((previsto - realizado) / realizado) * 100 : 0;
             return {
-              nome: grupoPrev.nome || "Sem grupo",
+              nome: grupoReal.nome || "Sem grupo",
               realizado,
               previsto,
               variacaoPct,
-              grupo: grupoPrev.nome,
+              grupo: grupoReal.nome,
             };
           })(),
         ];
