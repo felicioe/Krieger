@@ -441,39 +441,56 @@ function RelatorioPrevisao({
   // Itera sobre os grupos do REALIZADO (2026) e cruza com a base (2025) para gerar o PREVISTO.
   const linhas = gruposRealizado.flatMap((grupoReal) => {
     const grupoBase = mapaGruposBase.get(norm(grupoReal.nome));
+    // Previsto do grupo = soma da base (2025) × fator — mesmo valor nos dois modos.
+    const baseTotal = grupoBase
+      ? grupoBase.itens.reduce((s, item) => s + (Number(item.valor) || 0), 0)
+      : 0;
+    const previstoGrupo = baseTotal * fator;
+    const realizadoGrupo = grupoReal.itens.reduce(
+      (s, item) => s + (Number(item.valor) || 0),
+      0,
+    );
+
     return detalhado
-      ? grupoReal.itens.map((itemReal) => {
-          const realizado = Number(itemReal.valor) || 0;
-          // Previsto vem da base (2025) × fator; se não existir na base, usa o próprio realizado.
-          const baseItem = grupoBase?.itens.find(
-            (it) => norm(it.nome) === norm(itemReal.nome),
+      ? (() => {
+          // Distribui o previsto do grupo proporcionalmente ao peso de cada item
+          // no realizado, garantindo que a soma dos itens bata com o total do grupo.
+          const itensComRealizado = grupoReal.itens.map((itemReal) => ({
+            itemReal,
+            realizado: Number(itemReal.valor) || 0,
+          }));
+          const totalRealizadoItens = itensComRealizado.reduce(
+            (s, it) => s + it.realizado,
+            0,
           );
-          const previsto = (Number(baseItem?.valor) || 0) * fator;
-          // Fórmula exata: (Previsto - Realizado) / Realizado * 100
-          const variacaoPct =
-            realizado !== 0 ? ((previsto - realizado) / realizado) * 100 : 0;
-          return {
-            nome: itemReal.nome || "Sem nome",
-            realizado,
-            previsto,
-            variacaoPct,
-            grupo: grupoReal.nome,
-          };
-        })
+          let previstoAcumulado = 0;
+          return itensComRealizado.map((it, idx) => {
+            const realizado = it.realizado;
+            let previsto: number;
+            if (idx === itensComRealizado.length - 1) {
+              // Último item recebe o restante para fechar o total do grupo.
+              previsto = previstoGrupo - previstoAcumulado;
+            } else if (totalRealizadoItens > 0) {
+              previsto = (realizado / totalRealizadoItens) * previstoGrupo;
+            } else {
+              previsto = 0;
+            }
+            previstoAcumulado += previsto;
+            const variacaoPct =
+              realizado !== 0 ? ((previsto - realizado) / realizado) * 100 : 0;
+            return {
+              nome: it.itemReal.nome || "Sem nome",
+              realizado,
+              previsto,
+              variacaoPct,
+              grupo: grupoReal.nome,
+            };
+          });
+        })()
       : [
           (() => {
-            const realizado = grupoReal.itens.reduce(
-              (s, item) => s + (Number(item.valor) || 0),
-              0,
-            );
-            // Previsto vem da soma dos itens correspondentes na base (2025) × fator.
-            const baseTotal = grupoBase
-              ? grupoBase.itens.reduce(
-                  (s, item) => s + (Number(item.valor) || 0),
-                  0,
-                )
-              : 0;
-            const previsto = baseTotal * fator;
+            const realizado = realizadoGrupo;
+            const previsto = previstoGrupo;
             const variacaoPct =
               realizado !== 0 ? ((previsto - realizado) / realizado) * 100 : 0;
             return {
