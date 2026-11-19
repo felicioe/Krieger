@@ -418,47 +418,66 @@ function RelatorioPrevisao({
   const [detalhado, setDetalhado] = useState(false);
   const [exportandoXlsx, setExportandoXlsx] = useState(false);
   const exportandoRef = useRef(false);
-  // No modo relatórios, o Realizado vem do demonstrativo do próprio exercício atual,
-    // e o Previsto vem do demonstrativo base (anterior) reajustado pela variação calculada.
-  const demonstrativoRealizado = exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
-  const demonstrativoPrevisto = demonstrativoBase ?? demonstrativoVazio(exercicio.condoNome);
-  const fator = 1 + resultado.variacaoPct / 100;
+  // No modo relatórios:
+  // - Realizado = despesas do exercício ANTERIOR (2025) → demonstrativoBase
+  // - Previsto = valor já imputado para o exercício ATUAL (2026) → exercicio.demonstrativo
+  // - Variação = (Previsto − Realizado) / Realizado × 100
+  const demonstrativoRealizado = demonstrativoBase ?? demonstrativoVazio(exercicio.condoNome);
+  const demonstrativoPrevisto = exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
 
-  // Montamos as linhas cruzando Realizado (exercício atual) e Previsto (base + variação)
-  // Como os grupos/itens podem corresponder por nome ou índice, mapeamos com segurança.
   const gruposRealizado = demonstrativoRealizado.despesas.grupos;
   const gruposPrevisto = demonstrativoPrevisto.despesas.grupos;
 
-  const linhas = gruposRealizado.flatMap((grupoReal, gIdx) => {
-    const grupoPrev = gruposPrevisto[gIdx] ?? grupoReal;
+  // Mapeia grupos e itens por NOME normalizado (sem acento/case) para evitar
+  // mismatch por índice quando a ordem ou quantidade difere entre os exercícios.
+  const norm = (s: string) =>
+    (s ?? "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .trim();
+
+  const mapaGruposReal = new Map(gruposRealizado.map((g) => [norm(g.nome), g]));
+
+  const linhas = gruposPrevisto.flatMap((grupoPrev) => {
+    const grupoReal = mapaGruposReal.get(norm(grupoPrev.nome)) ?? grupoPrev;
+    const mapaItensReal = new Map(
+      grupoReal.itens.map((it) => [norm(it.nome), it]),
+    );
+
     return detalhado
-      ? grupoReal.itens.map((itemReal, iIdx) => {
-          const itemPrev = grupoPrev.itens[iIdx] ?? itemReal;
+      ? grupoPrev.itens.map((itemPrev) => {
+          const itemReal = mapaItensReal.get(norm(itemPrev.nome)) ?? itemPrev;
+          const previsto = Number(itemPrev.valor) || 0;
           const realizado = Number(itemReal.valor) || 0;
-          const baseItem = Number(itemPrev.valor) || 0;
-          const previsto = baseItem * fator;
-          // Variação real entre Previsto e Realizado (do exercício atual)
-          const variacaoPct = realizado > 0 ? ((previsto - realizado) / realizado) * 100 : (resultado.variacaoPct || 0);
+          const variacaoPct =
+            realizado > 0 ? ((previsto - realizado) / realizado) * 100 : 0;
           return {
-            nome: itemReal.nome || "Sem nome",
+            nome: itemPrev.nome || "Sem nome",
             realizado,
             previsto,
             variacaoPct,
-            grupo: grupoReal.nome,
+            grupo: grupoPrev.nome,
           };
         })
       : [
           (() => {
-            const realizado = grupoReal.itens.reduce((s, item) => s + (Number(item.valor) || 0), 0);
-            const baseGrupo = grupoPrev.itens.reduce((s, item) => s + (Number(item.valor) || 0), 0);
-            const previsto = baseGrupo * fator;
-            const variacaoPct = baseGrupo > 0 ? ((previsto - baseGrupo) / baseGrupo) * 100 : (resultado.variacaoPct || 0);
+            const previsto = grupoPrev.itens.reduce(
+              (s, item) => s + (Number(item.valor) || 0),
+              0,
+            );
+            const realizado = grupoReal.itens.reduce(
+              (s, item) => s + (Number(item.valor) || 0),
+              0,
+            );
+            const variacaoPct =
+              realizado > 0 ? ((previsto - realizado) / realizado) * 100 : 0;
             return {
-              nome: grupoReal.nome || "Sem grupo",
+              nome: grupoPrev.nome || "Sem grupo",
               realizado,
               previsto,
               variacaoPct,
-              grupo: grupoReal.nome,
+              grupo: grupoPrev.nome,
             };
           })(),
         ];
@@ -539,7 +558,7 @@ function RelatorioPrevisao({
           "",
           formatBRL(totalRealizado),
           formatBRL(totalPrevisto),
-          totalRealizado ? `${formatNumeroBR((fator - 1) * 100)}%` : "—",
+          totalRealizado ? `${formatNumeroBR(variacaoGeralPct)}%` : "—",
         ],
       });
       if (!abriu)
@@ -626,9 +645,8 @@ function RelatorioPrevisao({
             </thead>
             <tbody>
               {linhas.map((linha, index) => {
-                const previsto = linha.realizado * fator;
                 const variacao = linha.realizado
-                  ? formatNumeroBR((previsto / Math.abs(linha.realizado) - 1) * 100) + "%"
+                  ? formatNumeroBR(linha.variacaoPct) + "%"
                   : "—";
                 const novoGrupo =
                   detalhado && (index === 0 || linhas[index - 1]!.grupo !== linha.grupo);
@@ -648,7 +666,7 @@ function RelatorioPrevisao({
                       <td className="px-3 py-2">{linha.nome}</td>
                       <td className="num px-3 py-2 text-right">{formatBRL(linha.realizado)}</td>
                       <td className="num px-3 py-2 text-right font-medium">
-                        {formatBRL(previsto)}
+                        {formatBRL(linha.previsto)}
                       </td>
                       <td className="num px-3 py-2 text-right text-muted-foreground">{variacao}</td>
                     </tr>
@@ -665,7 +683,7 @@ function RelatorioPrevisao({
                 </td>
                 <td className="num px-3 py-2 text-right text-primary">
                   {totalRealizado
-                    ? `${formatNumeroBR((totalPrevisto / Math.abs(totalRealizado) - 1) * 100)}%`
+                    ? `${formatNumeroBR(variacaoGeralPct)}%`
                     : "—"}
                 </td>
               </tr>
