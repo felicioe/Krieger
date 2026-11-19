@@ -1,0 +1,1 @@
+function e(e,t,n){return`${e} ${e===1?t:n}`}function t(e,t,n){return e===1?t:n}function n(e){return e<=0?`hoje`:e===1?`ontem`:`há ${e} dias`}function r(e){return e===0?`Vence hoje`:e===1?`Vence amanhã`:e===-1?`Venceu ontem`:e<0?`Vencido há ${-e} dias`:`Em ${e} dias`}export{r as i,n,t as r,e as t};

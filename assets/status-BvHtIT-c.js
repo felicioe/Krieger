@@ -1,0 +1,1 @@
+var e={pendente:{rotulo:`Pendente`,variante:`warning`},confirmado:{rotulo:`Confirmada`,variante:`success`},descartado:{rotulo:`Descartada`,variante:`outline`}};export{e as t};
