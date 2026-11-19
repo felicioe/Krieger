@@ -133,11 +133,20 @@ export function aplicarVariacaoDoHistorico<T extends {
   variacaoParam?: number | null;
   rateioAtual?: number | null;
   rateioAprovado?: number | null;
+  demonstrativo?: { despesas?: { grupos?: { itens?: unknown[] }[] } } | null;
 }>(params: T, linhas: HistoricoRateio[]): T {
   if (!params.condoId || params.ano == null) return params;
   // Só injeta quando não há variação explícita no exercício (valor diferente de zero).
   if (params.variacao && params.variacao !== 0) return params;
   if (params.variacaoParam && params.variacaoParam !== 0) return params;
+  // Se o exercício já tem demonstrativo com despesas realizadas, não injeta variação do histórico.
+  // O previsto deve ser igual ao realizado; a variação histórica serve apenas para projetar
+  // exercícios futuros que ainda não têm dados. Caso Lago Negro 2026: aplicava 15,26% sobre
+  // R$ 982.212,87 gerando R$ 1.132.098,55 em vez de manter R$ 982.212,87.
+  const temDespesas = params.demonstrativo?.despesas?.grupos?.some(
+    (g) => g.itens && g.itens.length > 0,
+  );
+  if (temDespesas) return params;
 
   // Busca a variação % já gravada na linha do exercício ANTERIOR (ano - 1). É esse índice
   // apurado que se aplica à previsão do exercício atual. Ex.: previsão de 2026 usa a variação

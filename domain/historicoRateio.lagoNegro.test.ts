@@ -93,6 +93,32 @@ describe("aplicarVariacaoDoHistorico — caso Lago Negro 2026", () => {
     expect(resultado.variacaoParam).toBe(15.26);
   });
 
+  it("não injeta variação quando exercício já tem demonstrativo com despesas (evita aplicar índice sobre realizado)", () => {
+    // Regressão: o sistema aplicava 15,26% sobre R$ 982.212,87 gerando R$ 1.132.098,55.
+    // Quando o exercício já tem demonstrativo completo, o previsto deve ser igual ao realizado.
+    const exercicio2026ComDemonstrativo = {
+      condoId: "condo-lago-negro",
+      ano: 2026,
+      variacao: 0,
+      variacaoMetodo: "percentual" as const,
+      variacaoParam: 0,
+      rateioAtual: null,
+      rateioAprovado: null,
+      demonstrativo: {
+        despesas: {
+          grupos: [
+            { nome: "DEPARTAMENTO PESSOAL", itens: [{ nome: "Salários", valor: 235486.72 }] },
+          ],
+        },
+      },
+    };
+
+    const resultado = aplicarVariacaoDoHistorico(exercicio2026ComDemonstrativo, [historico2025]);
+
+    expect(resultado.variacao).toBe(0);
+    expect(resultado.variacaoParam).toBe(0);
+  });
+
   it("usa rateioSugerido como base quando rateioAtual e variacao forem null (cenario producao Lago Negro)", () => {
     // Dados reais de producao: historico 2025 tem rateioAtual=null, variacao=null,
     // rateioSugerido=370, rateioAprovado=370. A variacao deve ser calculada como
