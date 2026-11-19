@@ -440,16 +440,22 @@ function RelatorioPrevisao({
   const mapaGruposReal = new Map(gruposRealizado.map((g) => [norm(g.nome), g]));
 
   const linhas = gruposPrevisto.flatMap((grupoPrev) => {
-    const grupoReal = mapaGruposReal.get(norm(grupoPrev.nome)) ?? grupoPrev;
+    // Se o grupo não existia em 2025, realizado = 0 (nova despesa em 2026).
+    const grupoRealEncontrado = mapaGruposReal.get(norm(grupoPrev.nome));
+    const temGrupoReal = grupoRealEncontrado != null;
+    const grupoReal = grupoRealEncontrado ?? { itens: [] as typeof grupoPrev.itens };
     const mapaItensReal = new Map(
       grupoReal.itens.map((it) => [norm(it.nome), it]),
     );
 
     return detalhado
       ? grupoPrev.itens.map((itemPrev) => {
-          const itemReal = mapaItensReal.get(norm(itemPrev.nome)) ?? itemPrev;
+          const itemRealEncontrado = mapaItensReal.get(norm(itemPrev.nome));
           const previsto = Number(itemPrev.valor) || 0;
-          const realizado = Number(itemReal.valor) || 0;
+          // Se o item não existia em 2025, realizado = 0.
+          const realizado = itemRealEncontrado
+            ? Number(itemRealEncontrado.valor) || 0
+            : 0;
           const variacaoPct =
             realizado > 0 ? ((previsto - realizado) / realizado) * 100 : 0;
           return {
@@ -466,10 +472,13 @@ function RelatorioPrevisao({
               (s, item) => s + (Number(item.valor) || 0),
               0,
             );
-            const realizado = grupoReal.itens.reduce(
-              (s, item) => s + (Number(item.valor) || 0),
-              0,
-            );
+            // Se o grupo inteiro não existia em 2025, realizado = 0.
+            const realizado = temGrupoReal
+              ? grupoReal.itens.reduce(
+                  (s, item) => s + (Number(item.valor) || 0),
+                  0,
+                )
+              : 0;
             const variacaoPct =
               realizado > 0 ? ((previsto - realizado) / realizado) * 100 : 0;
             return {
