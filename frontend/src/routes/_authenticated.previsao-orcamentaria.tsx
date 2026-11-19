@@ -418,33 +418,62 @@ function RelatorioPrevisao({
   const [detalhado, setDetalhado] = useState(false);
   const [exportandoXlsx, setExportandoXlsx] = useState(false);
   const exportandoRef = useRef(false);
-  // No modo relatórios, o Realizado vem da base anterior (despesas importadas),
-  // não do demonstrativo do exercício atual que já pode estar reajustado.
-  const demonstrativo = demonstrativoBase ?? exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
+  // No modo relatórios, o Realizado vem do demonstrativo do próprio exercício atual,
+    // e o Previsto vem do demonstrativo base (anterior) reajustado pela variação calculada.
+  const demonstrativoRealizado = exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
+  const demonstrativoPrevisto = demonstrativoBase ?? demonstrativoVazio(exercicio.condoNome);
   const fator = 1 + resultado.variacaoPct / 100;
-  const linhas = demonstrativo.despesas.grupos.flatMap((grupo) =>
-    detalhado
-      ? grupo.itens.map((item) => ({
-          nome: item.nome || "Sem nome",
-          realizado: Number(item.valor) || 0,
-          grupo: grupo.nome,
-        }))
+
+  // Montamos as linhas cruzando Realizado (exercício atual) e Previsto (base + variação)
+  // Como os grupos/itens podem corresponder por nome ou índice, mapeamos com segurança.
+  const gruposRealizado = demonstrativoRealizado.despesas.grupos;
+  const gruposPrevisto = demonstrativoPrevisto.despesas.grupos;
+
+  const linhas = gruposRealizado.flatMap((grupoReal, gIdx) => {
+    const grupoPrev = gruposPrevisto[gIdx] ?? grupoReal;
+    return detalhado
+      ? grupoReal.itens.map((itemReal, iIdx) => {
+          const itemPrev = grupoPrev.itens[iIdx] ?? itemReal;
+          const realizado = Number(itemReal.valor) || 0;
+          const baseItem = Number(itemPrev.valor) || 0;
+          const previsto = baseItem * fator;
+          // Variação real entre Previsto e Realizado (do exercício atual)
+          const variacaoPct = realizado > 0 ? ((previsto - realizado) / realizado) * 100 : (resultado.variacaoPct || 0);
+          return {
+            nome: itemReal.nome || "Sem nome",
+            realizado,
+            previsto,
+            variacaoPct,
+            grupo: grupoReal.nome,
+          };
+        })
       : [
-          {
-            nome: grupo.nome || "Sem grupo",
-            realizado: grupo.itens.reduce((s, item) => s + (Number(item.valor) || 0), 0),
-            grupo: grupo.nome,
-          },
-        ],
-  );
+          (() => {
+            const realizado = grupoReal.itens.reduce((s, item) => s + (Number(item.valor) || 0), 0);
+            const baseGrupo = grupoPrev.itens.reduce((s, item) => s + (Number(item.valor) || 0), 0);
+            const previsto = baseGrupo * fator;
+            const variacaoPct = baseGrupo > 0 ? ((previsto - baseGrupo) / baseGrupo) * 100 : (resultado.variacaoPct || 0);
+            return {
+              nome: grupoReal.nome || "Sem grupo",
+              realizado,
+              previsto,
+              variacaoPct,
+              grupo: grupoReal.nome,
+            };
+          })(),
+        ];
+  });
+
   const totalRealizado = linhas.reduce((s, linha) => s + linha.realizado, 0);
-  const totalPrevisto = totalRealizado * fator;
+  const totalPrevisto = linhas.reduce((s, linha) => s + linha.previsto, 0);
+  const variacaoGeralPct = totalRealizado > 0 ? ((totalPrevisto - totalRealizado) / totalRealizado) * 100 : (resultado.variacaoPct || 0);
+
   const dadosExportacao = linhas.map((linha) => ({
     Grupo: linha.grupo,
     Conta: linha.nome,
     Realizado: linha.realizado,
-    Previsto: linha.realizado * fator,
-    "Variação (%)": linha.realizado ? Number(((fator - 1) * 100).toFixed(2)) : null,
+    Previsto: linha.previsto,
+    "Variação (%)": Number(linha.variacaoPct.toFixed(2)),
   }));
   const nomeArquivo = `previsao-relatorios-${exercicio.ano}`;
   const baixarCsv = () => {
