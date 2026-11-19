@@ -146,9 +146,12 @@ export function aplicarVariacaoDoHistorico<T extends {
   let pct = linhaAnterior?.variacao ?? null;
 
   // Quando o campo variacao da linha anterior for null (ex.: primeira prestação sem base),
-  // recalcula a partir dos rateios gravados naquela mesma linha.
-  if ((pct === null || pct === 0) && linhaAnterior?.rateioAtual && linhaAnterior?.rateioAprovado) {
-    pct = calcularVariacao(linhaAnterior.rateioAtual, linhaAnterior.rateioAprovado);
+  // recalcula a partir dos rateios gravados naquela mesma linha. Usa rateioSugerido como
+  // base quando rateioAtual for null — caso do Lago Negro 2025, onde só havia rateioAprovado
+  // e rateioSugerido (=370) mas nenhum rateioAtual anterior para comparar.
+  if ((pct === null || pct === 0) && linhaAnterior?.rateioAprovado) {
+    const base = linhaAnterior.rateioAtual ?? linhaAnterior.rateioSugerido;
+    if (base) pct = calcularVariacao(base, linhaAnterior.rateioAprovado);
   }
 
   // Último fallback: calcula a variação entre rateioAtual e rateioAprovado do próprio exercício.

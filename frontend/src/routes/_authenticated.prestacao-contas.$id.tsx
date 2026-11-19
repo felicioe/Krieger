@@ -177,13 +177,17 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       const anterior = existentes
         .filter((h) => h.condoId === ex.condoId && Number(h.ano) < Number(ex.ano))
         .sort((a, b) => Number(b.ano) - Number(a.ano))[0];
+      // Usa o rateio do PDF (rateioUnidadeAtual) como base quando não há histórico anterior.
+      // Isso garante que o índice de 15,26% (321 → 370) seja calculado corretamente mesmo na
+      // primeira importação do condomínio, onde não existe exercício 2024 no sistema.
+      const rateioBase = anterior?.rateioAprovado ?? pv?.rateioUnidadeAtual ?? pv?.rateioMensalAtual ?? null;
       const linha = historicoDoExercicio(
         {
           id: ex.id,
           condoId: ex.condoId,
           condoNome: ex.condoNome,
           ano: ex.ano,
-          rateioAtual: anterior?.rateioAprovado ?? null,
+          rateioAtual: rateioBase,
           rateioAprovado: aprovado,
         },
         pv?.rateioUnidadeAtual ?? pv?.rateioMensalAtual ?? null,
