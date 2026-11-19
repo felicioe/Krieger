@@ -93,9 +93,11 @@ describe("aplicarVariacaoDoHistorico — caso Lago Negro 2026", () => {
     expect(resultado.variacaoParam).toBe(15.26);
   });
 
-  it("não injeta variação quando exercício já tem demonstrativo com despesas (evita aplicar índice sobre realizado)", () => {
+  it("não injeta variação quando exercício tem demonstrativo com despesas (fluxo normal)", () => {
     // Regressão: o sistema aplicava 15,26% sobre R$ 982.212,87 gerando R$ 1.132.098,55.
-    // Quando o exercício já tem demonstrativo completo, o previsto deve ser igual ao realizado.
+    // No fluxo normal, demonstrativo com despesas é a previsão consolidada — não recebe o
+    // índice outra vez. O modo "Previsão para relatórios" remove o demonstrativo antes de
+    // chamar esta função e passa a base anterior separadamente (aplicação única do índice).
     const exercicio2026ComDemonstrativo = {
       condoId: "condo-lago-negro",
       ano: 2026,
@@ -117,6 +119,26 @@ describe("aplicarVariacaoDoHistorico — caso Lago Negro 2026", () => {
 
     expect(resultado.variacao).toBe(0);
     expect(resultado.variacaoParam).toBe(0);
+  });
+
+  it("injeta variação quando o demonstrativo é removido (modo relatórios com base anterior)", () => {
+    // Modo "Previsão para relatórios": sem demonstrativo, a variação histórica é injetada
+    // sobre a base anterior (R$ 851.955,11) para gerar o previsto (~R$ 982 mil), uma única vez.
+    const exercicio2026SemDemonstrativo = {
+      condoId: "condo-lago-negro",
+      ano: 2026,
+      variacao: 0,
+      variacaoMetodo: "percentual" as const,
+      variacaoParam: 0,
+      rateioAtual: null,
+      rateioAprovado: null,
+      demonstrativo: null,
+    };
+
+    const resultado = aplicarVariacaoDoHistorico(exercicio2026SemDemonstrativo, [historico2025]);
+
+    expect(resultado.variacao).toBe(15.26);
+    expect(resultado.variacaoParam).toBe(15.26);
   });
 
   it("usa rateioSugerido como base quando rateioAtual e variacao forem null (cenario producao Lago Negro)", () => {

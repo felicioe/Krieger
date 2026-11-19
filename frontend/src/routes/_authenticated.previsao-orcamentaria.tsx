@@ -31,7 +31,7 @@ import {
 } from "@/domain/exercicio";
 import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
 import { aplicarRateioBase, aplicarVariacaoDoHistorico, historicoDoExercicio } from "@/domain/historicoRateio";
-import type { Condominio, Exercicio, HistoricoRateio } from "@/domain/types";
+import type { Condominio, Demonstrativo, Exercicio, HistoricoRateio } from "@/domain/types";
 import { novoId } from "@/lib/id";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { imprimirTabela } from "@/lib/imprimirTabela";
@@ -206,9 +206,16 @@ function EditorPrevisao({
   // de aplicarVariacaoDoHistorico não tem base para comparar com o rateioAprovado e retorna 0%.
   const eComRateioBase = aplicarRateioBase(e, historicoRateios);
   // Injeta a variação % do histórico de rateios quando o exercício não tem variação explícita.
-  // Sem isso, o previsto anual fica igual à base (caso Lago Negro 2026: R$ 851.955,11 sem índice).
+  // No modo "relatorios" o demonstrativo é removido antes da chamada: lá a base da previsão é
+  // o realizado anterior (R$ 851.955,11 no caso Lago Negro) e o índice do histórico (15,26%)
+  // precisa ser aplicado UMA vez sobre ela; com o demonstrativo próprio (já reajustado, R$
+  // 982.212,87) presente, a função não injetaria nada e a tela mostraria 0,00%.
   const paramsComHistorico = aplicarVariacaoDoHistorico(
-    { ...eComRateioBase, indices: eComRateioBase.consid?.indices },
+    {
+      ...eComRateioBase,
+      ...(modo === "relatorios" ? { demonstrativo: null } : {}),
+      indices: eComRateioBase.consid?.indices,
+    },
     historicoRateios,
   );
   const resultado = useMemo(
@@ -313,7 +320,7 @@ function EditorPrevisao({
 
   if (modo === "relatorios") {
     return (
-      <RelatorioPrevisao seletor={seletor} exercicio={e} resultado={resultado} periodo={periodo} />
+      <RelatorioPrevisao seletor={seletor} exercicio={e} resultado={resultado} periodo={periodo} demonstrativoBase={demonstrativoBase} />
     );
   }
 
@@ -393,16 +400,20 @@ function RelatorioPrevisao({
   exercicio,
   resultado,
   periodo,
+  demonstrativoBase,
 }: {
   seletor: ReactNode;
   exercicio: Exercicio;
   resultado: ReturnType<typeof calcularPrevisao>;
   periodo: string | null;
+  demonstrativoBase: Demonstrativo | null;
 }) {
   const [detalhado, setDetalhado] = useState(false);
   const [exportandoXlsx, setExportandoXlsx] = useState(false);
   const exportandoRef = useRef(false);
-  const demonstrativo = exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
+  // No modo relatórios, o Realizado vem da base anterior (despesas importadas),
+  // não do demonstrativo do exercício atual que já pode estar reajustado.
+  const demonstrativo = demonstrativoBase ?? exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
   const fator = 1 + resultado.variacaoPct / 100;
   const linhas = demonstrativo.despesas.grupos.flatMap((grupo) =>
     detalhado

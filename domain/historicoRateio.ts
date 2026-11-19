@@ -139,10 +139,9 @@ export function aplicarVariacaoDoHistorico<T extends {
   // Só injeta quando não há variação explícita no exercício (valor diferente de zero).
   if (params.variacao && params.variacao !== 0) return params;
   if (params.variacaoParam && params.variacaoParam !== 0) return params;
-  // Se o exercício já tem demonstrativo com despesas realizadas, não injeta variação do histórico.
-  // O previsto deve ser igual ao realizado; a variação histórica serve apenas para projetar
-  // exercícios futuros que ainda não têm dados. Caso Lago Negro 2026: aplicava 15,26% sobre
-  // R$ 982.212,87 gerando R$ 1.132.098,55 em vez de manter R$ 982.212,87.
+  // No fluxo normal, um demonstrativo com despesas já é a previsão consolidada e não pode
+  // receber o índice outra vez. O modo "Previsão para relatórios" remove o demonstrativo antes
+  // desta chamada e passa a base anterior separadamente, permitindo aplicar o índice uma única vez.
   const temDespesas = params.demonstrativo?.despesas?.grupos?.some(
     (g) => g.itens && g.itens.length > 0,
   );
