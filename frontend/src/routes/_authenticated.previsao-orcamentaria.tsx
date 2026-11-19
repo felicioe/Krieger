@@ -198,10 +198,17 @@ function EditorPrevisao({
   // pra uma previsão que precisa ficar estável. `demonstrativoBasePrevisao` devolve null só para
   // exercício aberto SEM anterior; aí a regra da primeira prestação (docs/ESPECIFICACAO-V2.md)
   // manda usar o próprio demonstrativo — base móvel é o preço aceitável de não calcular R$ 0,00.
+  // No modo relatórios, a base é SEMPRE o demonstrativo do exercício anterior (despesas
+  // realizadas do período fechado), pois o próprio exercício já pode ter o índice embutido.
+  // Aplicar 15,26% sobre R$ 982.212,87 geraria R$ 1.132.098,55; a base correta é
+  // R$ 851.955,11 (anterior) → previsto ~R$ 982 mil. Fora do modo relatórios, mantém
+  // a regra original de usar o demonstrativo do próprio exercício.
   const demonstrativoBase =
-    demonstrativoBasePrevisao(e, exercicioAnterior) ??
-    demonstrativo ??
-    demonstrativoVazio(e.condoNome);
+    modo === "relatorios"
+      ? (exercicioAnterior?.demonstrativo ?? demonstrativo ?? demonstrativoVazio(e.condoNome))
+      : (demonstrativoBasePrevisao(e, exercicioAnterior) ??
+         demonstrativo ??
+         demonstrativoVazio(e.condoNome));
   // Herda o rateioAtual do ano anterior antes de calcular a variação — sem isso, o fallback
   // de aplicarVariacaoDoHistorico não tem base para comparar com o rateioAprovado e retorna 0%.
   const eComRateioBase = aplicarRateioBase(e, historicoRateios);
