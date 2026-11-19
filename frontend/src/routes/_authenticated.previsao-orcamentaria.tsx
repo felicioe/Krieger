@@ -419,22 +419,39 @@ function RelatorioPrevisao({
   const [exportandoXlsx, setExportandoXlsx] = useState(false);
   const exportandoRef = useRef(false);
   // No modo relatórios:
-  // - Realizado = despesas do exercício ANTERIOR (2025) → demonstrativoBase
-  // - Previsto = base de 2025 × fator (1 + variação%) → cálculo da previsão
+  // - Realizado = despesas do exercício ATUAL (2026) → exercicio.demonstrativo
+  // - Previsto = base anterior (2025) × fator (1 + variação%) → cálculo da previsão
   // - Variação = (Previsto − Realizado) / Realizado × 100
-  const demonstrativoRealizado = demonstrativoBase ?? demonstrativoVazio(exercicio.condoNome);
+  const demonstrativoRealizado = exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
+  const demonstrativoBaseRef = demonstrativoBase ?? demonstrativoVazio(exercicio.condoNome);
   const fator = 1 + resultado.variacaoPct / 100;
 
   const gruposRealizado = demonstrativoRealizado.despesas.grupos;
+  const gruposBase = demonstrativoBaseRef.despesas.grupos;
 
-  // Itera sobre os grupos do REALIZADO (2025) e aplica o fator para gerar o PREVISTO.
+  // Mapeia grupos da base (2025) por nome normalizado para aplicar o fator.
+  const norm = (s: string) =>
+    (s ?? "")
+      .normalize("NFD")
+      .replace(/[̀-ͯ]/g, "")
+      .toLowerCase()
+      .trim();
+  const mapaGruposBase = new Map(gruposBase.map((g) => [norm(g.nome), g]));
+
+  // Itera sobre os grupos do REALIZADO (2026) e cruza com a base (2025) para gerar o PREVISTO.
   const linhas = gruposRealizado.flatMap((grupoReal) => {
+    const grupoBase = mapaGruposBase.get(norm(grupoReal.nome));
     return detalhado
       ? grupoReal.itens.map((itemReal) => {
           const realizado = Number(itemReal.valor) || 0;
-          const previsto = realizado * fator;
+          // Previsto vem da base (2025) × fator; se não existir na base, usa o próprio realizado.
+          const baseItem = grupoBase?.itens.find(
+            (it) => norm(it.nome) === norm(itemReal.nome),
+          );
+          const previsto = (Number(baseItem?.valor) || 0) * fator;
+          // Fórmula exata: (Previsto - Realizado) / Realizado * 100
           const variacaoPct =
-            realizado > 0 ? ((previsto - realizado) / realizado) * 100 : 0;
+            realizado !== 0 ? ((previsto - realizado) / realizado) * 100 : 0;
           return {
             nome: itemReal.nome || "Sem nome",
             realizado,
@@ -449,9 +466,16 @@ function RelatorioPrevisao({
               (s, item) => s + (Number(item.valor) || 0),
               0,
             );
-            const previsto = realizado * fator;
+            // Previsto vem da soma dos itens correspondentes na base (2025) × fator.
+            const baseTotal = grupoBase
+              ? grupoBase.itens.reduce(
+                  (s, item) => s + (Number(item.valor) || 0),
+                  0,
+                )
+              : 0;
+            const previsto = baseTotal * fator;
             const variacaoPct =
-              realizado > 0 ? ((previsto - realizado) / realizado) * 100 : 0;
+              realizado !== 0 ? ((previsto - realizado) / realizado) * 100 : 0;
             return {
               nome: grupoReal.nome || "Sem grupo",
               realizado,
