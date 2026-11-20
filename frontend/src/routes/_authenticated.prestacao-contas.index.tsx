@@ -106,7 +106,7 @@ function ListaExercicios() {
         const eComHistorico = aplicarVariacaoDoHistorico(e, historicoRateios);
         const r = calcularPrevisao(
           demonstrativoBase,
-          { ...eComHistorico, indices: eComHistorico.condominio?.indices ?? [] },
+          { ...eComHistorico, indices: eComHistorico.consid?.indices ?? [] },
           condo?.unidades ?? null,
         );
         return {

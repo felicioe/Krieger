@@ -174,11 +174,14 @@ export function compararPrevistoRealizado(
   const mapa = new Map((opcoes.condominio?.mapeamento ?? []).filter((d: DePara) => d.de?.trim()).map((d) => [chaveRotulo(d.de), d.para] as const));
   const re = expressaoDeducao(exercicio.deducaoRegex);
 
-  // Previsão do exercício N, aberta por despesa (os totais por grupo são os mesmos do modo tradicional).
-  // Injeta a variação % do histórico (ou do rateioAtual/rateioAprovado) quando não há variação explícita.
+  // Lógica unificada com a tela de previsão:
+  // - Realizado = despesas do exercício ATUAL (demonstrativo do próprio exercício)
+  // - Previsto = base anterior (demonstrativoBase) × fator de variação
+  // - Variação = (Previsto − Realizado) / Realizado × 100
   const exercicioComHistorico = aplicarVariacaoDoHistorico(exercicio, opcoes.historicoRateios ?? []);
+  const demonstrativoBase = opcoes.demonstrativoBase ?? exercicioComHistorico.demonstrativo;
   const prev = calcularPrevisao(
-    opcoes.demonstrativoBase ?? exercicioComHistorico.demonstrativo,
+    demonstrativoBase,
     {
       ...exercicioComHistorico,
       indices: exercicioComHistorico.consid?.indices,
