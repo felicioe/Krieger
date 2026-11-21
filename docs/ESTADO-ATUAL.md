@@ -1,5 +1,24 @@
 # Estado atual e passagem de contexto
 
+## Fechamento transacional e bloqueio de período fechado — 21/11/2026 (issue #286)
+
+Fechar o exercício N grava o previsto de N+1 (realizado de N × (1 + % do histórico de rateios)), congela o
+previsto que N usa e é idempotente; sem percentual o fechamento é recusado (409) e nada é gravado. Relatórios
+mensais de meses de exercício fechado não podem ser salvos, movidos, excluídos nem importados até reabrir a
+prestação. Testes em `scripts/test-previsoes-aprovadas.php` (CI). **Exige a migration
+`20261121_previsoes_aprovadas.sql` aplicada antes de fechar qualquer exercício com despesas**; sem ela o
+fechamento é recusado com instrução. **Não publicado.**
+
+## Previsto aprovado persistido e carga inicial — 21/11/2026 (issue #285)
+
+Nova tabela `kr_previsoes_aprovadas` (`migrations/20261121_previsoes_aprovadas.sql`, também em
+`schema.sql`), biblioteca `lib_previsoes.php` (no pacote), leitura `api.php?a=listar&s=previsoes_aprovadas`
+(escrita só pelo servidor) e carga inicial `api.php?a=previsoes_carga&modo=simular|aplicar`
+(administrador), com painel na página **Backup**. O domínio (`previstoDoExercicio`) prefere o registro
+gravado em exercício aberto. Testes: `scripts/test-previsoes-aprovadas.php` (CI, MySQL efêmero) e
+fixtures compartilhadas PHP/TypeScript. **A migration NÃO foi aplicada em produção**: aplicar antes de
+usar a carga; a leitura funciona sem ela. Pendente: #286 (fechamento transacional e bloqueios).
+
 ## Previsto aprovado — camada única de leitura — 21/11/2026 (issue #284)
 
 `domain/previstoAprovado.ts` passa a ser a fonte do previsto das quatro telas de comparação e do

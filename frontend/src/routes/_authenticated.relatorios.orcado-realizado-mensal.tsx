@@ -23,6 +23,7 @@ import type {
   ConfigEscritorio,
   Exercicio,
   HistoricoRateio,
+  PrevisaoAprovada,
   Mensal,
 } from "@/domain/types";
 
@@ -36,6 +37,7 @@ export const Route = createFileRoute("/_authenticated/relatorios/orcado-realizad
       queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
       queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas")),
     ]),
   component: Pagina,
 });
@@ -49,6 +51,9 @@ function Pagina() {
   );
   const { data: historicoRateios } = useSuspenseQuery(
     listaQueryTolerante<HistoricoRateio>("historico_rateios"),
+  );
+  const { data: previsoesAprovadas } = useSuspenseQuery(
+    listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
   );
   const exercicios = useMemo(
     () => raw.map(normalizarExercicio).sort((a, b) => Number(b.ano) - Number(a.ano)),
@@ -74,6 +79,7 @@ function Pagina() {
         fim,
         demonstrativoBase,
         historicoRateios,
+        previsoesAprovadas,
       })
     : null;
   const opEx = exercicios.map((x) => ({

@@ -37,6 +37,7 @@ import type {
   ConfigEscritorio,
   Exercicio,
   HistoricoRateio,
+  PrevisaoAprovada,
   Mensal,
 } from "@/domain/types";
 import { contagem, palavra } from "@/components/app/textos";
@@ -55,6 +56,7 @@ export const Route = createFileRoute("/_authenticated/relatorio-final/$id")({
       queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
       queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas")),
     ]);
     if (!e) throw notFound();
     return null;
@@ -88,6 +90,9 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   const { data: historicoRateios } = useSuspenseQuery(
     listaQueryTolerante<HistoricoRateio>("historico_rateios"),
   );
+  const { data: previsoesAprovadas } = useSuspenseQuery(
+    listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
+  );
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [aba, setAba] = useState("previa");
@@ -116,8 +121,17 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
         escritorio,
         mensais,
         historicoRateios,
+        previsoesAprovadas,
       }),
-    [eComHistorico, exercicioAnterior, condo, escritorio, mensais, historicoRateios],
+    [
+      eComHistorico,
+      exercicioAnterior,
+      condo,
+      escritorio,
+      mensais,
+      historicoRateios,
+      previsoesAprovadas,
+    ],
   );
   const sujo = JSON.stringify(e) !== salvoJson;
   const mudar = (parcial: Partial<Exercicio>) =>

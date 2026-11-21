@@ -94,6 +94,25 @@ export type AlvoLimpeza =
   | "documentos"
   | "backups";
 
+/** Resultado da carga inicial do previsto aprovado (simulação ou aplicação). */
+export interface CargaPrevistoLinha {
+  condoId: string;
+  condoNome: string;
+  exercicioBaseId: string;
+  anoBase: number;
+  exercicioDestino: number;
+  percentual: number | null;
+  totalPrevisto: number | null;
+  status: "pronto" | "gravado" | "ja_existe" | "pendente";
+  motivo: string;
+  destinoFechado: boolean;
+}
+export interface CargaPrevistoResultado {
+  aplicado: boolean;
+  gravados: number;
+  linhas: CargaPrevistoLinha[];
+}
+
 export type ContagensLimpeza = Record<Exclude<AlvoLimpeza, "tudo">, number>;
 
 /** Contrato único de acesso a dados — implementado pela API PHP e pelo mock. */
@@ -124,6 +143,8 @@ export interface ApiAdapter {
   manutencao: {
     contagens(): Promise<ContagensLimpeza>;
     limpar(alvo: AlvoLimpeza): Promise<{ ok: true; apagados: number }>;
+    /** Carga inicial do previsto aprovado; `simular` não grava nada. */
+    cargaPrevistos(modo: "simular" | "aplicar"): Promise<CargaPrevistoResultado>;
   };
   auth: {
     eu(): Promise<Usuario | null>;

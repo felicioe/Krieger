@@ -24,7 +24,8 @@ export type Store =
   | "anexos_importacao"
   | "decisoes_previsao"
   | "decisoes_importacao"
-  | "historico_rateios";
+  | "historico_rateios"
+  | "previsoes_aprovadas";
 
 export const STORES: Store[] = [
   "condominios",
@@ -84,6 +85,41 @@ export interface IndiceCorrecao {
  * herdar `rateioAtual` automaticamente; (c) calcular a variação % entre anos sem depender de
  * recálculo. `rateioAprovado` é o valor por unidade efetivamente travado.
  */
+/** Conta do previsto aprovado: realizado de origem (exercício-base) e previsto anual em centavos. */
+export interface ContaPrevistaAprovada {
+  grupo: string;
+  nome: string;
+  /** Chave normalizada (sem acento, minúscula) usada no casamento de rubricas. */
+  chave?: string;
+  realizadoOrigem: number;
+  previsto: number;
+}
+
+export interface GrupoPrevistoAprovado {
+  nome: string;
+  chave?: string;
+  contas: ContaPrevistaAprovada[];
+  totalPrevisto: number;
+}
+
+/**
+ * Previsto aprovado gravado pelo servidor (store `previsoes_aprovadas`, só leitura no cliente):
+ * gerado no fechamento do exercício-base ou pela carga inicial, com versão por substituição.
+ */
+export interface PrevisaoAprovada extends ComId {
+  condoId: string;
+  exercicioDestino: number;
+  versao: number;
+  exercicioBaseId: string | null;
+  percentualAprovado: number;
+  totalPrevisto: number;
+  grupos: GrupoPrevistoAprovado[];
+  origem: "aprovacao" | "carga_inicial";
+  aprovadoEm: string;
+  aprovadoPor: string | null;
+  anterior: { versao: number; percentualAprovado: number; totalPrevisto: number; aprovadoEm: string } | null;
+}
+
 export interface HistoricoRateio extends ComId {
   condoId: string;
   condoNome?: string;
@@ -411,6 +447,8 @@ export interface Exercicio extends ComId {
     mensais: Mensal[];
     exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null;
     escritorio: ConfigEscritorio | null;
+    /** Previsto aprovado usado por este exercício, congelado no fechamento (para reproduzir o comparativo). */
+    previstoAprovado?: PrevisaoAprovada | null;
   };
   historicoFechamento?: {
     acao: "fechar" | "reabrir";

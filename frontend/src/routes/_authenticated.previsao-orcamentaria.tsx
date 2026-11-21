@@ -36,7 +36,14 @@ import {
   aplicarVariacaoDoHistorico,
   historicoDoExercicio,
 } from "@/domain/historicoRateio";
-import type { Condominio, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
+import type {
+  Condominio,
+  Demonstrativo,
+  Exercicio,
+  HistoricoRateio,
+  Mensal,
+  PrevisaoAprovada,
+} from "@/domain/types";
 import { novoId } from "@/lib/id";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { imprimirTabela } from "@/lib/imprimirTabela";
@@ -66,6 +73,7 @@ export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas")),
       queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
     ]),
   component: PaginaPrevisao,
@@ -78,6 +86,9 @@ function PaginaPrevisao() {
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: historicoRateios } = useSuspenseQuery(
     listaQueryTolerante<HistoricoRateio>("historico_rateios"),
+  );
+  const { data: previsoesAprovadas } = useSuspenseQuery(
+    listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
   );
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
 
@@ -166,6 +177,7 @@ function PaginaPrevisao() {
       exercicioAnterior={exercicioAnterior ?? null}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
       historicoRateios={historicoRateios}
+      previsoesAprovadas={previsoesAprovadas}
       mensais={mensais}
       exercicios={exercicios}
       seletor={seletor}
@@ -179,6 +191,7 @@ function EditorPrevisao({
   exercicioAnterior,
   condominio,
   historicoRateios,
+  previsoesAprovadas,
   mensais,
   exercicios,
   seletor,
@@ -188,6 +201,7 @@ function EditorPrevisao({
   exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null;
   condominio: Condominio | undefined;
   historicoRateios: HistoricoRateio[];
+  previsoesAprovadas: PrevisaoAprovada[];
   mensais: Mensal[];
   exercicios: Exercicio[];
   seletor: ReactNode;
@@ -345,6 +359,7 @@ function EditorPrevisao({
         mensais={mensais}
         condominio={condominio}
         historicoRateios={historicoRateios}
+        previsoesAprovadas={previsoesAprovadas}
       />
     );
   }
@@ -428,6 +443,7 @@ function RelatorioPrevisao({
   mensais,
   condominio,
   historicoRateios,
+  previsoesAprovadas,
 }: {
   seletor: ReactNode;
   exercicio: Exercicio;
@@ -437,6 +453,7 @@ function RelatorioPrevisao({
   mensais: Mensal[];
   condominio: Pick<Condominio, "mapeamento"> | undefined;
   historicoRateios: HistoricoRateio[];
+  previsoesAprovadas: PrevisaoAprovada[];
 }) {
   const [detalhado, setDetalhado] = useState(false);
   const [exportandoXlsx, setExportandoXlsx] = useState(false);
@@ -451,8 +468,9 @@ function RelatorioPrevisao({
         condominio: condominio ?? null,
         demonstrativoBase,
         historicoRateios,
+        previsoesAprovadas,
       }),
-    [exercicio, mensais, condominio, demonstrativoBase, historicoRateios],
+    [exercicio, mensais, condominio, demonstrativoBase, historicoRateios, previsoesAprovadas],
   );
   const { semBase } = calculo;
 

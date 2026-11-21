@@ -19,6 +19,7 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DataTable, type Coluna } from "@/components/app/DataTable";
 import { api, mensagemErro } from "@/lib/api";
+import type { CargaPrevistoResultado } from "@/lib/apiTypes";
 import { useUsuario } from "@/lib/auth";
 import { backupsQuery, chaves, itemQuery } from "@/lib/queries";
 import { formatDataHora, formatBytes } from "@/lib/format";
@@ -47,6 +48,110 @@ function baixarComoArquivo(dados: DadosBackup, nome: string) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+const ROTULO_STATUS_CARGA = {
+  pronto: "Pronto para gravar",
+  gravado: "Gravado",
+  ja_existe: "Já existe",
+  pendente: "Pendente",
+} as const;
+
+/**
+ * Carga inicial do previsto aprovado (issue #285): a simulação só lê; a aplicação grava somente o que
+ * está pronto, nunca substitui um previsto existente nem altera prestações de contas.
+ */
+function CargaPrevistos() {
+  const [resultado, setResultado] = useState<CargaPrevistoResultado | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+
+  async function executar(modo: "simular" | "aplicar") {
+    setOcupado(true);
+    try {
+      const r = await api.manutencao.cargaPrevistos(modo);
+      setResultado(r);
+      toast.success(
+        modo === "aplicar"
+          ? `${r.gravados} previsto(s) aprovado(s) gravado(s).`
+          : "Simulação concluída. Nada foi gravado.",
+      );
+    } catch (e) {
+      toast.error(mensagemErro(e));
+    } finally {
+      setOcupado(false);
+    }
+  }
+
+  const prontos = resultado?.linhas.filter((l) => l.status === "pronto").length ?? 0;
+  return (
+    <SectionCard
+      className="lg:col-span-2"
+      titulo="Previstos aprovados — carga inicial"
+      descricao="Gera o previsto do exercício seguinte a partir de cada prestação com demonstrativo e percentual aprovado no histórico de rateios."
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" onClick={() => void executar("simular")} disabled={ocupado}>
+          {ocupado ? <Loader2 className="animate-spin" /> : null} Simular (não grava)
+        </Button>
+        <Button
+          onClick={() => setConfirmando(true)}
+          disabled={ocupado || !resultado || resultado.aplicado || prontos === 0}
+        >
+          Aplicar carga ({prontos})
+        </Button>
+      </div>
+      {resultado && (
+        <div className="mt-4 overflow-x-auto rounded-md border">
+          <table className="w-full border-collapse text-sm">
+            <thead className="bg-muted/60">
+              <tr className="border-b">
+                <th className="px-3 py-2 text-left">Condomínio</th>
+                <th className="px-3 py-2 text-left">Base → destino</th>
+                <th className="px-3 py-2 text-right">%</th>
+                <th className="px-3 py-2 text-right">Previsto</th>
+                <th className="px-3 py-2 text-left">Situação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {resultado.linhas.map((l) => (
+                <tr key={`${l.condoId}-${l.exercicioDestino}`} className="border-b last:border-0">
+                  <td className="px-3 py-2">{l.condoNome || l.condoId}</td>
+                  <td className="num px-3 py-2">
+                    {l.anoBase} → {l.exercicioDestino}
+                    {l.destinoFechado ? " (destino fechado)" : ""}
+                  </td>
+                  <td className="num px-3 py-2 text-right">
+                    {l.percentual === null ? "—" : `${l.percentual}%`}
+                  </td>
+                  <td className="num px-3 py-2 text-right">
+                    {l.totalPrevisto === null
+                      ? "—"
+                      : l.totalPrevisto.toLocaleString("pt-BR", {
+                          style: "currency",
+                          currency: "BRL",
+                        })}
+                  </td>
+                  <td className="px-3 py-2">
+                    {ROTULO_STATUS_CARGA[l.status]}
+                    {l.motivo ? ` — ${l.motivo}` : ""}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <ConfirmDialog
+        aberto={confirmando}
+        aoMudar={setConfirmando}
+        titulo="Aplicar a carga inicial?"
+        descricao={`Serão gravados ${prontos} previsto(s) aprovado(s). Previstos existentes e prestações de contas não são alterados. Confira a simulação antes de continuar.`}
+        rotuloConfirmar="Aplicar carga"
+        aoConfirmar={() => executar("aplicar")}
+      />
+    </SectionCard>
+  );
 }
 
 function PaginaBackup() {
@@ -287,6 +392,8 @@ function PaginaBackup() {
             </div>
           )}
         </SectionCard>
+
+        {admin && <CargaPrevistos />}
 
         <SectionCard
           className="lg:col-span-2"

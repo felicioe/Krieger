@@ -2,7 +2,7 @@ import { centavos } from "./demonstrativo";
 import { chaveRotulo, mesesDoExercicioSeguinte } from "./previstoRealizado";
 import { previstoDoExercicio } from "./previstoAprovado";
 import { competenciaMensal } from "./mensal";
-import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
+import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Mensal, PrevisaoAprovada } from "./types";
 
 /**
  * Previsão para relatórios (menu Financeiro → Previsão para relatórios).
@@ -67,6 +67,8 @@ export interface OpcoesPrevisaoRelatorio {
   demonstrativoBase?: Demonstrativo | null | undefined;
   /** Histórico de rateios: fonte do percentual aprovado. */
   historicoRateios?: HistoricoRateio[] | undefined;
+  /** Previstos aprovados gravados pelo servidor; têm precedência sobre o previsto derivado. */
+  previsoesAprovadas?: PrevisaoAprovada[] | undefined;
 }
 
 /** Variação em %, 2 casas; null sem previsto. */
@@ -101,6 +103,7 @@ export function calcularPrevisaoParaRelatorios(
     demonstrativoBase: opcoes.demonstrativoBase,
     historicoRateios: opcoes.historicoRateios,
     condominio,
+    previsoesAprovadas: opcoes.previsoesAprovadas,
   });
   const avisos: string[] = [...previstoAprovado.avisos];
   const mapa = new Map(

@@ -1,5 +1,41 @@
 # Decisões do projeto
 
+## 2026-11-21 — fechamento gera o previsto de N+1 e período fechado só muda após reabrir (issue #286)
+
+Decisões do responsável: alterar dados de período fechado exige **reabrir a prestação de contas**; importar
+ou editar um mês fechado é **bloqueado** pela API até lá (situação rara, pois ao fechar tudo já foi conferido).
+
+`alterar_fechamento_exercicio` (`lib_exercicios.php`), em uma única transação: (1) confirmação repetida
+devolve o fechamento existente, mesmo com versão obsoleta; (2) o previsto de N+1 é gravado a partir do
+demonstrativo de N e do percentual do histórico de rateios (0% é válido); sem percentual (ou sem a tabela)
+o fechamento **não conclui** e nada fica pela metade; (3) o previsto que N usa é **congelado** em
+`fechamento.previstoAprovado`, para reproduzir o comparativo depois; (4) refechar N sem mudar nada não cria
+nova versão; se N+1 já estiver fechado e o previsto mudaria, o fechamento é bloqueado até reabrir N+1;
+reabrir N mantém o previsto de N+1 até o novo fechamento, que o substitui por nova versão.
+
+`exigir_mes_fora_de_exercicio_fechado` bloqueia salvar, mover e excluir relatório mensal (DRE mensal ou
+Comparativo Financeiro, que geram um relatório por competência) e a confirmação de importação cuja
+competência caia no período de um exercício fechado do mesmo condomínio. A competência é derivada no
+servidor com a mesma regra de `competenciaMensal`. Limitação: o fechamento continua copiando todos os
+relatórios mensais do condomínio (comportamento anterior), não só os do período.
+
+## 2026-11-21 — previsto aprovado persistido em `kr_previsoes_aprovadas` (issue #285)
+
+O previsto aprovado (simples, percentual do histórico de rateios) passa a ter tabela própria, com uma
+linha vigente por condomínio e exercício de destino (`UNIQUE (condo_id, exercicio_destino)`), o
+detalhamento por grupo e conta (nome, chave normalizada, realizado de origem e previsto), o total
+fechado pela soma das linhas, a origem (`aprovacao` ou `carga_inicial`), quem e quando aprovou e a
+versão. Substituir um previsto grava uma versão nova e deixa o resumo da anterior em `anterior`.
+
+Decidido: (1) o cliente só **lê** a store `previsoes_aprovadas`; a escrita é do servidor, no fechamento
+da prestação (#286) ou na carga inicial; (2) a leitura tolera a ausência da tabela (lista vazia), então
+o código pode ser publicado antes da migration; já a **carga só roda com a tabela criada**; (3) exercício
+aberto usa o registro gravado, exercício fechado usa o previsto congelado no fechamento, e exercício
+fechado sem congelado mantém o derivado, para não mudar números já emitidos; (4) a carga inicial começa
+sempre por **simulação sem gravar**, só grava o que tem demonstrativo e percentual identificáveis, nunca
+substitui previsto existente e nunca altera prestações de contas; (5) o cálculo PHP e o TypeScript são
+conferidos pelas mesmas fixtures (`domain/fixtures/previsto-aprovado.json`).
+
 ## 2026-11-21 — previsto aprovado simples e percentual do histórico de rateios (issues #284 a #286)
 
 Decisões do responsável: (1) o previsto aprovado é o **simples**, `realizado da conta do exercício anterior

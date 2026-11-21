@@ -1,7 +1,18 @@
 import { centavos } from "./demonstrativo";
 import { percentualAprovadoDoHistorico } from "./historicoRateio";
 import { resolverVariacao } from "./previsao";
-import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio } from "./types";
+import type {
+  Condominio,
+  ContaPrevistaAprovada,
+  DePara,
+  Demonstrativo,
+  Exercicio,
+  GrupoPrevistoAprovado,
+  HistoricoRateio,
+  PrevisaoAprovada,
+} from "./types";
+
+export type { ContaPrevistaAprovada, GrupoPrevistoAprovado };
 
 /**
  * Previsto aprovado — fonte única do "previsto" para Previsão para relatórios, Previsto × Realizado,
@@ -15,24 +26,11 @@ import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio } fr
  *   histórico, cai na variação explícita do exercício (com aviso); sem ambos, o previsto fica pendente.
  * - Sem exercício anterior com despesas não há base histórica: "sem previsão aprovada".
  *
- * Hoje o previsto é DERIVADO na leitura (`origem: "derivado"`). A etapa 3 (#285) passa a lê-lo de
- * `kr_previsoes_aprovadas`, sem mudar quem consome esta estrutura.
+ * O previsto é lido de `kr_previsoes_aprovadas` (`origem: "aprovado"`) quando o exercício está aberto e
+ * existe registro para ele; exercício fechado usa o previsto congelado no fechamento. Sem registro, é
+ * DERIVADO na leitura (`origem: "derivado"`) do exercício anterior — assim exercícios fechados antes
+ * da tabela mantêm os números já emitidos.
  */
-
-export interface ContaPrevistaAprovada {
-  grupo: string;
-  nome: string;
-  /** Realizado de origem (exercício anterior) desta conta. */
-  realizadoOrigem: number;
-  /** Previsto anual aprovado da conta, em centavos. */
-  previsto: number;
-}
-
-export interface GrupoPrevistoAprovado {
-  nome: string;
-  contas: ContaPrevistaAprovada[];
-  totalPrevisto: number;
-}
 
 export type SituacaoPrevisto = "ok" | "sem_base" | "sem_percentual";
 
@@ -44,7 +42,9 @@ export interface PrevistoAprovado {
   origemPercentual: "historico" | "exercicio" | null;
   totalPrevisto: number;
   grupos: GrupoPrevistoAprovado[];
-  origem: "derivado";
+  origem: "derivado" | "aprovado";
+  /** Versão do registro persistido (só quando `origem` é "aprovado"). */
+  versao?: number;
   avisos: string[];
 }
 
@@ -134,18 +134,35 @@ export function previstoAprovadoDerivado(entrada: EntradaPrevisto): PrevistoApro
 
   let total = 0;
   const resultado: GrupoPrevistoAprovado[] = [];
-  for (const g of grupos.values()) {
-    const contas: ContaPrevistaAprovada[] = [...g.contas.values()].map((c) => ({
+  for (const [chaveGrupo, g] of grupos.entries()) {
+    const contas: ContaPrevistaAprovada[] = [...g.contas.entries()].map(([chave, c]) => ({
       grupo: g.nome,
       nome: c.nome,
+      chave,
       realizadoOrigem: centavos(c.realizado),
       previsto: centavos(c.realizado * fator),
     }));
     const totalGrupo = centavos(contas.reduce((s, c) => s + c.previsto, 0));
     total += totalGrupo;
-    resultado.push({ nome: g.nome, contas, totalPrevisto: totalGrupo });
+    resultado.push({ nome: g.nome, chave: chaveGrupo, contas, totalPrevisto: totalGrupo });
   }
   return { ...base, percentual, origemPercentual, totalPrevisto: centavos(total), grupos: resultado };
+}
+
+/** Converte o registro persistido na mesma estrutura usada pelas telas. */
+export function previstoDeRegistro(reg: PrevisaoAprovada): PrevistoAprovado {
+  return {
+    condoId: reg.condoId,
+    exercicioDestino: reg.exercicioDestino,
+    situacao: "ok",
+    percentual: reg.percentualAprovado,
+    origemPercentual: "historico",
+    totalPrevisto: reg.totalPrevisto,
+    grupos: reg.grupos,
+    origem: "aprovado",
+    versao: reg.versao,
+    avisos: [],
+  };
 }
 
 export interface OpcoesPrevistoDoExercicio {
@@ -153,13 +170,25 @@ export interface OpcoesPrevistoDoExercicio {
   demonstrativoBase?: Demonstrativo | null | undefined;
   historicoRateios?: HistoricoRateio[] | undefined;
   condominio?: Pick<Condominio, "mapeamento"> | null | undefined;
+  /** Previstos aprovados gravados pelo servidor (store `previsoes_aprovadas`). */
+  previsoesAprovadas?: PrevisaoAprovada[] | undefined;
 }
 
 /**
- * Previsto do exercício para as telas de comparação. Em exercício fechado usa a base e o cadastro
- * congelados no fechamento; senão, a base informada (exercício anterior) e o histórico de rateios.
+ * Previsto do exercício para as telas de comparação. Ordem: (1) exercício fechado com o previsto
+ * congelado no fechamento; (2) exercício aberto com previsto aprovado gravado; (3) derivado do
+ * exercício anterior e do histórico de rateios (em exercício fechado, com a base e o cadastro
+ * congelados no fechamento).
  */
 export function previstoDoExercicio(exercicio: Exercicio, opcoes: OpcoesPrevistoDoExercicio = {}): PrevistoAprovado {
+  const congelado = exercicio.fechado ? exercicio.fechamento?.previstoAprovado : null;
+  if (congelado) return previstoDeRegistro(congelado);
+  if (!exercicio.fechado) {
+    const gravado = opcoes.previsoesAprovadas?.find(
+      (p) => p.condoId === exercicio.condoId && Number(p.exercicioDestino) === Number(exercicio.ano),
+    );
+    if (gravado) return previstoDeRegistro(gravado);
+  }
   let base = opcoes.demonstrativoBase ?? null;
   let condominio = opcoes.condominio ?? null;
   if (exercicio.fechado && exercicio.fechamento) {

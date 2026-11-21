@@ -335,3 +335,22 @@ CREATE TABLE IF NOT EXISTS kr_consulta_historico (
   KEY idx_condo (condo_id),
   KEY idx_usuario (usuario_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Previsto aprovado por condomínio e exercício de destino (issue #285; ver migrations/20261121_previsoes_aprovadas.sql).
+CREATE TABLE IF NOT EXISTS kr_previsoes_aprovadas (
+  id VARCHAR(64) PRIMARY KEY,
+  condo_id VARCHAR(64) NOT NULL,
+  exercicio_destino INT NOT NULL,
+  versao INT NOT NULL DEFAULT 1,
+  exercicio_base_id VARCHAR(64) NULL,
+  percentual_aprovado DECIMAL(10,6) NOT NULL,
+  total_previsto DECIMAL(14,2) NOT NULL,
+  detalhamento JSON NOT NULL,
+  origem VARCHAR(32) NOT NULL,
+  aprovado_em DATETIME NOT NULL,
+  aprovado_por VARCHAR(64) NULL,
+  anterior JSON NULL,
+  UNIQUE KEY uk_previsao_condo_destino (condo_id, exercicio_destino),
+  INDEX idx_previsao_condo (condo_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
