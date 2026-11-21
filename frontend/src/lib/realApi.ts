@@ -17,6 +17,7 @@ import {
   type AlvoLimpeza,
   type ApiAdapter,
   type ConfirmarImportacaoResposta,
+  type CargaPrevistoResultado,
   type ContagensLimpeza,
   type MetadadosAnexoImportado,
   type PerfilMatriz,
@@ -142,6 +143,9 @@ export const realApi: ApiAdapter = {
     },
     async limpar(alvo: AlvoLimpeza) {
       return post<{ ok: true; apagados: number }>("api.php?a=limpar_dados", { alvo });
+    },
+    async cargaPrevistos(modo: "simular" | "aplicar") {
+      return post<CargaPrevistoResultado>(`api.php?a=previsoes_carga&modo=${modo}`, {});
     },
   },
   auth: {

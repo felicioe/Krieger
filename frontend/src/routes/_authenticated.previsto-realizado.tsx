@@ -40,6 +40,7 @@ import type {
   ConfigEscritorio,
   Exercicio,
   HistoricoRateio,
+  PrevisaoAprovada,
   Mensal,
 } from "@/domain/types";
 import { contagem } from "@/components/app/textos";
@@ -64,6 +65,7 @@ export const Route = createFileRoute("/_authenticated/previsto-realizado")({
       queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
       queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas")),
     ]),
   component: PaginaComparativo,
 });
@@ -80,6 +82,9 @@ function PaginaComparativo() {
   // Tolerante: se a tabela ainda não existir no servidor, a tela continua funcionando.
   const { data: historicoRateios } = useSuspenseQuery(
     listaQueryTolerante<HistoricoRateio>("historico_rateios"),
+  );
+  const { data: previsoesAprovadas } = useSuspenseQuery(
+    listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
   );
   const [tolerancia, setTolerancia] = useState<number | null>(TOLERANCIA_PADRAO);
   const [mostrarAnaliticas, setMostrarAnaliticas] = useState(true);
@@ -112,9 +117,19 @@ function PaginaComparativo() {
             // Previsto aprovado simples: base é o exercício anterior; % vem do histórico de rateios.
             demonstrativoBase: exercicioAnterior?.demonstrativo ?? null,
             historicoRateios,
+            previsoesAprovadas,
           })
         : null,
-    [exercicio, mensais, condo, busca.ate, tolerancia, exercicioAnterior, historicoRateios],
+    [
+      exercicio,
+      mensais,
+      condo,
+      busca.ate,
+      tolerancia,
+      exercicioAnterior,
+      historicoRateios,
+      previsoesAprovadas,
+    ],
   );
 
   const cabeca = (

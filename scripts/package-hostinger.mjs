@@ -21,6 +21,7 @@ const fromRoot = [
   'lib_auth.php',
   'lib_indices.php',
   'lib_exercicios.php',
+  'lib_previsoes.php',
   'lib_permissoes.php',
   'lib_importacao.php',
   'lib_backup.php',

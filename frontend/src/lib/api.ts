@@ -92,6 +92,8 @@ export const api = {
   manutencao: {
     contagens: () => guarda(() => impl().manutencao.contagens()),
     limpar: (alvo: AlvoLimpeza) => guarda(() => impl().manutencao.limpar(alvo)),
+    cargaPrevistos: (modo: "simular" | "aplicar") =>
+      guarda(() => impl().manutencao.cargaPrevistos(modo)),
   },
   auth: {
     eu: () => impl().auth.eu(),

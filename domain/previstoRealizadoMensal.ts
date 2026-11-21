@@ -1,7 +1,7 @@
 import { previstoDoExercicio } from "./previstoAprovado";
 import { competenciaMensal, mesesDoExercicioSeguinte, chaveRotulo } from "./previstoRealizado";
 import { centavos } from "./demonstrativo";
-import type { Condominio, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
+import type { Condominio, Demonstrativo, Exercicio, HistoricoRateio, Mensal, PrevisaoAprovada } from "./types";
 
 export type CelulaMensal = { previsto: number; realizado: number; diferenca: number; horizontal: number | null; verticalPrevisto: number | null; verticalRealizado: number | null };
 export type LinhaMensal = { grupo: string; mensal: CelulaMensal[]; total: CelulaMensal };
@@ -24,6 +24,7 @@ export function compararPrevistoRealizadoMensal(
     demonstrativoBase?: Demonstrativo | null | undefined;
     /** Histórico de rateios — fonte do percentual aprovado. */
     historicoRateios?: HistoricoRateio[];
+    previsoesAprovadas?: PrevisaoAprovada[];
   } = {},
 ): ResultadoMensalDetalhado {
   if (exercicio.fechado && exercicio.fechamento) {
@@ -38,7 +39,7 @@ export function compararPrevistoRealizadoMensal(
   const porPos = new Map<number, Mensal[]>();
   const pos = new Map(janela.map((m, i) => [ch(m), i + 1]));
   for (const m of mensais) { if (m.condoId !== exercicio.condoId) continue; const c = competenciaMensal(m); const p = c ? pos.get(ch(c)) : undefined; if (p && p >= inicio && p <= fim) porPos.set(p, [...(porPos.get(p) ?? []), m]); }
-  const aprovado = previstoDoExercicio(exercicio, { demonstrativoBase: opcoes.demonstrativoBase, historicoRateios: opcoes.historicoRateios, condominio: opcoes.condominio });
+  const aprovado = previstoDoExercicio(exercicio, { demonstrativoBase: opcoes.demonstrativoBase, historicoRateios: opcoes.historicoRateios, condominio: opcoes.condominio, previsoesAprovadas: opcoes.previsoesAprovadas });
   const mapa = new Map((opcoes.condominio?.mapeamento ?? []).filter((x) => x.de?.trim()).map((x) => [chaveRotulo(x.de), x.para]));
   const nome = (s: string) => mapa.get(chaveRotulo(s)) ?? s;
   const grupos = new Map<string, { nome: string; previsto: number; realizado: number[] }>();

@@ -84,6 +84,7 @@ import {
   type AlvoLimpeza,
   type ApiAdapter,
   type ConfirmarImportacaoResposta,
+  type CargaPrevistoResultado,
   type ContagensLimpeza,
   type Registro,
 } from "./apiTypes";
@@ -257,6 +258,7 @@ function semente(): Dados {
     decisoes_previsao: [],
     decisoes_importacao: [],
     historico_rateios: [],
+    previsoes_aprovadas: [],
   };
 }
 
@@ -1151,6 +1153,11 @@ export const mockApi: ApiAdapter = {
     },
   },
   manutencao: {
+    async cargaPrevistos(): Promise<CargaPrevistoResultado> {
+      await espera();
+      exigirAdmin();
+      return { aplicado: false, gravados: 0, linhas: [] };
+    },
     async contagens(): Promise<ContagensLimpeza> {
       await espera();
       exigirAdmin();

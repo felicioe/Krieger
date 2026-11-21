@@ -10,7 +10,7 @@ import {
   type ResultadoPrevisaoSugeridaPorUnidade,
 } from "./previsaoSugerida";
 import { compararPrevistoRealizado, type ResultadoComparativo } from "./previstoRealizado";
-import type { Condominio, ConfigEscritorio, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
+import type { Condominio, ConfigEscritorio, Demonstrativo, Exercicio, HistoricoRateio, Mensal, PrevisaoAprovada } from "./types";
 
 /**
  * Relatório final da prestação de contas: monta, a partir de um exercício, todas as seções
@@ -263,6 +263,8 @@ export function montarRelatorioFinal(entrada: {
   exercicioAnterior?: Pick<Exercicio, "demonstrativo"> | null;
   /** Histórico de rateios travados — fonte do índice anual aprovado (ver `aplicarVariacaoDoHistorico`). */
   historicoRateios?: HistoricoRateio[];
+  /** Previstos aprovados gravados pelo servidor (store `previsoes_aprovadas`). */
+  previsoesAprovadas?: PrevisaoAprovada[];
   condominio: Condominio | null;
   escritorio: ConfigEscritorio | null;
   mensais: Mensal[];
@@ -322,6 +324,7 @@ export function montarRelatorioFinal(entrada: {
     // Previsto aprovado simples: base é o exercício ANTERIOR (nunca o próprio), % do histórico de rateios.
     demonstrativoBase: entrada.exercicioAnterior?.demonstrativo ?? null,
     historicoRateios: entrada.historicoRateios ?? [],
+    previsoesAprovadas: entrada.previsoesAprovadas ?? [],
   });
   const mensaisDoComparativo = mensaisDoRelatorio(e.condoId, entrada.mensais, comparativo);
   // Uma prestação pode ser fechada antes de todos os meses do exercício seguinte

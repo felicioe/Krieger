@@ -1,5 +1,6 @@
 import { centavos } from "./demonstrativo";
 import { previstoDoExercicio, type PrevistoAprovado } from "./previstoAprovado";
+import type { PrevisaoAprovada } from "./types";
 import { competenciaMensal, mesAnoDe } from "./mensal";
 import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
 
@@ -90,6 +91,8 @@ export interface OpcoesComparativo {
   demonstrativoBase?: Demonstrativo | null | undefined;
   /** Histórico de rateios — fonte do percentual aprovado. */
   historicoRateios?: HistoricoRateio[];
+  /** Previstos aprovados gravados pelo servidor; têm precedência sobre o previsto derivado. */
+  previsoesAprovadas?: PrevisaoAprovada[];
 }
 
 const p2 = (n: number) => String(n).padStart(2, "0");
@@ -186,6 +189,7 @@ export function compararPrevistoRealizado(
     demonstrativoBase: opcoes.demonstrativoBase,
     historicoRateios: opcoes.historicoRateios,
     condominio: opcoes.condominio,
+    previsoesAprovadas: opcoes.previsoesAprovadas,
   });
   avisos.push(...previstoAprovado.avisos);
   // Sem previsto aprovado (sem base ou sem percentual) não há situação nem percentual a classificar.

@@ -9,6 +9,7 @@ require __DIR__ . '/lib_backup.php';
 require __DIR__ . '/lib_anexos.php';
 require_once __DIR__ . '/lib_indices.php';
 require_once __DIR__ . '/lib_exercicios.php';
+require_once __DIR__ . '/lib_previsoes.php';
 aplicar_cabecalhos_seguranca();
 
 function erro(string $msg, int $codigo = 400): never { json_erro($msg, $codigo); }
@@ -60,7 +61,7 @@ function resolver_id_condominio(PDO $pdo, array $o, string $idProposto): string 
 
 $ALVOS_LIMPEZA = [
   'condominios' => ['kr_indices_condominio', 'kr_condominios'],
-  'exercicios' => ['kr_historico_rateios', 'kr_exercicios'],
+  'exercicios' => ['kr_previsoes_aprovadas', 'kr_historico_rateios', 'kr_exercicios'],
   'mensais' => ['kr_mensais'],
   'assembleias' => ['kr_assembleias'],
   'atas' => ['kr_atas'],
@@ -111,6 +112,7 @@ $permissaoStore = [
   'decisoes_previsao' => 'previsao_orcamentaria',
   'decisoes_importacao' => 'importador',
   'historico_rateios' => 'previsao_orcamentaria',
+  'previsoes_aprovadas' => 'previsao_orcamentaria',
   'config' => 'escritorio',
 ];
 if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permissaoStore[$s])) {
@@ -121,6 +123,7 @@ if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permi
     'condominios' => ['painel', 'prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'relatorio_mensal', 'editais', 'atas', 'importador', 'drive_documentos', 'consulta_documentos'],
     'exercicios' => ['painel', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
     'historico_rateios' => ['previsao_orcamentaria'],
+    'previsoes_aprovadas' => ['previsao_orcamentaria', 'previsto_realizado', 'prestacao_contas', 'relatorio_mensal', 'painel'],
     'mensais' => ['prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
     'assembleias' => ['painel', 'atas'],
     'modelos' => ['editais'],
@@ -343,6 +346,15 @@ try {
     saida(['ok' => true]);
   }
 
+  // Carga inicial do previsto aprovado: `modo=simular` (padrão) não grava; `modo=aplicar` grava só o
+  // que estiver pronto e nunca substitui um previsto existente.
+  if ($a === 'previsoes_carga') {
+    if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem executar a carga inicial do previsto aprovado.', 403);
+    $aplicar = $param('modo') === 'aplicar';
+    try { saida(previsoes_carga_inicial($pdo, $aplicar, (string)$usuario['id'])); }
+    catch (RuntimeException $e) { if ($e->getCode() === 409) erro($e->getMessage(), 409); throw $e; }
+  }
+
   if ($a === 'limpar_contagens') {
     if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem consultar ou limpar cadastros em massa.', 403);
     $contagens = [];
@@ -390,6 +402,13 @@ try {
       throw $e;
     }
     saida(['ok' => true, 'apagados' => $apagados]);
+  }
+
+  // Previsto aprovado: leitura pelo cliente; a escrita é só do servidor (fechamento da prestação ou
+  // carga inicial). Sem a tabela (migration pendente) a leitura devolve lista vazia.
+  if ($s === 'previsoes_aprovadas') {
+    if ($a === 'listar') saida(listar_previsoes_aprovadas($pdo));
+    erro('O previsto aprovado só é gravado pelo fechamento da prestação de contas ou pela carga inicial.', 403);
   }
 
   if (!in_array($s, $STORES, true)) erro('Store inválida.');

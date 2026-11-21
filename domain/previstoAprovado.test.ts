@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { previstoAprovadoDerivado, percentualExplicitoDoExercicio } from "./previstoAprovado";
+import { readFileSync } from "node:fs";
+import { previstoAprovadoDerivado, previstoDoExercicio, percentualExplicitoDoExercicio } from "./previstoAprovado";
 import { percentualAprovadoDoHistorico } from "./historicoRateio";
 import { demonstrativoVazio, recalcularDemonstrativo } from "./demonstrativo";
-import type { Demonstrativo, HistoricoRateio } from "./types";
+import type { Demonstrativo, Exercicio, HistoricoRateio, PrevisaoAprovada } from "./types";
 
 const demo = (grupos: Demonstrativo["despesas"]["grupos"]): Demonstrativo =>
   recalcularDemonstrativo({ ...demonstrativoVazio("T"), despesas: { grupos, subtotal: 0, saldoRestante: 0 } });
@@ -51,5 +52,62 @@ describe("previstoAprovadoDerivado", () => {
     expect(percentualExplicitoDoExercicio({ variacao: 0, variacaoMetodo: "manual", variacaoParam: null })).toBeNull();
     expect(percentualExplicitoDoExercicio({ variacao: 0, variacaoMetodo: "percentual", variacaoParam: 8 })).toBe(8);
     expect(percentualExplicitoDoExercicio({ variacao: 0, variacaoMetodo: "valor", variacaoParam: 30000 })).toBeNull();
+  });
+});
+
+describe("fixtures compartilhadas com o PHP (scripts/test-previsoes-aprovadas.php)", () => {
+  const casos = JSON.parse(readFileSync(new URL("./fixtures/previsto-aprovado.json", import.meta.url), "utf8")) as {
+    nome: string;
+    percentual: number;
+    mapeamento: { de: string; para: string }[];
+    grupos: Demonstrativo["despesas"]["grupos"];
+    esperado: { totalPrevisto: number; grupos: unknown[] };
+  }[];
+  for (const c of casos) {
+    it(c.nome, () => {
+      const p = previstoAprovadoDerivado({
+        condoId: "c1",
+        anoDestino: 2026,
+        demonstrativoBase: demo(c.grupos),
+        historicoRateios: [linha(2025, { variacao: c.percentual })],
+        mapeamento: c.mapeamento,
+      });
+      expect(p.totalPrevisto).toBe(c.esperado.totalPrevisto);
+      expect(p.grupos).toEqual(c.esperado.grupos);
+    });
+  }
+});
+
+describe("previsto aprovado gravado pelo servidor", () => {
+  const registro: PrevisaoAprovada = {
+    id: "pa-1", condoId: "c1", exercicioDestino: 2026, versao: 2, exercicioBaseId: "e25", percentualAprovado: 10, totalPrevisto: 999,
+    grupos: [{ nome: "Pessoal", totalPrevisto: 999, contas: [{ grupo: "Pessoal", nome: "Salários", realizadoOrigem: 900, previsto: 999 }] }],
+    origem: "aprovacao", aprovadoEm: "2025-12-01 10:00:00", aprovadoPor: "u1", anterior: null,
+  };
+  const exercicio = (extra: Partial<Exercicio> = {}) =>
+    ({ id: "e26", condoId: "c1", condoNome: "T", ano: 2026, variacao: 0, variacaoMetodo: "manual", variacaoParam: null, ...extra }) as Exercicio;
+
+  it("exercício aberto usa o registro gravado, com a versão", () => {
+    const p = previstoDoExercicio(exercicio(), { demonstrativoBase: base, historicoRateios: [linha(2025, { variacao: 10 })], previsoesAprovadas: [registro] });
+    expect(p.origem).toBe("aprovado");
+    expect(p.versao).toBe(2);
+    expect(p.totalPrevisto).toBe(999);
+  });
+
+  it("registro de outro condomínio ou ano não vale; sem registro deriva do exercício anterior", () => {
+    const outros = [{ ...registro, condoId: "c2" }, { ...registro, exercicioDestino: 2027 }];
+    const p = previstoDoExercicio(exercicio(), { demonstrativoBase: base, historicoRateios: [linha(2025, { variacao: 10 })], previsoesAprovadas: outros });
+    expect(p.origem).toBe("derivado");
+    expect(p.totalPrevisto).toBe(132000);
+  });
+
+  it("exercício fechado ignora a tabela: usa o previsto congelado; sem congelado, mantém o derivado", () => {
+    const congelado = { ...registro, totalPrevisto: 555 };
+    const fechadoComCongelado = exercicio({ fechado: true, fechamento: { versao: 1, fechadoEm: "", fechadoPor: "u", condominio: { mapeamento: [] } as never, mensais: [], exercicioAnterior: { demonstrativo: base }, escritorio: null, previstoAprovado: congelado } });
+    expect(previstoDoExercicio(fechadoComCongelado, { previsoesAprovadas: [registro] }).totalPrevisto).toBe(555);
+    const fechadoSemCongelado = exercicio({ fechado: true, fechamento: { versao: 1, fechadoEm: "", fechadoPor: "u", condominio: { mapeamento: [] } as never, mensais: [], exercicioAnterior: { demonstrativo: base }, escritorio: null } });
+    const p = previstoDoExercicio(fechadoSemCongelado, { historicoRateios: [linha(2025, { variacao: 10 })], previsoesAprovadas: [registro] });
+    expect(p.origem).toBe("derivado");
+    expect(p.totalPrevisto).toBe(132000);
   });
 });

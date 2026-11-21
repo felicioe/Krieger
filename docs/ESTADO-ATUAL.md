@@ -1,5 +1,15 @@
 # Estado atual e passagem de contexto
 
+## Previsto aprovado persistido e carga inicial — 21/11/2026 (issue #285)
+
+Nova tabela `kr_previsoes_aprovadas` (`migrations/20261121_previsoes_aprovadas.sql`, também em
+`schema.sql`), biblioteca `lib_previsoes.php` (no pacote), leitura `api.php?a=listar&s=previsoes_aprovadas`
+(escrita só pelo servidor) e carga inicial `api.php?a=previsoes_carga&modo=simular|aplicar`
+(administrador), com painel na página **Backup**. O domínio (`previstoDoExercicio`) prefere o registro
+gravado em exercício aberto. Testes: `scripts/test-previsoes-aprovadas.php` (CI, MySQL efêmero) e
+fixtures compartilhadas PHP/TypeScript. **A migration NÃO foi aplicada em produção**: aplicar antes de
+usar a carga; a leitura funciona sem ela. Pendente: #286 (fechamento transacional e bloqueios).
+
 ## Previsto aprovado — camada única de leitura — 21/11/2026 (issue #284)
 
 `domain/previstoAprovado.ts` passa a ser a fonte do previsto das quatro telas de comparação e do
