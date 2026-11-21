@@ -19,8 +19,14 @@ Isso não exclui integrações instaladas fora de webhooks. A auditoria posterio
 confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
 Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
-`deploy-hostinger`, contendo somente o pacote curado de um SHA de main. Última
-publicação: `deploy-hostinger` `5a599e6`, com o pacote do commit `4506ebd`
+`deploy-hostinger`, contendo somente o pacote curado de um SHA de main.
+**Publicação de 21/11/2026:** `deploy-hostinger` `e3c2a89` (sobre `121d1da`), com o pacote do commit
+`04b8cb0` de `main` (PR #283, issues #282 e #284: realizado dos relatórios mensais e previsto
+aprovado simples). Runtime `index-DtzFStHE.js` no ar igual ao do pacote e chunk
+`_authenticated.previsao-orcamentaria-CgdO-u3n.js` com MD5 idêntico; `api.php` e `auth.php?a=eu`
+respondem 401 sem sessão e `krieger-config.php`/`config.php` não são servidos. Sem migration.
+Rollback: republicar o conteúdo de `121d1da`. Login, telas e dados reais ainda precisam de conferência
+do responsável. Antes dela, a última publicação foi: `deploy-hostinger` `5a599e6`, com o pacote do commit `4506ebd`
 (main, versão 1.14 — correção da previsão que calculava R$ 0,00 quando o
 condomínio não tinha exercício anterior); o runtime `index-xstmJ57l.js` no ar
 coincide com o `index.html` publicado, e o chunk
