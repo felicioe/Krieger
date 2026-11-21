@@ -1,5 +1,14 @@
 # Estado atual e passagem de contexto
 
+## Previsão para relatórios — 21/11/2026 (issue #282)
+
+A tela **Financeiro → Previsão para relatórios** (`/previsao-orcamentaria?modo=relatorios`) passou a usar
+`calcularPrevisaoParaRelatorios` (`domain/previsaoRelatorios.ts`, 10 testes): realizado dos relatórios
+mensais do período (alternativa: demonstrativo da prestação, com aviso), previsto do exercício anterior
+× (1 + %) proporcional aos meses, variação `(realizado − previsto) ÷ previsto` e sem cálculo quando não há
+exercício anterior. PDF, XLSX e CSV usam o mesmo resultado. **Pendente:** unificar `demonstrativoBasePrevisao`
+nas demais telas (ver `docs/DECISOES.md`, 21/11/2026). **Não validado em produção.**
+
 ## Histórico de rateios e documentos por cidade — 16/11/2026
 
 **Histórico de rateios (versão 1.14).** Cada exercício cujo rateio foi travado gera uma linha em

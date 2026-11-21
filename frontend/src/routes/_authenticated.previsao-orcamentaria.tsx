@@ -30,8 +30,13 @@ import {
   prepararExercicio,
 } from "@/domain/exercicio";
 import { calcularPrevisao, demonstrativoBasePrevisao } from "@/domain/previsao";
-import { aplicarRateioBase, aplicarVariacaoDoHistorico, historicoDoExercicio } from "@/domain/historicoRateio";
-import type { Condominio, Demonstrativo, Exercicio, HistoricoRateio } from "@/domain/types";
+import { calcularPrevisaoParaRelatorios } from "@/domain/previsaoRelatorios";
+import {
+  aplicarRateioBase,
+  aplicarVariacaoDoHistorico,
+  historicoDoExercicio,
+} from "@/domain/historicoRateio";
+import type { Condominio, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
 import { novoId } from "@/lib/id";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { imprimirTabela } from "@/lib/imprimirTabela";
@@ -61,6 +66,7 @@ export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
     ]),
   component: PaginaPrevisao,
 });
@@ -73,6 +79,7 @@ function PaginaPrevisao() {
   const { data: historicoRateios } = useSuspenseQuery(
     listaQueryTolerante<HistoricoRateio>("historico_rateios"),
   );
+  const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
 
   const exercicios = useMemo(
     () =>
@@ -159,6 +166,7 @@ function PaginaPrevisao() {
       exercicioAnterior={exercicioAnterior ?? null}
       condominio={condominios.find((c) => c.id === exercicio.condoId)}
       historicoRateios={historicoRateios}
+      mensais={mensais}
       exercicios={exercicios}
       seletor={seletor}
       modo={busca.modo ?? "rateio"}
@@ -171,6 +179,7 @@ function EditorPrevisao({
   exercicioAnterior,
   condominio,
   historicoRateios,
+  mensais,
   exercicios,
   seletor,
   modo,
@@ -179,6 +188,7 @@ function EditorPrevisao({
   exercicioAnterior: Pick<Exercicio, "demonstrativo"> | null;
   condominio: Condominio | undefined;
   historicoRateios: HistoricoRateio[];
+  mensais: Mensal[];
   exercicios: Exercicio[];
   seletor: ReactNode;
   modo: "rateio" | "relatorios";
@@ -207,8 +217,8 @@ function EditorPrevisao({
     modo === "relatorios"
       ? (exercicioAnterior?.demonstrativo ?? demonstrativo ?? demonstrativoVazio(e.condoNome))
       : (demonstrativoBasePrevisao(e, exercicioAnterior) ??
-         demonstrativo ??
-         demonstrativoVazio(e.condoNome));
+        demonstrativo ??
+        demonstrativoVazio(e.condoNome));
   // Herda o rateioAtual do ano anterior antes de calcular a variação — sem isso, o fallback
   // de aplicarVariacaoDoHistorico não tem base para comparar com o rateioAprovado e retorna 0%.
   const eComRateioBase = aplicarRateioBase(e, historicoRateios);
@@ -327,7 +337,15 @@ function EditorPrevisao({
 
   if (modo === "relatorios") {
     return (
-      <RelatorioPrevisao seletor={seletor} exercicio={e} resultado={resultado} periodo={periodo} demonstrativoBase={demonstrativoBase} />
+      <RelatorioPrevisao
+        seletor={seletor}
+        exercicio={e}
+        resultado={resultado}
+        periodo={periodo}
+        demonstrativoBase={exercicioAnterior?.demonstrativo ?? null}
+        mensais={mensais}
+        condominio={condominio}
+      />
     );
   }
 
@@ -408,112 +426,63 @@ function RelatorioPrevisao({
   resultado,
   periodo,
   demonstrativoBase,
+  mensais,
+  condominio,
 }: {
   seletor: ReactNode;
   exercicio: Exercicio;
   resultado: ReturnType<typeof calcularPrevisao>;
   periodo: string | null;
+  /** Demonstrativo do exercício ANTERIOR; null quando não existe (sem base histórica). */
   demonstrativoBase: Demonstrativo | null;
+  mensais: Mensal[];
+  condominio: Pick<Condominio, "mapeamento"> | undefined;
 }) {
   const [detalhado, setDetalhado] = useState(false);
   const [exportandoXlsx, setExportandoXlsx] = useState(false);
   const exportandoRef = useRef(false);
-  // No modo relatórios:
-  // - Realizado = despesas do exercício ATUAL (2026) → exercicio.demonstrativo
-  // - Previsto = base anterior (2025) × fator (1 + variação%) → cálculo da previsão
-  // - Variação = (Previsto − Realizado) / Realizado × 100
-  const demonstrativoRealizado = exercicio.demonstrativo ?? demonstrativoVazio(exercicio.condoNome);
-  const demonstrativoBaseRef = demonstrativoBase ?? demonstrativoVazio(exercicio.condoNome);
-  const fator = 1 + resultado.variacaoPct / 100;
+  // Regra da issue #282 (cálculo em `domain/previsaoRelatorios.ts`):
+  // - Realizado = relatórios mensais do período (alternativa: demonstrativo da prestação)
+  // - Previsto = exercício anterior × (1 + reajuste%), proporcional aos meses com realizado
+  // - Variação = (Realizado − Previsto) ÷ Previsto
+  const calculo = useMemo(
+    () =>
+      calcularPrevisaoParaRelatorios(exercicio, mensais, {
+        condominio: condominio ?? null,
+        demonstrativoBase,
+        reajustePct: resultado.variacaoPct,
+        variacaoMetodo: exercicio.variacaoMetodo,
+      }),
+    [exercicio, mensais, condominio, demonstrativoBase, resultado.variacaoPct],
+  );
+  const { semBase } = calculo;
 
-  const gruposRealizado = demonstrativoRealizado.despesas.grupos;
-  const gruposBase = demonstrativoBaseRef.despesas.grupos;
-
-  // Mapeia grupos da base (2025) por nome normalizado para aplicar o fator.
-  const norm = (s: string) =>
-    (s ?? "")
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      .trim();
-  const mapaGruposBase = new Map(gruposBase.map((g) => [norm(g.nome), g]));
-
-  // Itera sobre os grupos do REALIZADO (2026) e cruza com a base (2025) para gerar o PREVISTO.
-  const linhas = gruposRealizado.flatMap((grupoReal) => {
-    const grupoBase = mapaGruposBase.get(norm(grupoReal.nome));
-    // Previsto do grupo = soma da base (2025) × fator — mesmo valor nos dois modos.
-    const baseTotal = grupoBase
-      ? grupoBase.itens.reduce((s, item) => s + (Number(item.valor) || 0), 0)
-      : 0;
-    const previstoGrupo = baseTotal * fator;
-    const realizadoGrupo = grupoReal.itens.reduce(
-      (s, item) => s + (Number(item.valor) || 0),
-      0,
-    );
-
-    return detalhado
-      ? (() => {
-          // Distribui o previsto do grupo proporcionalmente ao peso de cada item
-          // no realizado, garantindo que a soma dos itens bata com o total do grupo.
-          const itensComRealizado = grupoReal.itens.map((itemReal) => ({
-            itemReal,
-            realizado: Number(itemReal.valor) || 0,
-          }));
-          const totalRealizadoItens = itensComRealizado.reduce(
-            (s, it) => s + it.realizado,
-            0,
-          );
-          let previstoAcumulado = 0;
-          return itensComRealizado.map((it, idx) => {
-            const realizado = it.realizado;
-            let previsto: number;
-            if (idx === itensComRealizado.length - 1) {
-              // Último item recebe o restante para fechar o total do grupo.
-              previsto = previstoGrupo - previstoAcumulado;
-            } else if (totalRealizadoItens > 0) {
-              previsto = (realizado / totalRealizadoItens) * previstoGrupo;
-            } else {
-              previsto = 0;
-            }
-            previstoAcumulado += previsto;
-            const variacaoPct =
-              realizado !== 0 ? ((previsto - realizado) / realizado) * 100 : 0;
-            return {
-              nome: it.itemReal.nome || "Sem nome",
-              realizado,
-              previsto,
-              variacaoPct,
-              grupo: grupoReal.nome,
-            };
-          });
-        })()
+  const linhas = calculo.grupos.flatMap((g) =>
+    detalhado
+      ? g.contas
       : [
-          (() => {
-            const realizado = realizadoGrupo;
-            const previsto = previstoGrupo;
-            const variacaoPct =
-              realizado !== 0 ? ((previsto - realizado) / realizado) * 100 : 0;
-            return {
-              nome: grupoReal.nome || "Sem grupo",
-              realizado,
-              previsto,
-              variacaoPct,
-              grupo: grupoReal.nome,
-            };
-          })(),
-        ];
-  });
-
-  const totalRealizado = linhas.reduce((s, linha) => s + linha.realizado, 0);
-  const totalPrevisto = linhas.reduce((s, linha) => s + linha.previsto, 0);
-  const variacaoGeralPct = totalRealizado > 0 ? ((totalPrevisto - totalRealizado) / totalRealizado) * 100 : (resultado.variacaoPct || 0);
+          {
+            grupo: g.nome,
+            nome: g.nome || "Sem grupo",
+            previsto: g.previsto,
+            realizado: g.realizado,
+            diferenca: g.diferenca,
+            variacaoPct: g.variacaoPct,
+          },
+        ],
+  );
+  const totalRealizado = calculo.total.realizado;
+  const totalPrevisto = calculo.total.previsto;
+  const variacaoGeralPct = calculo.total.variacaoPct;
+  const textoVariacao = (v: number | null) => (v === null ? "—" : `${formatNumeroBR(v)}%`);
+  const textoPrevisto = (v: number) => (semBase ? "—" : formatBRL(v));
 
   const dadosExportacao = linhas.map((linha) => ({
     Grupo: linha.grupo,
     Conta: linha.nome,
     Realizado: linha.realizado,
-    Previsto: linha.previsto,
-    "Variação (%)": Number(linha.variacaoPct.toFixed(2)),
+    Previsto: semBase ? null : linha.previsto,
+    "Variação (%)": linha.variacaoPct === null ? null : Number(linha.variacaoPct.toFixed(2)),
   }));
   const nomeArquivo = `previsao-relatorios-${exercicio.ano}`;
   const baixarCsv = () => {
@@ -524,7 +493,7 @@ function RelatorioPrevisao({
         linha.Grupo,
         linha.Conta,
         linha.Realizado.toFixed(2),
-        linha.Previsto.toFixed(2),
+        linha.Previsto === null ? "" : linha.Previsto.toFixed(2),
         linha["Variação (%)"] ?? "",
       ]),
     ]
@@ -550,7 +519,7 @@ function RelatorioPrevisao({
           linha.Grupo,
           linha.Conta,
           linha.Realizado,
-          linha.Previsto,
+          linha.Previsto ?? "",
           linha["Variação (%)"] ?? "",
         ]),
       ]);
@@ -571,15 +540,15 @@ function RelatorioPrevisao({
           linha.Grupo,
           linha.Conta,
           formatBRL(linha.Realizado),
-          formatBRL(linha.Previsto),
-          linha["Variação (%)"] === null ? "—" : `${formatNumeroBR(linha["Variação (%)"])}%`,
+          linha.Previsto === null ? "—" : formatBRL(linha.Previsto),
+          textoVariacao(linha["Variação (%)"]),
         ]),
         totais: [
           "Total",
           "",
           formatBRL(totalRealizado),
-          formatBRL(totalPrevisto),
-          totalRealizado ? `${formatNumeroBR(variacaoGeralPct)}%` : "—",
+          textoPrevisto(totalPrevisto),
+          textoVariacao(variacaoGeralPct),
         ],
       });
       if (!abriu)
@@ -626,7 +595,11 @@ function RelatorioPrevisao({
       <SectionCard className="mb-6">{seletor}</SectionCard>
       <SectionCard
         titulo="Previsto × Realizado"
-        descricao={`Realizado aplicado pelo reajuste de ${formatNumeroBR(resultado.variacaoPct)}% · sem deduções, ajustes ou variação de despesas sugeridas.`}
+        descricao={
+          semBase
+            ? "Sem exercício anterior com despesas: não há base histórica para o previsto. Mostrando só o realizado."
+            : `Previsto = realizado do exercício anterior reajustado em ${formatNumeroBR(calculo.reajustePct)}%, proporcional a ${calculo.meses} ${calculo.meses === 1 ? "mês" : "meses"} · Realizado ${calculo.origemRealizado === "mensais" ? `dos relatórios mensais até ${calculo.mesAte}` : "da prestação de contas"} · variação = (realizado − previsto) ÷ previsto · sem deduções, ajustes ou variação de despesas sugeridas.`
+        }
       >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div
@@ -654,6 +627,16 @@ function RelatorioPrevisao({
             </Button>
           </div>
         </div>
+        {calculo.avisos.length > 0 && (
+          <ul
+            className="mb-4 list-disc space-y-1 pl-5 text-sm text-muted-foreground"
+            aria-label="Avisos do cálculo"
+          >
+            {calculo.avisos.map((aviso) => (
+              <li key={aviso}>{aviso}</li>
+            ))}
+          </ul>
+        )}
         <RolagemTabela className="rounded-md border">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-muted/60">
@@ -666,9 +649,7 @@ function RelatorioPrevisao({
             </thead>
             <tbody>
               {linhas.map((linha, index) => {
-                const variacao = linha.realizado
-                  ? formatNumeroBR(linha.variacaoPct) + "%"
-                  : "—";
+                const variacao = textoVariacao(linha.variacaoPct);
                 const novoGrupo =
                   detalhado && (index === 0 || linhas[index - 1]!.grupo !== linha.grupo);
                 return (
@@ -687,7 +668,7 @@ function RelatorioPrevisao({
                       <td className="px-3 py-2">{linha.nome}</td>
                       <td className="num px-3 py-2 text-right">{formatBRL(linha.realizado)}</td>
                       <td className="num px-3 py-2 text-right font-medium">
-                        {formatBRL(linha.previsto)}
+                        {textoPrevisto(linha.previsto)}
                       </td>
                       <td className="num px-3 py-2 text-right text-muted-foreground">{variacao}</td>
                     </tr>
@@ -700,12 +681,10 @@ function RelatorioPrevisao({
                 <td className="px-3 py-2">Total</td>
                 <td className="num px-3 py-2 text-right">{formatBRL(totalRealizado)}</td>
                 <td className="num px-3 py-2 text-right text-primary">
-                  {formatBRL(totalPrevisto)}
+                  {textoPrevisto(totalPrevisto)}
                 </td>
                 <td className="num px-3 py-2 text-right text-primary">
-                  {totalRealizado
-                    ? `${formatNumeroBR(variacaoGeralPct)}%`
-                    : "—"}
+                  {textoVariacao(variacaoGeralPct)}
                 </td>
               </tr>
             </tfoot>
