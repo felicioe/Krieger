@@ -94,6 +94,8 @@ export const api = {
     limpar: (alvo: AlvoLimpeza) => guarda(() => impl().manutencao.limpar(alvo)),
     cargaPrevistos: (modo: "simular" | "aplicar") =>
       guarda(() => impl().manutencao.cargaPrevistos(modo)),
+    atualizarPrevisto: (condoId: string, anoDestino: number) =>
+      guarda(() => impl().manutencao.atualizarPrevisto(condoId, anoDestino)),
   },
   auth: {
     eu: () => impl().auth.eu(),

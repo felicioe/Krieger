@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  avisosContinuidadeRateio,
   avisosDaLinhaRateio,
   formatarPercentualCompleto,
   linhaRateioAlterada,
@@ -302,6 +303,34 @@ describe("histórico de rateios no cadastro do condomínio (#297)", () => {
     expect(avisos[0]).toMatch(/2026 já está gravado com 0,00%/);
     expect(avisosDaLinhaRateio(2025, 0, previsoes, [], "c1")).toEqual([]);
     expect(avisosDaLinhaRateio(null, 5, previsoes, [], "c1")).toEqual([]);
+  });
+});
+
+describe("continuidade e observação do histórico (#299)", () => {
+  const linha = (ano: number, atual: number | null, aprovado: number) => ({ ...linhaRateioNova(ano), rateioAtual: atual, rateioAprovado: aprovado });
+
+  it("avisa quando o rateio atual difere do aprovado do ano anterior (caso Urban Classic)", () => {
+    const avisos = avisosContinuidadeRateio([linha(2026, 47466.81, 53362.19), linha(2025, 700, 49222.57)]);
+    expect(avisos).toHaveLength(1);
+    expect(avisos[0]).toMatch(/^2026: o rateio atual \(R\$ 47\.466,81\) difere do rateio aprovado de 2025 \(R\$ 49\.222,57\)/);
+    expect(avisos[0]).toMatch(/percentual calculado seria 8,41/);
+  });
+
+  it("não avisa quando bate, quando falta o ano anterior ou o rateio atual", () => {
+    expect(avisosContinuidadeRateio([linha(2026, 100, 110), linha(2025, 90, 100)])).toEqual([]);
+    expect(avisosContinuidadeRateio([linha(2026, 100, 110)])).toEqual([]);
+    expect(avisosContinuidadeRateio([linha(2026, null, 110), linha(2025, 90, 100)])).toEqual([]);
+  });
+
+  it("a observação entra na linha gravada, conta como alteração e sobrevive a travar o rateio", () => {
+    const base = { condoId: "c1", ano: 2026, rateioAtual: 100, rateioAprovado: 110, rateioSugerido: null, percentualInformado: 10, observacao: "  Índice aplicado às receitas  " };
+    expect(montarLinhaHistorico(base, { travadoEm: "t" }).observacao).toBe("Índice aplicado às receitas");
+    expect("observacao" in montarLinhaHistorico({ ...base, observacao: "  " }, { travadoEm: "t" })).toBe(false);
+    const l = linhaRateioDe({ id: "a", condoId: "c1", ano: 2026, rateioAtual: 100, rateioSugerido: null, variacao: 10, rateioAprovado: 110, travadoEm: "t", fonte: "manual", exercicioId: null, observacao: "motivo" });
+    expect(l.observacao).toBe("motivo");
+    expect(linhaRateioAlterada(l, { ...l, observacao: "outro" })).toBe(true);
+    const travada = preservarPercentualInformado({ variacao: 3, variacaoOrigem: "calculado" as const }, { variacao: 3, variacaoOrigem: "calculado", observacao: "motivo" });
+    expect(travada).toMatchObject({ variacao: 3, observacao: "motivo" });
   });
 });
 

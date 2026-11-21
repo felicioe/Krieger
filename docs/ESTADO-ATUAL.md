@@ -1,5 +1,13 @@
 # Estado atual e passagem de contexto
 
+## Carga com o previsto gravado, atualização, continuidade e observação — 21/11/2026 (issue #299)
+
+Página Backup: a simulação mostra o previsto **gravado** e marca divergência com o histórico; botão **Atualizar previsto**
+(administrador) grava nova versão. Cadastro do condomínio, seção Histórico de rateios: alerta de continuidade e campo de
+observação por linha. Domínio em `domain/historicoRateio.ts` (`avisosContinuidadeRateio`, observação), PHP em
+`lib_previsoes.php` (`previsao_atualizar`) e `validar_historico_rateio`; testes de domínio e PHP (seção 6 de
+`scripts/test-previsoes-aprovadas.php`). Sem migration. **Não validado em produção.**
+
 ## Histórico de rateios no cadastro do condomínio — 21/11/2026 (issue #297)
 
 A edição do histórico de rateios saiu da tela própria e está na seção **Histórico de rateios** do cadastro do

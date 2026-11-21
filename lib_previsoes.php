@@ -173,6 +173,7 @@ function previsoes_carga_inicial(PDO $pdo, bool $aplicar, ?string $usuarioId): a
         'condoId' => $condoId, 'condoNome' => (string)($e['condoNome'] ?? ($condos[$condoId]['nome'] ?? '')), 'exercicioBaseId' => (string)($e['id'] ?? ''),
         'anoBase' => $ano, 'exercicioDestino' => $ano + 1, 'percentual' => null, 'totalPrevisto' => null, 'status' => 'pronto', 'motivo' => '',
         'destinoFechado' => isset($destinoFechado[$condoId . '|' . ($ano + 1)]),
+        'gravado' => null, 'divergeDoHistorico' => false,
       ];
       if (!previsao_tem_despesas($e['demonstrativo'] ?? null)) { $linha['status'] = 'pendente'; $linha['motivo'] = 'Exercício sem demonstrativo com despesas.'; $linhas[] = $linha; continue; }
       $pct = previsao_percentual_historico($pdo, $condoId, $ano);
@@ -180,7 +181,16 @@ function previsoes_carga_inicial(PDO $pdo, bool $aplicar, ?string $usuarioId): a
       $calculo = previsao_calcular($e['demonstrativo'], $pct, $condos[$condoId]['mapeamento'] ?? []);
       $linha['percentual'] = $pct;
       $linha['totalPrevisto'] = $calculo['totalPrevisto'];
-      if (previsao_tabela_existe($pdo) && ler_previsao_aprovada($pdo, $condoId, $ano + 1)) { $linha['status'] = 'ja_existe'; $linha['motivo'] = 'Já existe previsto aprovado para o exercício de destino.'; $linhas[] = $linha; continue; }
+      $existente = previsao_tabela_existe($pdo) ? ler_previsao_aprovada($pdo, $condoId, $ano + 1) : null;
+      if ($existente) {
+        // Mostra o previsto GRAVADO (não o recalculado) e sinaliza quando difere do histórico atual.
+        $linha['status'] = 'ja_existe';
+        $linha['gravado'] = ['percentual' => $existente['percentualAprovado'], 'totalPrevisto' => $existente['totalPrevisto'], 'versao' => $existente['versao'], 'origem' => $existente['origem']];
+        $linha['divergeDoHistorico'] = abs($existente['percentualAprovado'] - $pct) > 0.005 || abs($existente['totalPrevisto'] - $calculo['totalPrevisto']) > 0.015;
+        $linha['motivo'] = $linha['divergeDoHistorico'] ? 'O previsto gravado difere do histórico atual.' : 'Já existe previsto aprovado para o exercício de destino.';
+        $linhas[] = $linha;
+        continue;
+      }
       if ($aplicar) {
         gravar_previsao_aprovada($pdo, $condoId, $ano + 1, (string)($e['id'] ?? ''), $pct, $calculo, 'carga_inicial', $usuarioId);
         $linha['status'] = 'gravado';
@@ -192,3 +202,40 @@ function previsoes_carga_inicial(PDO $pdo, bool $aplicar, ?string $usuarioId): a
   } catch (Throwable $erro) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $erro; }
   return ['aplicado' => $aplicar, 'gravados' => $gravados, 'linhas' => $linhas];
 }
+
+/**
+ * Atualiza um previsto aprovado que diverge do histórico (issue #299): recalcula a partir do
+ * demonstrativo do exercício-base e do percentual atual do histórico de rateios e grava uma NOVA versão
+ * (origem `atualizacao`, resumo da anterior em `anterior`), sem reabrir nem fechar exercícios. Não
+ * altera exercícios nem o previsto congelado de exercício fechado. Sem divergência, nada é gravado.
+ */
+function previsao_atualizar(PDO $pdo, string $condoId, int $anoDestino, ?string $usuarioId): array {
+  if (!previsao_tabela_existe($pdo)) throw new RuntimeException('Aplique a migration 20261121_previsoes_aprovadas.sql antes de atualizar previstos.', 409);
+  $base = null;
+  foreach ($pdo->query('SELECT dados FROM kr_exercicios')->fetchAll(PDO::FETCH_COLUMN) as $json) {
+    $e = json_decode((string)$json, true, 512, JSON_THROW_ON_ERROR);
+    if (($e['condoId'] ?? '') === $condoId && (int)($e['ano'] ?? 0) === $anoDestino - 1) $base = $e;
+  }
+  if (!$base) throw new RuntimeException('Não há prestação de contas de ' . ($anoDestino - 1) . ' para este condomínio.', 409);
+  if (!previsao_tem_despesas($base['demonstrativo'] ?? null)) throw new RuntimeException('A prestação de ' . ($anoDestino - 1) . ' não tem demonstrativo com despesas.', 409);
+  $pct = previsao_percentual_historico($pdo, $condoId, $anoDestino - 1);
+  if ($pct === null) throw new RuntimeException('Percentual aprovado não encontrado no histórico de rateios de ' . ($anoDestino - 1) . '.', 409);
+  $st = $pdo->prepare('SELECT dados FROM kr_condominios WHERE id = ?');
+  $st->execute([$condoId]);
+  $json = $st->fetchColumn();
+  $condo = $json === false ? [] : json_decode((string)$json, true, 512, JSON_THROW_ON_ERROR);
+  $calculo = previsao_calcular($base['demonstrativo'], $pct, $condo['mapeamento'] ?? []);
+  $pdo->beginTransaction();
+  try {
+    $existente = ler_previsao_aprovada($pdo, $condoId, $anoDestino, true);
+    if (!$existente) throw new RuntimeException('Não há previsto gravado para ' . $anoDestino . '; use a carga inicial.', 409);
+    if (abs($existente['percentualAprovado'] - $pct) <= 0.005 && abs($existente['totalPrevisto'] - $calculo['totalPrevisto']) <= 0.015) {
+      $pdo->commit();
+      return ['atualizado' => false, 'previsao' => $existente];
+    }
+    $novo = gravar_previsao_aprovada($pdo, $condoId, $anoDestino, (string)($base['id'] ?? ''), $pct, $calculo, 'atualizacao', $usuarioId);
+    $pdo->commit();
+    return ['atualizado' => true, 'previsao' => $novo];
+  } catch (Throwable $erro) { if ($pdo->inTransaction()) $pdo->rollBack(); throw $erro; }
+}
+

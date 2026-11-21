@@ -99,6 +99,7 @@ function validar_historico_rateio(array &$o): void {
     if (!is_numeric($o['variacao']) || (float)$o['variacao'] < -100 || (float)$o['variacao'] > 1000) throw new InvalidArgumentException('O percentual do histórico deve estar entre −100% e 1.000%.');
     $o['variacao'] = round((float)$o['variacao'], 6);
   }
+  if (isset($o['observacao']) && (!is_string($o['observacao']) || (function_exists('mb_strlen') ? mb_strlen($o['observacao']) : strlen($o['observacao'])) > 500)) throw new InvalidArgumentException('A observação do histórico deve ser um texto de até 500 caracteres.');
   if (isset($o['variacaoOrigem']) && !in_array($o['variacaoOrigem'], ['calculado', 'informado'], true)) throw new InvalidArgumentException('Origem do percentual inválida.');
   if (isset($o['fonte']) && !in_array($o['fonte'], ['importacao', 'calculo', 'manual'], true)) throw new InvalidArgumentException('Fonte do histórico inválida.');
 }

@@ -6,6 +6,7 @@ import { DinheiroInput, InteiroInput } from "@/components/app/inputs";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { formatBRL } from "@/lib/format";
 import {
+  avisosContinuidadeRateio,
   avisosDaLinhaRateio,
   formatarPercentualCompleto,
   linhaRateioAlterada,
@@ -47,14 +48,16 @@ export function HistoricoRateiosCondominio({
     const i = l.idExistente ? inicialDe(l) : undefined;
     return !!i && !linhaRateioAlterada(i, l);
   };
-  const avisos = linhas.flatMap((l) =>
-    avisosDaLinhaRateio(
-      l.ano,
-      percentualEmUsoDaLinha(l, inalterada(l)).valor,
-      previsoes,
-      exerciciosFechados,
-      condoId,
-    ).map((a) => `${l.ano}: ${a}`),
+  const avisos = [...avisosContinuidadeRateio(linhas)].concat(
+    linhas.flatMap((l) =>
+      avisosDaLinhaRateio(
+        l.ano,
+        percentualEmUsoDaLinha(l, inalterada(l)).valor,
+        previsoes,
+        exerciciosFechados,
+        condoId,
+      ).map((a) => `${l.ano}: ${a}`),
+    ),
   );
 
   return (
@@ -170,6 +173,14 @@ export function HistoricoRateiosCondominio({
                       </Button>
                     </p>
                   )}
+                  <Input
+                    aria-label="Observação da linha"
+                    value={l.observacao}
+                    maxLength={500}
+                    onChange={(e) => up({ observacao: e.target.value })}
+                    placeholder="Observação ou motivo (opcional)"
+                    className="h-8 text-xs"
+                  />
                   {erro && (
                     <p className="text-destructive" role="alert">
                       {erro}

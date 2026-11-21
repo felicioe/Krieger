@@ -106,6 +106,14 @@ export interface CargaPrevistoLinha {
   status: "pronto" | "gravado" | "ja_existe" | "pendente";
   motivo: string;
   destinoFechado: boolean;
+  /** Previsto já gravado (só em "ja_existe"): o que de fato vale, não o recalculado do histórico. */
+  gravado: { percentual: number; totalPrevisto: number; versao: number; origem: string } | null;
+  /** O previsto gravado difere do histórico atual (percentual ou total). */
+  divergeDoHistorico: boolean;
+}
+export interface AtualizarPrevistoResultado {
+  atualizado: boolean;
+  previsao: { versao: number; percentualAprovado: number; totalPrevisto: number; origem: string };
 }
 export interface CargaPrevistoResultado {
   aplicado: boolean;
@@ -145,6 +153,8 @@ export interface ApiAdapter {
     limpar(alvo: AlvoLimpeza): Promise<{ ok: true; apagados: number }>;
     /** Carga inicial do previsto aprovado; `simular` não grava nada. */
     cargaPrevistos(modo: "simular" | "aplicar"): Promise<CargaPrevistoResultado>;
+    /** Substitui por nova versão um previsto gravado que diverge do histórico (administrador). */
+    atualizarPrevisto(condoId: string, anoDestino: number): Promise<AtualizarPrevistoResultado>;
   };
   auth: {
     eu(): Promise<Usuario | null>;

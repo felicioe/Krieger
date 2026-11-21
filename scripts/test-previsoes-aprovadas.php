@@ -287,4 +287,45 @@ $assert((int)$pdo->query("SELECT COUNT(*) FROM kr_historico_rateios WHERE condo_
 // Excluir remove a linha: sem histórico o percentual deixa de existir.
 $pdo->prepare('DELETE FROM kr_historico_rateios WHERE id = ?')->execute(['hr-2']);
 $assert(previsao_percentual_historico($pdo, 'hr-c1', 2025) === null, 'Excluir a linha deveria remover o percentual.');
-echo "Previsto aprovado: paridade com o domínio, gravação versionada, rollback, percentual do histórico, carga inicial, fechamento transacional (idempotência, falha sem estado parcial, congelamento, nova versão) e bloqueio de mês fechado, backup e restauração dos previstos aprovados e do histórico de rateios e a edição do histórico (validação, % informado com 6 casas, unicidade e exclusão) validados.\n";
+
+// 6. Atualizar previsto divergente e observação do histórico (issue #299).
+foreach (['kr_previsoes_aprovadas', 'kr_historico_rateios', 'kr_exercicios', 'kr_condominios'] as $t) $pdo->exec("DELETE FROM $t");
+gravar_registro_exercicio($pdo, 'condominios', ['id' => 'at-1', 'nome' => 'at-1', 'mapeamento' => []]);
+$dem100 = ['periodo' => ['ini' => '01/01/2025', 'fim' => '31/12/2025'], 'despesas' => ['grupos' => [['nome' => 'Pessoal', 'itens' => [['nome' => 'Salários', 'valor' => 100000]]]]]];
+gravar_registro_exercicio($pdo, 'exercicios', ['id' => 'at25', 'condoId' => 'at-1', 'condoNome' => 'at-1', 'ano' => 2025, 'demonstrativo' => $dem100]);
+$hist('hat', 'at-1', 2025, 15.0, null, null, 100.0);
+$pdo->beginTransaction();
+gravar_previsao_aprovada($pdo, 'at-1', 2026, 'at25', 0.0, previsao_calcular($dem100, 0.0), 'carga_inicial', 'adm');   // gravado com 0%
+$pdo->commit();
+$sim = previsoes_carga_inicial($pdo, false, 'adm');
+$lin = null; foreach ($sim['linhas'] as $l) if ($l['exercicioBaseId'] === 'at25') $lin = $l;
+$assert($lin['status'] === 'ja_existe' && $lin['divergeDoHistorico'] === true, 'Previsto gravado com 0% deveria divergir do histórico (15%).');
+$assert($igual($lin['gravado']['percentual'], 0.0) && $igual($lin['gravado']['totalPrevisto'], 100000) && $lin['gravado']['versao'] === 1 && $lin['gravado']['origem'] === 'carga_inicial', 'A simulação deveria mostrar o previsto gravado.');
+$assert($igual($lin['percentual'], 15.0) && $igual($lin['totalPrevisto'], 115000), 'A linha deveria trazer também o previsto do histórico atual.');
+
+$r = previsao_atualizar($pdo, 'at-1', 2026, 'adm-2');
+$assert($r['atualizado'] === true && $r['previsao']['versao'] === 2 && $r['previsao']['origem'] === 'atualizacao' && $r['previsao']['aprovadoPor'] === 'adm-2', 'Atualizar deveria gravar a versão 2 (origem atualizacao).');
+$assert($igual($r['previsao']['totalPrevisto'], 115000) && $igual($r['previsao']['percentualAprovado'], 15.0), 'Atualizar deveria usar 15% do histórico.');
+$assert($r['previsao']['anterior']['versao'] === 1 && $igual($r['previsao']['anterior']['percentualAprovado'], 0.0), 'O resumo da versão anterior deveria ficar em anterior.');
+$de = previsao_atualizar($pdo, 'at-1', 2026, 'adm-2');
+$assert($de['atualizado'] === false && $de['previsao']['versao'] === 2, 'Sem divergência nada deveria ser gravado.');
+$sim2 = previsoes_carga_inicial($pdo, false, 'adm');
+foreach ($sim2['linhas'] as $l) if ($l['exercicioBaseId'] === 'at25') $assert($l['divergeDoHistorico'] === false, 'Depois de atualizar não deveria divergir.');
+$exigir409 = static function (callable $fn, string $msg) use ($assert): void {
+  try { $fn(); } catch (RuntimeException $e) { $assert($e->getCode() === 409, $msg . ' (esperado 409)'); return; }
+  $assert(false, $msg);
+};
+$exigir409(fn() => previsao_atualizar($pdo, 'at-1', 2040, 'adm'), 'Sem prestação-base deveria ser recusado.');
+$exigir409(fn() => previsao_atualizar($pdo, 'at-1', 2027, 'adm'), 'Sem previsto gravado deveria ser recusado (use a carga).');
+$pdo->exec("DELETE FROM kr_historico_rateios WHERE condo_id = 'at-1'");
+$exigir409(fn() => previsao_atualizar($pdo, 'at-1', 2026, 'adm'), 'Sem percentual no histórico deveria ser recusado.');
+$assert(ler_previsao_aprovada($pdo, 'at-1', 2026)['versao'] === 2, 'A recusa não deveria alterar o previsto.');
+
+// Observação do histórico: texto até 500 caracteres, preservado no JSON espelho.
+$obs = ['id' => 'ho-1', 'condoId' => 'ob-1', 'ano' => 2026, 'rateioAprovado' => 53362.19, 'rateioAtual' => 47466.81, 'variacao' => 12.42, 'variacaoOrigem' => 'informado', 'fonte' => 'manual', 'observacao' => 'Índice efetivamente aplicado às receitas', 'travadoEm' => '2026-11-21T12:00:00.000Z'];
+$obsOk = $obs; validar_historico_rateio($obsOk);
+gravar_registro_exercicio($pdo, 'historico_rateios', $obsOk);
+$assert(ler_registro_exercicio($pdo, 'historico_rateios', 'ho-1')['observacao'] === 'Índice efetivamente aplicado às receitas', 'A observação do histórico não foi preservada.');
+$rejeita(array_merge($obs, ['observacao' => str_repeat('x', 501)]), 'Observação com mais de 500 caracteres deveria ser recusada.');
+$rejeita(array_merge($obs, ['observacao' => 123]), 'Observação que não é texto deveria ser recusada.');
+echo "Previsto aprovado: paridade com o domínio, gravação versionada, rollback, percentual do histórico, carga inicial, fechamento transacional (idempotência, falha sem estado parcial, congelamento, nova versão) e bloqueio de mês fechado, backup e restauração dos previstos aprovados e do histórico de rateios e a edição do histórico (validação, % informado com 6 casas, unicidade e exclusão), a atualização de previsto divergente e a observação do histórico validados.\n";

@@ -84,6 +84,7 @@ import {
   type AlvoLimpeza,
   type ApiAdapter,
   type ConfirmarImportacaoResposta,
+  type AtualizarPrevistoResultado,
   type CargaPrevistoResultado,
   type ContagensLimpeza,
   type Registro,
@@ -1157,6 +1158,14 @@ export const mockApi: ApiAdapter = {
       await espera();
       exigirAdmin();
       return { aplicado: false, gravados: 0, linhas: [] };
+    },
+    async atualizarPrevisto(): Promise<AtualizarPrevistoResultado> {
+      await espera();
+      exigirAdmin();
+      return {
+        atualizado: false,
+        previsao: { versao: 1, percentualAprovado: 0, totalPrevisto: 0, origem: "atualizacao" },
+      };
     },
     async contagens(): Promise<ContagensLimpeza> {
       await espera();
