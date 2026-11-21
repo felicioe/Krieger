@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
-require dirname(__DIR__) . '/lib_indices.php';
-require dirname(__DIR__) . '/lib_exercicios.php';
-require dirname(__DIR__) . '/lib_previsoes.php';
+require_once dirname(__DIR__) . '/lib_indices.php';
+require_once dirname(__DIR__) . '/lib_exercicios.php';
+require_once dirname(__DIR__) . '/lib_previsoes.php';
 $assert = static function (bool $ok, string $msg): void { if (!$ok) throw new RuntimeException($msg); };
 $igual = static fn($a, $b): bool => abs((float)$a - (float)$b) < 0.0001;
 
