@@ -7,8 +7,7 @@ comparativo do relatório final (previsto simples; % do histórico de rateios; b
 Removidos do comparativo: dedução, ajustes e o grupo "Ajustes gerais" (campos `tipo: "ajuste"` e
 `deduzidas` ficam só por compatibilidade das telas). Novos sinais no resultado: `situacaoPrevisto`
 (`ok`, `sem_base`, `sem_percentual`) e `semPrevisaoConta`. **Sem banco, PHP ou versão.** Pendentes:
-#285 (tabela e carga inicial, com simulação) e #286 (aprovação transacional e bloqueios). **Não validado
-em produção.**
+#285 (tabela e carga inicial, com simulação) e #286 (aprovação transacional e bloqueios). **Publicado em 21/11/2026 (`04b8cb0`, `deploy-hostinger` `e3c2a89`); falta a conferência do responsável com login e dados reais.**
 
 ## Previsão para relatórios — 21/11/2026 (issue #282)
 
@@ -17,7 +16,7 @@ A tela **Financeiro → Previsão para relatórios** (`/previsao-orcamentaria?mo
 mensais do período (alternativa: demonstrativo da prestação, com aviso), previsto do exercício anterior
 × (1 + %) proporcional aos meses, variação `(realizado − previsto) ÷ previsto` e sem cálculo quando não há
 exercício anterior. PDF, XLSX e CSV usam o mesmo resultado. **Pendente:** unificar `demonstrativoBasePrevisao`
-nas demais telas (ver `docs/DECISOES.md`, 21/11/2026). **Não validado em produção.**
+nas demais telas (ver `docs/DECISOES.md`, 21/11/2026). **Publicado em 21/11/2026 (`04b8cb0`, `deploy-hostinger` `e3c2a89`); falta a conferência do responsável com login e dados reais.**
 
 ## Histórico de rateios e documentos por cidade — 16/11/2026
 
