@@ -34,6 +34,7 @@ import { calcularPrevisaoParaRelatorios } from "@/domain/previsaoRelatorios";
 import {
   aplicarRateioBase,
   aplicarVariacaoDoHistorico,
+  preservarPercentualInformado,
   historicoDoExercicio,
 } from "@/domain/historicoRateio";
 import type {
@@ -313,7 +314,11 @@ function EditorPrevisao({
       const existente = historicoRateios.find(
         (h) => h.condoId === linha.condoId && Number(h.ano) === linha.ano,
       );
-      await api.salvar("historico_rateios", { ...linha, id: existente?.id ?? novoId() });
+      // O % informado na tela Histórico de rateios não é trocado pelo calculado ao travar.
+      await api.salvar("historico_rateios", {
+        ...preservarPercentualInformado(linha, existente),
+        id: existente?.id ?? novoId(),
+      });
       queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
 
       // Propaga como base do exercício seguinte, se ainda não tiver rateio atual.

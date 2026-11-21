@@ -20,6 +20,7 @@ export const Route = createFileRoute("/_authenticated")({
       ["/condominios", "condominios.visualizar"],
       ["/prestacao-contas", "prestacao_contas.visualizar"],
       ["/previsao-orcamentaria", "previsao_orcamentaria.visualizar"],
+      ["/historico-rateios", "previsao_orcamentaria.visualizar"],
       ["/previsto-realizado", "previsto_realizado.visualizar"],
       ["/relatorio-mensal", "relatorio_mensal.visualizar"],
       ["/importador", "importador.visualizar"],

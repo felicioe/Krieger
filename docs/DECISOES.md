@@ -1,5 +1,24 @@
 # Decisões do projeto
 
+## 2026-11-21 — tela Histórico de rateios: % informado vale mais que o calculado (issue #292)
+
+Decisões do responsável: (1) o **% informado vale mais que o calculado**; a tela mostra a sugestão do sistema com
+**todas as casas decimais (6)** e um botão "Usar", para não perder as casas calculadas ao digitar um valor
+arredondado; (2) **qualquer usuário** com a permissão de previsão orçamentária pode inserir, editar e excluir
+linhas, pois é um campo operacional (sem exigir administrador e sem permissão nova).
+
+Implementação: a rota **Financeiro → Histórico de rateios** usa `previsao_orcamentaria.visualizar/editar`. A origem do
+percentual (`variacaoOrigem`: "calculado" ou "informado") fica no JSON espelho `dados` da linha, sem migration;
+o valor em uso continua na coluna `variacao` (DECIMAL 10,6), então o previsto, a carga inicial e o fechamento
+passam a usar o informado sem mudança. Travar o rateio na Previsão orçamentária **preserva** o % informado
+(`preservarPercentualInformado`). O servidor valida cada linha (`validar_historico_rateio`: condomínio, ano,
+valores não negativos, % entre −100% e 1.000% arredondado a 6 casas, origem e fonte). A linha tem chave única
+condomínio + ano: salvar com outro id atualiza a existente.
+
+Limitação: editar uma linha **não altera** previstos já gravados em `kr_previsoes_aprovadas` (a tela avisa quando
+o % difere); para atualizá-los, reabrir e fechar o exercício. Relatórios de exercício fechado que ainda derivam
+o previsto do histórico (fechados antes do congelamento) mudam com o novo %; a tela avisa.
+
 ## 2026-11-21 — backup e restauração incluem previstos aprovados e histórico de rateios (issue #290)
 
 `previsoes_aprovadas` entra em `$STORES` (backup, validação e restauração). As duas tabelas com colunas
