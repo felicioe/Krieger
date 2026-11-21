@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatarPercentualCompleto,
+  montarLinhaHistorico,
+  parsePercentualCompleto,
+  preservarPercentualInformado,
+  sugestoesPercentual,
+  validarLinhaHistorico,
+  variacaoCompleta,
   aplicarRateioBase,
   calcularVariacao,
   historicoDoAno,
@@ -145,5 +152,64 @@ describe("historicoOrdenado e historicoDoAno", () => {
   it("acha a linha do ano pedido", () => {
     expect(historicoDoAno(linhas, "c1", 2025)?.rateioAprovado).toBe(370);
     expect(historicoDoAno(linhas, "c1", 2030)).toBeNull();
+  });
+});
+
+describe("tela Histórico de rateios (#292)", () => {
+  it("variacaoCompleta guarda 6 casas, sem o arredondamento a 2 casas", () => {
+    expect(variacaoCompleta(752.78, 820)).toBe(8.929568); // 820 ÷ 752,78 − 1
+    expect(variacaoCompleta(321, 370)).toBe(15.264798);
+    expect(calcularVariacao(321, 370)).toBe(15.26);
+    expect(variacaoCompleta(null, 370)).toBeNull();
+    expect(variacaoCompleta(0, 370)).toBeNull();
+  });
+
+  it("formata e lê percentuais com até 6 casas", () => {
+    expect(formatarPercentualCompleto(15.264798)).toBe("15,264798");
+    expect(formatarPercentualCompleto(8.93)).toBe("8,93");
+    expect(formatarPercentualCompleto(0)).toBe("0,00");
+    expect(formatarPercentualCompleto(null)).toBe("—");
+    expect(parsePercentualCompleto("8,932412")).toBe(8.932412);
+    expect(parsePercentualCompleto("8.932")).toBe(8.932); // ponto é decimal, não milhar
+    expect(parsePercentualCompleto("8,93%")).toBe(8.93);
+    expect(parsePercentualCompleto("-2,5")).toBe(-2.5);
+    expect(parsePercentualCompleto("")).toBeNull();
+    expect(parsePercentualCompleto("abc")).toBeNull();
+    expect(parsePercentualCompleto("1,2,3")).toBeNull();
+  });
+
+  const entrada = { condoId: "c1", ano: 2025, rateioAtual: 752.78, rateioAprovado: 820, rateioSugerido: 800, percentualInformado: null };
+
+  it("sugestões: do aprovado e do sugerido, com todas as casas", () => {
+    const s = sugestoesPercentual(entrada);
+    expect(s.doAprovado).toBe(8.929568);
+    expect(s.doSugerido).toBe(6.272749);
+  });
+
+  it("o % informado vale mais que o calculado e marca a origem", () => {
+    const calculada = montarLinhaHistorico(entrada, { travadoEm: "t" });
+    expect(calculada).toMatchObject({ variacao: 8.929568, variacaoOrigem: "calculado", fonte: "manual", rateioAprovado: 820 });
+    const informada = montarLinhaHistorico({ ...entrada, percentualInformado: 8.93 }, { travadoEm: "t" });
+    expect(informada).toMatchObject({ variacao: 8.93, variacaoOrigem: "informado" });
+    const completa = montarLinhaHistorico({ ...entrada, percentualInformado: 8.9324123456 }, { travadoEm: "t" });
+    expect(completa.variacao).toBe(8.932412);
+  });
+
+  it("validação: campos obrigatórios, faixa do % e avisos de 0% ou divergência", () => {
+    expect(validarLinhaHistorico({ ...entrada, condoId: "", ano: 25, rateioAprovado: null }).erros).toMatchObject({
+      condoId: expect.any(String), ano: expect.any(String), rateioAprovado: expect.any(String),
+    });
+    expect(validarLinhaHistorico({ ...entrada, percentualInformado: 2000 }).erros.percentualInformado).toBeDefined();
+    expect(validarLinhaHistorico(entrada).erros).toEqual({});
+    expect(validarLinhaHistorico({ ...entrada, rateioAtual: 820 }).avisos.join(" ")).toMatch(/0%/);
+    expect(validarLinhaHistorico({ ...entrada, rateioAtual: null }).avisos.join(" ")).toMatch(/Sem rateio atual/);
+    expect(validarLinhaHistorico({ ...entrada, percentualInformado: 9.5 }).avisos.join(" ")).toMatch(/difere do calculado/);
+  });
+
+  it("travar o rateio preserva o % informado; calculado é substituído", () => {
+    const nova = { variacao: 0, variacaoOrigem: "calculado" as const };
+    expect(preservarPercentualInformado(nova, { variacao: 8.932412, variacaoOrigem: "informado" })).toEqual({ variacao: 8.932412, variacaoOrigem: "informado" });
+    expect(preservarPercentualInformado(nova, { variacao: 3, variacaoOrigem: "calculado" })).toBe(nova);
+    expect(preservarPercentualInformado(nova, null)).toBe(nova);
   });
 });

@@ -255,4 +255,36 @@ catch (RuntimeException $e) { $assert($e->getCode() === 409, 'Restaurar sem a ta
 restaurar_store_especial($pdo, 'previsoes_aprovadas', ['previsoes_aprovadas' => []], true);
 $pdo->rollBack();
 $pdo->exec((string)file_get_contents(dirname(__DIR__) . '/migrations/20261121_previsoes_aprovadas.sql'));
-echo "Previsto aprovado: paridade com o domínio, gravação versionada, rollback, percentual do histórico, carga inicial, fechamento transacional (idempotência, falha sem estado parcial, congelamento, nova versão) e bloqueio de mês fechado, backup e restauração dos previstos aprovados e do histórico de rateios validados.\n";
+
+// 5. Histórico de rateios editado na tela (issue #292): validação, % informado com 6 casas e unicidade.
+$valido = ['id' => 'hr-1', 'condoId' => 'hr-c1', 'ano' => 2025, 'rateioAtual' => 752.78, 'rateioAprovado' => 820.0, 'rateioSugerido' => null, 'variacao' => 8.932412345, 'variacaoOrigem' => 'informado', 'fonte' => 'manual', 'travadoEm' => '2026-11-21T12:00:00.000Z'];
+$rejeita = static function (array $o, string $msg) use ($assert): void {
+  try { validar_historico_rateio($o); } catch (InvalidArgumentException) { return; }
+  $assert(false, $msg);
+};
+$ok = $valido; validar_historico_rateio($ok);
+$assert($ok['variacao'] === 8.932412 && $ok['ano'] === 2025, 'O percentual deveria ser arredondado a 6 casas.');
+$rejeita(array_merge($valido, ['condoId' => '']), 'Condomínio vazio deveria ser recusado.');
+$rejeita(array_merge($valido, ['ano' => 25]), 'Ano de 2 dígitos deveria ser recusado.');
+$rejeita(array_merge($valido, ['rateioAprovado' => -1]), 'Aprovado negativo deveria ser recusado.');
+$rejeita(array_merge($valido, ['rateioAprovado' => 'abc']), 'Aprovado não numérico deveria ser recusado.');
+$rejeita(array_merge($valido, ['variacao' => 1500]), 'Percentual acima de 1.000% deveria ser recusado.');
+$rejeita(array_merge($valido, ['variacao' => -101]), 'Percentual abaixo de −100% deveria ser recusado.');
+$rejeita(array_merge($valido, ['variacaoOrigem' => 'chute']), 'Origem inválida deveria ser recusada.');
+$rejeita(array_merge($valido, ['fonte' => 'outra']), 'Fonte inválida deveria ser recusada.');
+$semPct = array_merge($valido, ['variacao' => null, 'variacaoOrigem' => 'calculado']); validar_historico_rateio($semPct);
+$assert($semPct['variacao'] === null, 'Percentual vazio deveria continuar vazio.');
+
+$pdo->exec('DELETE FROM kr_historico_rateios');
+gravar_registro_exercicio($pdo, 'historico_rateios', $ok);
+$lido = ler_registro_exercicio($pdo, 'historico_rateios', 'hr-1');
+$assert($lido['variacaoOrigem'] === 'informado' && $igual($lido['variacao'], 8.932412) && $lido['fonte'] === 'manual', 'Origem informada ou as 6 casas do percentual não foram preservadas.');
+$assert($igual(previsao_percentual_historico($pdo, 'hr-c1', 2025), 8.932412), 'O previsto deveria usar o percentual informado do histórico.');
+// Inserir outro id para o mesmo condomínio/ano atualiza a linha (chave única), não duplica.
+$ed = array_merge($ok, ['id' => 'hr-2', 'variacao' => 9.5]); validar_historico_rateio($ed);
+gravar_registro_exercicio($pdo, 'historico_rateios', $ed);
+$assert((int)$pdo->query("SELECT COUNT(*) FROM kr_historico_rateios WHERE condo_id = 'hr-c1'")->fetchColumn() === 1 && $igual(previsao_percentual_historico($pdo, 'hr-c1', 2025), 9.5), 'Editar a linha do mesmo condomínio/ano duplicou ou não atualizou.');
+// Excluir remove a linha: sem histórico o percentual deixa de existir.
+$pdo->prepare('DELETE FROM kr_historico_rateios WHERE id = ?')->execute(['hr-2']);
+$assert(previsao_percentual_historico($pdo, 'hr-c1', 2025) === null, 'Excluir a linha deveria remover o percentual.');
+echo "Previsto aprovado: paridade com o domínio, gravação versionada, rollback, percentual do histórico, carga inicial, fechamento transacional (idempotência, falha sem estado parcial, congelamento, nova versão) e bloqueio de mês fechado, backup e restauração dos previstos aprovados e do histórico de rateios e a edição do histórico (validação, % informado com 6 casas, unicidade e exclusão) validados.\n";

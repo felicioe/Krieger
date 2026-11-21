@@ -134,9 +134,14 @@ export interface HistoricoRateio extends ComId {
   /** Rateio por unidade travado — o valor que vale para o ano. */
   rateioAprovado: number;
   travadoEm: string;
-  /** Origem do valor: importado do Systemar ou calculado na tela de previsão. */
-  fonte: "importacao" | "calculo";
+  /** Origem do valor: importado do Systemar, calculado na previsão ou digitado na tela de histórico. */
+  fonte: "importacao" | "calculo" | "manual";
   exercicioId: string | null;
+  /**
+   * De onde vem `variacao`: "calculado" a partir dos rateios ou "informado" pelo usuário (vale mais
+   * que o calculado e é preservado ao travar o rateio). Ausente em linhas antigas = calculado.
+   */
+  variacaoOrigem?: "calculado" | "informado";
 }
 
 /** Histórico de índices aplicados por condomínio. */

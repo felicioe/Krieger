@@ -194,3 +194,112 @@ export function aplicarVariacaoDoHistorico<T extends {
     variacaoParam: pct,
   };
 }
+
+// ---------- Tela "Histórico de rateios" (issue #292) ----------
+
+const arred6 = (n: number) => Math.round(n * 1e6) / 1e6;
+
+/**
+ * Variação % de `atual` sobre `anterior` com a precisão gravada (6 casas), sem o arredondamento a 2
+ * casas de `calcularVariacao`. Serve de sugestão para o usuário não perder as casas calculadas.
+ */
+export function variacaoCompleta(anterior: number | null, atual: number | null): number | null {
+  if (anterior === null || atual === null || !Number.isFinite(anterior) || !Number.isFinite(atual) || anterior === 0)
+    return null;
+  return arred6((atual / anterior - 1) * 100);
+}
+
+/** Percentual no padrão brasileiro com até 6 casas (mínimo 2), sem zeros inúteis à direita. */
+export function formatarPercentualCompleto(v: number | null | undefined): string {
+  if (v === null || v === undefined || !Number.isFinite(v)) return "—";
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+}
+
+export interface EntradaLinhaHistorico {
+  condoId: string;
+  condoNome?: string;
+  ano: number | null;
+  rateioAtual: number | null;
+  rateioAprovado: number | null;
+  rateioSugerido: number | null;
+  /** % digitado pelo usuário; vazio (null) = usar o calculado. */
+  percentualInformado: number | null;
+}
+
+/** Sugestões de % com todas as casas: a do aprovado e a do sugerido do sistema, sobre o rateio atual. */
+export function sugestoesPercentual(e: Pick<EntradaLinhaHistorico, "rateioAtual" | "rateioAprovado" | "rateioSugerido">) {
+  return {
+    doAprovado: variacaoCompleta(e.rateioAtual, e.rateioAprovado),
+    doSugerido: variacaoCompleta(e.rateioAtual, e.rateioSugerido),
+  };
+}
+
+/** Erros (por campo) e avisos (não bloqueantes) da linha de histórico em edição. */
+export function validarLinhaHistorico(e: EntradaLinhaHistorico): {
+  erros: Partial<Record<"condoId" | "ano" | "rateioAprovado" | "percentualInformado" | "rateioAtual", string>>;
+  avisos: string[];
+} {
+  const erros: ReturnType<typeof validarLinhaHistorico>["erros"] = {};
+  const avisos: string[] = [];
+  if (!e.condoId) erros.condoId = "Escolha o condomínio.";
+  if (!e.ano || !Number.isInteger(e.ano) || e.ano < 1900 || e.ano > 2999) erros.ano = "Informe o ano com 4 dígitos.";
+  if (e.rateioAprovado === null || !Number.isFinite(e.rateioAprovado) || e.rateioAprovado < 0)
+    erros.rateioAprovado = "Informe o rateio aprovado.";
+  if (e.rateioAtual !== null && (!Number.isFinite(e.rateioAtual) || e.rateioAtual < 0))
+    erros.rateioAtual = "O rateio atual não pode ser negativo.";
+  if (e.percentualInformado !== null && (!Number.isFinite(e.percentualInformado) || e.percentualInformado < -100 || e.percentualInformado > 1000))
+    erros.percentualInformado = "Informe um percentual entre −100% e 1.000%.";
+  const calculado = variacaoCompleta(e.rateioAtual, e.rateioAprovado);
+  const emUso = e.percentualInformado ?? calculado;
+  if (emUso === null) avisos.push("Sem rateio atual não há % calculado: informe o % ou o rateio atual.");
+  else if (emUso === 0) avisos.push("O % em uso é 0%. Confira se o rateio atual não foi copiado do aprovado.");
+  if (e.percentualInformado !== null && calculado !== null && Math.abs(e.percentualInformado - calculado) > 0.005)
+    avisos.push(`O % informado (${formatarPercentualCompleto(e.percentualInformado)}%) difere do calculado dos rateios (${formatarPercentualCompleto(calculado)}%). Vale o informado.`);
+  return { erros, avisos };
+}
+
+/** Linha de histórico (sem id) a partir do formulário: o % informado vale mais que o calculado. */
+export function montarLinhaHistorico(
+  e: EntradaLinhaHistorico,
+  base: { exercicioId?: string | null; travadoEm: string },
+): Omit<HistoricoRateio, "id"> {
+  const aprovado = centavos(e.rateioAprovado ?? 0);
+  const informado = e.percentualInformado !== null;
+  return {
+    condoId: e.condoId,
+    ...(e.condoNome ? { condoNome: e.condoNome } : {}),
+    ano: Number(e.ano),
+    rateioAtual: e.rateioAtual === null ? null : centavos(e.rateioAtual),
+    rateioSugerido: e.rateioSugerido === null ? null : centavos(e.rateioSugerido),
+    variacao: informado ? arred6(e.percentualInformado as number) : variacaoCompleta(e.rateioAtual, aprovado),
+    variacaoOrigem: informado ? "informado" : "calculado",
+    rateioAprovado: aprovado,
+    travadoEm: base.travadoEm,
+    fonte: "manual",
+    exercicioId: base.exercicioId ?? null,
+  };
+}
+
+/**
+ * Ao travar o rateio na previsão, o % informado na tela de histórico não pode ser trocado pelo
+ * calculado: mantém `variacao` e a origem da linha existente quando ela foi informada.
+ */
+export function preservarPercentualInformado<T extends Pick<HistoricoRateio, "variacao" | "variacaoOrigem">>(
+  nova: T,
+  existente: Pick<HistoricoRateio, "variacao" | "variacaoOrigem"> | null | undefined,
+): T {
+  if (existente?.variacaoOrigem !== "informado") return nova;
+  return { ...nova, variacao: existente.variacao, variacaoOrigem: "informado" };
+}
+
+/**
+ * Lê um percentual digitado: vírgula ou ponto como separador decimal (percentual não tem milhar, então
+ * "8.932" é 8,932 e não 8.932). Vazio ou inválido = null.
+ */
+export function parsePercentualCompleto(texto: string | null | undefined): number | null {
+  const s = (texto ?? "").replace(/%|\s/g, "").replace(",", ".");
+  if (s === "" || s === "-" || !/^-?\d*\.?\d*$/.test(s)) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? arred6(n) : null;
+}
+

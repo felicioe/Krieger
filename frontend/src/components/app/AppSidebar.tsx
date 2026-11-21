@@ -95,6 +95,12 @@ export const GRUPOS_MENU: Grupo[] = [
         icone: Calculator,
         permissao: "previsao_orcamentaria.visualizar",
       },
+      {
+        titulo: "Histórico de rateios",
+        to: "/historico-rateios",
+        icone: History,
+        permissao: "previsao_orcamentaria.visualizar",
+      },
     ],
   },
   {

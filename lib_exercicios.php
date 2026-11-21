@@ -78,6 +78,31 @@ function gravar_registro_exercicio(PDO $pdo, string $store, array $o): array {
   $st->execute([$o['id'], $json, date('Y-m-d H:i:s')]);
   return $o;
 }
+/**
+ * Valida (e normaliza) uma linha do histórico de rateios enviada pelo cliente (issue #292). O % em
+ * `variacao` é gravado com a precisão da coluna (6 casas); `variacaoOrigem` diz se foi calculado ou
+ * informado pelo usuário (vale mais que o calculado e fica no JSON espelho `dados`).
+ */
+function validar_historico_rateio(array &$o): void {
+  $condo = $o['condoId'] ?? null;
+  if (!is_string($condo) || trim($condo) === '' || strlen($condo) > 64) throw new InvalidArgumentException('Informe o condomínio do histórico de rateios.');
+  $ano = $o['ano'] ?? null;
+  if (!is_int($ano) && !(is_string($ano) && ctype_digit($ano))) throw new InvalidArgumentException('Informe o ano do histórico de rateios com 4 dígitos.');
+  $ano = (int)$ano;
+  if ($ano < 1900 || $ano > 2999) throw new InvalidArgumentException('Ano do histórico de rateios fora do intervalo.');
+  $o['ano'] = $ano;
+  if (!is_numeric($o['rateioAprovado'] ?? null) || (float)$o['rateioAprovado'] < 0) throw new InvalidArgumentException('Informe o rateio aprovado (valor não negativo).');
+  foreach (['rateioAtual', 'rateioSugerido'] as $campo) {
+    if (($o[$campo] ?? null) !== null && (!is_numeric($o[$campo]) || (float)$o[$campo] < 0)) throw new InvalidArgumentException('Rateio inválido no histórico (valor não negativo).');
+  }
+  if (($o['variacao'] ?? null) !== null) {
+    if (!is_numeric($o['variacao']) || (float)$o['variacao'] < -100 || (float)$o['variacao'] > 1000) throw new InvalidArgumentException('O percentual do histórico deve estar entre −100% e 1.000%.');
+    $o['variacao'] = round((float)$o['variacao'], 6);
+  }
+  if (isset($o['variacaoOrigem']) && !in_array($o['variacaoOrigem'], ['calculado', 'informado'], true)) throw new InvalidArgumentException('Origem do percentual inválida.');
+  if (isset($o['fonte']) && !in_array($o['fonte'], ['importacao', 'calculo', 'manual'], true)) throw new InvalidArgumentException('Fonte do histórico inválida.');
+}
+
 /** Mês e ano de uma data dd/mm/aaaa ou mm/aaaa (como `mesAnoDe`, em domain/mensal.ts). */
 function mes_ano_de_texto($texto): ?array {
   if (!preg_match('/^(?:[0-9]{1,2}\/)?([0-9]{1,2})\/([0-9]{4})$/', trim((string)$texto), $m)) return null;

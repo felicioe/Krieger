@@ -474,6 +474,7 @@ try {
           $e = ler_registro_exercicio($pdo, 'exercicios', (string)($o['exercicioId'] ?? ''));
           if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de alterar anexos.', 409);
         }
+        if ($s === 'historico_rateios') validar_historico_rateio($o);
         if ($s === 'mensais') {
           exigir_mes_fora_de_exercicio_fechado($pdo, ler_registro_exercicio($pdo, 'mensais', $id));
           exigir_mes_fora_de_exercicio_fechado($pdo, $o);

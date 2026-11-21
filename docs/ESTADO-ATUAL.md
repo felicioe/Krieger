@@ -1,5 +1,15 @@
 # Estado atual e passagem de contexto
 
+## Tela Histórico de rateios — 21/11/2026 (issue #292)
+
+Nova rota **Financeiro → Histórico de rateios** (`/historico-rateios`): lista por condomínio e ano (rateio atual,
+aprovado, % em uso com origem, previsto do ano seguinte já gravado), com inserir, editar e excluir. O % informado
+vale mais que o calculado; o diálogo mostra a sugestão do aprovado e a do sistema com 6 casas e botão "Usar".
+Domínio em `domain/historicoRateio.ts` (`variacaoCompleta`, `montarLinhaHistorico`, `validarLinhaHistorico`,
+`preservarPercentualInformado`, `parsePercentualCompleto`), validação PHP em `validar_historico_rateio`, testes
+de domínio e PHP (seção 5 de `scripts/test-previsoes-aprovadas.php`). Sem migration. Conferida no ambiente de
+teste (mock) com navegador; **não validada em produção.**
+
 ## Backup dos previstos aprovados — 21/11/2026 (issue #290)
 
 O backup passa a exportar e restaurar `previsoes_aprovadas` e `historico_rateios` (tabelas com colunas
