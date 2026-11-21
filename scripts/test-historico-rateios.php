@@ -51,7 +51,7 @@ $verificar((int)$pdo->query('SELECT COUNT(*) FROM kr_historico_rateios')->fetchC
 
 // 4. Leitura genérica (listar/obter) segue funcionando: decodifica `dados`.
 $viaListar = json_decode((string)$pdo->query("SELECT dados FROM kr_historico_rateios WHERE id = 'hist-2'")->fetchColumn(), true, 512, JSON_THROW_ON_ERROR);
-$verificar($viaListar['rateioAprovado'] === 400.0, 'Leitura pelo JSON não reflete o upsert.');
+$verificar((float)$viaListar['rateioAprovado'] === 400.0, 'Leitura pelo JSON não reflete o upsert.');
 
 // 5. Stores legados continuam pelo caminho REPLACE (id/dados/atualizado_em).
 $pdo->exec('CREATE TABLE IF NOT EXISTS kr_decisoes_previsao (id VARCHAR(64) PRIMARY KEY, dados JSON NULL, atualizado_em DATETIME NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
