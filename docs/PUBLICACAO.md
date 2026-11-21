@@ -20,7 +20,16 @@ confirmou o auto-deploy da Hostinger; ver [CONEXOES.md](CONEXOES.md).
 
 Produção React confirmada no navegador em 21/10/2026. A branch de publicação é
 `deploy-hostinger`, contendo somente o pacote curado de um SHA de main.
-**Publicação de 21/11/2026:** `deploy-hostinger` `e3c2a89` (sobre `121d1da`), com o pacote do commit
+**Publicação de 21/11/2026 (tarde):** `deploy-hostinger` `f3d9d3b` (sobre `e3c2a89`), com o pacote de
+`dcee27a` de `main` (PR #288, issues #285 e #286: previsto aprovado persistido, carga inicial com simulação,
+fechamento transacional e bloqueio de mês fechado). A migration `migrations/20261121_previsoes_aprovadas.sql`
+foi **aplicada pelo responsável no phpMyAdmin antes da publicação** (`CREATE TABLE IF NOT EXISTS`, sem erro).
+Runtime `index-DviwkmqW.js` no ar igual ao do pacote e chunk da página Backup com MD5 idêntico;
+`api.php` (inclusive `listar&s=previsoes_aprovadas`) e `auth.php?a=eu` respondem 401 sem sessão;
+`krieger-config.php` e `config.php` 404; `lib_auth.php`, `lib_previsoes.php` e `lib_exercicios.php` 403.
+Rollback: republicar o conteúdo de `e3c2a89` (a tabela pode permanecer). Login, fechamento de exercício,
+simulação da carga e telas com dados reais ainda precisam de conferência do responsável.
+**Publicação de 21/11/2026 (manhã):** `deploy-hostinger` `e3c2a89` (sobre `121d1da`), com o pacote do commit
 `04b8cb0` de `main` (PR #283, issues #282 e #284: realizado dos relatórios mensais e previsto
 aprovado simples). Runtime `index-DtzFStHE.js` no ar igual ao do pacote e chunk
 `_authenticated.previsao-orcamentaria-CgdO-u3n.js` com MD5 idêntico; `api.php` e `auth.php?a=eu`

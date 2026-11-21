@@ -5,9 +5,11 @@
 Fechar o exercício N grava o previsto de N+1 (realizado de N × (1 + % do histórico de rateios)), congela o
 previsto que N usa e é idempotente; sem percentual o fechamento é recusado (409) e nada é gravado. Relatórios
 mensais de meses de exercício fechado não podem ser salvos, movidos, excluídos nem importados até reabrir a
-prestação. Testes em `scripts/test-previsoes-aprovadas.php` (CI). **Exige a migration
-`20261121_previsoes_aprovadas.sql` aplicada antes de fechar qualquer exercício com despesas**; sem ela o
-fechamento é recusado com instrução. **Não publicado.**
+prestação. Testes em `scripts/test-previsoes-aprovadas.php` (CI). Exige a migration
+`20261121_previsoes_aprovadas.sql` (já aplicada); sem ela o fechamento é recusado com instrução.
+**Publicado em 21/11/2026 (`dcee27a`, `deploy-hostinger` `f3d9d3b`); falta a conferência do responsável com
+login e dados reais (fechar um exercício de teste, simular a carga).** Pendente: incluir `previsoes_aprovadas`
+no backup/restauração.
 
 ## Previsto aprovado persistido e carga inicial — 21/11/2026 (issue #285)
 
@@ -16,8 +18,9 @@ Nova tabela `kr_previsoes_aprovadas` (`migrations/20261121_previsoes_aprovadas.s
 (escrita só pelo servidor) e carga inicial `api.php?a=previsoes_carga&modo=simular|aplicar`
 (administrador), com painel na página **Backup**. O domínio (`previstoDoExercicio`) prefere o registro
 gravado em exercício aberto. Testes: `scripts/test-previsoes-aprovadas.php` (CI, MySQL efêmero) e
-fixtures compartilhadas PHP/TypeScript. **A migration NÃO foi aplicada em produção**: aplicar antes de
-usar a carga; a leitura funciona sem ela. Pendente: #286 (fechamento transacional e bloqueios).
+fixtures compartilhadas PHP/TypeScript. **Migration aplicada em produção pelo responsável em 21/11/2026** (phpMyAdmin); código publicado em
+`deploy-hostinger` `f3d9d3b` (`dcee27a`). **Ainda não rodei a simulação da carga nem a carga:** o responsável
+confere a simulação na página Backup antes de aplicar. Fechamento e bloqueios: ver a seção seguinte.
 
 ## Previsto aprovado — camada única de leitura — 21/11/2026 (issue #284)
 
