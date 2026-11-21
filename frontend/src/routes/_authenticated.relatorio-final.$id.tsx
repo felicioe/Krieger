@@ -32,7 +32,13 @@ import {
 } from "@/domain/exercicio";
 import { alternarSecao, montarRelatorioFinal, SECOES } from "@/domain/relatorioFinal";
 import { aplicarVariacaoDoHistorico } from "@/domain/historicoRateio";
-import type { Condominio, ConfigEscritorio, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
+import type {
+  Condominio,
+  ConfigEscritorio,
+  Exercicio,
+  HistoricoRateio,
+  Mensal,
+} from "@/domain/types";
 import { contagem, palavra } from "@/components/app/textos";
 
 export const Route = createFileRoute("/_authenticated/relatorio-final/$id")({

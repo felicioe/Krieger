@@ -180,7 +180,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
       // Usa o rateio do PDF (rateioUnidadeAtual) como base quando não há histórico anterior.
       // Isso garante que o índice de 15,26% (321 → 370) seja calculado corretamente mesmo na
       // primeira importação do condomínio, onde não existe exercício 2024 no sistema.
-      const rateioBase = anterior?.rateioAprovado ?? pv?.rateioUnidadeAtual ?? pv?.rateioMensalAtual ?? null;
+      const rateioBase =
+        anterior?.rateioAprovado ?? pv?.rateioUnidadeAtual ?? pv?.rateioMensalAtual ?? null;
       const linha = historicoDoExercicio(
         {
           id: ex.id,

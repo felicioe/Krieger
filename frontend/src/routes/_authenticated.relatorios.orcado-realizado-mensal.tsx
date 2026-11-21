@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
-import { itemQuery, listaQuery } from "@/lib/queries";
+import { itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { Exportacoes } from "@/components/app/Exportacoes";
 import { baixarCsv, baixarXlsx } from "@/lib/exportar";
 import { imprimirColunas } from "@/lib/imprimirColunas";
@@ -17,9 +17,14 @@ import { baixarDocumento } from "@/lib/documento/baixar";
 import { TabelaMensal } from "@/components/previsto-realizado/TabelaMensal";
 import { cabecalho } from "@/lib/head";
 import { encontrarExercicioAnterior, normalizarExercicio } from "@/domain/exercicio";
-import { demonstrativoBasePrevisao } from "@/domain/previsao";
 import { compararPrevistoRealizadoMensal } from "@/domain/previstoRealizadoMensal";
-import type { Condominio, ConfigEscritorio, Exercicio, Mensal } from "@/domain/types";
+import type {
+  Condominio,
+  ConfigEscritorio,
+  Exercicio,
+  HistoricoRateio,
+  Mensal,
+} from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/relatorios/orcado-realizado-mensal")({
   head: () =>
@@ -30,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/relatorios/orcado-realizad
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Mensal>("mensais")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
     ]),
   component: Pagina,
 });
@@ -40,6 +46,9 @@ function Pagina() {
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const { data: escritorio } = useSuspenseQuery(
     itemQuery<ConfigEscritorio>("config", "escritorio"),
+  );
+  const { data: historicoRateios } = useSuspenseQuery(
+    listaQueryTolerante<HistoricoRateio>("historico_rateios"),
   );
   const exercicios = useMemo(
     () => raw.map(normalizarExercicio).sort((a, b) => Number(b.ano) - Number(a.ano)),
@@ -53,10 +62,10 @@ function Pagina() {
   const [vertical, setVertical] = useState(false);
   const e = exercicios.find((x) => x.id === exercicioId) ?? exercicios[0];
   const condo = e ? condominios.find((c) => c.id === e.condoId) : null;
-  // Mesma base do editor de previsão: o realizado do exercício anterior, nunca o demonstrativo do
-  // próprio exercício — pra este comparativo nunca divergir da previsão aprovada ali.
+  // Previsto aprovado simples: base é o realizado do exercício ANTERIOR (nunca o próprio) e o
+  // percentual vem do histórico de rateios — a mesma fonte das demais telas de comparação.
   const demonstrativoBase = e
-    ? demonstrativoBasePrevisao(e, encontrarExercicioAnterior(exercicios, e))
+    ? (encontrarExercicioAnterior(exercicios, e)?.demonstrativo ?? null)
     : null;
   const r = e
     ? compararPrevistoRealizadoMensal(e, mensais, {
@@ -64,6 +73,7 @@ function Pagina() {
         inicio,
         fim,
         demonstrativoBase,
+        historicoRateios,
       })
     : null;
   const opEx = exercicios.map((x) => ({
@@ -156,6 +166,16 @@ function Pagina() {
           </div>
         </div>
       </SectionCard>
+      {r.avisos.length > 0 && (
+        <ul
+          className="mb-4 list-disc space-y-1 pl-5 text-sm text-muted-foreground"
+          aria-label="Avisos do cálculo"
+        >
+          {r.avisos.map((aviso) => (
+            <li key={aviso}>{aviso}</li>
+          ))}
+        </ul>
+      )}
       <TabelaMensal resultado={r} orcado={orcado} horizontal={horizontal} vertical={vertical} />
     </>
   );

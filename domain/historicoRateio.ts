@@ -104,6 +104,24 @@ export function variacaoDoAno(
 }
 
 /**
+ * Percentual aprovado gravado no histórico de rateios para o ano-base (a prestação que aprovou o
+ * reajuste do exercício seguinte). Usa a variação gravada na linha; se ela estiver vazia, recalcula
+ * entre o rateio atual (ou sugerido) e o aprovado da própria linha. `0` é um valor válido; `null`
+ * significa que o histórico não traz percentual aprovado para o ano.
+ */
+export function percentualAprovadoDoHistorico(
+  linhas: HistoricoRateio[],
+  condoId: string,
+  anoBase: number,
+): number | null {
+  const linha = historicoDoAno(linhas, condoId, anoBase);
+  if (!linha) return null;
+  if (typeof linha.variacao === "number" && Number.isFinite(linha.variacao)) return linha.variacao;
+  const base = linha.rateioAtual ?? linha.rateioSugerido;
+  return calcularVariacao(base ?? null, linha.rateioAprovado ?? null);
+}
+
+/**
  * Mescla o histórico com o exercício: devolve o exercício com `rateioAtual` preenchido pelo
  * aprovado do ano anterior quando ele estiver vazio. Não sobrescreve valor já informado.
  */

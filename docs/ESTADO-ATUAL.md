@@ -1,5 +1,24 @@
 # Estado atual e passagem de contexto
 
+## Previsto aprovado — camada única de leitura — 21/11/2026 (issue #284)
+
+`domain/previstoAprovado.ts` passa a ser a fonte do previsto das quatro telas de comparação e do
+comparativo do relatório final (previsto simples; % do histórico de rateios; base = exercício anterior).
+Removidos do comparativo: dedução, ajustes e o grupo "Ajustes gerais" (campos `tipo: "ajuste"` e
+`deduzidas` ficam só por compatibilidade das telas). Novos sinais no resultado: `situacaoPrevisto`
+(`ok`, `sem_base`, `sem_percentual`) e `semPrevisaoConta`. **Sem banco, PHP ou versão.** Pendentes:
+#285 (tabela e carga inicial, com simulação) e #286 (aprovação transacional e bloqueios). **Não validado
+em produção.**
+
+## Previsão para relatórios — 21/11/2026 (issue #282)
+
+A tela **Financeiro → Previsão para relatórios** (`/previsao-orcamentaria?modo=relatorios`) passou a usar
+`calcularPrevisaoParaRelatorios` (`domain/previsaoRelatorios.ts`, 10 testes): realizado dos relatórios
+mensais do período (alternativa: demonstrativo da prestação, com aviso), previsto do exercício anterior
+× (1 + %) proporcional aos meses, variação `(realizado − previsto) ÷ previsto` e sem cálculo quando não há
+exercício anterior. PDF, XLSX e CSV usam o mesmo resultado. **Pendente:** unificar `demonstrativoBasePrevisao`
+nas demais telas (ver `docs/DECISOES.md`, 21/11/2026). **Não validado em produção.**
+
 ## Histórico de rateios e documentos por cidade — 16/11/2026
 
 **Histórico de rateios (versão 1.14).** Cada exercício cujo rateio foi travado gera uma linha em

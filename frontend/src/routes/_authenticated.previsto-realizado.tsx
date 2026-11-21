@@ -30,13 +30,18 @@ import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { cn } from "@/lib/utils";
 import { encontrarExercicioAnterior, normalizarExercicio } from "@/domain/exercicio";
-import { demonstrativoBasePrevisao } from "@/domain/previsao";
 import {
   compararPrevistoRealizado,
   TOLERANCIA_PADRAO,
   type Totais,
 } from "@/domain/previstoRealizado";
-import type { Condominio, ConfigEscritorio, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
+import type {
+  Condominio,
+  ConfigEscritorio,
+  Exercicio,
+  HistoricoRateio,
+  Mensal,
+} from "@/domain/types";
 import { contagem } from "@/components/app/textos";
 
 type Busca = { exercicio?: string; ate?: number };
@@ -104,8 +109,8 @@ function PaginaComparativo() {
             condominio: condo ?? null,
             mesAte: busca.ate ?? null,
             tolerancia,
-            // Mantém a mesma base financeira usada na previsão aprovada.
-            demonstrativoBase: demonstrativoBasePrevisao(exercicio, exercicioAnterior),
+            // Previsto aprovado simples: base é o exercício anterior; % vem do histórico de rateios.
+            demonstrativoBase: exercicioAnterior?.demonstrativo ?? null,
             historicoRateios,
           })
         : null,

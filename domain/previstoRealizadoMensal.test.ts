@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { compararPrevistoRealizadoMensal } from "@/domain/previstoRealizadoMensal";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
-import type { Demonstrativo, Exercicio } from "@/domain/types";
+import type { Demonstrativo, Exercicio, HistoricoRateio } from "@/domain/types";
 
 function demo(grupos: Demonstrativo["despesas"]["grupos"], ini = "", fim = ""): Demonstrativo {
   return recalcularDemonstrativo({
@@ -34,12 +34,19 @@ function exercicio(): Exercicio {
 }
 
 describe("compararPrevistoRealizadoMensal", () => {
-  it("demonstrativoBase substitui o do próprio exercício na previsão (achado do Codex no PR #170: evita divergir do editor)", () => {
+  const hist = (variacao: number): HistoricoRateio[] => [
+    { id: "h1", condoId: "c1", ano: 2025, rateioAtual: null, rateioSugerido: null, variacao, rateioAprovado: 1, travadoEm: "", fonte: "calculo", exercicioId: null },
+  ];
+
+  it("previsto vem do exercício anterior × (1 + % do histórico); sem base não há previsão aprovada", () => {
     const e = exercicio();
-    const outraBase = demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 240000 }] }]);
-    const comBase = compararPrevistoRealizadoMensal(e, [], { demonstrativoBase: outraBase });
-    const semBase = compararPrevistoRealizadoMensal(e, [], {});
-    expect(comBase.total.previsto).toBe(240000);
-    expect(semBase.total.previsto).toBe(120000); // base do próprio exercício
+    e.ano = 2026;
+    const base = demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 240000 }] }]);
+    const comBase = compararPrevistoRealizadoMensal(e, [], { demonstrativoBase: base, historicoRateios: hist(10) });
+    const semBase = compararPrevistoRealizadoMensal(e, [], { historicoRateios: hist(10) });
+    expect(comBase.total.previsto).toBe(264000);
+    expect(comBase.situacaoPrevisto).toBe("ok");
+    expect(semBase.total.previsto).toBe(0); // não usa o demonstrativo do próprio exercício
+    expect(semBase.situacaoPrevisto).toBe("sem_base");
   });
 });

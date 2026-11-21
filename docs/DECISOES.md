@@ -1,5 +1,38 @@
 # Decisões do projeto
 
+## 2026-11-21 — previsto aprovado simples e percentual do histórico de rateios (issues #284 a #286)
+
+Decisões do responsável: (1) o previsto aprovado é o **simples**, `realizado da conta do exercício anterior
+× (1 + %)`, sem dedução, ajustes ou variação de despesas sugeridas (isso fica só na previsão do rateio);
+(2) o percentual vem do **histórico de rateios** do ano-base (exercício − 1), e `0%` é válido;
+(3) alterar período fechado exige **reabrir a prestação de contas**; importação em mês fechado é bloqueada.
+
+`domain/previstoAprovado.ts` (`previstoDoExercicio`) é a fonte única do previsto para Previsão para
+relatórios, Previsto × Realizado, Previsto × Realizado mensal e comparativo do relatório final. A base é
+sempre o exercício **anterior**; sem ele não há previsão aprovada. Sem percentual no histórico, usa-se a
+variação explícita do exercício, com aviso; sem ambos, o previsto fica pendente. Isso resolve a pendência
+da entrada anterior sobre `demonstrativoBasePrevisao` nas telas de comparação; a função continua servindo
+apenas à previsão do rateio. Próximas etapas: persistir em `kr_previsoes_aprovadas` (#285) e aprovação
+transacional com bloqueio na API (#286).
+
+## 2026-11-21 — Previsão para relatórios: realizado dos mensais, previsto do ano anterior e variação (realizado − previsto) ÷ previsto
+
+Regra confirmada pelo responsável (issue #282): o **realizado** é o que foi lançado no exercício avaliado
+e vem dos relatórios mensais (DRE mensal ou comparativo mensal) dentro do período; a prestação de contas de
+2025 só carrega os primeiros dados, sem detalhe mensal. O **previsto** é o realizado do exercício anterior
+× (1 + % considerado na prestação), proporcional aos meses com realizado. A **variação** é
+`(realizado − previsto) ÷ previsto`, o mesmo sentido de `classificar` em `domain/previstoRealizado.ts`.
+Sem exercício anterior (ex.: 2025) não existe base histórica e a tela não calcula previsto nem variação.
+
+Implementado em `domain/previsaoRelatorios.ts` (`calcularPrevisaoParaRelatorios`). Sem relatório mensal no
+período, o realizado cai no demonstrativo da prestação, com aviso da origem. Grupos e contas que só existem
+no ano anterior entram no previsto.
+
+Pendência registrada: `demonstrativoBasePrevisao` (`domain/previsao.ts`) ainda devolve o demonstrativo do
+**próprio** exercício e alimenta Previsto × Realizado, relatório final e orçado × realizado mensal; só o modo
+relatórios usa o exercício anterior. Unificar a base nessas telas muda números já publicados e fica para uma
+issue própria, com decisão do responsável.
+
 ## 2026-11-11 — cartório exato volta a vir antes da cidade na escolha do modelo de ata
 
 O PR #263 (modelos de ata prontos) inverteu a regra da #256: o campo `tipo` passou a desempatar
