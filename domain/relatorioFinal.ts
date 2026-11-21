@@ -319,7 +319,9 @@ export function montarRelatorioFinal(entrada: {
   const comparativo = compararPrevistoRealizado(e, entrada.mensais, {
     condominio,
     mesAte: e.relatorioFinal?.prAte ?? null,
-    demonstrativoBase,
+    // Previsto aprovado simples: base é o exercício ANTERIOR (nunca o próprio), % do histórico de rateios.
+    demonstrativoBase: entrada.exercicioAnterior?.demonstrativo ?? null,
+    historicoRateios: entrada.historicoRateios ?? [],
   });
   const mensaisDoComparativo = mensaisDoRelatorio(e.condoId, entrada.mensais, comparativo);
   // Uma prestação pode ser fechada antes de todos os meses do exercício seguinte

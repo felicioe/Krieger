@@ -32,6 +32,8 @@ function comparativoFixture(): ResultadoComparativo {
     grupos: [grupo],
     deduzidas: [],
     total: totais(14000, 13300),
+    situacaoPrevisto: "ok",
+    percentualPrevisto: 10,
     tolerancia: 5,
     relatoriosUsados: 1,
     avisos: [],

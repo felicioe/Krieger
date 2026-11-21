@@ -1,5 +1,15 @@
 # Estado atual e passagem de contexto
 
+## Previsto aprovado — camada única de leitura — 21/11/2026 (issue #284)
+
+`domain/previstoAprovado.ts` passa a ser a fonte do previsto das quatro telas de comparação e do
+comparativo do relatório final (previsto simples; % do histórico de rateios; base = exercício anterior).
+Removidos do comparativo: dedução, ajustes e o grupo "Ajustes gerais" (campos `tipo: "ajuste"` e
+`deduzidas` ficam só por compatibilidade das telas). Novos sinais no resultado: `situacaoPrevisto`
+(`ok`, `sem_base`, `sem_percentual`) e `semPrevisaoConta`. **Sem banco, PHP ou versão.** Pendentes:
+#285 (tabela e carga inicial, com simulação) e #286 (aprovação transacional e bloqueios). **Não validado
+em produção.**
+
 ## Previsão para relatórios — 21/11/2026 (issue #282)
 
 A tela **Financeiro → Previsão para relatórios** (`/previsao-orcamentaria?modo=relatorios`) passou a usar

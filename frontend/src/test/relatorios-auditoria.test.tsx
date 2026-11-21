@@ -31,6 +31,7 @@ function resultado(carga: number[]): ResultadoMensalDetalhado {
     linhas: [{ grupo: "Pessoal", mensal, total }],
     total,
     avisos: [],
+    situacaoPrevisto: "ok",
     relatoriosUsados: carga.reduce((soma, n) => soma + n, 0),
   };
 }

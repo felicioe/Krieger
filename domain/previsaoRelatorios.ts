@@ -1,7 +1,8 @@
 import { centavos } from "./demonstrativo";
 import { chaveRotulo, mesesDoExercicioSeguinte } from "./previstoRealizado";
+import { previstoDoExercicio } from "./previstoAprovado";
 import { competenciaMensal } from "./mensal";
-import type { Condominio, DePara, Demonstrativo, Exercicio, Mensal } from "./types";
+import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
 
 /**
  * Previsão para relatórios (menu Financeiro → Previsão para relatórios).
@@ -10,8 +11,8 @@ import type { Condominio, DePara, Demonstrativo, Exercicio, Mensal } from "./typ
  * - Realizado = o que foi efetivamente lançado no exercício avaliado. Vem dos relatórios mensais
  *   (DRE mensal ou comparativo mensal) dentro do período do exercício. Sem nenhum mensal no período,
  *   usa o demonstrativo da própria prestação de contas e avisa a origem.
- * - Previsto = total realizado do exercício ANTERIOR × (1 + % considerado na prestação de contas),
- *   proporcional aos meses com realizado (anual × meses ÷ 12).
+ * - Previsto = previsto aprovado simples (`previstoAprovado.ts`): realizado do exercício ANTERIOR
+ *   × (1 + % do histórico de rateios), proporcional aos meses com realizado (anual × meses ÷ 12).
  * - Variação = (realizado − previsto) ÷ previsto — mesmo sentido de `classificar`
  *   (`previstoRealizado.ts`) e do restante do sistema.
  * - Sem exercício anterior (primeira prestação carregada) não há base histórica: o previsto e a
@@ -31,6 +32,8 @@ export interface LinhaPrevisaoRelatorio {
   diferenca: number;
   /** (realizado − previsto) ÷ previsto, em %; null sem previsto. */
   variacaoPct: number | null;
+  /** Conta com despesa e sem previsto aprovado ("Sem previsão para a conta"). */
+  semPrevisaoConta?: boolean;
 }
 
 export interface GrupoPrevisaoRelatorio extends Omit<LinhaPrevisaoRelatorio, "grupo"> {
@@ -49,21 +52,21 @@ export interface ResultadoPrevisaoRelatorio {
   mesAte: string | null;
   /** Relatórios mensais somados no realizado. */
   relatoriosUsados: number;
-  /** Percentual de reajuste aplicado sobre a base do ano anterior. */
-  reajustePct: number;
+  /** Situação do previsto aprovado: ok, sem exercício anterior ou sem percentual aprovado. */
+  situacaoPrevisto: "ok" | "sem_base" | "sem_percentual";
+  /** Percentual de reajuste aplicado sobre a base do ano anterior (null quando pendente). */
+  reajustePct: number | null;
   grupos: GrupoPrevisaoRelatorio[];
   total: Omit<LinhaPrevisaoRelatorio, "grupo" | "nome">;
   avisos: string[];
 }
 
 export interface OpcoesPrevisaoRelatorio {
-  condominio?: Pick<Condominio, "mapeamento"> | null;
+  condominio?: Pick<Condominio, "mapeamento"> | null | undefined;
   /** Demonstrativo do exercício anterior (base do previsto); null/undefined = sem base. */
-  demonstrativoBase?: Demonstrativo | null;
-  /** Reajuste % resolvido pela previsão (`calcularPrevisao().variacaoPct`). */
-  reajustePct: number;
-  /** Método da variação do exercício; "valor" (R$ fixo) não se distribui por conta. */
-  variacaoMetodo?: string;
+  demonstrativoBase?: Demonstrativo | null | undefined;
+  /** Histórico de rateios: fonte do percentual aprovado. */
+  historicoRateios?: HistoricoRateio[] | undefined;
 }
 
 /** Variação em %, 2 casas; null sem previsto. */
@@ -74,7 +77,8 @@ export function variacaoPct(realizado: number, previsto: number): number | null 
 
 interface Acum {
   nome: string;
-  base: number;
+  /** Previsto anual aprovado da conta. */
+  anual: number;
   realizado: number;
 }
 
@@ -83,35 +87,29 @@ interface AcumGrupo {
   contas: Map<string, Acum>;
 }
 
-const temDespesas = (d: Demonstrativo | null | undefined): d is Demonstrativo =>
-  !!d?.despesas?.grupos?.some((g) => g.itens?.some((i) => (Number(i.valor) || 0) !== 0 || !!i.nome));
-
 export function calcularPrevisaoParaRelatorios(
   exercicio: Exercicio,
   mensais: Mensal[],
   opcoes: OpcoesPrevisaoRelatorio,
 ): ResultadoPrevisaoRelatorio {
   let condominio = opcoes.condominio ?? null;
-  let base = opcoes.demonstrativoBase ?? null;
   if (exercicio.fechado && exercicio.fechamento) {
     mensais = exercicio.fechamento.mensais;
     condominio = exercicio.fechamento.condominio;
-    base = exercicio.fechamento.exercicioAnterior?.demonstrativo ?? base;
   }
-  const avisos: string[] = [];
+  const previstoAprovado = previstoDoExercicio(exercicio, {
+    demonstrativoBase: opcoes.demonstrativoBase,
+    historicoRateios: opcoes.historicoRateios,
+    condominio,
+  });
+  const avisos: string[] = [...previstoAprovado.avisos];
   const mapa = new Map(
     (condominio?.mapeamento ?? []).filter((d: DePara) => d.de?.trim()).map((d) => [chaveRotulo(d.de), d.para] as const),
   );
   const nomeDe = (s: string) => mapa.get(chaveRotulo(s)) ?? s;
 
-  const semBase = !temDespesas(base);
-  const fator = 1 + opcoes.reajustePct / 100;
-  if (semBase) {
-    avisos.push("Sem exercício anterior com despesas: não há base histórica, então o previsto e a variação não são calculados.");
-  }
-  if (opcoes.variacaoMetodo === "valor") {
-    avisos.push("A variação do exercício é um valor fixo em R$, que não se distribui por conta: o previsto foi calculado sem reajuste percentual.");
-  }
+  // Sem previsto aprovado (sem base ou sem percentual) não se calcula previsto nem variação.
+  const semBase = previstoAprovado.situacao !== "ok";
 
   // Janela e relatórios mensais do período do exercício.
   const janela = mesesDoExercicioSeguinte(exercicio);
@@ -169,16 +167,14 @@ export function calcularPrevisaoParaRelatorios(
     const ck = chaveRotulo(nome);
     let c = g.contas.get(ck);
     if (!c) {
-      c = { nome, base: 0, realizado: 0 };
+      c = { nome, anual: 0, realizado: 0 };
       g.contas.set(ck, c);
     }
     return c;
   };
 
-  if (!semBase) {
-    for (const g of base!.despesas.grupos) {
-      for (const it of g.itens ?? []) conta(nomeDe(g.nome), nomeDe(it.nome)).base += Number(it.valor) || 0;
-    }
+  for (const g of previstoAprovado.grupos) {
+    for (const c of g.contas) conta(g.nome, c.nome).anual += c.previsto;
   }
   for (const d of fontes) {
     for (const g of d.despesas?.grupos ?? []) {
@@ -205,8 +201,13 @@ export function calcularPrevisaoParaRelatorios(
     let gp = 0;
     let gr = 0;
     for (const c of g.contas.values()) {
-      const l = fecharLinha(centavos((c.base * fator * meses) / 12), c.realizado);
-      contas.push({ grupo: g.nome, nome: c.nome, ...l });
+      const l = fecharLinha(centavos((c.anual * meses) / 12), c.realizado);
+      contas.push({
+        grupo: g.nome,
+        nome: c.nome,
+        ...l,
+        ...(!semBase && c.anual === 0 && l.realizado !== 0 ? { semPrevisaoConta: true } : {}),
+      });
       gp += l.previsto;
       gr += l.realizado;
     }
@@ -222,7 +223,8 @@ export function calcularPrevisaoParaRelatorios(
     meses,
     mesAte,
     relatoriosUsados,
-    reajustePct: opcoes.reajustePct,
+    situacaoPrevisto: previstoAprovado.situacao,
+    reajustePct: previstoAprovado.percentual,
     grupos: resultadoGrupos,
     total: fecharLinha(totalPrevisto, totalRealizado),
     avisos,

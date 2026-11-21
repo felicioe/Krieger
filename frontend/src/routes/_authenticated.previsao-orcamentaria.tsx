@@ -340,11 +340,11 @@ function EditorPrevisao({
       <RelatorioPrevisao
         seletor={seletor}
         exercicio={e}
-        resultado={resultado}
         periodo={periodo}
         demonstrativoBase={exercicioAnterior?.demonstrativo ?? null}
         mensais={mensais}
         condominio={condominio}
+        historicoRateios={historicoRateios}
       />
     );
   }
@@ -423,20 +423,20 @@ function EditorPrevisao({
 function RelatorioPrevisao({
   seletor,
   exercicio,
-  resultado,
   periodo,
   demonstrativoBase,
   mensais,
   condominio,
+  historicoRateios,
 }: {
   seletor: ReactNode;
   exercicio: Exercicio;
-  resultado: ReturnType<typeof calcularPrevisao>;
   periodo: string | null;
   /** Demonstrativo do exercício ANTERIOR; null quando não existe (sem base histórica). */
   demonstrativoBase: Demonstrativo | null;
   mensais: Mensal[];
   condominio: Pick<Condominio, "mapeamento"> | undefined;
+  historicoRateios: HistoricoRateio[];
 }) {
   const [detalhado, setDetalhado] = useState(false);
   const [exportandoXlsx, setExportandoXlsx] = useState(false);
@@ -450,10 +450,9 @@ function RelatorioPrevisao({
       calcularPrevisaoParaRelatorios(exercicio, mensais, {
         condominio: condominio ?? null,
         demonstrativoBase,
-        reajustePct: resultado.variacaoPct,
-        variacaoMetodo: exercicio.variacaoMetodo,
+        historicoRateios,
       }),
-    [exercicio, mensais, condominio, demonstrativoBase, resultado.variacaoPct],
+    [exercicio, mensais, condominio, demonstrativoBase, historicoRateios],
   );
   const { semBase } = calculo;
 
@@ -596,9 +595,11 @@ function RelatorioPrevisao({
       <SectionCard
         titulo="Previsto × Realizado"
         descricao={
-          semBase
-            ? "Sem exercício anterior com despesas: não há base histórica para o previsto. Mostrando só o realizado."
-            : `Previsto = realizado do exercício anterior reajustado em ${formatNumeroBR(calculo.reajustePct)}%, proporcional a ${calculo.meses} ${calculo.meses === 1 ? "mês" : "meses"} · Realizado ${calculo.origemRealizado === "mensais" ? `dos relatórios mensais até ${calculo.mesAte}` : "da prestação de contas"} · variação = (realizado − previsto) ÷ previsto · sem deduções, ajustes ou variação de despesas sugeridas.`
+          calculo.situacaoPrevisto === "sem_base"
+            ? "Sem previsão aprovada: não há exercício anterior com despesas (base histórica). Mostrando só o realizado."
+            : calculo.situacaoPrevisto === "sem_percentual"
+              ? "Previsão pendente: o percentual aprovado não foi encontrado no histórico de rateios. Mostrando só o realizado."
+              : `Previsto = realizado do exercício anterior reajustado em ${formatNumeroBR(calculo.reajustePct ?? 0)}%, proporcional a ${calculo.meses} ${calculo.meses === 1 ? "mês" : "meses"} · Realizado ${calculo.origemRealizado === "mensais" ? `dos relatórios mensais até ${calculo.mesAte}` : "da prestação de contas"} · variação = (realizado − previsto) ÷ previsto · sem deduções, ajustes ou variação de despesas sugeridas.`
         }
       >
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -665,7 +666,14 @@ function RelatorioPrevisao({
                       </tr>
                     )}
                     <tr className="border-b last:border-0">
-                      <td className="px-3 py-2">{linha.nome}</td>
+                      <td className="px-3 py-2">
+                        {linha.nome}
+                        {"semPrevisaoConta" in linha && linha.semPrevisaoConta && (
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            Sem previsão para a conta
+                          </span>
+                        )}
+                      </td>
                       <td className="num px-3 py-2 text-right">{formatBRL(linha.realizado)}</td>
                       <td className="num px-3 py-2 text-right font-medium">
                         {textoPrevisto(linha.previsto)}

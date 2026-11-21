@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { compararPrevistoRealizado } from "@/domain/previstoRealizado";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
-import type { Demonstrativo, Exercicio, Mensal } from "@/domain/types";
+import type { Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
 import type { Bloco } from "@/lib/documento/tipos";
 import { semRealizado, textoSemRealizado } from "@/components/previsto-realizado/semRealizado";
 
@@ -48,6 +48,32 @@ const exercicio = {
   consid: {} as Exercicio["consid"],
   prev: { modo: "tradicional", ajustes: [] },
 } as Exercicio;
+/** Exercício anterior (09/2024–08/2025): realizado de origem do previsto aprovado. */
+const exercicioAnterior = {
+  demonstrativo: demo(
+    [
+      { nome: "Pessoal", itens: [{ nome: "Salários", valor: 120000 }] },
+      { nome: "Manutenção", itens: [{ nome: "Elevadores", valor: 24000 }] },
+    ],
+    "01/09/2024",
+    "31/08/2025",
+  ),
+};
+const historicoRateios: HistoricoRateio[] = [
+  {
+    id: "h1",
+    condoId: "c1",
+    ano: 2024,
+    rateioAtual: null,
+    rateioSugerido: null,
+    variacao: 0,
+    rateioAprovado: 1,
+    travadoEm: "",
+    fonte: "calculo",
+    exercicioId: null,
+  },
+];
+const base = { demonstrativoBase: exercicioAnterior.demonstrativo, historicoRateios };
 const mensal = (grupos: Demonstrativo["despesas"]["grupos"]): Mensal => ({
   id: "m1",
   condoId: "c1",
@@ -72,7 +98,7 @@ describe("Previsto × Realizado sem relatório mensal no período", () => {
 
   it("PDF/Word: sem relatório, troca a tabela por rubrica e o gráfico pela mensagem e não mostra −100%", async () => {
     const { documentoPrevistoRealizado } = await import("@/documentos/previstoRealizado");
-    const c = compararPrevistoRealizado(exercicio, []);
+    const c = compararPrevistoRealizado(exercicio, [], base);
     const doc = await documentoPrevistoRealizado({
       comparativo: c,
       exercicio,
@@ -90,7 +116,7 @@ describe("Previsto × Realizado sem relatório mensal no período", () => {
     const c = compararPrevistoRealizado(
       exercicio,
       [mensal([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 10000 }] }])],
-      { mesAte: 1 },
+      { mesAte: 1, ...base },
     );
     expect(semRealizado(c)).toBe(false);
     const doc = await documentoPrevistoRealizado({
@@ -126,6 +152,8 @@ describe("Relatório final sem relatório mensal no período", () => {
       condominio,
       escritorio: null,
       mensais: [],
+      exercicioAnterior,
+      historicoRateios,
     });
     const doc = await documentoRelatorioFinal({
       rel,

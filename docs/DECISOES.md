@@ -1,5 +1,20 @@
 # Decisões do projeto
 
+## 2026-11-21 — previsto aprovado simples e percentual do histórico de rateios (issues #284 a #286)
+
+Decisões do responsável: (1) o previsto aprovado é o **simples**, `realizado da conta do exercício anterior
+× (1 + %)`, sem dedução, ajustes ou variação de despesas sugeridas (isso fica só na previsão do rateio);
+(2) o percentual vem do **histórico de rateios** do ano-base (exercício − 1), e `0%` é válido;
+(3) alterar período fechado exige **reabrir a prestação de contas**; importação em mês fechado é bloqueada.
+
+`domain/previstoAprovado.ts` (`previstoDoExercicio`) é a fonte única do previsto para Previsão para
+relatórios, Previsto × Realizado, Previsto × Realizado mensal e comparativo do relatório final. A base é
+sempre o exercício **anterior**; sem ele não há previsão aprovada. Sem percentual no histórico, usa-se a
+variação explícita do exercício, com aviso; sem ambos, o previsto fica pendente. Isso resolve a pendência
+da entrada anterior sobre `demonstrativoBasePrevisao` nas telas de comparação; a função continua servindo
+apenas à previsão do rateio. Próximas etapas: persistir em `kr_previsoes_aprovadas` (#285) e aprovação
+transacional com bloqueio na API (#286).
+
 ## 2026-11-21 — Previsão para relatórios: realizado dos mensais, previsto do ano anterior e variação (realizado − previsto) ÷ previsto
 
 Regra confirmada pelo responsável (issue #282): o **realizado** é o que foi lançado no exercício avaliado

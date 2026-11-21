@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { calcularPrevisaoParaRelatorios, variacaoPct } from "./previsaoRelatorios";
 import { demonstrativoVazio, recalcularDemonstrativo } from "./demonstrativo";
-import type { Demonstrativo, Exercicio, Mensal } from "./types";
+import type { Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
 
 function demo(grupos: Demonstrativo["despesas"]["grupos"], ini = "", fim = ""): Demonstrativo {
   return recalcularDemonstrativo({
@@ -49,6 +49,10 @@ function mensal(mes: number, grupos: Demonstrativo["despesas"]["grupos"], condoI
   };
 }
 
+const hist = (variacao: number | null, ano = 2025): HistoricoRateio[] => [
+  { id: "h1", condoId: "c1", ano, rateioAtual: null, rateioSugerido: null, variacao, rateioAprovado: 1, travadoEm: "", fonte: "calculo", exercicioId: null },
+];
+
 const base2025 = demo([pessoal(1000), { nome: "Água", itens: [{ nome: "Sabesp", valor: 600 }] }], "01/01/2025", "31/12/2025");
 
 describe("calcularPrevisaoParaRelatorios", () => {
@@ -62,7 +66,7 @@ describe("calcularPrevisaoParaRelatorios", () => {
     const r = calcularPrevisaoParaRelatorios(
       exercicio(),
       [mensal(1, [pessoal(110)]), mensal(2, [pessoal(130)])],
-      { demonstrativoBase: base2025, reajustePct: 10 },
+      { demonstrativoBase: base2025, historicoRateios: hist(10) },
     );
     expect(r.origemRealizado).toBe("mensais");
     expect(r.meses).toBe(2);
@@ -79,7 +83,7 @@ describe("calcularPrevisaoParaRelatorios", () => {
     const r = calcularPrevisaoParaRelatorios(
       exercicio(),
       [mensal(1, [pessoal(100)])],
-      { demonstrativoBase: base2025, reajustePct: 0 },
+      { demonstrativoBase: base2025, historicoRateios: hist(0) },
     );
     const agua = r.grupos.find((g) => g.nome === "Água")!;
     expect(agua.previsto).toBe(50);
@@ -93,7 +97,7 @@ describe("calcularPrevisaoParaRelatorios", () => {
     const r = calcularPrevisaoParaRelatorios(
       exercicio(),
       [mensal(1, [{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 80 }, { nome: "Rescisão", valor: 40 }] }])],
-      { demonstrativoBase: base2025, reajustePct: 0 },
+      { demonstrativoBase: base2025, historicoRateios: hist(0) },
     );
     const resc = r.grupos[0]!.contas.find((c) => c.nome === "Rescisão")!;
     expect(resc.previsto).toBe(0);
@@ -102,7 +106,7 @@ describe("calcularPrevisaoParaRelatorios", () => {
   });
 
   it("sem exercício anterior não calcula previsto nem variação", () => {
-    const r = calcularPrevisaoParaRelatorios(exercicio(), [mensal(1, [pessoal(100)])], { demonstrativoBase: null, reajustePct: 10 });
+    const r = calcularPrevisaoParaRelatorios(exercicio(), [mensal(1, [pessoal(100)])], { demonstrativoBase: null, historicoRateios: hist(10) });
     expect(r.semBase).toBe(true);
     expect(r.total.previsto).toBe(0);
     expect(r.total.variacaoPct).toBeNull();
@@ -111,7 +115,7 @@ describe("calcularPrevisaoParaRelatorios", () => {
   });
 
   it("sem mensais usa o demonstrativo da prestação, no período inteiro, e avisa a origem", () => {
-    const r = calcularPrevisaoParaRelatorios(exercicio([pessoal(1320)]), [], { demonstrativoBase: base2025, reajustePct: 10 });
+    const r = calcularPrevisaoParaRelatorios(exercicio([pessoal(1320)]), [], { demonstrativoBase: base2025, historicoRateios: hist(10) });
     expect(r.origemRealizado).toBe("prestacao");
     expect(r.meses).toBe(12);
     expect(r.mesAte).toBeNull();
@@ -126,7 +130,7 @@ describe("calcularPrevisaoParaRelatorios", () => {
     const r = calcularPrevisaoParaRelatorios(
       exercicio(),
       [mensal(1, [pessoal(100)]), mensal(3, [pessoal(100)]), mensal(2, [pessoal(9999)], "outro")],
-      { demonstrativoBase: base2025, reajustePct: 0 },
+      { demonstrativoBase: base2025, historicoRateios: hist(0) },
     );
     expect(r.relatoriosUsados).toBe(2);
     expect(r.meses).toBe(3);
@@ -138,7 +142,7 @@ describe("calcularPrevisaoParaRelatorios", () => {
     const r = calcularPrevisaoParaRelatorios(
       exercicio(),
       [mensal(1, [{ nome: "Pessoal", itens: [{ nome: "Folha", valor: 100 }] }])],
-      { demonstrativoBase: base2025, reajustePct: 0, condominio: { mapeamento: [{ de: "Folha", para: "Salários" }] } },
+      { demonstrativoBase: base2025, historicoRateios: hist(0), condominio: { mapeamento: [{ de: "Folha", para: "Salários" }] } },
     );
     const pes = r.grupos.find((g) => g.nome === "Pessoal")!;
     expect(pes.contas).toHaveLength(1);
@@ -150,15 +154,57 @@ describe("calcularPrevisaoParaRelatorios", () => {
     const r = calcularPrevisaoParaRelatorios(
       exercicio(),
       [mensal(1, [pessoal(100)])],
-      { demonstrativoBase: demo([{ nome: "Pessoal", itens: [{ nome: "A", valor: 100 }, { nome: "B", valor: 100 }, { nome: "C", valor: 100 }] }]), reajustePct: 3 },
+      { demonstrativoBase: demo([{ nome: "Pessoal", itens: [{ nome: "A", valor: 100 }, { nome: "B", valor: 100 }, { nome: "C", valor: 100 }] }]), historicoRateios: hist(3) },
     );
     const g = r.grupos[0]!;
     expect(g.contas.reduce((s, c) => s + c.previsto, 0)).toBeCloseTo(g.previsto, 2);
     expect(r.total.previsto).toBe(g.previsto);
   });
 
-  it("método de variação em valor fixo gera aviso e não aplica percentual", () => {
-    const r = calcularPrevisaoParaRelatorios(exercicio(), [], { demonstrativoBase: base2025, reajustePct: 0, variacaoMetodo: "valor" });
-    expect(r.avisos.join(" ")).toMatch(/valor fixo/);
+  it("percentual do histórico de rateios prevalece sobre a variação do exercício; 0% é válido", () => {
+    const e = exercicio();
+    e.variacaoParam = 99;
+    const r = calcularPrevisaoParaRelatorios(e, [], { demonstrativoBase: base2025, historicoRateios: hist(0) });
+    expect(r.situacaoPrevisto).toBe("ok");
+    expect(r.reajustePct).toBe(0);
+    expect(r.grupos.find((g) => g.nome === "Pessoal")!.previsto).toBe(1000);
+  });
+
+  it("sem histórico usa a variação informada no exercício, com aviso", () => {
+    const r = calcularPrevisaoParaRelatorios(exercicio(), [], { demonstrativoBase: base2025 });
+    expect(r.reajustePct).toBe(10);
+    expect(r.grupos.find((g) => g.nome === "Pessoal")!.previsto).toBe(1100);
+    expect(r.avisos.join(" ")).toMatch(/variação informada no exercício/);
+  });
+
+  it("sem histórico e sem variação no exercício o previsto fica pendente (sem percentual)", () => {
+    const e = exercicio();
+    e.variacaoMetodo = "manual";
+    e.variacaoParam = null;
+    e.variacao = 0;
+    const r = calcularPrevisaoParaRelatorios(e, [mensal(1, [pessoal(100)])], { demonstrativoBase: base2025 });
+    expect(r.situacaoPrevisto).toBe("sem_percentual");
+    expect(r.reajustePct).toBeNull();
+    expect(r.total.previsto).toBe(0);
+    expect(r.total.variacaoPct).toBeNull();
+    expect(r.avisos.join(" ")).toMatch(/Percentual aprovado não encontrado/);
+  });
+
+  it("variação em valor fixo (R$) não vira percentual: sem histórico, o previsto fica pendente", () => {
+    const e = exercicio();
+    e.variacaoMetodo = "valor";
+    e.variacaoParam = 30000;
+    const r = calcularPrevisaoParaRelatorios(e, [], { demonstrativoBase: base2025 });
+    expect(r.situacaoPrevisto).toBe("sem_percentual");
+  });
+
+  it("conta nova com despesa é marcada como sem previsão para a conta", () => {
+    const r = calcularPrevisaoParaRelatorios(
+      exercicio(),
+      [mensal(1, [{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 80 }, { nome: "Rescisão", valor: 40 }] }])],
+      { demonstrativoBase: base2025, historicoRateios: hist(0) },
+    );
+    expect(r.grupos[0]!.contas.find((c) => c.nome === "Rescisão")!.semPrevisaoConta).toBe(true);
+    expect(r.grupos[0]!.contas.find((c) => c.nome === "Salários")!.semPrevisaoConta).toBeUndefined();
   });
 });

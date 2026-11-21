@@ -79,6 +79,8 @@ function comparativo(): ResultadoComparativo {
     tolerancia: 5,
     relatoriosUsados: 1,
     avisos: [],
+    situacaoPrevisto: "ok",
+    percentualPrevisto: 10,
   };
 }
 
