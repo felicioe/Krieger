@@ -44,12 +44,7 @@ import {
   chaveDivergencia,
   compararComTotaisPdf,
 } from "@/domain/previsaoSugerida";
-import type {
-  Condominio,
-  ConfigEscritorio,
-  Exercicio,
-  HistoricoRateio,
-} from "@/domain/types";
+import type { Condominio, ConfigEscritorio, Exercicio, HistoricoRateio } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/")({
   head: () =>
