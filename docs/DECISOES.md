@@ -1,5 +1,20 @@
 # Decisões do projeto
 
+## 2026-11-21 — histórico de rateios dentro do cadastro do condomínio (issue #297)
+
+Decisão do responsável: a tela própria "Histórico de rateios" (#292) ficou confusa; o histórico passa a ser
+editado **no cadastro do condomínio**, na seção "Histórico de rateios" logo abaixo de "Índices de correção
+aplicados". A rota `/historico-rateios` e o item de menu foram **removidos**.
+
+Mantidas as regras de #292: **% informado vale mais que o calculado**, sugestão com 6 casas e botão "Usar",
+permissão `previsao_orcamentaria` (visualizar para ver a seção, editar para alterar) e validação PHP
+(`validar_historico_rateio`). Como os índices, **alterações e exclusões são gravadas ao salvar o cadastro**
+(`planejarHistorico`, em `domain/historicoRateio.ts`): só linhas novas ou alteradas são enviadas (linhas antigas
+não são reescritas), exclusões vêm antes e mudar o ano de uma linha gravada exclui a antiga e cria outra
+(chave única condomínio + ano). Se o cadastro grava e o histórico falha, o usuário é avisado e o cadastro não
+é desfeito. Em condomínio novo a seção pede para salvar antes. Travar o rateio na Previsão orçamentária
+continua preservando o % informado.
+
 ## 2026-11-21 — tela Histórico de rateios: % informado vale mais que o calculado (issue #292)
 
 Decisões do responsável: (1) o **% informado vale mais que o calculado**; a tela mostra a sugestão do sistema com

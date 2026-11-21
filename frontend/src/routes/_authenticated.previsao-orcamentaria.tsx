@@ -314,7 +314,7 @@ function EditorPrevisao({
       const existente = historicoRateios.find(
         (h) => h.condoId === linha.condoId && Number(h.ano) === linha.ano,
       );
-      // O % informado na tela Histórico de rateios não é trocado pelo calculado ao travar.
+      // O % informado no Histórico de rateios do cadastro do condomínio não é trocado pelo calculado ao travar.
       await api.salvar("historico_rateios", {
         ...preservarPercentualInformado(linha, existente),
         id: existente?.id ?? novoId(),

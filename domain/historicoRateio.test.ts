@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  avisosDaLinhaRateio,
   formatarPercentualCompleto,
+  linhaRateioAlterada,
+  linhaRateioDe,
+  linhaRateioNova,
+  linhasRateioDoCondominio,
+  percentualEmUsoDaLinha,
+  planejarHistorico,
+  validarLinhasRateio,
   montarLinhaHistorico,
   parsePercentualCompleto,
   preservarPercentualInformado,
@@ -213,3 +221,87 @@ describe("tela Histórico de rateios (#292)", () => {
     expect(preservarPercentualInformado(nova, null)).toBe(nova);
   });
 });
+
+describe("histórico de rateios no cadastro do condomínio (#297)", () => {
+  const h = (id: string, ano: number, extra: Partial<HistoricoRateio> = {}): HistoricoRateio => ({
+    id, condoId: "c1", ano, rateioAtual: 100, rateioSugerido: null, variacao: 8, rateioAprovado: 108,
+    travadoEm: "2026-01-01T00:00:00Z", fonte: "calculo", exercicioId: "e1", ...extra,
+  });
+  const ctx = (ids: string[] = ["novo-1", "novo-2"]) => ({ condoId: "c1", condoNome: "Cond", agora: "agora", novoId: () => ids.shift() as string });
+
+  it("lista só o condomínio, da mais recente para a mais antiga, e mostra o % informado", () => {
+    const linhas = linhasRateioDoCondominio(
+      [h("a", 2024), h("b", 2025, { variacao: 8.932412, variacaoOrigem: "informado" }), { ...h("x", 2025), condoId: "c2" }],
+      "c1",
+    );
+    expect(linhas.map((l) => l.ano)).toEqual([2025, 2024]);
+    expect(linhas[0]).toMatchObject({ idExistente: "b", textoPercentual: "8,932412", origemGravada: "informado" });
+    expect(linhas[1]).toMatchObject({ textoPercentual: "", origemGravada: "calculado", variacaoGravada: 8 });
+  });
+
+  it("sem alteração nada é gravado: linhas antigas não são reescritas", () => {
+    const iniciais = linhasRateioDoCondominio([h("a", 2024), h("b", 2025)], "c1");
+    const plano = planejarHistorico(iniciais, iniciais.map((l) => ({ ...l })), ctx());
+    expect(plano).toEqual({ salvar: [], excluir: [] });
+  });
+
+  it("grava só a linha alterada, com o % informado e a origem", () => {
+    const iniciais = linhasRateioDoCondominio([h("a", 2024), h("b", 2025)], "c1");
+    const atuais = iniciais.map((l) => (l.idExistente === "b" ? { ...l, rateioAprovado: 820, rateioAtual: 752.78, textoPercentual: "8,93" } : l));
+    const plano = planejarHistorico(iniciais, atuais, ctx());
+    expect(plano.excluir).toEqual([]);
+    expect(plano.salvar).toHaveLength(1);
+    expect(plano.salvar[0]).toMatchObject({ id: "b", ano: 2025, rateioAprovado: 820, variacao: 8.93, variacaoOrigem: "informado", fonte: "manual" });
+  });
+
+  it("linha nova recebe id novo; linha removida é excluída (exclusões primeiro na lista de excluir)", () => {
+    const iniciais = linhasRateioDoCondominio([h("a", 2024), h("b", 2025)], "c1");
+    const nova = { ...linhaRateioNova(2026), rateioAtual: 200, rateioAprovado: 210 };
+    const plano = planejarHistorico(iniciais, [nova, iniciais[0]!], ctx());
+    expect(plano.salvar).toHaveLength(1);
+    expect(plano.salvar[0]).toMatchObject({ id: "novo-1", ano: 2026, variacao: 5, variacaoOrigem: "calculado" });
+    expect(plano.excluir).toEqual(["a"]); // 2024 saiu da lista
+  });
+
+  it("mudar o ano de uma linha gravada exclui a antiga e cria outra (chave única condomínio + ano)", () => {
+    const iniciais = linhasRateioDoCondominio([h("a", 2024)], "c1");
+    const plano = planejarHistorico(iniciais, [{ ...iniciais[0]!, ano: 2023 }], ctx());
+    expect(plano.excluir).toEqual(["a"]);
+    expect(plano.salvar[0]).toMatchObject({ id: "novo-1", ano: 2023, exercicioId: null });
+  });
+
+  it("linhaRateioAlterada olha só os campos editáveis", () => {
+    const l = linhaRateioDe(h("a", 2024));
+    expect(linhaRateioAlterada(l, { ...l, fonte: "manual", variacaoGravada: 99 })).toBe(false);
+    expect(linhaRateioAlterada(l, { ...l, textoPercentual: " 8,5 " })).toBe(true);
+    expect(linhaRateioAlterada(l, { ...l, rateioAtual: 101 })).toBe(true);
+  });
+
+  it("% em uso: informado, depois o gravado numa linha inalterada, depois o calculado", () => {
+    const l = linhaRateioDe(h("a", 2024, { variacao: 8 }));
+    expect(percentualEmUsoDaLinha(l, true)).toEqual({ valor: 8, origem: "calculado" });
+    expect(percentualEmUsoDaLinha({ ...l, textoPercentual: "9,5" }, false)).toEqual({ valor: 9.5, origem: "informado" });
+    expect(percentualEmUsoDaLinha({ ...l, rateioAtual: 200, rateioAprovado: 210 }, false)).toEqual({ valor: 5, origem: "calculado" });
+  });
+
+  it("validação das linhas: obrigatórios, % ilegível e ano repetido", () => {
+    const boa = { ...linhaRateioNova(2025), rateioAtual: 100, rateioAprovado: 108 };
+    expect(validarLinhasRateio([boa], "c1").ok).toBe(true);
+    const r = validarLinhasRateio([boa, { ...boa }, { ...boa, ano: 2024, textoPercentual: "abc" }, linhaRateioNova(null)], "c1");
+    expect(r.ok).toBe(false);
+    expect(r.porLinha[0]).toBeNull();
+    expect(r.porLinha[1]).toMatch(/mais de uma vez/);
+    expect(r.porLinha[2]).toMatch(/número/);
+    expect(r.porLinha[3]).toBeTruthy();
+  });
+
+  it("avisos: previsto gravado com % diferente e exercício seguinte fechado", () => {
+    const previsoes = [{ condoId: "c1", exercicioDestino: 2026, percentualAprovado: 0, versao: 1 }];
+    const avisos = avisosDaLinhaRateio(2025, 8.93, previsoes, [{ condoId: "c1", ano: 2026 }], "c1");
+    expect(avisos).toHaveLength(2);
+    expect(avisos[0]).toMatch(/2026 já está gravado com 0,00%/);
+    expect(avisosDaLinhaRateio(2025, 0, previsoes, [], "c1")).toEqual([]);
+    expect(avisosDaLinhaRateio(null, 5, previsoes, [], "c1")).toEqual([]);
+  });
+});
+

@@ -1,5 +1,14 @@
 # Estado atual e passagem de contexto
 
+## Histórico de rateios no cadastro do condomínio — 21/11/2026 (issue #297)
+
+A edição do histórico de rateios saiu da tela própria e está na seção **Histórico de rateios** do cadastro do
+condomínio (`components/condominios/HistoricoRateiosCondominio.tsx`), abaixo dos índices de correção, gravada ao
+salvar o cadastro. Rota e menu `/historico-rateios` removidos. Lógica em `domain/historicoRateio.ts`
+(`linhasRateioDoCondominio`, `planejarHistorico`, `validarLinhasRateio`, `percentualEmUsoDaLinha`,
+`avisosDaLinhaRateio`), 9 testes novos. Sem migration. Conferida no ambiente de teste (mock) com navegador;
+**não validada em produção.** (A seção sobre a tela própria, abaixo, está superada por esta.)
+
 ## Tela Histórico de rateios — 21/11/2026 (issue #292)
 
 Nova rota **Financeiro → Histórico de rateios** (`/historico-rateios`): lista por condomínio e ano (rateio atual,
