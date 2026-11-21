@@ -1,5 +1,5 @@
 import { centavos } from "./demonstrativo";
-import type { Exercicio, HistoricoRateio } from "./types";
+import type { Exercicio, HistoricoRateio, PrevisaoAprovada } from "./types";
 
 /**
  * Histórico de rateios travados por condomínio/ano.
@@ -301,5 +301,166 @@ export function parsePercentualCompleto(texto: string | null | undefined): numbe
   if (s === "" || s === "-" || !/^-?\d*\.?\d*$/.test(s)) return null;
   const n = Number(s);
   return Number.isFinite(n) ? arred6(n) : null;
+}
+
+// ---------- Histórico de rateios dentro do cadastro do condomínio (issue #297) ----------
+
+/** Linha editável do histórico no cadastro do condomínio. */
+export interface LinhaRateioForm {
+  /** Id da linha gravada; null em linha nova. */
+  idExistente: string | null;
+  ano: number | null;
+  rateioAtual: number | null;
+  rateioAprovado: number | null;
+  /** Sugestão do sistema gravada na linha (só leitura na tela). */
+  rateioSugerido: number | null;
+  /** % digitado; vazio = usar o calculado. */
+  textoPercentual: string;
+  /** % gravado e sua origem, para mostrar o que está em uso numa linha que ninguém mexeu. */
+  variacaoGravada: number | null;
+  origemGravada: "calculado" | "informado";
+  fonte: HistoricoRateio["fonte"];
+  exercicioId: string | null;
+}
+
+export const linhaRateioDe = (h: HistoricoRateio): LinhaRateioForm => ({
+  idExistente: h.id,
+  ano: Number(h.ano),
+  rateioAtual: h.rateioAtual,
+  rateioAprovado: h.rateioAprovado,
+  rateioSugerido: h.rateioSugerido,
+  textoPercentual:
+    h.variacaoOrigem === "informado" && h.variacao !== null ? formatarPercentualCompleto(h.variacao) : "",
+  variacaoGravada: h.variacao,
+  origemGravada: h.variacaoOrigem === "informado" ? "informado" : "calculado",
+  fonte: h.fonte,
+  exercicioId: h.exercicioId,
+});
+
+export const linhaRateioNova = (ano: number | null = null): LinhaRateioForm => ({
+  idExistente: null,
+  ano,
+  rateioAtual: null,
+  rateioAprovado: null,
+  rateioSugerido: null,
+  textoPercentual: "",
+  variacaoGravada: null,
+  origemGravada: "calculado",
+  fonte: "manual",
+  exercicioId: null,
+});
+
+/** Linhas do condomínio, da mais recente para a mais antiga. */
+export const linhasRateioDoCondominio = (historico: HistoricoRateio[], condoId: string): LinhaRateioForm[] =>
+  historico
+    .filter((h) => h.condoId === condoId)
+    .sort((a, b) => Number(b.ano) - Number(a.ano))
+    .map(linhaRateioDe);
+
+/** A linha mudou em relação ao que está gravado (só estes campos são editáveis). */
+export const linhaRateioAlterada = (a: LinhaRateioForm, b: LinhaRateioForm): boolean =>
+  a.ano !== b.ano ||
+  a.rateioAtual !== b.rateioAtual ||
+  a.rateioAprovado !== b.rateioAprovado ||
+  a.textoPercentual.trim() !== b.textoPercentual.trim();
+
+const paraEntrada = (l: LinhaRateioForm, condoId: string, condoNome?: string): EntradaLinhaHistorico => ({
+  condoId,
+  ...(condoNome ? { condoNome } : {}),
+  ano: l.ano,
+  rateioAtual: l.rateioAtual,
+  rateioAprovado: l.rateioAprovado,
+  rateioSugerido: l.rateioSugerido,
+  percentualInformado: parsePercentualCompleto(l.textoPercentual),
+});
+
+/** % em uso: o informado; senão, o gravado numa linha inalterada; senão, o calculado dos rateios. */
+export function percentualEmUsoDaLinha(
+  l: LinhaRateioForm,
+  inalterada: boolean,
+): { valor: number | null; origem: "calculado" | "informado" } {
+  const informado = parsePercentualCompleto(l.textoPercentual);
+  if (informado !== null) return { valor: informado, origem: "informado" };
+  if (inalterada && l.idExistente) return { valor: l.variacaoGravada, origem: l.origemGravada };
+  return { valor: variacaoCompleta(l.rateioAtual, l.rateioAprovado), origem: "calculado" };
+}
+
+/** Erros por linha (mesma ordem) e gerais; anos repetidos e campos inválidos impedem salvar. */
+export function validarLinhasRateio(
+  linhas: LinhaRateioForm[],
+  condoId: string,
+): { porLinha: (string | null)[]; ok: boolean } {
+  const vistos = new Map<number, number>();
+  const porLinha = linhas.map((l, i) => {
+    const textoInvalido = l.textoPercentual.trim() !== "" && parsePercentualCompleto(l.textoPercentual) === null;
+    const { erros } = validarLinhaHistorico(paraEntrada(l, condoId || "x"));
+    const msg = textoInvalido ? "Digite o percentual como número, por exemplo 8,93." : (Object.values(erros)[0] ?? null);
+    if (msg) return msg;
+    const ano = l.ano as number;
+    if (vistos.has(ano)) return `O ano ${ano} aparece mais de uma vez.`;
+    vistos.set(ano, i);
+    return null;
+  });
+  return { porLinha, ok: porLinha.every((m) => m === null) };
+}
+
+export interface PlanoHistorico {
+  salvar: (Omit<HistoricoRateio, "id"> & { id: string })[];
+  excluir: string[];
+}
+
+/**
+ * O que gravar ao salvar o cadastro: só linhas novas ou alteradas (linhas antigas não são
+ * reescritas), exclui as removidas e, se o ano de uma linha gravada mudou, exclui a antiga e cria
+ * outra (a chave única é condomínio + ano). Exclusões vêm antes das gravações.
+ */
+export function planejarHistorico(
+  iniciais: LinhaRateioForm[],
+  atuais: LinhaRateioForm[],
+  ctx: { condoId: string; condoNome?: string; agora: string; novoId: () => string },
+): PlanoHistorico {
+  const inicialPorId = new Map(iniciais.filter((l) => l.idExistente).map((l) => [l.idExistente as string, l]));
+  const mantidos = new Set<string>();
+  const plano: PlanoHistorico = { salvar: [], excluir: [] };
+  for (const l of atuais) {
+    const antiga = l.idExistente ? inicialPorId.get(l.idExistente) : undefined;
+    if (antiga && !linhaRateioAlterada(antiga, l)) {
+      mantidos.add(antiga.idExistente as string);
+      continue;
+    }
+    const mudouAno = antiga && antiga.ano !== l.ano;
+    if (antiga && !mudouAno) mantidos.add(antiga.idExistente as string);
+    const linha = montarLinhaHistorico(paraEntrada(l, ctx.condoId, ctx.condoNome), {
+      exercicioId: mudouAno ? null : l.exercicioId,
+      travadoEm: ctx.agora,
+    });
+    plano.salvar.push({ ...linha, id: antiga && !mudouAno ? (l.idExistente as string) : ctx.novoId() });
+  }
+  for (const [id] of inicialPorId) if (!mantidos.has(id)) plano.excluir.push(id);
+  return plano;
+}
+
+/** Avisos de uma linha: previsto do ano seguinte já gravado com % diferente e exercício seguinte fechado. */
+export function avisosDaLinhaRateio(
+  ano: number | null,
+  emUso: number | null,
+  previsoes: Pick<PrevisaoAprovada, "condoId" | "exercicioDestino" | "percentualAprovado" | "versao">[],
+  exerciciosFechados: { condoId: string; ano: number | string }[],
+  condoId: string,
+): string[] {
+  if (ano === null) return [];
+  const avisos: string[] = [];
+  const previsto = previsoes.find((p) => p.condoId === condoId && Number(p.exercicioDestino) === ano + 1);
+  if (previsto && emUso !== null && Math.abs(previsto.percentualAprovado - emUso) > 0.005) {
+    avisos.push(
+      `O previsto de ${ano + 1} já está gravado com ${formatarPercentualCompleto(previsto.percentualAprovado)}% (v${previsto.versao}) e não muda ao salvar aqui. Para atualizá-lo, reabra e feche o exercício de ${ano}.`,
+    );
+  }
+  if (exerciciosFechados.some((e) => e.condoId === condoId && Number(e.ano) === ano + 1)) {
+    avisos.push(
+      `O exercício de ${ano + 1} está fechado: relatórios dele que ainda derivam o previsto do histórico mudam com este percentual.`,
+    );
+  }
+  return avisos;
 }
 

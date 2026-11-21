@@ -39,18 +39,29 @@ import {
   Selecao,
 } from "@/components/app/inputs";
 import { api } from "@/lib/api";
-import { chaves, itemQuery, listaQuery } from "@/lib/queries";
+import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { mascaraCNPJ, formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
-import { useUsuario } from "@/lib/auth";
+import { temPermissao, useUsuario } from "@/lib/auth";
+import { novoId } from "@/lib/id";
+import { HistoricoRateiosCondominio } from "@/components/condominios/HistoricoRateiosCondominio";
+import {
+  linhaRateioAlterada,
+  linhasRateioDoCondominio,
+  planejarHistorico,
+  validarLinhasRateio,
+  type LinhaRateioForm,
+} from "@/domain/historicoRateio";
 import { validarIndicesCondominio } from "@/domain/indicesCondominio";
 import { condominioPadrao, normalizarCondominio, prepararCondominio } from "@/domain/condominio";
 import { consultarCnpjReceita, divergenciasCnpj, enderecoDaReceita } from "@/lib/receitaCnpj";
 import type {
   Condominio,
   Exercicio,
+  HistoricoRateio,
   IndiceCorrecao,
   ModoRegra,
+  PrevisaoAprovada,
   UnidadeCondominio,
 } from "@/domain/types";
 import { ARREDONDAMENTOS, VARIACAO_METODOS } from "@/domain/previsaoCriterios";
@@ -84,6 +95,12 @@ function PaginaCondominio() {
 function CondominioExistente({ id }: { id: string }) {
   const { data } = useSuspenseQuery(itemQuery<Condominio>("condominios", id));
   const { data: exercicios = [] } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
+  const { data: historicoRateios = [] } = useSuspenseQuery(
+    listaQueryTolerante<HistoricoRateio>("historico_rateios"),
+  );
+  const { data: previsoes = [] } = useSuspenseQuery(
+    listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
+  );
   const historicoIndices = exercicios
     .filter((e) => e.condoId === id && (e.consid?.indices?.length ?? 0) > 0)
     .sort((a, b) => Number(a.ano) - Number(b.ano))
@@ -96,6 +113,9 @@ function CondominioExistente({ id }: { id: string }) {
     <FormCondominio
       inicial={normalizarCondominio(data ?? { id })}
       historicoIndices={historicoIndices}
+      linhasRateioIniciais={linhasRateioDoCondominio(historicoRateios, id)}
+      previsoes={previsoes}
+      exerciciosFechados={exercicios.filter((e) => e.fechado)}
     />
   );
 }
@@ -115,6 +135,7 @@ const SECOES = [
   "manutencoes",
   "documentos",
   "indices",
+  "rateios",
   "automacoes",
   "regras",
   "depara",
@@ -129,6 +150,7 @@ const TITULOS: Record<Secao, string> = {
   manutencoes: "Manutenções e vistorias",
   documentos: "Documentos obrigatórios",
   indices: "Índices de correção aplicados",
+  rateios: "Histórico de rateios",
   automacoes: "Histórico mensal e automações",
   regras: "Regras do relatório",
   depara: "De-para de rótulos",
@@ -136,7 +158,7 @@ const TITULOS: Record<Secao, string> = {
 const idSecao = (k: Secao) => `secao-${k}`;
 
 /** Resumo de uma linha para cada seção recolhível (só contagem do que está preenchido). */
-function resumos(c: Condominio): Record<Secao, string> {
+function resumos(c: Condominio): Omit<Record<Secao, string>, "rateios"> {
   const preenchido = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== "";
   const datas = [
     c.vigenciaExtintores,
@@ -190,8 +212,14 @@ function resumos(c: Condominio): Record<Secao, string> {
 function FormCondominio({
   inicial,
   historicoIndices = [],
+  linhasRateioIniciais = [],
+  previsoes = [],
+  exerciciosFechados = [],
 }: {
   inicial: Condominio;
+  linhasRateioIniciais?: LinhaRateioForm[];
+  previsoes?: PrevisaoAprovada[];
+  exerciciosFechados?: { condoId: string; ano: number | string }[];
   historicoIndices?: {
     ano: number | string;
     periodo?: { ini: string; fim: string };
@@ -203,6 +231,21 @@ function FormCondominio({
   const usuario = useUsuario();
   const novo = !inicial.id;
   const [c, setC] = useState<Condominio>(inicial);
+  // Histórico de rateios (issue #297): gravado junto do cadastro, só quando há permissão de previsão.
+  const podeVerRateios = temPermissao(usuario, "previsao_orcamentaria.visualizar");
+  const podeEditarRateios = temPermissao(usuario, "previsao_orcamentaria.editar");
+  const [rateios, setRateios] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
+  const [rateiosGravados, setRateiosGravados] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
+  const [tentouRateios, setTentouRateios] = useState(false);
+  const validacaoRateios = validarLinhasRateio(rateios, c.id);
+  // Só as linhas novas ou alteradas bloqueiam o salvamento; linhas antigas não são revalidadas.
+  const errosRateios = validacaoRateios.porLinha.map((m, i) => {
+    const l = rateios[i]!;
+    const antiga = l.idExistente
+      ? rateiosGravados.find((g) => g.idExistente === l.idExistente)
+      : undefined;
+    return antiga && !linhaRateioAlterada(antiga, l) ? null : m;
+  });
   const [apoliceSelecionada, setApoliceSelecionada] = useState<string>(
     inicial.historicoApolices?.at(-1)?.id ?? "",
   );
@@ -211,8 +254,14 @@ function FormCondominio({
   const refNome = useRef<HTMLInputElement>(null);
   const [abertas, setAbertas] = useState(() => todas(false));
   const abrir = (k: Secao) => (v: boolean) => setAbertas((a) => ({ ...a, [k]: v }));
-  const todasAbertas = SECOES.every((k) => abertas[k]);
-  const res = resumos(c);
+  const secoesVisiveis = SECOES.filter((k) => k !== "rateios" || podeVerRateios);
+  const todasAbertas = secoesVisiveis.every((k) => abertas[k]);
+  const res = {
+    ...resumos(c),
+    rateios: rateios.length
+      ? `${rateios.length} ${rateios.length === 1 ? "ano" : "anos"} (${Math.min(...rateios.map((l) => l.ano ?? 9999))} a ${Math.max(...rateios.map((l) => l.ano ?? 0))})`
+      : "Nenhum rateio registrado",
+  };
   const irPara = (k: Secao) => {
     setAbertas((a) => ({ ...a, [k]: true }));
     requestAnimationFrame(() =>
@@ -254,12 +303,49 @@ function FormCondominio({
   }
 
   const salvar = useMutation({
-    mutationFn: (dados: Condominio) =>
-      api.salvar("condominios", { ...dados, indices: validarIndicesCondominio(dados.indices) }),
-    onSuccess: (salvo) => {
+    mutationFn: async (dados: Condominio) => {
+      const salvo = await api.salvar("condominios", {
+        ...dados,
+        indices: validarIndicesCondominio(dados.indices),
+      });
+      // Histórico de rateios: exclusões primeiro e só o que mudou; o cadastro já foi gravado, então
+      // uma falha aqui é avisada sem desfazer o cadastro.
+      let erroRateios: string | null = null;
+      let frescas: LinhaRateioForm[] | null = null;
+      if (!novo && podeEditarRateios) {
+        const plano = planejarHistorico(rateiosGravados, rateios, {
+          condoId: salvo.id,
+          condoNome: salvo.nome,
+          agora: new Date().toISOString(),
+          novoId,
+        });
+        try {
+          for (const id of plano.excluir) await api.excluir("historico_rateios", id);
+          for (const linha of plano.salvar) await api.salvar("historico_rateios", linha);
+        } catch (e) {
+          erroRateios = e instanceof Error ? e.message : "erro desconhecido";
+        }
+        if (plano.excluir.length > 0 || plano.salvar.length > 0) {
+          const lista = await api.listar<HistoricoRateio>("historico_rateios");
+          frescas = linhasRateioDoCondominio(lista, salvo.id);
+        }
+      }
+      return { salvo, erroRateios, frescas };
+    },
+    onSuccess: ({ salvo, erroRateios, frescas }) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
       queryClient.setQueryData(chaves.item("condominios", salvo.id), salvo);
-      toast.success("Condomínio salvo.");
+      if (frescas) {
+        queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
+        setRateios(frescas);
+        setRateiosGravados(frescas);
+        setTentouRateios(false);
+      }
+      if (erroRateios) {
+        toast.error(`Condomínio salvo, mas o histórico de rateios não foi gravado: ${erroRateios}`);
+      } else {
+        toast.success("Condomínio salvo.");
+      }
       if (novo) navigate({ to: "/condominios/$id", params: { id: salvo.id }, replace: true });
       else setC(normalizarCondominio(salvo));
     },
@@ -284,6 +370,12 @@ function FormCondominio({
       return;
     }
     setErroNome(null);
+    if (!novo && podeEditarRateios && errosRateios.some((m) => m !== null)) {
+      setTentouRateios(true);
+      setAbertas((a) => ({ ...a, rateios: true }));
+      toast.error("Corrija o histórico de rateios antes de salvar.");
+      return;
+    }
     setC(r.valor);
     // Só grava atualizadoEm/atualizadoPor no que é enviado pro servidor — não no estado local
     // imediato: se o salvamento falhar, "Atualizado em" não deve passar a impressão de que
@@ -510,7 +602,7 @@ function FormCondominio({
         </div>
 
         <nav aria-label="Ir direto para uma seção" className="flex flex-wrap gap-1.5">
-          {SECOES.map((k) => (
+          {secoesVisiveis.map((k) => (
             <Button
               key={k}
               type="button"
@@ -962,6 +1054,33 @@ function FormCondominio({
             )}
           />
         </SecaoRecolhivel>
+
+        {podeVerRateios && (
+          <SecaoRecolhivel
+            id={idSecao("rateios")}
+            titulo="Histórico de rateios"
+            resumo={res.rateios}
+            aberta={abertas.rateios}
+            aoMudar={abrir("rateios")}
+          >
+            {novo ? (
+              <p className="text-sm text-muted-foreground">
+                Salve o cadastro para registrar o histórico de rateios deste condomínio.
+              </p>
+            ) : (
+              <HistoricoRateiosCondominio
+                condoId={c.id}
+                linhas={rateios}
+                iniciais={rateiosGravados}
+                onChange={setRateios}
+                desabilitado={!podeEditarRateios}
+                erros={tentouRateios ? errosRateios : null}
+                previsoes={previsoes}
+                exerciciosFechados={exerciciosFechados}
+              />
+            )}
+          </SecaoRecolhivel>
+        )}
 
         <SecaoRecolhivel
           id={idSecao("automacoes")}

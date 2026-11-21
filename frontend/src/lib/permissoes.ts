@@ -6,7 +6,6 @@ export const rotasPermissoes: Array<[string, string]> = [
   ["/prestacao-contas", "prestacao_contas"],
   ["/relatorio-final", "prestacao_contas"],
   ["/previsao-orcamentaria", "previsao_orcamentaria"],
-  ["/historico-rateios", "previsao_orcamentaria"],
   ["/previsto-realizado", "previsto_realizado"],
   ["/relatorio-mensal", "relatorio_mensal"],
   ["/importador", "importador"],

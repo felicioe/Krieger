@@ -18,7 +18,6 @@ import { Route as AuthenticatedBackupRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedConsultaDocumentosRouteImport } from './routes/_authenticated.consulta-documentos'
 import { Route as AuthenticatedDriveDocumentosRouteImport } from './routes/_authenticated.drive-documentos'
 import { Route as AuthenticatedEscritorioRouteImport } from './routes/_authenticated.escritorio'
-import { Route as AuthenticatedHistoricoRateiosRouteImport } from './routes/_authenticated.historico-rateios'
 import { Route as AuthenticatedImportadorRouteImport } from './routes/_authenticated.importador'
 import { Route as AuthenticatedImportadorCondominiosRouteImport } from './routes/_authenticated.importador-condominios'
 import { Route as AuthenticatedLimpezaDadosRouteImport } from './routes/_authenticated.limpeza-dados'
@@ -92,12 +91,6 @@ const AuthenticatedEscritorioRoute = AuthenticatedEscritorioRouteImport.update({
   path: '/escritorio',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedHistoricoRateiosRoute =
-  AuthenticatedHistoricoRateiosRouteImport.update({
-    id: '/historico-rateios',
-    path: '/historico-rateios',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const AuthenticatedImportadorRoute = AuthenticatedImportadorRouteImport.update({
   id: '/importador',
   path: '/importador',
@@ -256,7 +249,6 @@ export interface FileRoutesByFullPath {
   '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
   '/escritorio': typeof AuthenticatedEscritorioRoute
-  '/historico-rateios': typeof AuthenticatedHistoricoRateiosRoute
   '/importador': typeof AuthenticatedImportadorRoute
   '/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
   '/limpeza-dados': typeof AuthenticatedLimpezaDadosRoute
@@ -293,7 +285,6 @@ export interface FileRoutesByTo {
   '/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
   '/escritorio': typeof AuthenticatedEscritorioRoute
-  '/historico-rateios': typeof AuthenticatedHistoricoRateiosRoute
   '/importador': typeof AuthenticatedImportadorRoute
   '/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
   '/limpeza-dados': typeof AuthenticatedLimpezaDadosRoute
@@ -332,7 +323,6 @@ export interface FileRoutesById {
   '/_authenticated/consulta-documentos': typeof AuthenticatedConsultaDocumentosRoute
   '/_authenticated/drive-documentos': typeof AuthenticatedDriveDocumentosRoute
   '/_authenticated/escritorio': typeof AuthenticatedEscritorioRoute
-  '/_authenticated/historico-rateios': typeof AuthenticatedHistoricoRateiosRoute
   '/_authenticated/importador': typeof AuthenticatedImportadorRoute
   '/_authenticated/importador-condominios': typeof AuthenticatedImportadorCondominiosRoute
   '/_authenticated/limpeza-dados': typeof AuthenticatedLimpezaDadosRoute
@@ -371,7 +361,6 @@ export interface FileRouteTypes {
     | '/consulta-documentos'
     | '/drive-documentos'
     | '/escritorio'
-    | '/historico-rateios'
     | '/importador'
     | '/importador-condominios'
     | '/limpeza-dados'
@@ -408,7 +397,6 @@ export interface FileRouteTypes {
     | '/consulta-documentos'
     | '/drive-documentos'
     | '/escritorio'
-    | '/historico-rateios'
     | '/importador'
     | '/importador-condominios'
     | '/limpeza-dados'
@@ -446,7 +434,6 @@ export interface FileRouteTypes {
     | '/_authenticated/consulta-documentos'
     | '/_authenticated/drive-documentos'
     | '/_authenticated/escritorio'
-    | '/_authenticated/historico-rateios'
     | '/_authenticated/importador'
     | '/_authenticated/importador-condominios'
     | '/_authenticated/limpeza-dados'
@@ -545,13 +532,6 @@ declare module '@tanstack/react-router' {
       path: '/escritorio'
       fullPath: '/escritorio'
       preLoaderRoute: typeof AuthenticatedEscritorioRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/historico-rateios': {
-      id: '/_authenticated/historico-rateios'
-      path: '/historico-rateios'
-      fullPath: '/historico-rateios'
-      preLoaderRoute: typeof AuthenticatedHistoricoRateiosRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/importador': {
@@ -745,7 +725,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedConsultaDocumentosRoute: typeof AuthenticatedConsultaDocumentosRoute
   AuthenticatedDriveDocumentosRoute: typeof AuthenticatedDriveDocumentosRoute
   AuthenticatedEscritorioRoute: typeof AuthenticatedEscritorioRoute
-  AuthenticatedHistoricoRateiosRoute: typeof AuthenticatedHistoricoRateiosRoute
   AuthenticatedImportadorRoute: typeof AuthenticatedImportadorRoute
   AuthenticatedImportadorCondominiosRoute: typeof AuthenticatedImportadorCondominiosRoute
   AuthenticatedLimpezaDadosRoute: typeof AuthenticatedLimpezaDadosRoute
@@ -780,7 +759,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedConsultaDocumentosRoute: AuthenticatedConsultaDocumentosRoute,
   AuthenticatedDriveDocumentosRoute: AuthenticatedDriveDocumentosRoute,
   AuthenticatedEscritorioRoute: AuthenticatedEscritorioRoute,
-  AuthenticatedHistoricoRateiosRoute: AuthenticatedHistoricoRateiosRoute,
   AuthenticatedImportadorRoute: AuthenticatedImportadorRoute,
   AuthenticatedImportadorCondominiosRoute:
     AuthenticatedImportadorCondominiosRoute,
