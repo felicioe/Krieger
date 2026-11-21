@@ -61,7 +61,11 @@ exigência de administrador e não há limitação inventada ao criador do regis
 
 Limpeza em massa e restauração são recusadas enquanto houver exercícios fechados, inclusive
 para administrador. É necessário reabrir explicitamente antes dessas operações destrutivas.
-Novos lançamentos mensais podem continuar: não alteram os snapshots dos exercícios já encerrados.
+Lançamentos mensais de meses **fora** do período fechado continuam livres. Desde a issue #286 a API
+bloqueia salvar, mover, excluir e importar um relatório mensal (DRE mensal ou Comparativo Financeiro)
+cuja competência caia no período de um exercício fechado do mesmo condomínio: o mês só muda depois de
+reabrir a prestação de contas. O fechamento também grava o previsto aprovado de N+1 e congela o de N
+(exige a migration `20261121_previsoes_aprovadas.sql`; ver `docs/DECISOES.md`).
 
 ## Banco e publicação
 

@@ -467,6 +467,10 @@ try {
           $e = ler_registro_exercicio($pdo, 'exercicios', (string)($o['exercicioId'] ?? ''));
           if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de alterar anexos.', 409);
         }
+        if ($s === 'mensais') {
+          exigir_mes_fora_de_exercicio_fechado($pdo, ler_registro_exercicio($pdo, 'mensais', $id));
+          exigir_mes_fora_de_exercicio_fechado($pdo, $o);
+        }
         if ($s === 'exercicios') {
           $anterior = ler_registro_exercicio($pdo, 'exercicios', $id);
           validar_edicao_exercicio($anterior, $o);
@@ -483,6 +487,7 @@ try {
       $id = id_valido($param('id'));
       $pdo->beginTransaction();
       try {
+        if ($s === 'mensais') exigir_mes_fora_de_exercicio_fechado($pdo, ler_registro_exercicio($pdo, 'mensais', $id));
         if ($s === 'exercicios') { $e = ler_registro_exercicio($pdo, $s, $id); if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de excluir.', 409); }
         if ($s === 'anexos_importacao') { $anexo = ler_registro_exercicio($pdo, $s, $id); $e = ler_registro_exercicio($pdo, 'exercicios', (string)($anexo['exercicioId'] ?? '')); if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de excluir anexos.', 409); }
         if ($s === 'condominios') { exigir_exercicios_abertos($pdo, $id); $pdo->prepare('DELETE FROM kr_indices_condominio WHERE condo_id = ?')->execute([$id]); }

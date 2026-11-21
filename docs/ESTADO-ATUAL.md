@@ -1,5 +1,14 @@
 # Estado atual e passagem de contexto
 
+## Fechamento transacional e bloqueio de período fechado — 21/11/2026 (issue #286)
+
+Fechar o exercício N grava o previsto de N+1 (realizado de N × (1 + % do histórico de rateios)), congela o
+previsto que N usa e é idempotente; sem percentual o fechamento é recusado (409) e nada é gravado. Relatórios
+mensais de meses de exercício fechado não podem ser salvos, movidos, excluídos nem importados até reabrir a
+prestação. Testes em `scripts/test-previsoes-aprovadas.php` (CI). **Exige a migration
+`20261121_previsoes_aprovadas.sql` aplicada antes de fechar qualquer exercício com despesas**; sem ela o
+fechamento é recusado com instrução. **Não publicado.**
+
 ## Previsto aprovado persistido e carga inicial — 21/11/2026 (issue #285)
 
 Nova tabela `kr_previsoes_aprovadas` (`migrations/20261121_previsoes_aprovadas.sql`, também em
