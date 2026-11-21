@@ -58,6 +58,12 @@ tarefas ou validar entregas.
   pedir confirmação a cada etapa. Registrar tudo no PR e no `docs/ESTADO-ATUAL.md` de qualquer forma.
   Continua valendo pedir confirmação antes de ações destrutivas (force-push, apagar branch não
   mesclada, mudar configuração/banco de produção) e quando há decisão de produto real em aberto.
+- **Não parar à espera do CI (pedido explícito do responsável, 21/11/2026):** com o PR aberto e a
+  mudança validada localmente, **não encerrar o turno nem pedir novo "pode publicar" enquanto o CI roda**.
+  Acompanhar o CI e, assim que as **duas** execuções do SHA final ficarem verdes, mesclar (squash),
+  gerar o pacote do SHA de `main`, publicar em `deploy-hostinger`, validar sem login e registrar na
+  issue — tudo na sequência. Se o CI falhar, ler o log, corrigir e reenviar. Continua valendo o
+  contrato: nada é publicado com CI vermelho, e migration/banco de produção seguem exigindo autorização.
 
 ## Validação
 

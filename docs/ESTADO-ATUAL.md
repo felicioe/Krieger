@@ -1,5 +1,13 @@
 # Estado atual e passagem de contexto
 
+## Histórico de rateios na Previsão Orçamentária — 21/11/2026 (issue #294)
+
+Componente `components/previsao/HistoricoRateiosPrevisao.tsx` (modo rateio): rateio histórico e % histórico do ano anterior,
+editáveis, com origem e sugestão de 6 casas. Lógica em `domain/historicoRateio.ts` (`linhaAnoAnterior`,
+`planejarAnoAnterior`, `planejarTravamentoRateio`), 5 testes novos (travar, preservar o % informado, propagar ao
+exercício seguinte, ano anterior). O "Travar rateio no histórico" passou a usar `planejarTravamentoRateio`. Sem migration.
+Conferido no ambiente de teste (mock); **não validado em produção.**
+
 ## Carga com o previsto gravado, atualização, continuidade e observação — 21/11/2026 (issue #299)
 
 Página Backup: a simulação mostra o previsto **gravado** e marca divergência com o histórico; botão **Atualizar previsto**

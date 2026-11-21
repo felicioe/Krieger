@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  linhaAnoAnterior,
+  planejarAnoAnterior,
+  planejarTravamentoRateio,
   avisosContinuidadeRateio,
   avisosDaLinhaRateio,
   formatarPercentualCompleto,
@@ -331,6 +334,61 @@ describe("continuidade e observação do histórico (#299)", () => {
     expect(linhaRateioAlterada(l, { ...l, observacao: "outro" })).toBe(true);
     const travada = preservarPercentualInformado({ variacao: 3, variacaoOrigem: "calculado" as const }, { variacao: 3, variacaoOrigem: "calculado", observacao: "motivo" });
     expect(travada).toMatchObject({ variacao: 3, observacao: "motivo" });
+  });
+});
+
+describe("Previsão Orçamentária: travar, propagar e ano anterior (#294)", () => {
+  const h = (id: string, ano: number, extra: Partial<HistoricoRateio> = {}): HistoricoRateio => ({
+    id, condoId: "c1", condoNome: "Cond", ano, rateioAtual: 321, rateioSugerido: 370, variacao: 15.26, rateioAprovado: 370,
+    travadoEm: "t", fonte: "calculo", exercicioId: "e1", ...extra,
+  });
+  const ex = (id: string, ano: number, extra: Record<string, unknown> = {}) => ({
+    id, condoId: "c1", condoNome: "Cond", ano, rateioAtual: null as number | null, rateioAprovado: null as number | null, ...extra,
+  });
+  const base = (extra: Partial<Parameters<typeof planejarTravamentoRateio>[0]> = {}) => ({
+    exercicio: ex("e26", 2026), aprovado: 420, historico: [h("h25", 2025)], exercicios: [ex("e26", 2026), ex("e27", 2027)],
+    agora: "agora", novoId: () => "novo", ...extra,
+  });
+
+  it("trava: grava a linha do ano herdando o rateio atual do ano anterior e calcula o %", () => {
+    const { linha } = planejarTravamentoRateio(base());
+    expect(linha).toMatchObject({ id: "novo", ano: 2026, rateioAtual: 370, rateioAprovado: 420, fonte: "calculo", condoId: "c1" });
+    expect(linha.variacao).toBe(13.51); // 420 ÷ 370 − 1
+  });
+
+  it("trava: atualiza a linha existente do ano (mesmo id) e preserva o % informado e a observação", () => {
+    const existente = h("h26", 2026, { variacao: 12.42, variacaoOrigem: "informado", observacao: "índice aplicado às receitas" });
+    const { linha } = planejarTravamentoRateio(base({ historico: [h("h25", 2025), existente] }));
+    expect(linha.id).toBe("h26");
+    expect(linha).toMatchObject({ variacao: 12.42, variacaoOrigem: "informado", observacao: "índice aplicado às receitas", rateioAprovado: 420 });
+  });
+
+  it("trava: propaga o aprovado como rateio atual do exercício seguinte que ainda não tem um", () => {
+    expect(planejarTravamentoRateio(base()).proximo).toEqual({ id: "e27", rateioAtual: 420 });
+    expect(planejarTravamentoRateio(base({ exercicios: [ex("e27", 2027, { rateioAtual: 500 })] })).proximo).toBeNull();
+    expect(planejarTravamentoRateio(base({ exercicios: [ex("e28", 2028)] })).proximo).toBeNull();
+    expect(planejarTravamentoRateio(base({ exercicios: [{ ...ex("x27", 2027), condoId: "outro" }] })).proximo).toBeNull();
+  });
+
+  it("ano anterior: usa a linha gravada ou uma linha nova e vazia do ano anterior", () => {
+    expect(linhaAnoAnterior([h("h25", 2025)], "c1", 2026)).toMatchObject({ idExistente: "h25", ano: 2025, rateioAprovado: 370 });
+    expect(linhaAnoAnterior([], "c1", 2026)).toMatchObject({ idExistente: null, ano: 2025, rateioAprovado: null });
+  });
+
+  it("ano anterior: informar o % e o rateio histórico cria ou atualiza só a linha do ano anterior", () => {
+    const ctx = { condoId: "c1", condoNome: "Cond", agora: "agora", novoId: () => "novo" };
+    const nova = { ...linhaAnoAnterior([], "c1", 2026), rateioAprovado: 820, textoPercentual: "8,93" };
+    const criar = planejarAnoAnterior([], nova, ctx);
+    expect(criar.excluir).toEqual([]);
+    expect(criar.salvar[0]).toMatchObject({ id: "novo", ano: 2025, rateioAprovado: 820, variacao: 8.93, variacaoOrigem: "informado" });
+
+    const gravadas = [h("h25", 2025)];
+    const editada = { ...linhaAnoAnterior(gravadas, "c1", 2026), textoPercentual: "9,5" };
+    const atualizar = planejarAnoAnterior(gravadas, editada, ctx);
+    expect(atualizar.salvar).toHaveLength(1);
+    expect(atualizar.salvar[0]).toMatchObject({ id: "h25", ano: 2025, variacao: 9.5, rateioAprovado: 370, rateioAtual: 321 });
+    // sem mudança, nada é gravado
+    expect(planejarAnoAnterior(gravadas, linhaAnoAnterior(gravadas, "c1", 2026), ctx)).toEqual({ salvar: [], excluir: [] });
   });
 });
 
