@@ -507,3 +507,59 @@ export function avisosContinuidadeRateio(linhas: LinhaRateioForm[]): string[] {
 const formatarBRL = (v: number): string =>
   `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// ---------- Histórico na Previsão Orçamentária (issue #294) ----------
+
+type ExercicioParaTravar = Pick<Exercicio, "id" | "condoId" | "condoNome" | "ano" | "rateioAtual" | "rateioAprovado">;
+
+export interface PlanoTravamento {
+  /** Linha do histórico do ano do exercício, já com id (o da existente, se houver). */
+  linha: Omit<HistoricoRateio, "id"> & { id: string };
+  /** Exercício seguinte sem rateio atual, que passa a ter o aprovado como base; null se não há. */
+  proximo: { id: string; rateioAtual: number } | null;
+}
+
+/**
+ * Travar o rateio na Previsão: a linha do histórico do ano (herdando o rateio atual do ano anterior
+ * e preservando o % informado e a observação da linha existente) e a propagação do aprovado como
+ * `rateioAtual` do exercício seguinte, quando ele existe e ainda não tem um.
+ */
+export function planejarTravamentoRateio(entrada: {
+  exercicio: ExercicioParaTravar;
+  aprovado: number;
+  historico: HistoricoRateio[];
+  exercicios: Pick<Exercicio, "id" | "condoId" | "ano" | "rateioAtual">[];
+  agora: string;
+  novoId: () => string;
+}): PlanoTravamento {
+  const { exercicio, aprovado, historico, exercicios, agora, novoId } = entrada;
+  const comBase = aplicarRateioBase(exercicio, historico);
+  const nova = historicoDoExercicio({ ...comBase, rateioAprovado: aprovado }, aprovado, "calculo", agora);
+  const existente = historico.find((h) => h.condoId === nova.condoId && Number(h.ano) === nova.ano);
+  const linha = { ...preservarPercentualInformado(nova, existente), id: existente?.id ?? novoId() };
+  const proximo = exercicios.find(
+    (x) =>
+      x.condoId === exercicio.condoId &&
+      Number(x.ano) === Number(exercicio.ano) + 1 &&
+      (x.rateioAtual === null || x.rateioAtual === undefined),
+  );
+  return { linha, proximo: proximo ? { id: proximo.id, rateioAtual: aprovado } : null };
+}
+
+/** Linha do ano anterior (a base da previsão): a gravada ou uma nova, vazia e editável. */
+export function linhaAnoAnterior(historico: HistoricoRateio[], condoId: string, ano: number): LinhaRateioForm {
+  const existente = historicoDoAno(historico, condoId, ano - 1);
+  return existente ? linhaRateioDe(existente) : linhaRateioNova(ano - 1);
+}
+
+/** Plano para gravar a linha do ano anterior editada na Previsão (cria ou atualiza só ela). */
+export function planejarAnoAnterior(
+  historico: HistoricoRateio[],
+  editada: LinhaRateioForm,
+  ctx: { condoId: string; condoNome?: string; agora: string; novoId: () => string },
+): PlanoHistorico {
+  const gravada = historicoDoAno(historico, ctx.condoId, (editada.ano ?? 0));
+  const iniciais = gravada ? [linhaRateioDe(gravada)] : [];
+  const atuais = [gravada ? { ...editada, idExistente: gravada.id } : { ...editada, idExistente: null }];
+  return planejarHistorico(iniciais, atuais, ctx);
+}
+

@@ -1,5 +1,18 @@
 # Decisões do projeto
 
+## 2026-11-21 — histórico de rateios dentro da Previsão Orçamentária (issue #294)
+
+A Previsão Orçamentária (modo rateio) ganhou o bloco **Histórico de rateios**: o **rateio histórico** e o **% histórico**
+do ano anterior (base da previsão) aparecem preenchidos pelo histórico, ou vazios e editáveis quando não há dado, com o
+% em uso e sua origem (Calculado/Informado), a sugestão de 6 casas e botão "Usar". Salvar grava a linha do ano anterior
+no mesmo histórico que o cadastro do condomínio mostra (regras de #292/#297: % informado vale mais; só a linha alterada
+é gravada). Sem sair da tela é possível informar e conferir.
+
+O **travar rateio** foi extraído para o domínio (`planejarTravamentoRateio`): grava a linha do ano (herda o rateio atual
+do ano anterior, calcula o %, preserva o % informado e a observação da linha existente) e propaga o aprovado como
+`rateioAtual` do exercício seguinte que ainda não tem um. A propagação para o cadastro é o próprio histórico (a seção do
+cadastro lê `historico_rateios`); a mensagem ao travar diz isso. Coberto por testes de domínio.
+
 ## 2026-11-21 — carga mostra o previsto gravado, atualização de previsto, continuidade e observação (issue #299)
 
 Caso real: o Urban Classic teve o rateio atual de 2026 alterado (R$ 47.466,81), gerando 12,42% no lugar de ~8,41%;

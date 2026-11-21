@@ -20,6 +20,7 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { opcoesCondominio, Selecao, SelecaoBusca } from "@/components/app/inputs";
 import { PainelPrevisao } from "@/components/previsao/PainelPrevisao";
+import { HistoricoRateiosPrevisao } from "@/components/previsao/HistoricoRateiosPrevisao";
 import { api } from "@/lib/api";
 import { chaves, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
@@ -34,8 +35,7 @@ import { calcularPrevisaoParaRelatorios } from "@/domain/previsaoRelatorios";
 import {
   aplicarRateioBase,
   aplicarVariacaoDoHistorico,
-  preservarPercentualInformado,
-  historicoDoExercicio,
+  planejarTravamentoRateio,
 } from "@/domain/historicoRateio";
 import type {
   Condominio,
@@ -302,41 +302,33 @@ function EditorPrevisao({
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
       queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
 
-      // Garante que rateioAtual esteja preenchido (herdado do ano anterior) antes de calcular
-      // a variacao. Sem isso, calcularVariacao(null, 370) retorna null e o historico fica sem %.
-      const nComRateioBase = aplicarRateioBase(n, historicoRateios);
-      const linha = historicoDoExercicio(
-        { ...nComRateioBase, rateioAprovado: aprovado },
+      // Linha do histórico (herda o rateio atual do ano anterior, calcula o %, preserva o % informado e a
+      // observação da linha existente) e propagação do aprovado ao exercício seguinte: ver
+      // `planejarTravamentoRateio` (domain/historicoRateio.ts), coberto por testes.
+      const plano = planejarTravamentoRateio({
+        exercicio: n,
         aprovado,
-        "calculo",
-        new Date().toISOString(),
-      );
-      const existente = historicoRateios.find(
-        (h) => h.condoId === linha.condoId && Number(h.ano) === linha.ano,
-      );
-      // O % informado no Histórico de rateios do cadastro do condomínio não é trocado pelo calculado ao travar.
-      await api.salvar("historico_rateios", {
-        ...preservarPercentualInformado(linha, existente),
-        id: existente?.id ?? novoId(),
+        historico: historicoRateios,
+        exercicios,
+        agora: new Date().toISOString(),
+        novoId,
       });
+      await api.salvar("historico_rateios", plano.linha);
       queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
 
       // Propaga como base do exercício seguinte, se ainda não tiver rateio atual.
-      const proximo = exercicios.find(
-        (x) =>
-          x.condoId === e.condoId &&
-          Number(x.ano) === Number(n.ano) + 1 &&
-          (x.rateioAtual === null || x.rateioAtual === undefined),
-      );
-      if (proximo) {
-        await api.salvar("exercicios", { ...proximo, rateioAtual: aprovado });
+      const proximo = plano.proximo
+        ? exercicios.find((x) => x.id === plano.proximo?.id)
+        : undefined;
+      if (proximo && plano.proximo) {
+        await api.salvar("exercicios", { ...proximo, rateioAtual: plano.proximo.rateioAtual });
         queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
       }
 
       toast.success(
         proximo
-          ? `Rateio de ${formatBRL(aprovado)} travado. Aplicado como base de ${proximo.ano}.`
-          : `Rateio de ${formatBRL(aprovado)} travado no histórico.`,
+          ? `Rateio de ${formatBRL(aprovado)} travado. Aplicado como base de ${proximo.ano} e registrado no histórico do cadastro do condomínio.`
+          : `Rateio de ${formatBRL(aprovado)} travado e registrado no histórico do cadastro do condomínio.`,
       );
     } catch (erro) {
       // O rateio aprovado já foi gravado no exercício antes deste ponto; o que falhou foi o
@@ -418,6 +410,16 @@ function EditorPrevisao({
       />
 
       <SectionCard className="mb-6">{seletor}</SectionCard>
+
+      {modo === "rateio" && (
+        <HistoricoRateiosPrevisao
+          key={`${e.condoId}-${e.ano}-${historicoRateios.length}`}
+          condoId={e.condoId}
+          condoNome={e.condoNome || condominio?.nome || ""}
+          ano={Number(e.ano)}
+          historico={historicoRateios}
+        />
+      )}
 
       {e.fechado && (
         <p className="mb-4 text-sm">
