@@ -1,5 +1,20 @@
 # Decisões do projeto
 
+## 2026-11-21 — backup e restauração incluem previstos aprovados e histórico de rateios (issue #290)
+
+`previsoes_aprovadas` entra em `$STORES` (backup, validação e restauração). As duas tabelas com colunas
+próprias — `previsoes_aprovadas` e `historico_rateios` — **não usam** o REPLACE genérico de `id`/`dados`
+(`restaurar_store_especial`, em `lib_backup.php`). Isso também corrige um defeito antigo: restaurar um
+backup com linhas de `historico_rateios` falhava, porque o REPLACE genérico gravava numa coluna
+`atualizado_em` que essa tabela não tem.
+
+Regras: (1) a restauração preserva versão, origem, autor, data e resumo anterior do previsto, sem criar
+versão nova; (2) a validação recusa, antes de gravar, previsto sem condomínio existente, par condomínio/
+exercício duplicado, versão inválida, detalhamento ausente e totais que não fecham pela soma das contas e
+dos grupos; (3) **backup antigo, sem a chave da store, não toca na tabela, nem com "substituir tudo"**, pois
+os dados não seriam recuperáveis; (4) sem a tabela (migration pendente), exportar devolve lista vazia e
+restaurar um backup que contenha previstos é recusado com 409 e instrução, antes de alterar dados.
+
 ## 2026-11-21 — fechamento gera o previsto de N+1 e período fechado só muda após reabrir (issue #286)
 
 Decisões do responsável: alterar dados de período fechado exige **reabrir a prestação de contas**; importar

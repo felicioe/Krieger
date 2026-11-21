@@ -41,6 +41,7 @@ export const STORES: Store[] = [
   "decisoes_previsao",
   "decisoes_importacao",
   "historico_rateios",
+  "previsoes_aprovadas",
 ];
 
 export interface ComId {

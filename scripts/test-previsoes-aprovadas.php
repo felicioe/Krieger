@@ -3,6 +3,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/lib_indices.php';
 require_once dirname(__DIR__) . '/lib_exercicios.php';
 require_once dirname(__DIR__) . '/lib_previsoes.php';
+require_once dirname(__DIR__) . '/lib_backup.php';
 $assert = static function (bool $ok, string $msg): void { if (!$ok) throw new RuntimeException($msg); };
 $igual = static fn($a, $b): bool => abs((float)$a - (float)$b) < 0.0001;
 
@@ -188,4 +189,70 @@ $aberto25 = $reabrir($atual('f25'));
 $pdo->beginTransaction();
 exigir_mes_fora_de_exercicio_fechado($pdo, $mensal('cf-1', '06/2025'));   // reaberto: liberado
 $pdo->rollBack();
-echo "Previsto aprovado: paridade com o domínio, gravação versionada, rollback, percentual do histórico, carga inicial, fechamento transacional (idempotência, falha sem estado parcial, congelamento, nova versão) e bloqueio de mês fechado validados.\n";
+
+// 4. Backup e restauração (issue #290): previstos aprovados e histórico de rateios (tabelas próprias).
+$pdo->exec('DELETE FROM kr_previsoes_aprovadas');
+$pdo->exec('DELETE FROM kr_historico_rateios');
+$hist('hb1', 'bk-1', 2025, 10.0, 300.0, null, 330.0);
+$hist('hb2', 'bk-2', 2025, null, 321.0, null, 370.0);
+$baseBk = ['despesas' => ['grupos' => [['nome' => 'Pessoal', 'itens' => [['nome' => 'Salários', 'valor' => 120000], ['nome' => 'Encargos', 'valor' => 33333.33]]]]]];
+$pdo->beginTransaction();
+gravar_previsao_aprovada($pdo, 'bk-1', 2026, 'e-bk1', 10.0, previsao_calcular($baseBk, 10.0), 'aprovacao', 'usuario-1');
+gravar_previsao_aprovada($pdo, 'bk-1', 2026, 'e-bk1', 5.0, previsao_calcular($baseBk, 5.0), 'aprovacao', 'usuario-2');   // versão 2, com resumo da 1
+gravar_previsao_aprovada($pdo, 'bk-2', 2026, 'e-bk2', 15.26, previsao_calcular($baseBk, 15.26), 'carga_inicial', 'adm');
+$pdo->commit();
+$exportado = ['previsoes_aprovadas' => ler_colecao_backup($pdo, 'previsoes_aprovadas'), 'historico_rateios' => ler_colecao_backup($pdo, 'historico_rateios')];
+$assert(count($exportado['previsoes_aprovadas']) === 2 && count($exportado['historico_rateios']) === 2, 'Backup não exportou as duas stores.');
+$conhecidos = ['bk-1' => true, 'bk-2' => true];
+$assert(validar_previsoes_backup($exportado['previsoes_aprovadas'], $conhecidos) === null, 'Backup válido foi recusado.');
+
+// 4a. Validação recusa dados inconsistentes antes de gravar.
+$um = $exportado['previsoes_aprovadas'][0];
+$assert(str_contains((string)validar_previsoes_backup([$um, $um], $conhecidos), 'duplicado'), 'Par condomínio/exercício duplicado deveria ser recusado.');
+$assert(str_contains((string)validar_previsoes_backup([$um], ['bk-9' => true]), 'não existe'), 'Condomínio inexistente deveria ser recusado.');
+$assert(str_contains((string)validar_previsoes_backup([array_merge($um, ['totalPrevisto' => $um['totalPrevisto'] + 10])], $conhecidos), 'não fecha'), 'Total que não fecha deveria ser recusado.');
+$semGrupos = $um; unset($semGrupos['grupos']);
+$assert(validar_previsoes_backup([$semGrupos], $conhecidos) !== null, 'Detalhamento ausente deveria ser recusado.');
+$assert(validar_previsoes_backup([array_merge($um, ['versao' => 0])], $conhecidos) !== null, 'Versão inválida deveria ser recusada.');
+
+// 4b. Restaurar após apagar devolve as mesmas linhas (inclusive versão, origem e resumo anterior).
+$pdo->exec('DELETE FROM kr_previsoes_aprovadas');
+$pdo->exec('DELETE FROM kr_historico_rateios');
+$pdo->beginTransaction();
+restaurar_store_especial($pdo, 'previsoes_aprovadas', $exportado, false);
+restaurar_store_especial($pdo, 'historico_rateios', $exportado, false);
+$pdo->commit();
+$refeito = ler_colecao_backup($pdo, 'previsoes_aprovadas');
+$assert($refeito === $exportado['previsoes_aprovadas'], 'Previstos restaurados diferem do backup.');
+$p1 = ler_previsao_aprovada($pdo, 'bk-1', 2026);
+$assert($p1['versao'] === 2 && $p1['anterior']['versao'] === 1 && $p1['aprovadoPor'] === 'usuario-2' && $p1['origem'] === 'aprovacao', 'Versão, origem ou resumo anterior perdidos na restauração.');
+$h = ler_colecao_backup($pdo, 'historico_rateios');
+$assert(count($h) === 2 && $igual($h[0]['rateioAprovado'], 330.0) && $igual($h[0]['variacao'], 10.0) && $igual($h[1]['rateioAtual'], 321.0), 'Histórico de rateios não foi restaurado (caminho genérico quebrava com tabela própria).');
+
+// 4c. Restaurar de novo não duplica; "substituir tudo" remove o que não está no backup.
+$pdo->beginTransaction(); restaurar_store_especial($pdo, 'previsoes_aprovadas', $exportado, false); $pdo->commit();
+$assert(count(listar_previsoes_aprovadas($pdo)) === 2, 'Restaurar duas vezes duplicou previstos.');
+$pdo->beginTransaction();
+gravar_previsao_aprovada($pdo, 'bk-1', 2030, 'e-x', 1.0, previsao_calcular($baseBk, 1.0), 'aprovacao', 'usuario-1');
+$pdo->commit();
+$assert(count(listar_previsoes_aprovadas($pdo)) === 3, 'Linha extra não gravada.');
+$pdo->beginTransaction(); restaurar_store_especial($pdo, 'previsoes_aprovadas', $exportado, true); $pdo->commit();
+$assert(count(listar_previsoes_aprovadas($pdo)) === 2, 'Substituir tudo deveria remover o previsto fora do backup.');
+
+// 4d. Backup antigo (sem as chaves) não toca nas tabelas, nem com "substituir tudo".
+$pdo->beginTransaction();
+restaurar_store_especial($pdo, 'previsoes_aprovadas', ['app' => 'krieger-condominios'], true);
+restaurar_store_especial($pdo, 'historico_rateios', ['app' => 'krieger-condominios'], true);
+$pdo->commit();
+$assert(count(listar_previsoes_aprovadas($pdo)) === 2 && count(ler_colecao_backup($pdo, 'historico_rateios')) === 2, 'Backup antigo apagou previstos ou histórico.');
+
+// 4e. Sem a tabela: backup com previstos é recusado (409); sem previstos segue.
+$pdo->exec('DROP TABLE kr_previsoes_aprovadas');
+$assert(ler_colecao_backup($pdo, 'previsoes_aprovadas') === [], 'Exportar sem a tabela deveria devolver lista vazia.');
+$pdo->beginTransaction();
+try { restaurar_store_especial($pdo, 'previsoes_aprovadas', $exportado, false); $assert(false, 'Restaurar previstos sem a tabela deveria ser recusado.'); }
+catch (RuntimeException $e) { $assert($e->getCode() === 409, 'Restaurar sem a tabela deveria dar 409.'); }
+restaurar_store_especial($pdo, 'previsoes_aprovadas', ['previsoes_aprovadas' => []], true);
+$pdo->rollBack();
+$pdo->exec((string)file_get_contents(dirname(__DIR__) . '/migrations/20261121_previsoes_aprovadas.sql'));
+echo "Previsto aprovado: paridade com o domínio, gravação versionada, rollback, percentual do histórico, carga inicial, fechamento transacional (idempotência, falha sem estado parcial, congelamento, nova versão) e bloqueio de mês fechado, backup e restauração dos previstos aprovados e do histórico de rateios validados.\n";

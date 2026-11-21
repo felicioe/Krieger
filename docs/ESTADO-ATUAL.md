@@ -1,5 +1,12 @@
 # Estado atual e passagem de contexto
 
+## Backup dos previstos aprovados — 21/11/2026 (issue #290)
+
+O backup passa a exportar e restaurar `previsoes_aprovadas` e `historico_rateios` (tabelas com colunas
+próprias, em `lib_backup.php`), com validação de consistência e proteção contra backup antigo (ver
+`docs/DECISOES.md`). Corrige a restauração do histórico de rateios, que falhava com o REPLACE genérico.
+Testes em `scripts/test-previsoes-aprovadas.php` (seção 4, CI). Sem migration. **Não publicado.**
+
 ## Fechamento transacional e bloqueio de período fechado — 21/11/2026 (issue #286)
 
 Fechar o exercício N grava o previsto de N+1 (realizado de N × (1 + % do histórico de rateios)), congela o

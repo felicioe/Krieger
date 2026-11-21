@@ -83,7 +83,7 @@ function contar_tabela_seguro(PDO $pdo, string $tb): int {
   }
 }
 
-$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'modelos_ata', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao', 'historico_rateios'];
+$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'modelos_ata', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao', 'historico_rateios', 'previsoes_aprovadas'];
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try { $pdo = conectar(); }
@@ -191,6 +191,11 @@ function validar_backup_dados(array $dados, PDO $pdo, bool $substituir, array $s
 
   // Verifica se registros que exigem condomínio apontam para condomínio existente
   $dependentes = ['exercicios', 'assembleias'];
+  // Previstos aprovados: referência de condomínio, unicidade condomínio/exercício e totais que fecham.
+  if (in_array('previsoes_aprovadas', $stores, true) && is_array($dados['previsoes_aprovadas'] ?? null)) {
+    $problema = validar_previsoes_backup($dados['previsoes_aprovadas'], $condoIds);
+    if ($problema !== null) erro($problema);
+  }
   foreach ($dependentes as $dep) {
     $lista = $dados[$dep] ?? [];
     foreach ($lista as $item) {
@@ -228,6 +233,8 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
   try {
     exigir_exercicios_abertos($pdo);
     foreach ($stores as $st) {
+      // Tabelas com colunas próprias (histórico de rateios e previstos aprovados) não usam o REPLACE genérico.
+      if (backup_store_especial($st)) { restaurar_store_especial($pdo, $st, $dados, $substituir); continue; }
       if ($substituir) {
         if ($st === 'condominios') $pdo->exec('DELETE FROM kr_indices_condominio');
         $pdo->exec('DELETE FROM ' . $tabela($st));
