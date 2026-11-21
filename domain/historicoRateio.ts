@@ -224,6 +224,8 @@ export interface EntradaLinhaHistorico {
   rateioSugerido: number | null;
   /** % digitado pelo usuário; vazio (null) = usar o calculado. */
   percentualInformado: number | null;
+  /** Motivo ou observação da linha (opcional). */
+  observacao?: string;
 }
 
 /** Sugestões de % com todas as casas: a do aprovado e a do sugerido do sistema, sobre o rateio atual. */
@@ -275,6 +277,7 @@ export function montarLinhaHistorico(
     variacaoOrigem: informado ? "informado" : "calculado",
     rateioAprovado: aprovado,
     travadoEm: base.travadoEm,
+    ...(e.observacao?.trim() ? { observacao: e.observacao.trim() } : {}),
     fonte: "manual",
     exercicioId: base.exercicioId ?? null,
   };
@@ -284,12 +287,19 @@ export function montarLinhaHistorico(
  * Ao travar o rateio na previsão, o % informado na tela de histórico não pode ser trocado pelo
  * calculado: mantém `variacao` e a origem da linha existente quando ela foi informada.
  */
-export function preservarPercentualInformado<T extends Pick<HistoricoRateio, "variacao" | "variacaoOrigem">>(
+export function preservarPercentualInformado<
+  T extends Pick<HistoricoRateio, "variacao" | "variacaoOrigem" | "observacao">,
+>(
   nova: T,
-  existente: Pick<HistoricoRateio, "variacao" | "variacaoOrigem"> | null | undefined,
+  existente: Pick<HistoricoRateio, "variacao" | "variacaoOrigem" | "observacao"> | null | undefined,
 ): T {
-  if (existente?.variacaoOrigem !== "informado") return nova;
-  return { ...nova, variacao: existente.variacao, variacaoOrigem: "informado" };
+  if (!existente) return nova;
+  let r = nova;
+  if (existente.variacaoOrigem === "informado")
+    r = { ...r, variacao: existente.variacao, variacaoOrigem: "informado" };
+  // A observação da linha também sobrevive ao travar o rateio.
+  if (existente.observacao && !r.observacao) r = { ...r, observacao: existente.observacao };
+  return r;
 }
 
 /**
@@ -321,6 +331,8 @@ export interface LinhaRateioForm {
   origemGravada: "calculado" | "informado";
   fonte: HistoricoRateio["fonte"];
   exercicioId: string | null;
+  /** Motivo ou observação da linha (opcional). */
+  observacao: string;
 }
 
 export const linhaRateioDe = (h: HistoricoRateio): LinhaRateioForm => ({
@@ -335,6 +347,7 @@ export const linhaRateioDe = (h: HistoricoRateio): LinhaRateioForm => ({
   origemGravada: h.variacaoOrigem === "informado" ? "informado" : "calculado",
   fonte: h.fonte,
   exercicioId: h.exercicioId,
+  observacao: h.observacao ?? "",
 });
 
 export const linhaRateioNova = (ano: number | null = null): LinhaRateioForm => ({
@@ -348,6 +361,7 @@ export const linhaRateioNova = (ano: number | null = null): LinhaRateioForm => (
   origemGravada: "calculado",
   fonte: "manual",
   exercicioId: null,
+  observacao: "",
 });
 
 /** Linhas do condomínio, da mais recente para a mais antiga. */
@@ -362,7 +376,8 @@ export const linhaRateioAlterada = (a: LinhaRateioForm, b: LinhaRateioForm): boo
   a.ano !== b.ano ||
   a.rateioAtual !== b.rateioAtual ||
   a.rateioAprovado !== b.rateioAprovado ||
-  a.textoPercentual.trim() !== b.textoPercentual.trim();
+  a.textoPercentual.trim() !== b.textoPercentual.trim() ||
+  a.observacao.trim() !== b.observacao.trim();
 
 const paraEntrada = (l: LinhaRateioForm, condoId: string, condoNome?: string): EntradaLinhaHistorico => ({
   condoId,
@@ -372,6 +387,7 @@ const paraEntrada = (l: LinhaRateioForm, condoId: string, condoNome?: string): E
   rateioAprovado: l.rateioAprovado,
   rateioSugerido: l.rateioSugerido,
   percentualInformado: parsePercentualCompleto(l.textoPercentual),
+  observacao: l.observacao,
 });
 
 /** % em uso: o informado; senão, o gravado numa linha inalterada; senão, o calculado dos rateios. */
@@ -463,4 +479,31 @@ export function avisosDaLinhaRateio(
   }
   return avisos;
 }
+
+/**
+ * Continuidade do histórico: o rateio atual de um ano deveria ser o rateio aprovado do ano anterior.
+ * Quando diferem (edição do histórico, importação com valor diferente), o % calculado muda sem aviso;
+ * devolve um aviso por ano com o % que sairia usando o aprovado anterior (issue #299).
+ */
+export function avisosContinuidadeRateio(linhas: LinhaRateioForm[]): string[] {
+  const avisos: string[] = [];
+  const porAno = new Map<number, LinhaRateioForm>();
+  for (const l of linhas) if (l.ano !== null) porAno.set(l.ano, l);
+  for (const [ano, l] of [...porAno.entries()].sort((a, b) => b[0] - a[0])) {
+    const anterior = porAno.get(ano - 1);
+    if (l.rateioAtual === null || !anterior || anterior.rateioAprovado === null) continue;
+    if (Math.abs(l.rateioAtual - anterior.rateioAprovado) <= 0.005) continue;
+    const alternativa = variacaoCompleta(anterior.rateioAprovado, l.rateioAprovado);
+    avisos.push(
+      `${ano}: o rateio atual (${formatarBRL(l.rateioAtual)}) difere do rateio aprovado de ${ano - 1} (${formatarBRL(anterior.rateioAprovado)}).` +
+        (alternativa === null
+          ? ""
+          : ` Com o aprovado de ${ano - 1} o percentual calculado seria ${formatarPercentualCompleto(alternativa)}%.`),
+    );
+  }
+  return avisos;
+}
+
+const formatarBRL = (v: number): string =>
+  `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 

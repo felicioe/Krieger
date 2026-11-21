@@ -1,5 +1,22 @@
 # Decisões do projeto
 
+## 2026-11-21 — carga mostra o previsto gravado, atualização de previsto, continuidade e observação (issue #299)
+
+Caso real: o Urban Classic teve o rateio atual de 2026 alterado (R$ 47.466,81), gerando 12,42% no lugar de ~8,41%;
+a regra do responsável é que o **% efetivamente aplicado às receitas (12,42%) é o que vale** para o previsto, o que o
+"% informado" já permite. O que faltava era enxergar e corrigir:
+
+1. **A simulação da carga mostra o previsto gravado** (percentual, total, versão e origem) nas linhas "Já existe" e
+   sinaliza quando ele **diverge do histórico atual** (antes só mostrava o recalculado, escondendo o gravado).
+2. **Atualizar previsto** (administrador, `api.php?a=previsoes_carga&modo=atualizar`, `previsao_atualizar`): recalcula
+   do demonstrativo da prestação-base e do % atual do histórico e grava **nova versão** (origem `atualizacao`, resumo da
+   anterior em `anterior`), sem reabrir e fechar o exercício. Sem divergência não grava; sem base, sem percentual ou sem
+   previsto gravado recusa com 409. Não altera exercícios nem o previsto congelado de exercício fechado.
+3. **Alerta de continuidade** no histórico do cadastro (`avisosContinuidadeRateio`): rateio atual de um ano diferente
+   do rateio aprovado do ano anterior, com o % que sairia usando o aprovado anterior.
+4. **Observação por linha** (até 500 caracteres, no JSON espelho `dados`, sem migration), preservada ao travar o rateio, no
+   backup e na restauração.
+
 ## 2026-11-21 — histórico de rateios dentro do cadastro do condomínio (issue #297)
 
 Decisão do responsável: a tela própria "Histórico de rateios" (#292) ficou confusa; o histórico passa a ser

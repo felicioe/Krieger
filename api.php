@@ -358,7 +358,15 @@ try {
   if ($a === 'previsoes_carga') {
     if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem executar a carga inicial do previsto aprovado.', 403);
     $aplicar = $param('modo') === 'aplicar';
-    try { saida(previsoes_carga_inicial($pdo, $aplicar, (string)$usuario['id'])); }
+    try {
+      if ($param('modo') === 'atualizar') {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST.', 405);
+        $anoDestino = $param('anoDestino');
+        if (!is_scalar($anoDestino) || !ctype_digit((string)$anoDestino)) erro('Informe o exercício de destino.');
+        saida(previsao_atualizar($pdo, id_valido($param('condoId')), (int)$anoDestino, (string)$usuario['id']));
+      }
+      saida(previsoes_carga_inicial($pdo, $aplicar, (string)$usuario['id']));
+    }
     catch (RuntimeException $e) { if ($e->getCode() === 409) erro($e->getMessage(), 409); throw $e; }
   }
 

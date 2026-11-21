@@ -19,7 +19,7 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DataTable, type Coluna } from "@/components/app/DataTable";
 import { api, mensagemErro } from "@/lib/api";
-import type { CargaPrevistoResultado } from "@/lib/apiTypes";
+import type { CargaPrevistoLinha, CargaPrevistoResultado } from "@/lib/apiTypes";
 import { useUsuario } from "@/lib/auth";
 import { backupsQuery, chaves, itemQuery } from "@/lib/queries";
 import { formatDataHora, formatBytes } from "@/lib/format";
@@ -65,6 +65,21 @@ function CargaPrevistos() {
   const [resultado, setResultado] = useState<CargaPrevistoResultado | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [confirmando, setConfirmando] = useState(false);
+  const [atualizando, setAtualizando] = useState<CargaPrevistoLinha | null>(null);
+
+  async function atualizarPrevisto(l: CargaPrevistoLinha) {
+    try {
+      const r = await api.manutencao.atualizarPrevisto(l.condoId, l.exercicioDestino);
+      toast.success(
+        r.atualizado
+          ? `Previsto de ${l.exercicioDestino} atualizado (versão ${r.previsao.versao}).`
+          : "O previsto já estava de acordo com o histórico.",
+      );
+      setResultado(await api.manutencao.cargaPrevistos("simular"));
+    } catch (e) {
+      toast.error(mensagemErro(e));
+    }
+  }
 
   async function executar(modo: "simular" | "aplicar") {
     setOcupado(true);
@@ -108,8 +123,9 @@ function CargaPrevistos() {
               <tr className="border-b">
                 <th className="px-3 py-2 text-left">Condomínio</th>
                 <th className="px-3 py-2 text-left">Base → destino</th>
-                <th className="px-3 py-2 text-right">%</th>
-                <th className="px-3 py-2 text-right">Previsto</th>
+                <th className="px-3 py-2 text-right">% do histórico</th>
+                <th className="px-3 py-2 text-right">Previsto do histórico</th>
+                <th className="px-3 py-2 text-left">Gravado</th>
                 <th className="px-3 py-2 text-left">Situação</th>
               </tr>
             </thead>
@@ -132,9 +148,25 @@ function CargaPrevistos() {
                           currency: "BRL",
                         })}
                   </td>
+                  <td className="num px-3 py-2">
+                    {l.gravado
+                      ? `${l.gravado.percentual}% · ${l.gravado.totalPrevisto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} · v${l.gravado.versao} · ${l.gravado.origem}`
+                      : "—"}
+                  </td>
                   <td className="px-3 py-2">
                     {ROTULO_STATUS_CARGA[l.status]}
                     {l.motivo ? ` — ${l.motivo}` : ""}
+                    {l.divergeDoHistorico && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="ml-2 h-7"
+                        onClick={() => setAtualizando(l)}
+                      >
+                        Atualizar previsto
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -142,6 +174,18 @@ function CargaPrevistos() {
           </table>
         </div>
       )}
+      <ConfirmDialog
+        aberto={!!atualizando}
+        aoMudar={(v) => !v && setAtualizando(null)}
+        titulo="Atualizar o previsto gravado?"
+        descricao={
+          atualizando
+            ? `${atualizando.condoNome} · ${atualizando.exercicioDestino}: o previsto gravado (${atualizando.gravado?.percentual}%) será substituído por uma nova versão calculada com o histórico atual (${atualizando.percentual}%). A versão anterior fica registrada. Prestações de contas e relatórios de exercício fechado não são alterados.`
+            : undefined
+        }
+        rotuloConfirmar="Atualizar previsto"
+        aoConfirmar={() => (atualizando ? atualizarPrevisto(atualizando) : undefined)}
+      />
       <ConfirmDialog
         aberto={confirmando}
         aoMudar={setConfirmando}

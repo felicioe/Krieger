@@ -115,7 +115,7 @@ export interface PrevisaoAprovada extends ComId {
   percentualAprovado: number;
   totalPrevisto: number;
   grupos: GrupoPrevistoAprovado[];
-  origem: "aprovacao" | "carga_inicial";
+  origem: "aprovacao" | "carga_inicial" | "atualizacao";
   aprovadoEm: string;
   aprovadoPor: string | null;
   anterior: { versao: number; percentualAprovado: number; totalPrevisto: number; aprovadoEm: string } | null;
@@ -142,6 +142,8 @@ export interface HistoricoRateio extends ComId {
    * que o calculado e é preservado ao travar o rateio). Ausente em linhas antigas = calculado.
    */
   variacaoOrigem?: "calculado" | "informado";
+  /** Motivo ou observação da linha (ex.: "índice efetivamente aplicado às receitas"); até 500 caracteres. */
+  observacao?: string;
 }
 
 /** Histórico de índices aplicados por condomínio. */

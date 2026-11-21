@@ -17,6 +17,7 @@ import {
   type AlvoLimpeza,
   type ApiAdapter,
   type ConfirmarImportacaoResposta,
+  type AtualizarPrevistoResultado,
   type CargaPrevistoResultado,
   type ContagensLimpeza,
   type MetadadosAnexoImportado,
@@ -146,6 +147,12 @@ export const realApi: ApiAdapter = {
     },
     async cargaPrevistos(modo: "simular" | "aplicar") {
       return post<CargaPrevistoResultado>(`api.php?a=previsoes_carga&modo=${modo}`, {});
+    },
+    async atualizarPrevisto(condoId: string, anoDestino: number) {
+      return post<AtualizarPrevistoResultado>(
+        `api.php?a=previsoes_carga&modo=atualizar&condoId=${enc(condoId)}&anoDestino=${anoDestino}`,
+        {},
+      );
     },
   },
   auth: {
