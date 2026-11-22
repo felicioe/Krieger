@@ -170,8 +170,12 @@ describe("bloco da conta no menu lateral", () => {
     await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
     expect(screen.getByRole("link", { name: "Usuários" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Minha senha" })).toBeNull();
-    for (const nome of ["Registro de Alterações", "Sair"])
-      expect(screen.queryByRole("button", { name: nome })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sair" })).toBeNull();
+    const ajuda = screen.getByRole("navigation", { name: "Ajuda e versão" });
+    expect(within(ajuda).getByRole("link", { name: "Central de ajuda" })).toBeInTheDocument();
+    expect(
+      within(ajuda).getByRole("button", { name: "Registro de Alterações" }),
+    ).toBeInTheDocument();
     const principal = screen.getByRole("navigation", { name: "Menu principal" });
     expect(
       within(principal)
@@ -231,7 +235,6 @@ describe("bloco da conta no menu lateral", () => {
   it("Registro de Alterações: abre a versão atual, fecha com Escape, devolve o foco e mantém o digitado", async () => {
     const { user } = montar();
     await user.type(await screen.findByLabelText("Observação"), "rascunho");
-    await user.click(botaoConta());
     const abrir = screen.getByRole("button", { name: "Registro de Alterações" });
     await user.click(abrir);
     const janela = await screen.findByRole("dialog", { name: "Registro de Alterações" });
@@ -267,7 +270,6 @@ describe("Registro de Alterações pela gaveta do celular", () => {
     // Gaveta remonta o menu: o bloco da conta começa recolhido também aqui.
     const conta = within(gaveta).getByRole("button", { name: /Conta: Maria Souza/ });
     expect(conta).toHaveAttribute("aria-expanded", "false");
-    await user.click(conta);
     await user.click(within(gaveta).getByRole("button", { name: "Registro de Alterações" }));
 
     const janela = await screen.findByRole("dialog", { name: "Registro de Alterações" });
@@ -338,7 +340,7 @@ describe("menu por perfil (#310)", () => {
     localStorage.removeItem("krieger.favoritos.u-teste");
   });
 
-  it("Usuário só com rotinas de uso não vê Dados, modelos ou Administração; a ajuda fica no bloco da conta", async () => {
+  it("Usuário só com rotinas de uso não vê Dados, modelos ou Administração; a ajuda permanece acessível", async () => {
     const { user, pronto } = montar({
       perfil: "user",
       nome: "João",
@@ -349,8 +351,7 @@ describe("menu por perfil (#310)", () => {
     expect(link("Prestação de contas")).toBeInTheDocument();
     for (const nome of ["Importador", "Modelos de edital", "Modelos de ata", "Escritório"])
       expect(link(nome)).toBeNull();
-    expect(link("Central de ajuda")).toBeNull();
-    await user.click(botaoConta("João"));
+    expect(botaoConta("João")).toHaveAttribute("aria-expanded", "false");
     expect(link("Central de ajuda")).toBeInTheDocument();
   });
 });

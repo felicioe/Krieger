@@ -609,6 +609,26 @@ export function ConteudoMenu({
           );
         })}
       </nav>
+      <nav aria-label="Ajuda e versão" className="shrink-0 border-t border-sidebar-border py-1">
+        <ul>
+          <li>
+            <ItemMenu
+              item={{ titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp }}
+              aoNavegar={aoNavegar}
+            />
+          </li>
+          {abrirRegistro && (
+            <li>
+              <BotaoMenu
+                icone={History}
+                onClick={() => (depoisDeFechar ? depoisDeFechar(abrirRegistro) : abrirRegistro())}
+              >
+                Registro de Alterações
+              </BotaoMenu>
+            </li>
+          )}
+        </ul>
+      </nav>
       <Collapsible
         open={contaAberta}
         onOpenChange={setContaAberta}
@@ -638,22 +658,6 @@ export function ConteudoMenu({
                 aoNavegar={aoNavegar}
               />
             </li>
-            <li>
-              <ItemMenu
-                item={{ titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp }}
-                aoNavegar={aoNavegar}
-              />
-            </li>
-            {abrirRegistro && (
-              <li>
-                <BotaoMenu
-                  icone={History}
-                  onClick={() => (depoisDeFechar ? depoisDeFechar(abrirRegistro) : abrirRegistro())}
-                >
-                  Registro de Alterações
-                </BotaoMenu>
-              </li>
-            )}
             <li>
               <BotaoMenu icone={LogOut} onClick={encerrar}>
                 Sair
