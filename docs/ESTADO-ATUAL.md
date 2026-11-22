@@ -17,6 +17,8 @@
   mensais identifica a tela de acompanhamento. Rotas e permissões permanecem.
 - #331: as descrições do Resumo da previsão quebram em várias linhas. Em
   cartões estreitos o valor passa para a linha seguinte, no mesmo ajuste.
+- #332: o adaptador de demonstração é buscado só na primeira operação em
+  ambiente de demonstração. O ambiente de produção continua chamando o PHP.
 
 
 ## Acessibilidade da previsão e do relatório final — 22/11/2026
