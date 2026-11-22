@@ -32,6 +32,7 @@ import { dataParaBR, dataParaISO, formatData, formatNumeroBR, parseData } from "
 import { cabecalho } from "@/lib/head";
 import {
   contarUnidadesPresentes,
+  quorumAposPresentes,
   normalizarAta,
   novoItemAta,
   OPCOES_MODALIDADE,
@@ -371,7 +372,12 @@ function FormAta({ inicial }: { inicial: Ata }) {
           >
             <RepeatableList<Presente>
               itens={a.presentes}
-              onChange={(presentes) => mudar({ presentes })}
+              onChange={(presentes) =>
+                mudar({
+                  presentes,
+                  quorum: quorumAposPresentes(a.quorum, a.presentes, presentes),
+                })
+              }
               novo={() => ({ unidade: "", nome: "", procurador: false })}
               colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[7rem_minmax(0,1fr)_8rem]"
               cabecalhos={["Unidade", "Nome", "Procurador"]}
