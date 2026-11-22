@@ -21,6 +21,7 @@ import { Field } from "@/components/app/Field";
 import { opcoesCondominio, Selecao, SelecaoBusca } from "@/components/app/inputs";
 import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
 import { useUsuario } from "@/lib/auth";
+import { DistribuicaoFracao } from "@/components/previsao/DistribuicaoFracao";
 import { PainelPrevisao } from "@/components/previsao/PainelPrevisao";
 import { HistoricoRateiosPrevisao } from "@/components/previsao/HistoricoRateiosPrevisao";
 import { api } from "@/lib/api";
@@ -443,6 +444,12 @@ function EditorPrevisao({
           />
         </fieldset>
       </form>
+      {/* Base do rateio e cota por unidade pela fração ideal (#132). */}
+      <DistribuicaoFracao
+        resultado={resultado}
+        condominio={e.fechado && e.fechamento ? e.fechamento.condominio : condominio}
+        arredondamento={e.arredondamento}
+      />
     </>
   );
 }
