@@ -24,7 +24,7 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
-import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
+import { Exportacoes } from "@/components/app/Exportacoes";
 import { DataInput, HoraInput, InteiroInput, Selecao } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
@@ -214,10 +214,13 @@ function FormAta({ inicial }: { inicial: Ata }) {
           <>
             <Badge variant={travada ? "success" : "warning"}>{rotuloStatus(a.status)}</Badge>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <BotaoDocumento
-              gerar={gerarDocumento}
-              bloqueio={sujo ? "Salve a ata antes de gerar o documento." : null}
-              rotulo={travada ? "Gerar ata" : "Gerar rascunho"}
+            <Exportacoes
+              acoes={{
+                documentos: [
+                  { rotulo: travada ? "Ata" : "Rascunho da ata", gerar: gerarDocumento },
+                ],
+              }}
+              bloqueio={sujo ? "Salve a ata antes de exportar." : null}
             />
             {travada ? (
               <Button

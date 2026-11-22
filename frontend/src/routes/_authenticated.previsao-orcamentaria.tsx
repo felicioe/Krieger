@@ -2,16 +2,7 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Fragment, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import {
-  CircleHelp,
-  Download,
-  FileSpreadsheet,
-  FileText,
-  Loader2,
-  Printer,
-  RefreshCw,
-  Save,
-} from "lucide-react";
+import { CircleHelp, FileSpreadsheet, Loader2, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +43,7 @@ import { novoId } from "@/lib/id";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { imprimirTabela } from "@/lib/imprimirTabela";
 import { baixarMatrizXlsx } from "@/lib/exportar";
+import { Exportacoes } from "@/components/app/Exportacoes";
 import { RolagemTabela } from "@/components/ui/table";
 
 type Busca = { exercicio?: string; modo?: "rateio" | "relatorios" };
@@ -475,8 +467,6 @@ function RelatorioPrevisao({
   previsoesAprovadas: PrevisaoAprovada[];
 }) {
   const [detalhado, setDetalhado] = useState(false);
-  const [exportandoXlsx, setExportandoXlsx] = useState(false);
-  const exportandoRef = useRef(false);
   // Regra da issue #282 (cálculo em `domain/previsaoRelatorios.ts`):
   // - Realizado = relatórios mensais do período (alternativa: demonstrativo da prestação)
   // - Previsto = exercício anterior × (1 + reajuste%), proporcional aos meses com realizado
@@ -521,51 +511,17 @@ function RelatorioPrevisao({
     "Variação (%)": linha.variacaoPct === null ? null : Number(linha.variacaoPct.toFixed(2)),
   }));
   const nomeArquivo = `previsao-relatorios-${exercicio.ano}`;
-  const baixarCsv = () => {
-    const cabecalho = ["Grupo", "Conta", "Realizado", "Previsto", "Variação (%)"];
-    const conteudo = [
-      cabecalho,
+  const baixarXlsx = () =>
+    baixarMatrizXlsx(nomeArquivo, "Previsto x Realizado", [
+      ["Grupo", "Conta", "Realizado", "Previsto", "Variação (%)"],
       ...dadosExportacao.map((linha) => [
         linha.Grupo,
         linha.Conta,
-        linha.Realizado.toFixed(2),
-        linha.Previsto === null ? "" : linha.Previsto.toFixed(2),
+        linha.Realizado,
+        linha.Previsto ?? "",
         linha["Variação (%)"] ?? "",
       ]),
-    ]
-      .map((linha) => linha.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(";"))
-      .join("\r\n");
-    const url = URL.createObjectURL(
-      new Blob(["\ufeff" + conteudo], { type: "text/csv;charset=utf-8" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${nomeArquivo}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-  const baixarXlsx = async () => {
-    if (exportandoRef.current) return;
-    exportandoRef.current = true;
-    setExportandoXlsx(true);
-    try {
-      await baixarMatrizXlsx(nomeArquivo, "Previsto x Realizado", [
-        ["Grupo", "Conta", "Realizado", "Previsto", "Variação (%)"],
-        ...dadosExportacao.map((linha) => [
-          linha.Grupo,
-          linha.Conta,
-          linha.Realizado,
-          linha.Previsto ?? "",
-          linha["Variação (%)"] ?? "",
-        ]),
-      ]);
-    } catch {
-      toast.error("Não foi possível preparar a planilha. Tente exportar novamente.");
-    } finally {
-      exportandoRef.current = false;
-      setExportandoXlsx(false);
-    }
-  };
+    ]);
   const imprimirPdf = () => {
     try {
       const abriu = imprimirTabela({
@@ -605,28 +561,7 @@ function RelatorioPrevisao({
             {periodo && <span className="num"> · período {periodo}</span>}
           </>
         }
-        acoes={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={imprimirPdf}>
-              <FileText /> PDF
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => void baixarXlsx()}
-              disabled={exportandoXlsx}
-              aria-busy={exportandoXlsx}
-            >
-              {exportandoXlsx ? <Loader2 className="animate-spin" /> : <FileSpreadsheet />}{" "}
-              {exportandoXlsx ? "Preparando XLSX…" : "XLSX"}
-            </Button>
-            <Button variant="outline" onClick={baixarCsv}>
-              <Download /> CSV
-            </Button>
-            <Button variant="outline" onClick={imprimirPdf}>
-              <Printer /> Imprimir
-            </Button>
-          </div>
-        }
+        acoes={<Exportacoes acoes={{ xlsx: baixarXlsx, imprimir: imprimirPdf }} />}
       />
       <SectionCard className="mb-6">{seletor}</SectionCard>
       <SectionCard

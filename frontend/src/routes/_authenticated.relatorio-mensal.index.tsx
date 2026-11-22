@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Exportacoes } from "@/components/app/Exportacoes";
-import { baixarCsv, baixarXlsx, type ColunaExportacao } from "@/lib/exportar";
+import { baixarXlsx, type ColunaExportacao } from "@/lib/exportar";
 import { imprimirColunas } from "@/lib/imprimirColunas";
 import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
@@ -156,7 +156,6 @@ function ListaMensais() {
           <>
             <Exportacoes
               acoes={{
-                csv: () => baixarCsv("relatorio-mensal", colunasExport, linhas),
                 xlsx: () => baixarXlsx("relatorio-mensal", "Mensais", colunasExport, linhas),
                 imprimir: () =>
                   imprimirColunas({

@@ -40,6 +40,7 @@ import { Route as AuthenticatedModelosIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedModelosIdRouteImport } from './routes/_authenticated.modelos.$id'
 import { Route as AuthenticatedPrestacaoContasIndexRouteImport } from './routes/_authenticated.prestacao-contas.index'
 import { Route as AuthenticatedPrestacaoContasIdRouteImport } from './routes/_authenticated.prestacao-contas.$id'
+import { Route as AuthenticatedRelatorioFinalIndexRouteImport } from './routes/_authenticated.relatorio-final.index'
 import { Route as AuthenticatedRelatorioFinalIdRouteImport } from './routes/_authenticated.relatorio-final.$id'
 import { Route as AuthenticatedRelatorioMensalIndexRouteImport } from './routes/_authenticated.relatorio-mensal.index'
 import { Route as AuthenticatedRelatorioMensalIdRouteImport } from './routes/_authenticated.relatorio-mensal.$id'
@@ -218,6 +219,12 @@ const AuthenticatedPrestacaoContasIdRoute =
     path: '/prestacao-contas/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedRelatorioFinalIndexRoute =
+  AuthenticatedRelatorioFinalIndexRouteImport.update({
+    id: '/relatorio-final/',
+    path: '/relatorio-final/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedRelatorioFinalIdRoute =
   AuthenticatedRelatorioFinalIdRouteImport.update({
     id: '/relatorio-final/$id',
@@ -298,6 +305,7 @@ export interface FileRoutesByFullPath {
   '/modelos-ata/': typeof AuthenticatedModelosAtaIndexRoute
   '/modelos/': typeof AuthenticatedModelosIndexRoute
   '/prestacao-contas/': typeof AuthenticatedPrestacaoContasIndexRoute
+  '/relatorio-final/': typeof AuthenticatedRelatorioFinalIndexRoute
   '/relatorio-mensal/': typeof AuthenticatedRelatorioMensalIndexRoute
 }
 export interface FileRoutesByTo {
@@ -337,6 +345,7 @@ export interface FileRoutesByTo {
   '/modelos-ata': typeof AuthenticatedModelosAtaIndexRoute
   '/modelos': typeof AuthenticatedModelosIndexRoute
   '/prestacao-contas': typeof AuthenticatedPrestacaoContasIndexRoute
+  '/relatorio-final': typeof AuthenticatedRelatorioFinalIndexRoute
   '/relatorio-mensal': typeof AuthenticatedRelatorioMensalIndexRoute
 }
 export interface FileRoutesById {
@@ -378,6 +387,7 @@ export interface FileRoutesById {
   '/_authenticated/modelos-ata/': typeof AuthenticatedModelosAtaIndexRoute
   '/_authenticated/modelos/': typeof AuthenticatedModelosIndexRoute
   '/_authenticated/prestacao-contas/': typeof AuthenticatedPrestacaoContasIndexRoute
+  '/_authenticated/relatorio-final/': typeof AuthenticatedRelatorioFinalIndexRoute
   '/_authenticated/relatorio-mensal/': typeof AuthenticatedRelatorioMensalIndexRoute
 }
 export interface FileRouteTypes {
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/modelos-ata/'
     | '/modelos/'
     | '/prestacao-contas/'
+    | '/relatorio-final/'
     | '/relatorio-mensal/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -458,6 +469,7 @@ export interface FileRouteTypes {
     | '/modelos-ata'
     | '/modelos'
     | '/prestacao-contas'
+    | '/relatorio-final'
     | '/relatorio-mensal'
   id:
     | '__root__'
@@ -498,6 +510,7 @@ export interface FileRouteTypes {
     | '/_authenticated/modelos-ata/'
     | '/_authenticated/modelos/'
     | '/_authenticated/prestacao-contas/'
+    | '/_authenticated/relatorio-final/'
     | '/_authenticated/relatorio-mensal/'
   fileRoutesById: FileRoutesById
 }
@@ -727,6 +740,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPrestacaoContasIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/relatorio-final/': {
+      id: '/_authenticated/relatorio-final/'
+      path: '/relatorio-final'
+      fullPath: '/relatorio-final/'
+      preLoaderRoute: typeof AuthenticatedRelatorioFinalIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/relatorio-final/$id': {
       id: '/_authenticated/relatorio-final/$id'
       path: '/relatorio-final/$id'
@@ -813,6 +833,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedModelosAtaIndexRoute: typeof AuthenticatedModelosAtaIndexRoute
   AuthenticatedModelosIndexRoute: typeof AuthenticatedModelosIndexRoute
   AuthenticatedPrestacaoContasIndexRoute: typeof AuthenticatedPrestacaoContasIndexRoute
+  AuthenticatedRelatorioFinalIndexRoute: typeof AuthenticatedRelatorioFinalIndexRoute
   AuthenticatedRelatorioMensalIndexRoute: typeof AuthenticatedRelatorioMensalIndexRoute
 }
 
@@ -857,6 +878,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedModelosIndexRoute: AuthenticatedModelosIndexRoute,
   AuthenticatedPrestacaoContasIndexRoute:
     AuthenticatedPrestacaoContasIndexRoute,
+  AuthenticatedRelatorioFinalIndexRoute: AuthenticatedRelatorioFinalIndexRoute,
   AuthenticatedRelatorioMensalIndexRoute:
     AuthenticatedRelatorioMensalIndexRoute,
 }

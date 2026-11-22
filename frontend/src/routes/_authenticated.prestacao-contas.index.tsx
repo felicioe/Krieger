@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Exportacoes } from "@/components/app/Exportacoes";
-import { baixarCsv, baixarXlsx, type ColunaExportacao } from "@/lib/exportar";
+import { baixarXlsx, type ColunaExportacao } from "@/lib/exportar";
 import { imprimirColunas } from "@/lib/imprimirColunas";
 import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
@@ -171,7 +171,6 @@ function ListaExercicios() {
             </Button>
             <Exportacoes
               acoes={{
-                csv: () => baixarCsv("prestacoes-de-contas", colunasExport, linhas),
                 xlsx: () => baixarXlsx("prestacoes-de-contas", "Prestações", colunasExport, linhas),
                 imprimir: () =>
                   imprimirColunas({
