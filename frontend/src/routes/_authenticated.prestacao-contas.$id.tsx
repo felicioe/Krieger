@@ -48,7 +48,14 @@ import {
   validarNovoExercicio,
 } from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
-import { aplicarRateioBase, historicoDoExercicio, rateioBaseDoAno } from "@/domain/historicoRateio";
+import {
+  aplicarRateioAprovadoDoHistorico,
+  aplicarRateioBase,
+  historicoDoExercicio,
+  rateioAprovadoDoHistorico,
+  rateioBaseDoAno,
+} from "@/domain/historicoRateio";
+import { CampoRateioHistorico } from "@/components/app/CampoRateioHistorico";
 import { novoId } from "@/lib/id";
 import type {
   Assembleia,
@@ -135,6 +142,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const rateioDoHistorico = e.fechado
     ? null
     : rateioBaseDoAno(historicoRateios, e.condoId, Number(e.ano));
+  // Rateio aprovado (#327): com o rateio do ano travado no histórico, vale o do histórico.
+  const aprovadoDoHistorico = rateioAprovadoDoHistorico(e, historicoRateios);
   // Fluxo guiado (#309): estado de cada etapa a partir do que já existe.
   const { data: editais } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
   const { data: atas } = useSuspenseQuery(listaQuery<Ata>("atas"));
@@ -184,7 +193,13 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
       }
       // Rateio atual (#308): com histórico do ano anterior, grava o valor do histórico.
-      return api.salvar("exercicios", aplicarRateioBase(dados, historicoRateios));
+      return api.salvar(
+        "exercicios",
+        aplicarRateioAprovadoDoHistorico(
+          aplicarRateioBase(dados, historicoRateios),
+          historicoRateios,
+        ),
+      );
     },
     onSuccess: (salvo) => {
       const n = normalizarExercicio(salvo);
@@ -456,34 +471,37 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               <Field rotulo="Data de emissão" className="sm:col-span-2">
                 <DataInput value={e.dataEmissao} onChange={(v) => mudar({ dataEmissao: v })} />
               </Field>
-              {rateioDoHistorico !== null ? (
-                <Field
-                  rotulo="Rateio atual (por unidade)"
-                  className="sm:col-span-3"
-                  dica={`Aprovado para ${Number(e.ano) - 1}, do histórico de rateios. Para alterar, use a Previsão orçamentária.`}
-                >
-                  <DinheiroInput value={rateioDoHistorico} onChange={() => {}} disabled />
-                </Field>
-              ) : (
-                <Field rotulo="Rateio atual (por unidade)" className="sm:col-span-3">
-                  <DinheiroInput
-                    value={e.rateioAtual}
-                    onChange={(v) => mudar({ rateioAtual: v })}
-                    disabled={e.fechado}
-                  />
-                </Field>
-              )}
-              <Field
-                rotulo="Rateio aprovado"
-                dica="Valor aprovado em assembleia."
+              <CampoRateioHistorico
+                rotulo="Rateio atual (por unidade)"
                 className="sm:col-span-3"
-              >
-                <DinheiroInput
-                  value={e.rateioAprovado}
-                  onChange={(v) => mudar({ rateioAprovado: v })}
-                  disabled={e.fechado}
-                />
-              </Field>
+                valor={e.rateioAtual}
+                onChange={(v) => mudar({ rateioAtual: v })}
+                disabled={e.fechado}
+                doHistorico={
+                  rateioDoHistorico !== null
+                    ? {
+                        valor: rateioDoHistorico,
+                        dica: `Aprovado para ${Number(e.ano) - 1}, do histórico de rateios. Para alterar, use a Previsão orçamentária.`,
+                      }
+                    : null
+                }
+              />
+              <CampoRateioHistorico
+                rotulo="Rateio aprovado"
+                className="sm:col-span-3"
+                dica="Valor aprovado em assembleia."
+                valor={e.rateioAprovado}
+                onChange={(v) => mudar({ rateioAprovado: v })}
+                disabled={e.fechado}
+                doHistorico={
+                  aprovadoDoHistorico !== null
+                    ? {
+                        valor: aprovadoDoHistorico,
+                        dica: `Travado no histórico de rateios para ${e.ano}. Para alterar, use a Previsão orçamentária.`,
+                      }
+                    : null
+                }
+              />
             </div>
           </SectionCard>
 

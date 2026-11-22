@@ -102,6 +102,27 @@ export function rateioBaseDivergente(
   return base;
 }
 
+/**
+ * Rateio aprovado do exercício com o histórico como fonte (#327). Com o rateio do ano já travado
+ * (há linha do histórico para o ano do exercício), vale o aprovado do histórico; sem linha,
+ * vale o do exercício. Exercício fechado não muda.
+ */
+export function rateioAprovadoDoHistorico(
+  e: Pick<Exercicio, "condoId" | "ano"> & { fechado?: boolean },
+  linhas: HistoricoRateio[],
+): number | null {
+  if (e.fechado) return null;
+  const valor = historicoDoAno(linhas, e.condoId, Number(e.ano))?.rateioAprovado;
+  return typeof valor === "number" && Number.isFinite(valor) ? valor : null;
+}
+
+export function aplicarRateioAprovadoDoHistorico<
+  T extends Pick<Exercicio, "condoId" | "ano" | "rateioAprovado"> & { fechado?: boolean },
+>(e: T, linhas: HistoricoRateio[]): T {
+  const valor = rateioAprovadoDoHistorico(e, linhas);
+  return valor === null || e.rateioAprovado === valor ? e : { ...e, rateioAprovado: valor };
+}
+
 /** Último rateio aprovado no histórico do condomínio, com o ano (#308). */
 export function ultimoRateioAprovado(
   linhas: HistoricoRateio[],

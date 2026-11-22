@@ -1,5 +1,13 @@
 # Decisões do projeto
 
+## 2026-11-22 — rateio aprovado: o histórico é a fonte quando o ano já foi travado (issue #327)
+
+Aprovado pelo responsável. Com linha do histórico de rateios para o ano do exercício (rateio
+travado na Previsão), o campo "Rateio aprovado" da prestação fica só leitura com o valor do
+histórico, e salvar a prestação grava esse valor no exercício. Sem linha para o ano, o campo segue
+editável. Exercício fechado não muda. Com isso, rateio atual (#308) e rateio aprovado têm a mesma
+fonte, e a alteração é feita só na Previsão orçamentária.
+
 ## 2026-11-22 — rateio por fração ideal como distribuição, sem mudar o rateio sugerido (issue #132)
 
 Aprovado pelo responsável. A fração ideal (fração prevista do cadastro) decide quanto cada
