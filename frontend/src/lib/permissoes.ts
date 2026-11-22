@@ -10,6 +10,7 @@ export const rotasPermissoes: Array<[string, string]> = [
   ["/relatorios/orcado-realizado-mensal", "previsto_realizado"],
   ["/relatorios/inadimplencia", "relatorio_mensal"],
   ["/relatorios/comparativo-despesas", "prestacao_contas"],
+  ["/relatorios/consolidado-escritorio", "relatorio_mensal"],
   ["/relatorio-mensal", "relatorio_mensal"],
   ["/importador", "importador"],
   ["/importacoes", "importador"],

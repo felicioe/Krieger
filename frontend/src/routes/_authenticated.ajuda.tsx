@@ -42,6 +42,7 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
       { id: "relatorio-mensal", titulo: "Acompanhamento de carga de dados mensais" },
       { id: "inadimplencia", titulo: "Evolução da inadimplência" },
       { id: "comparativo-despesas", titulo: "Comparativo de despesas" },
+      { id: "consolidado-escritorio", titulo: "Consolidado do escritório" },
     ],
   },
   {
@@ -331,6 +332,30 @@ function Ajuda() {
                 nunca com zero. O total de cada exercício é a soma das linhas e fecha com a
                 prestação de contas. Exporta em CSV, XLSX, PDF (A4 paisagem, com timbre) e
                 impressão.
+              </p>
+            </Texto>
+          </SectionCard>
+
+          <SectionCard
+            id="consolidado-escritorio"
+            titulo="Consolidado do escritório"
+            descricao="Todos os condomínios numa tabela, para decidir onde olhar primeiro."
+          >
+            <Texto>
+              <p>
+                Uma linha por condomínio, com receitas, despesas, saldo atual e inadimplência do
+                último relatório mensal, a variação do rateio do histórico e a situação da carga.
+                Todos os condomínios aparecem, inclusive os que ainda não têm relatório.
+              </p>
+              <p>
+                A situação é sempre em relação ao <strong>mês de referência</strong>, que começa no
+                mês anterior ao atual, porque o relatório de um mês só chega depois que ele termina:{" "}
+                <strong>Atrasado</strong> quando não há relatório desse mês;{" "}
+                <strong>Incompleto</strong> quando há relatório, mas o saldo não fecha; e{" "}
+                <strong>Em dia</strong> quando o relatório está carregado e o saldo confere. Dá para
+                filtrar por situação, buscar por nome, código ou CNPJ e ordenar por atraso,
+                inadimplência ou saldo. O rodapé traz os totais do escritório. Exporta em CSV, XLSX
+                e impressão.
               </p>
             </Texto>
           </SectionCard>
