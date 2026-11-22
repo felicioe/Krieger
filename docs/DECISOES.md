@@ -1,5 +1,16 @@
 # Decisões do projeto
 
+## 2026-11-22 — rateio atual: histórico prevalece; digitado só sem histórico (issue #308)
+
+Decisão do responsável: o rateio atual de um exercício aberto é o aprovado do ano anterior no
+histórico de rateios. O valor digitado na prestação só vale quando não existe histórico para o
+ano anterior. No histórico, a linha digitada à mão prevalece sobre a importada do PDF (a
+importação só grava quando não há linha para o ano). Exercícios fechados não mudam.
+
+Na prática: `aplicarRateioBase` passou a preferir o histórico mesmo com valor digitado; a
+prestação mostra o rateio do histórico como somente leitura e grava esse valor ao salvar; o
+cadastro do condomínio mostra o último aprovado. Para alterar, usa-se a Previsão orçamentária.
+
 ## 2026-11-22 — sequência geral: menu antes da Etapa 1 (revisão do plano)
 
 Decisão do responsável: o trabalho segue uma ordem única, registrada em

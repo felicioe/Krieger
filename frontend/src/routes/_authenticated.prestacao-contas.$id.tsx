@@ -48,9 +48,8 @@ import {
   validarNovoExercicio,
 } from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
-import { historicoDoExercicio, rateioBaseDivergente } from "@/domain/historicoRateio";
+import { aplicarRateioBase, historicoDoExercicio, rateioBaseDoAno } from "@/domain/historicoRateio";
 import { novoId } from "@/lib/id";
-import { formatBRL } from "@/lib/format";
 import type {
   Assembleia,
   Ata,
@@ -132,7 +131,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   // foi o que apagou as despesas do balanço na reimportação do Lago Negro 2025.
   const demonstrativo = demonstrativoSalvo;
   const sujo = JSON.stringify(e) !== salvoJson;
-  const rateioDoHistorico = rateioBaseDivergente(e, historicoRateios);
+  // Rateio atual (#308): com histórico do ano anterior, vale o histórico; sem ele, o digitado.
+  const rateioDoHistorico = e.fechado
+    ? null
+    : rateioBaseDoAno(historicoRateios, e.condoId, Number(e.ano));
   // Fluxo guiado (#309): estado de cada etapa a partir do que já existe.
   const { data: editais } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
   const { data: atas } = useSuspenseQuery(listaQuery<Ata>("atas"));
@@ -181,7 +183,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
         await api.salvar("condominios", condominioComConsid(condo, dados.consid));
         queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
       }
-      return api.salvar("exercicios", dados);
+      // Rateio atual (#308): com histórico do ano anterior, grava o valor do histórico.
+      return api.salvar("exercicios", aplicarRateioBase(dados, historicoRateios));
     },
     onSuccess: (salvo) => {
       const n = normalizarExercicio(salvo);
@@ -453,25 +456,22 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               <Field rotulo="Data de emissão" className="sm:col-span-2">
                 <DataInput value={e.dataEmissao} onChange={(v) => mudar({ dataEmissao: v })} />
               </Field>
-              <Field rotulo="Rateio atual (por unidade)" className="sm:col-span-3">
-                <DinheiroInput
-                  value={e.rateioAtual}
-                  onChange={(v) => mudar({ rateioAtual: v })}
-                  disabled={e.fechado}
-                />
-              </Field>
-              {!e.fechado && rateioDoHistorico !== null && (
-                <p className="col-span-full text-xs text-warning">
-                  O histórico de rateios tem {formatBRL(rateioDoHistorico)} aprovado para{" "}
-                  {Number(e.ano) - 1}.{" "}
-                  <button
-                    type="button"
-                    className="underline underline-offset-2"
-                    onClick={() => mudar({ rateioAtual: rateioDoHistorico })}
-                  >
-                    Usar o do histórico
-                  </button>
-                </p>
+              {rateioDoHistorico !== null ? (
+                <Field
+                  rotulo="Rateio atual (por unidade)"
+                  className="sm:col-span-3"
+                  dica={`Aprovado para ${Number(e.ano) - 1}, do histórico de rateios. Para alterar, use a Previsão orçamentária.`}
+                >
+                  <DinheiroInput value={rateioDoHistorico} onChange={() => {}} disabled />
+                </Field>
+              ) : (
+                <Field rotulo="Rateio atual (por unidade)" className="sm:col-span-3">
+                  <DinheiroInput
+                    value={e.rateioAtual}
+                    onChange={(v) => mudar({ rateioAtual: v })}
+                    disabled={e.fechado}
+                  />
+                </Field>
               )}
               <Field
                 rotulo="Rateio aprovado"

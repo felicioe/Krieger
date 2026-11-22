@@ -149,15 +149,21 @@ export function percentualAprovadoDoHistorico(
 }
 
 /**
- * Mescla o histórico com o exercício: devolve o exercício com `rateioAtual` preenchido pelo
- * aprovado do ano anterior quando ele estiver vazio. Não sobrescreve valor já informado.
+ * Rateio atual do exercício com o histórico como fonte (#308, decisão de 22/11/2026):
+ * - havendo o aprovado do ano anterior no histórico, ele vale, mesmo que outro valor tenha sido
+ *   digitado no exercício;
+ * - sem histórico, vale o digitado no exercício;
+ * - exercício fechado não muda.
+ * No histórico, a linha digitada à mão já prevalece sobre a importada do PDF (a importação só
+ * grava quando não existe linha para o ano).
  */
 export function aplicarRateioBase<
-  T extends Pick<Exercicio, "condoId" | "ano" | "rateioAtual">,
+  T extends Pick<Exercicio, "condoId" | "ano" | "rateioAtual"> & { fechado?: boolean },
 >(e: T, linhas: HistoricoRateio[]): T {
-  if (e.rateioAtual !== null && e.rateioAtual !== undefined) return e;
+  if (e.fechado) return e;
   const base = rateioBaseDoAno(linhas, e.condoId, Number(e.ano));
-  return base === null ? e : { ...e, rateioAtual: base };
+  if (base === null || base === undefined || !Number.isFinite(base)) return e;
+  return e.rateioAtual === base ? e : { ...e, rateioAtual: base };
 }
 
 /**
