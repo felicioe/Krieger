@@ -139,26 +139,12 @@ function badgeRegraAlocacao(regra: AlocacaoPastaDrive["regra"]) {
     );
   }
   if (regra === "auto_nome") {
-    return (
-      <Badge
-        variant="outline"
-        className="border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
-      >
-        Auto-identificado pelo nome
-      </Badge>
-    );
+    return <Badge variant="success">Auto-identificado pelo nome</Badge>;
   }
   if (regra === "manual") {
     return <Badge variant="secondary">Pasta escolhida</Badge>;
   }
-  return (
-    <Badge
-      variant="outline"
-      className="border-amber-300 bg-amber-50 text-amber-900 dark:bg-amber-950/50 dark:text-amber-300"
-    >
-      Não identificado → Outros Documentos
-    </Badge>
-  );
+  return <Badge variant="warning">Não identificado → Outros Documentos</Badge>;
 }
 
 function PaginaDriveDocumentos() {
