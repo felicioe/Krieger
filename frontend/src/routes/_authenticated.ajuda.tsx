@@ -109,8 +109,8 @@ function Ajuda() {
               <p>
                 O menu lateral segue a ordem do trabalho: primeiro Financeiro (lançar e fechar as
                 contas), depois Relatórios (conferir), Assembleias e documentos e, por fim, Cadastro
-                e configuração (cadastros e modelos, para quem administra) e Administração (escritório,
-                backup e limpeza, restritos ao SuperADM).
+                e configuração (cadastros e modelos, para quem administra) e Administração
+                (escritório, backup e limpeza, restritos ao SuperADM).
               </p>
             </Texto>
           </SectionCard>
