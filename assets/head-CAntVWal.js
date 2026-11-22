@@ -1,1 +1,0 @@
-function e(e,t){let n=`${e} · Sistema Krieger`;return{meta:[{title:n},{name:`description`,content:t},{property:`og:title`,content:n},{property:`og:description`,content:t},{property:`og:type`,content:`website`},{name:`twitter:card`,content:`summary`},{name:`robots`,content:`noindex`}]}}export{e as t};
