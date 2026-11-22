@@ -275,7 +275,7 @@ export function FormCondominio({
   const [abertas, setAbertas] = useState(() => todas(false));
   // Abas do cadastro (issue #303). Configuração só aparece para ADM e SuperADM.
   const [aba, setAba] = useState<AbaCondominio>("cadastro");
-  const podeConfigurar = usuario?.perfil === "admin" || usuario?.perfil === "adm";
+  const podeConfigurar = temPermissao(usuario, "condominios.configurar");
   const abrir = (k: Secao) => (v: boolean) => setAbertas((a) => ({ ...a, [k]: v }));
   const secoesVisiveis = SECOES.filter(
     (k) =>

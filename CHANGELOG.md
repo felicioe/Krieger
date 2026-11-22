@@ -2,7 +2,13 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.15**.
+Versão atual: **1.16**.
+
+## 1.16 — Permissões da aba Configuração e menu conferido com a matriz
+
+- A aba Configuração do cadastro do condomínio passa a depender da permissão Configurar condomínio, na matriz de perfis. Antes, aparecia por perfil fixo e não podia ser ajustada.
+- Salvar alterações em regras, rubricas, arredondamento ou de-para exige essa permissão também no servidor.
+- Um teste confere que cada item do menu abre apenas para quem tem a permissão correspondente.
 
 ## 1.15 — Exportação padronizada e Relatório final no menu Relatórios
 

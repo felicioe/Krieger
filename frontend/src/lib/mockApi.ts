@@ -70,7 +70,7 @@ function permissoesDoPerfil(perfil: Perfil): string[] {
 }
 function catalogoPermissoes(): PermissaoCatalogo[] {
   const modulos = [...new Set(rotasPermissoes.map(([, m]) => m))];
-  return modulos.flatMap((m) =>
+  const base = modulos.flatMap((m) =>
     ["visualizar", ...(MODULOS_EDITAVEIS.includes(m) ? ["editar"] : [])].map((acao) => ({
       chave: m + "." + acao,
       modulo: m,
@@ -78,6 +78,16 @@ function catalogoPermissoes(): PermissaoCatalogo[] {
       acao,
     })),
   );
+  // Ações além de visualizar/editar, como a aba Configuração do cadastro (ver migrations/20261122).
+  return [
+    ...base,
+    {
+      chave: "condominios.configurar",
+      modulo: "condominios",
+      tela: "condominios",
+      acao: "configurar",
+    },
+  ];
 }
 import {
   ApiError,

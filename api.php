@@ -472,6 +472,12 @@ try {
           $id = resolver_id_condominio($pdo, $o, $id);
           $o['id'] = $id;
           $existente = ler_registro_exercicio($pdo, 'condominios', $id);
+          // Campos da aba Configuração: alterá-los exige condominios.configurar (ver PERMISSOES-GRANULARES.md).
+          if ($existente) {
+            foreach (['deducaoRegex', 'aguaRubrica', 'energiaRubrica', 'elevadorRubrica', 'elevadorFornecedor', 'arredondamento', 'mapeamento'] as $campoConfig) {
+              if (($existente[$campoConfig] ?? null) != ($o[$campoConfig] ?? null)) { exigir_permissao($usuario, 'condominios.configurar'); break; }
+            }
+          }
           $indicesAlterados = !empty($o['indicesInicializados']) || ($existente['indices'] ?? []) !== ($o['indices'] ?? []);
           if ($indicesAlterados || !empty($existente['indicesInicializados']) || !empty($o['indices'])) $o = substituir_indices_condominio($pdo, $o);
           else unset($o['indicesInicializados']);
