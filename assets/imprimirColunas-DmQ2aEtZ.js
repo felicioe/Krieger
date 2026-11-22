@@ -1,0 +1,1 @@
+import{i as e,t}from"./imprimirTabela-C8WzugTK.js";function n(n){return t({titulo:n.titulo,...n.subtitulo?{subtitulo:n.subtitulo}:{},cabecalhos:n.colunas.map(e=>e.titulo),linhas:n.linhas.map(t=>n.colunas.map(n=>e(n,t))),totais:n.totais??[]})}export{n as t};
