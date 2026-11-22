@@ -3,7 +3,7 @@ import { aplicarVariacaoDoHistorico } from "./historicoRateio";
 import { calcularPrevisao, expressaoDeducao } from "./previsao";
 
 import { competenciaMensal, mesAnoDe } from "./mensal";
-import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
+import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Mensal, PrevisaoAprovada } from "./types";
 
 /**
  * Comparativo Previsto × Realizado.
@@ -78,6 +78,10 @@ export interface ResultadoComparativo {
   tolerancia: number;
   relatoriosUsados: number;
   avisos: string[];
+  /** Situação do previsto aprovado usado (ok, sem_base ou sem_percentual). */
+  situacaoPrevisto?: "ok" | "sem_base" | "sem_percentual";
+  /** Percentual aplicado ao previsto, quando houver. */
+  percentualPrevisto?: number | null;
 }
 
 export interface OpcoesComparativo {
@@ -91,6 +95,8 @@ export interface OpcoesComparativo {
   demonstrativoBase?: Demonstrativo | null;
   /** Histórico de rateios — fonte do índice anual aprovado quando o exercício não tem variação explícita. */
   historicoRateios?: HistoricoRateio[];
+  /** Previstos aprovados gravados (kr_previsoes_aprovadas), quando já existirem. */
+  previsoesAprovadas?: PrevisaoAprovada[];
 }
 
 const p2 = (n: number) => String(n).padStart(2, "0");

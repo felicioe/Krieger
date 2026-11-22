@@ -11,7 +11,9 @@ import { useEffect, useState } from "react";
  * - limparRecentes: () => void - limpa toda a lista de recentes
  */
 export function useCondominiosRecentes(userId: string | undefined) {
-  const storageKey = userId ? `krieger.condominios.recentes.${userId}` : "krieger.condominios.recentes";
+  const storageKey = userId
+    ? `krieger.condominios.recentes.${userId}`
+    : "krieger.condominios.recentes";
 
   // Carrega da persistência localStorage na inicialização
   const [recenteIds, setRecenteIds] = useState<string[]>(() => {
