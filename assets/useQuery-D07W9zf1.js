@@ -1,0 +1,1 @@
+import{f as e,m as t}from"./queries-BTIUYGqe.js";function n(n,r){return e(n,t,r)}export{n as t};
