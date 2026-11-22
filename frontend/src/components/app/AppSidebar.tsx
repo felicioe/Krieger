@@ -104,12 +104,6 @@ export const GRUPOS_MENU: Grupo[] = [
         icone: FileChartColumn,
         permissao: "previsao_orcamentaria.visualizar",
       },
-      {
-        titulo: "Relatório final",
-        to: "/relatorio-final",
-        icone: FileCheck2,
-        permissao: "prestacao_contas.visualizar",
-      },
     ],
   },
   {
@@ -163,6 +157,12 @@ export const GRUPOS_MENU: Grupo[] = [
         to: "/relatorios/consolidado-escritorio",
         icone: LayoutList,
         permissao: "relatorio_mensal.visualizar",
+      },
+      {
+        titulo: "Relatório final",
+        to: "/relatorio-final",
+        icone: FileCheck2,
+        permissao: "prestacao_contas.visualizar",
       },
     ],
   },
