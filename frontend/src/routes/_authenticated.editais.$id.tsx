@@ -32,7 +32,9 @@ import {
   opcoesCondominio,
 } from "@/components/app/inputs";
 import { api } from "@/lib/api";
+import { useUsuario } from "@/lib/auth";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
 import { dataParaBR, dataParaISO, formatData, parseData } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import {
@@ -94,6 +96,8 @@ const SEM_MODELO = "__sem";
 function FormEdital({ inicial }: { inicial: Assembleia }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const usuario = useUsuario();
+  const { recentes } = useCondominiosRecentes(usuario?.id);
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: modelosRaw } = useSuspenseQuery(listaQuery<Modelo>("modelos"));
   const modelos = modelosRaw.map((m) => normalizarModelo(m));
@@ -195,7 +199,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
     else mudar({ modeloId: novo });
   }
 
-  const opcoesCondo = opcoesCondominio(condominios);
+  const opcoesCondo = opcoesCondominio(condominios, false, recentes);
   // Modelos deste condomínio e os gerais. O modelo já escolhido permanece na lista mesmo que não
   // se aplique ao condomínio atual (edital antigo, ou condomínio trocado), com etiqueta dizendo de
   // onde ele vem — trocar o condomínio não descarta a escolha sem aviso.

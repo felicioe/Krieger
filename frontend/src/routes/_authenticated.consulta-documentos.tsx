@@ -15,6 +15,8 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { SecaoRecolhivel } from "@/components/app/SecaoRecolhivel";
 import { Field } from "@/components/app/Field";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import {
   MODALIDADES_NOTIFICACAO,
   dataPorExtenso,
@@ -135,6 +137,8 @@ const COMPONENTES_PARECER: Components = {
 function PaginaConsultaDocumentos() {
   const busca = Route.useSearch();
   const navigate = useNavigate({ from: "/consulta-documentos" });
+  const usuario = useUsuario();
+  const { recentes } = useCondominiosRecentes(usuario?.id);
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const escritorioQuery = useQuery(itemQuery<ConfigEscritorio>("config", "escritorio"));
   const resumoDocsQuery = useQuery(documentosResumoQuery());
@@ -247,7 +251,7 @@ function PaginaConsultaDocumentos() {
     const mapa = resumoDocsQuery.data ?? {};
     const totalDocs = Object.values(mapa).reduce((acc, n) => acc + n, 0);
     const condosComDoc = Object.values(mapa).filter((n) => n > 0).length;
-    const listaCondos = opcoesCondominio(ordenados, true).map((op) => {
+    const listaCondos = opcoesCondominio(ordenados, true, recentes).map((op) => {
       const qtd = mapa[op.valor] ?? 0;
       return {
         ...op,

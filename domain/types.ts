@@ -442,6 +442,10 @@ export interface Exercicio extends ComId {
   dataEmissao: string;
   rateioAtual: number | null;
   rateioAprovado?: number | null;
+  /** Override manual do rateio histórico (ano anterior). Quando preenchido, prevalece sobre o calculado pelo sistema. */
+  rateioHistoricoManual?: number | null;
+  /** Override manual da variação % histórica. Quando preenchido, prevalece sobre o calculado pelo sistema. */
+  variacaoHistoricaManual?: number | null;
   variacao: number | null;
   variacaoMetodo: VariacaoMetodo;
   variacaoParam: number | null;

@@ -14,7 +14,9 @@ import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
 import { api } from "@/lib/api";
+import { useUsuario } from "@/lib/auth";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import {
@@ -62,6 +64,8 @@ function PaginaModelo() {
 function FormModelo({ inicial }: { inicial: Modelo }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const usuario = useUsuario();
+  const { recentes } = useCondominiosRecentes(usuario?.id);
   const { data: assembleias } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const [m, setM] = useState<Modelo>(inicial);
@@ -72,7 +76,7 @@ function FormModelo({ inicial }: { inicial: Modelo }) {
   const usos = assembleias.filter((a) => a.modeloId === m.id).length;
   const opcoesCondo = [
     { valor: GERAL, rotulo: "Geral (todos os condomínios)", busca: "geral todos" },
-    ...opcoesCondominio(condominios),
+    ...opcoesCondominio(condominios, false, recentes),
   ];
   const sujo = JSON.stringify(m) !== salvoJson;
   const mudar = (parcial: Partial<Modelo>) => setM((x) => ({ ...x, ...parcial }));

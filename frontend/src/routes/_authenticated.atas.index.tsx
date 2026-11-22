@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import { DialogoNovaAta } from "@/components/atas/DialogoNovaAta";
 import { listaQuery } from "@/lib/queries";
 import { formatData } from "@/lib/format";
@@ -50,6 +52,8 @@ function ListaAtas() {
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: assembleias } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
   const { data: modelosAta } = useSuspenseQuery(listaQuery<ModeloAta>("modelos_ata"));
+  const usuario = useUsuario();
+  const { recentes } = useCondominiosRecentes(usuario?.id);
   const condo = busca.condo ?? TODOS;
   const status = busca.status ?? TODOS;
   const novoAberto = busca.novo !== undefined;

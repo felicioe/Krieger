@@ -234,20 +234,42 @@ function normalizarTextoBusca(s: string): string {
 /**
  * Monta as opções de condomínio já ordenadas e prontas para pesquisa inline
  * por código, nome, nome no relatório ou CNPJ.
+ * Quando `recenteIds` é fornecido (#295), os condomínios correspondentes aparecem
+ * primeiro na lista, na ordem de acesso mais recente, seguidos pelos demais em ordem alfabética.
  */
 export function opcoesCondominio(
   condominios: Condominio[],
   usarNomeRelatorio = false,
+  recenteIds?: string[],
 ): OpcaoBusca<string>[] {
   const obterRotulo = (c: Condominio) => (usarNomeRelatorio ? c.nomeRelatorio || c.nome : c.nome);
-  return [...condominios]
-    .sort((a, b) => obterRotulo(a).localeCompare(obterRotulo(b), "pt-BR"))
-    .map((c) => ({
-      valor: c.id,
-      rotulo: obterRotulo(c),
-      detalhe: c.codigo?.trim() || undefined,
-      busca: [c.codigo, c.nome, c.nomeRelatorio, c.cnpj].filter(Boolean).join(" "),
-    }));
+  const mapeados = condominios.map((c) => ({
+    valor: c.id,
+    rotulo: obterRotulo(c),
+    detalhe: c.codigo?.trim() || undefined,
+    busca: [c.codigo, c.nome, c.nomeRelatorio, c.cnpj].filter(Boolean).join(" "),
+  }));
+
+  if (!recenteIds || recenteIds.length === 0) {
+    return mapeados.sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"));
+  }
+
+  // Separa recentes (na ordem fornecida) dos demais (alfabéticos).
+  const recentesSet = new Set(recenteIds);
+  const recentes: typeof mapeados = [];
+  const demais: typeof mapeados = [];
+  const mapaPorId = new Map(mapeados.map((o) => [o.valor, o]));
+
+  for (const id of recenteIds) {
+    const opt = mapaPorId.get(id);
+    if (opt) recentes.push(opt);
+  }
+  for (const opt of mapeados) {
+    if (!recentesSet.has(opt.valor)) demais.push(opt);
+  }
+  demais.sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"));
+
+  return [...recentes, ...demais];
 }
 
 /**

@@ -272,6 +272,12 @@ export function PainelPrevisao({
           parcial={parcial}
           semUnidades={semUnidades}
           idQuadro={idQuadro}
+          rateioHistoricoCalculado={r.rateioAtual}
+          variacaoHistoricaCalculada={r.indice}
+          rateioHistoricoManual={e.rateioHistoricoManual ?? null}
+          variacaoHistoricaManual={e.variacaoHistoricaManual ?? null}
+          onRateioHistoricoChange={(v) => onChange({ rateioHistoricoManual: v })}
+          onVariacaoHistoricaChange={(v) => onChange({ variacaoHistoricaManual: v })}
           aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })}
           aoTravar={aoTravar}
         />
@@ -431,6 +437,12 @@ function Resumo({
   semUnidades,
   idQuadro,
   anoAnterior,
+  rateioHistoricoCalculado,
+  variacaoHistoricaCalculada,
+  rateioHistoricoManual,
+  variacaoHistoricaManual,
+  onRateioHistoricoChange,
+  onVariacaoHistoricaChange,
   aoAprovar,
   aoTravar,
 }: {
@@ -441,6 +453,16 @@ function Resumo({
   semUnidades: boolean;
   idQuadro: string;
   anoAnterior?: number | string | undefined;
+  /** Rateio histórico calculado pelo sistema a partir do historico_rateios. */
+  rateioHistoricoCalculado: number | null;
+  /** Variação % histórica calculada pelo sistema a partir do historico_rateios. */
+  variacaoHistoricaCalculada: number | null;
+  /** Override manual do rateio histórico (prevalece sobre o calculado). */
+  rateioHistoricoManual: number | null;
+  /** Override manual da variação % histórica (prevalece sobre a calculada). */
+  variacaoHistoricaManual: number | null;
+  onRateioHistoricoChange: (v: number | null) => void;
+  onVariacaoHistoricaChange: (v: number | null) => void;
   aoAprovar: () => void;
   /** Grava o rateio no histórico acumulativo. Sem isso, o botão não aparece. */
   aoTravar?: (() => void | Promise<void>) | undefined;
@@ -517,7 +539,7 @@ function Resumo({
           semUnidades={semUnidades}
         />
 
-        <div className="mt-3">
+        <div className="mt-3 space-y-2">
           <LinhaResumo rotulo="Rateio atual" valor={formatBRL(r.rateioAtual)} />
           <LinhaResumo
             rotulo="Índice de reajuste"
@@ -525,6 +547,46 @@ function Resumo({
             forte
             negativo={r.indice !== null && r.indice < 0}
           />
+          <div className="grid grid-cols-2 gap-2 border-t pt-2">
+            <Field
+              rotulo="Rateio histórico"
+              dica={
+                rateioHistoricoManual !== null && rateioHistoricoManual !== rateioHistoricoCalculado
+                  ? `Editado manualmente. Calculado pelo sistema: ${formatBRL(rateioHistoricoCalculado)}. Deixe vazio para voltar ao valor calculado.`
+                  : `Calculado pelo sistema a partir do histórico. Edite para sobrescrever.`
+              }
+            >
+              <div className="space-y-0.5">
+                <DinheiroInput
+                  aria-label="Rateio histórico"
+                  value={rateioHistoricoManual ?? rateioHistoricoCalculado}
+                  onChange={(v) => onRateioHistoricoChange(v ?? null)}
+                />
+                {rateioHistoricoManual !== null && rateioHistoricoManual !== rateioHistoricoCalculado && (
+                  <span className="text-[10px] font-medium text-warning">Editado manualmente</span>
+                )}
+              </div>
+            </Field>
+            <Field
+              rotulo="% histórico"
+              dica={
+                variacaoHistoricaManual !== null && variacaoHistoricaManual !== variacaoHistoricaCalculada
+                  ? `Editado manualmente. Calculado pelo sistema: ${pct(variacaoHistoricaCalculada)}. Deixe vazio para voltar ao valor calculado.`
+                  : `Calculado pelo sistema a partir do histórico. Edite para sobrescrever.`
+              }
+            >
+              <div className="space-y-0.5">
+                <PercentualInput
+                  aria-label="Percentual histórico"
+                  value={variacaoHistoricaManual ?? variacaoHistoricaCalculada}
+                  onChange={(v) => onVariacaoHistoricaChange(v ?? null)}
+                />
+                {variacaoHistoricaManual !== null && variacaoHistoricaManual !== variacaoHistoricaCalculada && (
+                  <span className="text-[10px] font-medium text-warning">Editado manualmente</span>
+                )}
+              </div>
+            </Field>
+          </div>
         </div>
 
         {r.rateioSugerido !== null && (

@@ -12,6 +12,8 @@ import { imprimirColunas } from "@/lib/imprimirColunas";
 import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import { DialogoNovoMensal } from "@/components/mensal/DialogoNovoMensal";
 import { listaQuery } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
@@ -62,6 +64,8 @@ type Linha = Mensal & {
 function ListaMensais() {
   const busca = Route.useSearch();
   const navigate = useNavigate({ from: "/relatorio-mensal/" });
+  const usuario = useUsuario();
+  const { recentes, adicionarRecente } = useCondominiosRecentes(usuario?.id);
   const { data: mensais } = useSuspenseQuery(listaQuery<Mensal>("mensais"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const [condo, setCondo] = useState(busca.condo ?? TODOS);
@@ -91,8 +95,13 @@ function ListaMensais() {
 
   const opcoesCondo = [
     { valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" },
-    ...opcoesCondominio(condominios),
+    ...opcoesCondominio(condominios, false, recentes),
   ];
+
+  const selecionarCondo = (id: string) => {
+    if (id !== TODOS) adicionarRecente(id);
+    setCondo(id);
+  };
 
   const colunasExport: ColunaExportacao<Linha>[] = [
     { titulo: "Mês", valor: (m) => m.comp, texto: (m) => m.comp },
@@ -180,7 +189,7 @@ function ListaMensais() {
           aria-label="Filtrar por condomínio"
           value={condo}
           onChange={(v) => {
-            setCondo(v);
+            selecionarCondo(v);
             navigate({ search: v === TODOS ? {} : { condo: v }, replace: true });
           }}
           opcoes={opcoesCondo}

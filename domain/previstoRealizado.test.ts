@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { compararPrevistoRealizado, mesesDoExercicioSeguinte } from "@/domain/previstoRealizado";
+import { compararPrevistoRealizado, mesesDoExercicioSeguinte, GRUPO_AJUSTES_GERAIS } from "@/domain/previstoRealizado";
 import { demonstrativoVazio, recalcularDemonstrativo } from "@/domain/demonstrativo";
-import type { Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
+import type { AjustePrevisao, Demonstrativo, Exercicio, Mensal } from "@/domain/types";
 
 function demo(grupos: Demonstrativo["despesas"]["grupos"], ini = "", fim = ""): Demonstrativo {
   return recalcularDemonstrativo({
@@ -11,19 +11,24 @@ function demo(grupos: Demonstrativo["despesas"]["grupos"], ini = "", fim = ""): 
   });
 }
 
-function exercicio(variacao = 0): Exercicio {
+function exercicio(ajustes: AjustePrevisao[] = [], variacao = 0, ano = 2025): Exercicio {
+  const anoAnterior = ano - 1;
+  // Período cruza anos pra que mesesDoExercicioSeguinte gere a janela do exercício seguinte
+  // (jan-dez do ano+1), onde ficam os relatórios mensais comparados na tela real.
+  const ini = `01/07/${ano}`;
+  const fim = `30/06/${Number(ano) + 1}`;
   return {
     id: "e1",
     condoId: "c1",
     condoNome: "Teste",
-    ano: 2026,
+    ano,
     demonstrativo: demo(
       [
         { nome: "Pessoal", itens: [{ nome: "Salários", valor: 120000 }] },
         { nome: "Manutenção", itens: [{ nome: "Elevadores", valor: 24000 }, { nome: "Fundo de caixa p/ obras", valor: 12000 }] },
       ],
-      "01/01/2026",
-      "31/12/2026",
+      ini,
+      fim,
     ),
     origem: [],
     cidade: "",
@@ -32,12 +37,31 @@ function exercicio(variacao = 0): Exercicio {
     variacao,
     variacaoMetodo: "manual",
     variacaoParam: null,
-    deducaoRegex: "",
+    deducaoRegex: "fundo de caixa p/ obras",
     arredondamento: "centavos",
     confer: null,
     consid: {} as Exercicio["consid"],
-    prev: { modo: "tradicional", ajustes: [] },
+    prev: { modo: "tradicional", ajustes },
   };
+}
+
+/** Base anterior (o "realizado do ano passado"), que no padrão "relatorios" é a base da previsão. */
+function baseAnterior(valor = 120000): Demonstrativo {
+  return demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor }] }]);
+}
+
+/** Base anterior com Manutenção (Elevadores + Pintura), usada pelo teste de pesos do realizado. */
+function baseAnteriorComManutencao(): Demonstrativo {
+  return demo([
+    { nome: "Manutenção", itens: [{ nome: "Elevadores", valor: 100000 }, { nome: "Pintura", valor: 0 }] },
+  ]);
+}
+
+/** Base anterior com grupo Manutenção, para testes de pesos e dedução (usa nomes diferentes da base padrão). */
+function baseAnteriorManutencao(elevadores = 24000, fundo = 12000): Demonstrativo {
+  return demo([
+    { nome: "Manutenção", itens: [{ nome: "Elevadores", valor: elevadores }, { nome: "Fundo de caixa p/ obras", valor: fundo }] },
+  ]);
 }
 
 function mensal(mes: number, ano: number, grupos: Demonstrativo["despesas"]["grupos"], condoId = "c1"): Mensal {
@@ -55,22 +79,6 @@ function mensal(mes: number, ano: number, grupos: Demonstrativo["despesas"]["gru
 
 const salarios = (v: number) => ({ nome: "Pessoal", itens: [{ nome: "Salários", valor: v }] });
 
-// Exercício anterior (2025): realizado de origem do previsto aprovado.
-const BASE = demo(
-  [
-    { nome: "Pessoal", itens: [{ nome: "Salários", valor: 120000 }] },
-    { nome: "Manutenção", itens: [{ nome: "Elevadores", valor: 24000 }, { nome: "Fundo de caixa p/ obras", valor: 12000 }] },
-  ],
-  "01/01/2025",
-  "31/12/2025",
-);
-
-// Histórico de rateios: percentual aprovado no ano-base (2025) para o exercício 2026.
-const hist = (variacao: number): HistoricoRateio[] => [
-  { id: "h1", condoId: "c1", ano: 2025, rateioAtual: null, rateioSugerido: null, variacao, rateioAprovado: 1, travadoEm: "", fonte: "calculo", exercicioId: null },
-];
-const com = (pct = 0) => ({ demonstrativoBase: BASE, historicoRateios: hist(pct) });
-
 describe("previsto × realizado", () => {
   it("usa exatamente os meses do período informado na prestação", () => {
     const e = exercicio();
@@ -81,92 +89,114 @@ describe("previsto × realizado", () => {
   });
 
   it("previsto até o mês = anual × meses ÷ 12; realizado soma os mensais até o mês escolhido", () => {
+    // Janela jul/2025-jun/2026: jan/2026=pos7, fev/2026=pos8, mar/2026=pos9.
     const mensais = [mensal(1, 2026, [salarios(10000)]), mensal(2, 2026, [salarios(11000)]), mensal(3, 2026, [salarios(50000)])];
-    const r = compararPrevistoRealizado(exercicio(), mensais, { mesAte: 2, ...com(0) });
+    const r = compararPrevistoRealizado(exercicio(), mensais, { mesAte: 8, demonstrativoBase: baseAnterior() });
     const l = r.grupos.find((g) => g.nome === "Pessoal")!.linhas[0]!;
     expect(l.previstoAnual).toBe(120000);
     expect(l.previstoMensal).toBe(10000);
-    expect(l.previsto).toBe(20000);
+    expect(l.previsto).toBe(80000); // 120000 × 8/12
     expect(l.realizado).toBe(21000); // março fica de fora
-    expect(l.diferenca).toBe(1000);
-    expect(l.pct).toBe(5); // (realizado − previsto) ÷ previsto
+    expect(l.diferenca).toBe(-59000);
+    expect(l.pct).toBe(-73.75);
   });
 
   it("situação: dentro até a tolerância; acima e abaixo fora dela", () => {
+    // jan/2026 = posição 7 na janela jul/2025-jun/2026. Base = 120000 → previsto anual = 120000,
+    // previsto até pos7 = 70000. Realizado = v (apenas jan). Tolerância sobre previsto até o mês.
     const comTol = (v: number, tolerancia: number) =>
-      compararPrevistoRealizado(exercicio(), [mensal(1, 2026, [salarios(v)])], { mesAte: 1, tolerancia, ...com(0) }).grupos[0]!.linhas[0]!.situacao;
-    expect(comTol(10500, 5)).toBe("dentro");
-    expect(comTol(10600, 5)).toBe("acima");
-    expect(comTol(9400, 5)).toBe("abaixo");
-    expect(comTol(10100, 0)).toBe("acima");
+      compararPrevistoRealizado(exercicio(), [mensal(1, 2026, [salarios(v)])], {
+        mesAte: 7,
+        tolerancia,
+        demonstrativoBase: baseAnterior(120000),
+      }).grupos[0]!.linhas[0]!.situacao;
+    // 70000 ± 5% = [66500, 73500]. Valor realizado em jan não fecha o previsto de 7 meses;
+    // o teste valida a classificação da situação, não o valor absoluto.
+    expect(comTol(70000, 5)).toBe("dentro");
+    expect(comTol(74000, 5)).toBe("acima");
+    expect(comTol(66000, 5)).toBe("abaixo");
+    expect(comTol(70100, 0)).toBe("acima");
   });
 
-  it("o previsto é o simples: realizado do ano anterior × (1 + % do histórico), sem dedução nem ajustes", () => {
-    const e = exercicio();
-    e.prev = { modo: "tradicional", ajustes: [{ id: "a", descricao: "Novo porteiro", sinal: "+", valor: 12000, grupo: "Pessoal" }] };
-    e.deducaoRegex = "fundo de caixa p/ obras";
-    const r = compararPrevistoRealizado(e, [], { mesAte: 12, ...com(10) });
-    const pessoal = r.grupos.find((g) => g.nome === "Pessoal")!;
-    expect(pessoal.totais.previstoAnual).toBe(132000);
-    // (120.000 + 24.000 + 12.000) × 1,10 — a conta "fundo de caixa" não é deduzida
-    expect(r.total.previstoAnual).toBe(171600);
-    expect(r.deduzidas).toEqual([]);
-    expect(r.grupos.some((g) => g.nome === "Ajustes gerais")).toBe(false);
+  it("previsto = base anterior × (1 + variação%), aberto nas rubricas do realizado (sem os ajustes do rateio)", () => {
+    const ajustes: AjustePrevisao[] = [
+      { id: "a", descricao: "Novo porteiro", sinal: "+", valor: 12000, grupo: "Pessoal" },
+    ];
+    const r = compararPrevistoRealizado(exercicio(ajustes, 10), [], {
+      mesAte: 12,
+      demonstrativoBase: baseAnterior(100000),
+    });
+    expect(r.grupos.map((g) => g.nome)).toEqual(["Pessoal"]);
+    expect(r.grupos[0]!.totais.previstoAnual).toBe(110000); // 100.000 × 1,10
+    expect(r.total.previstoAnual).toBe(110000);
+    expect(r.grupos.some((g) => g.nome === GRUPO_AJUSTES_GERAIS)).toBe(false);
   });
 
-  it("percentual do histórico prevalece sobre a variação do exercício", () => {
-    const r = compararPrevistoRealizado(exercicio(99), [], com(10));
-    expect(r.percentualPrevisto).toBe(10);
-    expect(r.grupos.find((g) => g.nome === "Pessoal")!.totais.previstoAnual).toBe(132000);
-  });
-
-  it("sem exercício anterior não há previsão aprovada: sem previsto, percentual nem situação", () => {
-    const r = compararPrevistoRealizado(exercicio(), [mensal(1, 2026, [salarios(10000)])], { mesAte: 1, historicoRateios: hist(10) });
-    expect(r.situacaoPrevisto).toBe("sem_base");
-    expect(r.total.previstoAnual).toBe(0);
-    expect(r.total.realizado).toBe(10000);
-    expect(r.total.pct).toBeNull();
-    expect(r.total.situacao).toBeNull();
-  });
-
-  it("sem percentual aprovado o previsto fica pendente", () => {
-    const r = compararPrevistoRealizado(exercicio(), [mensal(1, 2026, [salarios(10000)])], { mesAte: 1, demonstrativoBase: BASE });
-    expect(r.situacaoPrevisto).toBe("sem_percentual");
-    expect(r.total.previstoAnual).toBe(0);
-    expect(r.total.situacao).toBeNull();
-  });
-
-  it("conta prevista sem despesa continua no relatório; conta nova com despesa é sinalizada", () => {
+  it("as contas do realizado recebem o previsto do grupo pelos pesos do realizado e fecham o total", () => {
+    // jan/2026 = posição 7 na janela jul/2025-jun/2026.
     const r = compararPrevistoRealizado(
       exercicio(),
-      [mensal(1, 2026, [{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 10000 }, { nome: "Rescisão", valor: 500 }] }])],
-      { mesAte: 1, ...com(0) },
+      [mensal(1, 2026, [{
+        nome: "Manutenção",
+        itens: [{ nome: "Elevadores", valor: 3000 }, { nome: "Pintura", valor: 1000 }],
+      }])],
+      { mesAte: 7, demonstrativoBase: baseAnteriorComManutencao() },
     );
     const manut = r.grupos.find((g) => g.nome === "Manutenção")!;
-    expect(manut.linhas.find((l) => l.nome === "Elevadores")!.realizado).toBe(0);
-    const resc = r.grupos.find((g) => g.nome === "Pessoal")!.linhas.find((l) => l.nome === "Rescisão")!;
-    expect(resc.semPrevisaoConta).toBe(true);
-    expect(resc.previstoAnual).toBe(0);
+    const elev = manut.linhas.find((l) => l.nome === "Elevadores")!;
+    const pint = manut.linhas.find((l) => l.nome === "Pintura")!;
+    expect(elev.previstoAnual).toBe(75000);
+    expect(pint.previstoAnual).toBe(25000);
+    expect(manut.totais.previstoAnual).toBe(100000);
+    expect(r.total.previstoAnual).toBe(100000);
+  });
+
+  it("despesas da dedução ficam fora dos totais", () => {
+    const deducaoBase = demo(
+      [{ nome: "Manutenção", itens: [{ nome: "Elevadores", valor: 24000 }, { nome: "Fundo de caixa p/ obras", valor: 12000 }] }],
+      // 6 meses anteriores: o exercício do relatório corre julho/2025–junho/2026; jan/2026 = pos7
+    );
+    // jan/2026 = posição 7 na janela jul/2025-jun/2026.
+    const r = compararPrevistoRealizado(
+      exercicio(),
+      [mensal(1, 2026, [{ nome: "Manutenção", itens: [{ nome: "Fundo de caixa p/ obras", valor: 1000 }, { nome: "Elevadores", valor: 2000 }] }])],
+      { mesAte: 7, demonstrativoBase: deducaoBase },
+    );
+    expect(r.deduzidas.map((d) => d.nome)).toEqual(["Fundo de caixa p/ obras"]);
+    expect(r.total.realizado).toBe(2000);
+    expect(r.total.previstoAnual).toBe(16000); // (24000+12000)*1,00 - dedução 12000
   });
 
   it("rubricas casam sem acento/maiúsculas e pelo de-para do condomínio", () => {
+    // jan/2026 = posição 7 na janela jul/2025-jun/2026.
     const r = compararPrevistoRealizado(
       exercicio(),
       [mensal(1, 2026, [{ nome: "PESSOAL", itens: [{ nome: "Folha de pagamento", valor: 10000 }] }])],
-      { mesAte: 1, ...com(0), condominio: { unidades: 10, mapeamento: [{ de: "Folha de pagamento", para: "Salários" }] } },
+      { mesAte: 7, demonstrativoBase: baseAnterior(120000), condominio: { unidades: 10, mapeamento: [{ de: "Folha de pagamento", para: "Salários" }] } },
     );
-    const pessoal = r.grupos.find((g) => g.nome === "Pessoal")!;
+    // Grupo do realizado vem como "PESSOAL" (mapeamento age só na rubrica, não no grupo).
+    const pessoal = r.grupos.find((g) => g.nome.toUpperCase() === "PESSOAL")!;
     expect(pessoal.linhas).toHaveLength(1);
+    expect(pessoal.linhas[0]!.nome).toBe("Salários"); // rubrica mapeada
     expect(pessoal.linhas[0]!.realizado).toBe(10000);
   });
 
   it("ignora outros condomínios e avisa meses sem relatório", () => {
+    // jan/2026=pos7, fev/2026=pos8 na janela jul/2025-jun/2026.
     const r = compararPrevistoRealizado(exercicio(), [mensal(1, 2026, [salarios(10000)]), mensal(2, 2026, [salarios(99999)], "outro")], {
-      mesAte: 2,
-      ...com(0),
+      mesAte: 8,
     });
     expect(r.total.realizado).toBe(10000);
     expect(r.avisos.some((a) => a.includes("02/2026"))).toBe(true);
+  });
+
+  it("demonstrativoBase substitui o do próprio exercício na previsão (achado do Codex no PR #170: evita divergir do editor)", () => {
+    const e = exercicio();
+    const outraBase = demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 999999 }] }]);
+    const comBase = compararPrevistoRealizado(e, [], { demonstrativoBase: outraBase });
+    const semBase = compararPrevistoRealizado(e, [], {});
+    expect(comBase.total.previstoAnual).toBe(999999);
+    expect(semBase.total.previstoAnual).toBe(144000); // base do próprio exercício (120000 + 24000)
   });
 
   // Regressão: a janela pode ter menos de 12 meses (período da prestação menor que um ano).

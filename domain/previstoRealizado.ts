@@ -1,17 +1,22 @@
 import { centavos } from "./demonstrativo";
-import { previstoDoExercicio, type PrevistoAprovado } from "./previstoAprovado";
-import type { PrevisaoAprovada } from "./types";
+import { aplicarVariacaoDoHistorico } from "./historicoRateio";
+import { calcularPrevisao, expressaoDeducao } from "./previsao";
+
 import { competenciaMensal, mesAnoDe } from "./mensal";
 import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Mensal } from "./types";
 
 /**
  * Comparativo Previsto × Realizado.
  *
- * Previsto  = previsto aprovado SIMPLES do exercício (`previstoAprovado.ts`): realizado do exercício
- *             anterior × (1 + % do histórico de rateios), aberto por rubrica e grupo, sem dedução nem
- *             ajustes (issue #284). Previsto até o mês = anual × meses ÷ 12.
+ * Segue o padrão de "Previsão para relatórios" (modo `relatorios` do editor):
+ *  - Anual previsto = realizado do exercício ANTERIOR (demonstrativo dele) × (1 + variação% da
+ *    prestação de contas). A variação % vem do índice aprovado no histórico de rateios, a mesma
+ *    calculada na prestação de contas — nunca o demonstrativo do próprio exercício como base.
+ *  - O anual previsto é pulverizado nas rubricas do REALIZADO seguindo os pesos do realizado, de
+ *    forma que a soma das rubricas feche o total do grupo.
  * Realizado = soma das despesas dos relatórios mensais dentro do período
  *             informado na prestação, do primeiro mês até o mês escolhido.
+ * Previsto até o mês = anual × meses ÷ 12.
  * Diferença = realizado − previsto até o mês; % sobre o previsto até o mês.
  * Situação  = "dentro" quando |%| ≤ tolerância; senão "acima" ou "abaixo".
  *
@@ -20,9 +25,8 @@ import type { Condominio, DePara, Demonstrativo, Exercicio, HistoricoRateio, Men
  * - sem período informado, mantém-se a compatibilidade com o comportamento antigo;
  * - o mês de cada relatório mensal é o da data final do período (ou da inicial);
  * - rubricas casam pelo nome (sem acento/maiúsculas), após o de-para do condomínio;
- * - conta com despesa e sem previsto aprovado fica marcada ("Sem previsão para a conta");
- * - `tipo: "ajuste"`, `deduzidas` e `GRUPO_AJUSTES_GERAIS` são mantidos só por compatibilidade das
- *   telas: o previsto aprovado não tem ajustes nem dedução.
+ * - despesas que casam com a dedução ficam fora da comparação (como na previsão);
+ * - ajustes com grupo existente entram no grupo; os demais, em "Ajustes gerais".
  */
 
 export type Situacao = "dentro" | "acima" | "abaixo";
@@ -47,8 +51,6 @@ export interface LinhaComparativo extends Totais {
   nome: string;
   tipo: "rubrica" | "ajuste";
   sinal?: "+" | "-";
-  /** Conta com despesa e sem previsto aprovado ("Sem previsão para a conta"). */
-  semPrevisaoConta?: boolean;
 }
 
 export interface GrupoComparativo {
@@ -70,15 +72,12 @@ export interface ResultadoComparativo {
   meses: MesCompetencia[];
   mesAte: MesCompetencia;
   grupos: GrupoComparativo[];
-  /** Sempre vazio (o previsto aprovado não tem dedução); mantido por compatibilidade. */
+  /** Despesas retiradas pela dedução (fora dos totais). */
   deduzidas: { grupo: string; nome: string; previstoAnual: number; realizado: number }[];
   total: Totais;
   tolerancia: number;
   relatoriosUsados: number;
   avisos: string[];
-  /** Situação do previsto aprovado usado: ok, sem exercício anterior ou sem percentual aprovado. */
-  situacaoPrevisto: PrevistoAprovado["situacao"];
-  percentualPrevisto: number | null;
 }
 
 export interface OpcoesComparativo {
@@ -87,19 +86,21 @@ export interface OpcoesComparativo {
   mesAte?: number | null;
   /** Faixa em % considerada "dentro" do previsto. */
   tolerancia?: number | null;
-  /** Demonstrativo do exercício ANTERIOR (base do previsto). Sem ele não há previsão aprovada. */
-  demonstrativoBase?: Demonstrativo | null | undefined;
-  /** Histórico de rateios — fonte do percentual aprovado. */
+  /** Base pra projetar a previsão (ver `demonstrativoBasePrevisao`, em `previsao.ts`) — o realizado
+   * do exercício anterior. Sem isso, cai no demonstrativo do próprio `exercicio` (compatibilidade). */
+  demonstrativoBase?: Demonstrativo | null;
+  /** Histórico de rateios — fonte do índice anual aprovado quando o exercício não tem variação explícita. */
   historicoRateios?: HistoricoRateio[];
-  /** Previstos aprovados gravados pelo servidor; têm precedência sobre o previsto derivado. */
-  previsoesAprovadas?: PrevisaoAprovada[];
 }
 
 const p2 = (n: number) => String(n).padStart(2, "0");
 
 export { competenciaMensal, mesAnoDe };
 
-/** Meses de competência contidos no período informado da prestação. */
+/** Meses de competência contidos no período informado da prestação. Quando há período com datas
+ * inicial e final válidas, devolve todos os meses desse intervalo (seja dentro de um único ano
+ * civil ou cruzando anos). Sem período válido, cai em jan-dez do ano SEGUINTE ao exercício
+ * (compatibilidade com exercícios abertos cujos relatórios mensais são do ano seguinte). */
 export function mesesDoExercicioSeguinte(e: Pick<Exercicio, "ano" | "demonstrativo">): { mes: number; ano: number }[] {
   const inicio = mesAnoDe(e.demonstrativo?.periodo?.ini);
   const fim = mesAnoDe(e.demonstrativo?.periodo?.fim);
@@ -113,17 +114,9 @@ export function mesesDoExercicioSeguinte(e: Pick<Exercicio, "ano" | "demonstrati
       });
     }
   }
-  let mes = 1;
-  let ano = Number(e.ano) + 1;
-  if (fim) {
-    mes = fim.mes === 12 ? 1 : fim.mes + 1;
-    ano = fim.mes === 12 ? fim.ano + 1 : fim.ano;
-  }
-  return Array.from({ length: 12 }, (_, i) => {
-    const m = ((mes - 1 + i) % 12) + 1;
-    const a = ano + Math.floor((mes - 1 + i) / 12);
-    return { mes: m, ano: a };
-  });
+  // Sem período: janela é jan-dez do ano SEGUINTE (exercício N → relatórios de N+1).
+  const ano = Number(e.ano) + 1;
+  return Array.from({ length: 12 }, (_, i) => ({ mes: i + 1, ano }));
 }
 
 /** Chave de comparação de rótulos: sem acentos, minúsculas, espaços simples. */
@@ -166,6 +159,8 @@ interface Acum {
   previstoAnual: number;
   realizado: number;
   deduzida: boolean;
+  /** Linha só da base anterior, sem realizado no período (mostra o previsto, realizado zero). */
+  semRealizado?: boolean;
 }
 
 export function compararPrevistoRealizado(
@@ -174,29 +169,37 @@ export function compararPrevistoRealizado(
   opcoes: OpcoesComparativo = {},
 ): ResultadoComparativo {
   if (exercicio.fechado && exercicio.fechamento) {
+    const anterior = exercicio.fechamento.exercicioAnterior?.demonstrativo ?? null;
     mensais = exercicio.fechamento.mensais;
-    opcoes = { ...opcoes, condominio: exercicio.fechamento.condominio, demonstrativoBase: exercicio.fechamento.exercicioAnterior?.demonstrativo ?? opcoes.demonstrativoBase };
+    opcoes = {
+      ...opcoes,
+      condominio: exercicio.fechamento.condominio,
+      // No fechamento só usa a base anterior congelada quando existe; sem ela, mantém a que veio
+      // do fechado ou, em último caso, o próprio demonstrativo (primeira prestação).
+      demonstrativoBase: anterior ?? opcoes.demonstrativoBase ?? exercicio.demonstrativo,
+    };
   }
   const avisos: string[] = [];
   const tolerancia = Math.abs(opcoes.tolerancia ?? TOLERANCIA_PADRAO);
   const mapa = new Map((opcoes.condominio?.mapeamento ?? []).filter((d: DePara) => d.de?.trim()).map((d) => [chaveRotulo(d.de), d.para] as const));
+  const re = expressaoDeducao(exercicio.deducaoRegex);
+  const deduzidasRealizado = new Set<string>();
 
-  // Previsto aprovado simples (fonte única, `previstoAprovado.ts`):
-  // - Previsto = realizado do exercício ANTERIOR × (1 + % do histórico de rateios)
-  // - Realizado = relatórios mensais do período
-  // - Variação = (Realizado − Previsto) ÷ Previsto
-  const previstoAprovado = previstoDoExercicio(exercicio, {
-    demonstrativoBase: opcoes.demonstrativoBase,
-    historicoRateios: opcoes.historicoRateios,
-    condominio: opcoes.condominio,
-    previsoesAprovadas: opcoes.previsoesAprovadas,
-  });
-  avisos.push(...previstoAprovado.avisos);
-  // Sem previsto aprovado (sem base ou sem percentual) não há situação nem percentual a classificar.
-  const fecharSeguro: typeof fecharTotais = (...args) => {
-    const t = fecharTotais(...args);
-    return previstoAprovado.situacao === "ok" ? t : { ...t, pct: null, situacao: null };
-  };
+  // Mesma regra do modo "relatorios" do editor de previsão: a base é o realizado do exercício
+  // ANTERIOR e a variação % é a da prestação de contas (histórico de rateios), aplicada uma única
+  // vez sobre essa base. O demonstrativo do próprio exercício já pode ter o índice embutido e não
+  // serve de base (o editor remove `demonstrativo` antes de injetar o histórico pelo mesmo motivo).
+  const exercicioComHistorico = aplicarVariacaoDoHistorico(
+    { ...exercicio, demonstrativo: null },
+    opcoes.historicoRateios ?? [],
+  );
+  const variacaoPct = calcularPrevisao(
+    null,
+    { ...exercicioComHistorico, indices: exercicioComHistorico.consid?.indices },
+    opcoes.condominio?.unidades ?? null,
+  ).variacaoPct;
+  const fator = 1 + variacaoPct / 100;
+  const demonstrativoBase = opcoes.demonstrativoBase ?? exercicio.demonstrativo;
 
   // Janela do exercício N+1 e relatórios mensais por mês.
   const janela = mesesDoExercicioSeguinte(exercicio);
@@ -251,23 +254,87 @@ export function compararPrevistoRealizado(
     return l;
   };
 
-  for (const g of previstoAprovado.grupos) {
-    for (const c of g.contas) linha(g.nome, c.nome, "rubrica").previstoAnual += c.previsto;
+  // Previsto anual por grupo de cada base, na ordem em que os grupos aparecem.
+  const norm = (s: string) => chaveRotulo(s);
+  const anuaisBase = new Map<string, number>();
+  const nomesBase: string[] = [];
+  for (const g of demonstrativoBase?.despesas.grupos ?? []) {
+    const k = norm(g.nome);
+    if (!anuaisBase.has(k)) nomesBase.push(g.nome);
+    anuaisBase.set(k, (anuaisBase.get(k) ?? 0) + g.itens.reduce((s, it) => s + (Number(it.valor) || 0), 0));
   }
-
+  // Deduções da previsão ficam fora da comparação (como no editor).
+  const deducaoBase = new Map<string, number>();
+  for (const g of demonstrativoBase?.despesas.grupos ?? []) {
+    const grupoDeduzido = !!re && re.test(g.nome);
+    for (const it of g.itens) {
+      if (grupoDeduzido || (!!re && re.test(it.nome))) {
+        const k = norm(g.nome);
+        deducaoBase.set(k, (deducaoBase.get(k) ?? 0) + (Number(it.valor) || 0));
+      }
+    }
+  }
+  const previstoGrupo = (nome: string) => {
+    const k = norm(nome);
+    const baseAnterior = anuaisBase.get(k) ?? 0;
+    return (baseAnterior - (deducaoBase.get(k) ?? 0)) * fator;
+  };
+  const gruposBaseUsados = new Set<string>();
   let relatoriosUsados = 0;
+  // Realizado por grupo (chave normalizada) → valor por conta normalizada, na ordem de aparição,
+  // pra depois pulverizar o previsto do grupo pelos pesos do realizado.
+  const realizado = new Map<string, { nome: string; itens: Map<string, { nome: string; valor: number }> }>();
   for (let pos = 1; pos <= posAte; pos++) {
     for (const m of porPosicao.get(pos) ?? []) {
       relatoriosUsados++;
       for (const g of m.demonstrativo?.despesas?.grupos ?? []) {
+        const grupoDeduzido = !!re && re.test(g.nome);
+        const grupo = aplicarDePara(g.nome, mapa);
+        const gk = chaveRotulo(grupo);
+        if (!realizado.has(gk)) realizado.set(gk, { nome: grupo, itens: new Map() });
+        const acc = realizado.get(gk)!;
         for (const it of g.itens ?? []) {
-          const a = linha(aplicarDePara(g.nome, mapa), aplicarDePara(it.nome, mapa), "rubrica");
-          a.realizado += Number(it.valor) || 0;
+          const nome = aplicarDePara(it.nome, mapa);
+          const ik = chaveRotulo(nome);
+          if (!acc.itens.has(ik)) acc.itens.set(ik, { nome, valor: 0 });
+          acc.itens.get(ik)!.valor += Number(it.valor) || 0;
+          if (grupoDeduzido || (!!re && re.test(it.nome))) deduzidasRealizado.add(`${gk}\u0000${ik}`);
         }
       }
     }
   }
   if (relatoriosUsados === 0) avisos.push(`Nenhum relatório mensal de ${meses[0]!.rotulo} a ${mesAte.rotulo} para este condomínio.`);
+
+  // Previsto: nas contas do REALIZADO, cada uma com seu peso no realizado do grupo; o último item
+  // recebe o restante, pra soma das rubricas fechar exatamente o previsto do grupo.
+  for (const [gk, acc] of realizado) {
+    gruposBaseUsados.add(gk);
+    const total = acc.itens.size ? [...acc.itens.values()].reduce((s, it) => s + it.valor, 0) : 0;
+    const pg = previstoGrupo(acc.nome);
+    let acumulado = 0;
+    let i = 0;
+    for (const it of acc.itens.values()) {
+      const a = linha(acc.nome, it.nome, "rubrica");
+      a.realizado += it.valor;
+      a.deduzida = deduzidasRealizado.has(`${gk}\u0000${chaveRotulo(it.nome)}`) || (!!re && re.test(it.nome));
+      let p: number;
+      if (i === acc.itens.size - 1) p = pg - acumulado;
+      else if (total > 0) p = (it.valor / total) * pg;
+      else p = 0;
+      acumulado += p;
+      a.previstoAnual += p;
+      i++;
+    }
+  }
+  // Grupos da base que não têm nenhuma despesa realizada no período: aparecem com realizado zero,
+  // pra que o total previsto seja o da previsão inteira.
+  for (const nome of nomesBase) {
+    const gk = chaveRotulo(nome);
+    if (gruposBaseUsados.has(gk)) continue;
+    const a = linha(nome, nome, "rubrica");
+    a.previstoAnual += previstoGrupo(nome);
+    a.semRealizado = true;
+  }
 
   // Fecha linhas e totais (gerais por último).
   const ordenados = [...grupos.values()].sort(
@@ -286,17 +353,17 @@ export function compararPrevistoRealizado(
         deduzidas.push({ grupo: a.grupo, nome: a.nome, previstoAnual: centavos(a.previstoAnual), realizado: centavos(a.realizado) });
         continue;
       }
-      const t = fecharSeguro(a.previstoAnual, a.realizado, posAte, tolerancia);
-      // Conta nova com despesa: não há previsto para ela (≠ exercício inteiro sem previsão aprovada).
-      const semPrevisaoConta = previstoAprovado.situacao === "ok" && a.previstoAnual === 0 && t.realizado !== 0;
-      linhas.push({ grupo: g.nome, nome: a.nome, tipo: a.tipo, ...(a.sinal ? { sinal: a.sinal } : {}), ...(semPrevisaoConta ? { semPrevisaoConta: true } : {}), ...t });
+      const t = fecharTotais(a.previstoAnual, a.realizado, posAte, tolerancia);
+      // Ajuste sem despesa realizada correspondente não tem situação própria.
+      if (a.tipo === "ajuste" && t.realizado === 0) t.situacao = null;
+      linhas.push({ grupo: g.nome, nome: a.nome, tipo: a.tipo, ...(a.sinal ? { sinal: a.sinal } : {}), ...t });
       gp += a.previstoAnual;
       gr += a.realizado;
     }
     if (linhas.length === 0) continue;
     totalPrevisto += gp;
     totalRealizado += gr;
-    resultadoGrupos.push({ nome: g.nome, linhas, totais: fecharSeguro(gp, gr, posAte, tolerancia) });
+    resultadoGrupos.push({ nome: g.nome, linhas, totais: fecharTotais(gp, gr, posAte, tolerancia) });
   }
 
   return {
@@ -304,11 +371,9 @@ export function compararPrevistoRealizado(
     mesAte,
     grupos: resultadoGrupos,
     deduzidas,
-    total: fecharSeguro(totalPrevisto, totalRealizado, posAte, tolerancia),
+    total: fecharTotais(totalPrevisto, totalRealizado, posAte, tolerancia),
     tolerancia,
     relatoriosUsados,
     avisos,
-    situacaoPrevisto: previstoAprovado.situacao,
-    percentualPrevisto: previstoAprovado.percentual,
   };
 }
