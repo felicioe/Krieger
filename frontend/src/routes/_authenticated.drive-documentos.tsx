@@ -891,7 +891,7 @@ function PaginaDriveDocumentos() {
                     : "hover:bg-muted/60"
                 }`}
               >
-                <span className="flex items-center gap-2 truncate">
+                <span className="flex min-w-0 items-center gap-2">
                   <FolderOpen className="size-4 shrink-0 text-primary" />
                   Todos os Arquivos
                 </span>
@@ -914,14 +914,14 @@ function PaginaDriveDocumentos() {
                       selecionada ? "bg-primary/10 font-semibold text-primary" : "hover:bg-muted/60"
                     }`}
                   >
-                    <span className="flex min-w-0 items-center gap-1.5 truncate">
+                    <span className="flex min-w-0 items-center gap-1.5">
                       {no.nivel > 0 && <span className="text-muted-foreground">↳</span>}
                       {no.padraoOutros ? (
                         <Package className="size-3.5 shrink-0 text-amber-600" />
                       ) : (
                         <Folder className="size-3.5 shrink-0 text-sky-600" />
                       )}
-                      <span className="truncate">{no.nome}</span>
+                      <span className="min-w-0 break-words">{no.nome}</span>
                     </span>
                     <Badge
                       variant={no.padraoOutros ? "outline" : "secondary"}
@@ -978,7 +978,7 @@ function PaginaDriveDocumentos() {
 
             {/* Barra de Pesquisa e Filtro de Data */}
             <div className="mb-4 grid gap-3 sm:grid-cols-12">
-              <div className="relative sm:col-span-8">
+              <div className="relative min-w-0 sm:col-span-8">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={termoBusca}
@@ -987,9 +987,10 @@ function PaginaDriveDocumentos() {
                   className="pl-9"
                 />
               </div>
-              <div className="flex gap-2 sm:col-span-4">
+              <div className="flex min-w-0 gap-2 sm:col-span-4">
                 <Input
                   type="date"
+                  className="min-w-0 flex-1"
                   value={filtroData}
                   onChange={(e) => setFiltroData(e.target.value)}
                   aria-label="Filtrar por data do documento"
