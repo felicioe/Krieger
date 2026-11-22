@@ -9,6 +9,9 @@
   até cinco atalhos na ordem em que foram adicionados. Os destinos e os
   controles permanecem nos grupos de origem, inclusive para remover escolhas
   antigas que excedam o limite.
+- #336: Ajuda e versão reúne Central de ajuda e Registro de Alterações.
+  Minha senha e Sair ficam na conta, e Usuários fica em Administração,
+  restrito ao perfil SuperADM.
 
 
 ## Acessibilidade da previsão e do relatório final — 22/11/2026
