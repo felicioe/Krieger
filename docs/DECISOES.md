@@ -1,5 +1,12 @@
 # Decisões do projeto
 
+## 2026-11-22 — rateio por fração ideal como distribuição, sem mudar o rateio sugerido (issue #132)
+
+Aprovado pelo responsável. A fração ideal (fração prevista do cadastro) decide quanto cada
+unidade paga do total mensal; o rateio sugerido e o índice da previsão continuam iguais, porque o
+reajuste % é o mesmo para todas as unidades. Sem relação de frações válida, a base é a quantidade
+de unidades, com o motivo na tela. Detalhes em `docs/AVALIACAO-FRACOES.md`.
+
 ## 2026-11-22 — sequência geral: menu antes da Etapa 1 (revisão do plano)
 
 Decisão do responsável: o trabalho segue uma ordem única, registrada em

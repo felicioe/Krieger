@@ -5,6 +5,20 @@ levantamento abaixo mostra onde a quantidade de unidades decide um valor e o que
 muda se a fração ideal passar a ser a base. A implementação só começa depois da
 aprovação do responsável.
 
+## Implementação (22/11/2026)
+
+Aprovada pelo responsável e implementada em `domain/fracoes.ts`:
+
+- `baseDoRateio` decide a base: fração ideal (fração prevista) quando a relação de frações é
+  válida; senão, a quantidade de unidades, sempre com o motivo. Soma diferente de 1 e de 100%
+  gera aviso e as frações são usadas em proporção à soma.
+- `distribuirRateio` calcula a cota de cada unidade no mesmo arredondamento da previsão e passa a
+  diferença para as maiores frações primeiro, até a soma fechar com o total arredondado.
+- A Previsão orçamentária mostra a base usada e, com frações, a cota de cada unidade.
+- O rateio sugerido e o índice não mudam: o reajuste % é o mesmo para todas as unidades.
+- Fora desta etapa: o relatório final continua mostrando o rateio médio por unidade; a coluna de
+  fração (prevista) segue a proposta e pode ser revista com uma folha real do Systemar.
+
 ## Escopo
 
 - **Dentro:** todos os cálculos que hoje usam a contagem de unidades, inclusive
