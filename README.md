@@ -24,6 +24,7 @@ Desenvolvimento na Claude/Codex → PR no GitHub → `main` → Hostinger via co
 - [Auditoria técnica de 08/11/2026](docs/auditorias/IMPECCABLE-2026-11-08.md)
 - [Especificação funcional v2](docs/ESPECIFICACAO-V2.md)
 - [Plano de desenvolvimento por etapa e modelo](docs/PLANO-ETAPAS-MODELOS.md)
+- [Inventário de entrada de dados](docs/INVENTARIO-ENTRADA-DADOS.md)
 
 `main` é a branch padrão desde 20/10/2026. Novos trabalhos partem dela.
 Os fontes React estão em `frontend/` (PRs #21/#23), sem lógica duplicada — os
