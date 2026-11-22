@@ -41,6 +41,7 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
       { id: "previsto-realizado", titulo: "Previsto × Realizado" },
       { id: "relatorio-mensal", titulo: "Acompanhamento de carga de dados mensais" },
       { id: "inadimplencia", titulo: "Evolução da inadimplência" },
+      { id: "comparativo-despesas", titulo: "Comparativo de despesas" },
     ],
   },
   {
@@ -309,6 +310,27 @@ function Ajuda() {
                 o valor a receber é um saldo, o rodapé mostra a <strong>média</strong> dos meses com
                 dados, e não a soma. Exporta em CSV, XLSX, PDF (A4 paisagem, com timbre) e
                 impressão, todos com as mesmas colunas.
+              </p>
+            </Texto>
+          </SectionCard>
+
+          <SectionCard
+            id="comparativo-despesas"
+            titulo="Comparativo de despesas"
+            descricao="O que mais cresceu entre um exercício e outro."
+          >
+            <Texto>
+              <p>
+                Mostra uma linha por grupo de despesa, com o total de cada exercício do período e a
+                variação em reais e em percentual entre o primeiro e o último. Marque{" "}
+                <strong>Abrir por rubrica</strong> para ver as contas de cada grupo.
+              </p>
+              <p>
+                Grupos com o mesmo nome escrito de forma diferente (maiúsculas, acentos, espaços)
+                são somados juntos. Um grupo que não existe num exercício fica com a célula vazia,
+                nunca com zero. O total de cada exercício é a soma das linhas e fecha com a
+                prestação de contas. Exporta em CSV, XLSX, PDF (A4 paisagem, com timbre) e
+                impressão.
               </p>
             </Texto>
           </SectionCard>
