@@ -31,7 +31,7 @@ import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
 import { cn, irPara } from "@/lib/utils";
 import type { ResultadoPrevisao } from "@/domain/previsao";
-import { ARREDONDAMENTO_CURTO, ARREDONDAMENTOS, MODOS_PREVISAO } from "@/domain/previsaoCriterios";
+import { ARREDONDAMENTO_CURTO, ARREDONDAMENTOS, MODOS_PREVISAO, rotuloVariacao } from "@/domain/previsaoCriterios";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
 // Rótulos vêm de domain/previsaoCriterios.ts: o mesmo parâmetro precisa ter o mesmo nome aqui,
@@ -487,7 +487,7 @@ function Resumo({
         />
         <LinhaResumo rotulo="(−) Dedução" valor={formatBRL(r.deducao)} negativo={r.deducao > 0} />
         <LinhaResumo
-          rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${pct(r.variacaoPct)}`}
+          rotulo={metodo === "valor" ? "(+) Variação" : `(+) Variação ${rotuloVariacao(metodo)}`}
           valor={formatBRL(r.variacaoValor)}
         />
         {r.variacaoDespesasValor !== 0 && (

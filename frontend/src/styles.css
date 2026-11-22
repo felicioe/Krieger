@@ -106,8 +106,9 @@
    * #798898: 3,63:1 no branco, 3,35:1 no fundo #f4f6f9 e 3,19:1 na linha cinza das listas —
    * o mínimo de 3:1 para identificar um campo vazio (WCAG 1.4.11). Bordas decorativas de
    * cartões e tabelas continuam em --border. Ver docs/CONTRASTE.md.
+   * --control usado por Input, Select, Textarea, SinalToggle, Selecao.
    */
-  --control: oklch(0.62 0.03 252);
+  --control: oklch(0.45 0.03 252);
   --ring: oklch(0.5 0.08 246.9);
   --chart-1: oklch(0.338 0.08 246.9);
   --chart-2: oklch(0.6 0.1 200);
