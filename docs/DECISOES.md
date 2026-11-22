@@ -1,0 +1,447 @@
+# Decisões do projeto
+
+## 2026-11-21 — histórico de rateios dentro da Previsão Orçamentária (issue #294)
+
+A Previsão Orçamentária (modo rateio) ganhou o bloco **Histórico de rateios**: o **rateio histórico** e o **% histórico**
+do ano anterior (base da previsão) aparecem preenchidos pelo histórico, ou vazios e editáveis quando não há dado, com o
+% em uso e sua origem (Calculado/Informado), a sugestão de 6 casas e botão "Usar". Salvar grava a linha do ano anterior
+no mesmo histórico que o cadastro do condomínio mostra (regras de #292/#297: % informado vale mais; só a linha alterada
+é gravada). Sem sair da tela é possível informar e conferir.
+
+O **travar rateio** foi extraído para o domínio (`planejarTravamentoRateio`): grava a linha do ano (herda o rateio atual
+do ano anterior, calcula o %, preserva o % informado e a observação da linha existente) e propaga o aprovado como
+`rateioAtual` do exercício seguinte que ainda não tem um. A propagação para o cadastro é o próprio histórico (a seção do
+cadastro lê `historico_rateios`); a mensagem ao travar diz isso. Coberto por testes de domínio.
+
+## 2026-11-21 — carga mostra o previsto gravado, atualização de previsto, continuidade e observação (issue #299)
+
+Caso real: o Urban Classic teve o rateio atual de 2026 alterado (R$ 47.466,81), gerando 12,42% no lugar de ~8,41%;
+a regra do responsável é que o **% efetivamente aplicado às receitas (12,42%) é o que vale** para o previsto, o que o
+"% informado" já permite. O que faltava era enxergar e corrigir:
+
+1. **A simulação da carga mostra o previsto gravado** (percentual, total, versão e origem) nas linhas "Já existe" e
+   sinaliza quando ele **diverge do histórico atual** (antes só mostrava o recalculado, escondendo o gravado).
+2. **Atualizar previsto** (administrador, `api.php?a=previsoes_carga&modo=atualizar`, `previsao_atualizar`): recalcula
+   do demonstrativo da prestação-base e do % atual do histórico e grava **nova versão** (origem `atualizacao`, resumo da
+   anterior em `anterior`), sem reabrir e fechar o exercício. Sem divergência não grava; sem base, sem percentual ou sem
+   previsto gravado recusa com 409. Não altera exercícios nem o previsto congelado de exercício fechado.
+3. **Alerta de continuidade** no histórico do cadastro (`avisosContinuidadeRateio`): rateio atual de um ano diferente
+   do rateio aprovado do ano anterior, com o % que sairia usando o aprovado anterior.
+4. **Observação por linha** (até 500 caracteres, no JSON espelho `dados`, sem migration), preservada ao travar o rateio, no
+   backup e na restauração.
+
+## 2026-11-21 — histórico de rateios dentro do cadastro do condomínio (issue #297)
+
+Decisão do responsável: a tela própria "Histórico de rateios" (#292) ficou confusa; o histórico passa a ser
+editado **no cadastro do condomínio**, na seção "Histórico de rateios" logo abaixo de "Índices de correção
+aplicados". A rota `/historico-rateios` e o item de menu foram **removidos**.
+
+Mantidas as regras de #292: **% informado vale mais que o calculado**, sugestão com 6 casas e botão "Usar",
+permissão `previsao_orcamentaria` (visualizar para ver a seção, editar para alterar) e validação PHP
+(`validar_historico_rateio`). Como os índices, **alterações e exclusões são gravadas ao salvar o cadastro**
+(`planejarHistorico`, em `domain/historicoRateio.ts`): só linhas novas ou alteradas são enviadas (linhas antigas
+não são reescritas), exclusões vêm antes e mudar o ano de uma linha gravada exclui a antiga e cria outra
+(chave única condomínio + ano). Se o cadastro grava e o histórico falha, o usuário é avisado e o cadastro não
+é desfeito. Em condomínio novo a seção pede para salvar antes. Travar o rateio na Previsão orçamentária
+continua preservando o % informado.
+
+## 2026-11-21 — tela Histórico de rateios: % informado vale mais que o calculado (issue #292)
+
+Decisões do responsável: (1) o **% informado vale mais que o calculado**; a tela mostra a sugestão do sistema com
+**todas as casas decimais (6)** e um botão "Usar", para não perder as casas calculadas ao digitar um valor
+arredondado; (2) **qualquer usuário** com a permissão de previsão orçamentária pode inserir, editar e excluir
+linhas, pois é um campo operacional (sem exigir administrador e sem permissão nova).
+
+Implementação: a rota **Financeiro → Histórico de rateios** usa `previsao_orcamentaria.visualizar/editar`. A origem do
+percentual (`variacaoOrigem`: "calculado" ou "informado") fica no JSON espelho `dados` da linha, sem migration;
+o valor em uso continua na coluna `variacao` (DECIMAL 10,6), então o previsto, a carga inicial e o fechamento
+passam a usar o informado sem mudança. Travar o rateio na Previsão orçamentária **preserva** o % informado
+(`preservarPercentualInformado`). O servidor valida cada linha (`validar_historico_rateio`: condomínio, ano,
+valores não negativos, % entre −100% e 1.000% arredondado a 6 casas, origem e fonte). A linha tem chave única
+condomínio + ano: salvar com outro id atualiza a existente.
+
+Limitação: editar uma linha **não altera** previstos já gravados em `kr_previsoes_aprovadas` (a tela avisa quando
+o % difere); para atualizá-los, reabrir e fechar o exercício. Relatórios de exercício fechado que ainda derivam
+o previsto do histórico (fechados antes do congelamento) mudam com o novo %; a tela avisa.
+
+## 2026-11-21 — backup e restauração incluem previstos aprovados e histórico de rateios (issue #290)
+
+`previsoes_aprovadas` entra em `$STORES` (backup, validação e restauração). As duas tabelas com colunas
+próprias — `previsoes_aprovadas` e `historico_rateios` — **não usam** o REPLACE genérico de `id`/`dados`
+(`restaurar_store_especial`, em `lib_backup.php`). Isso também corrige um defeito antigo: restaurar um
+backup com linhas de `historico_rateios` falhava, porque o REPLACE genérico gravava numa coluna
+`atualizado_em` que essa tabela não tem.
+
+Regras: (1) a restauração preserva versão, origem, autor, data e resumo anterior do previsto, sem criar
+versão nova; (2) a validação recusa, antes de gravar, previsto sem condomínio existente, par condomínio/
+exercício duplicado, versão inválida, detalhamento ausente e totais que não fecham pela soma das contas e
+dos grupos; (3) **backup antigo, sem a chave da store, não toca na tabela, nem com "substituir tudo"**, pois
+os dados não seriam recuperáveis; (4) sem a tabela (migration pendente), exportar devolve lista vazia e
+restaurar um backup que contenha previstos é recusado com 409 e instrução, antes de alterar dados.
+
+## 2026-11-21 — fechamento gera o previsto de N+1 e período fechado só muda após reabrir (issue #286)
+
+Decisões do responsável: alterar dados de período fechado exige **reabrir a prestação de contas**; importar
+ou editar um mês fechado é **bloqueado** pela API até lá (situação rara, pois ao fechar tudo já foi conferido).
+
+`alterar_fechamento_exercicio` (`lib_exercicios.php`), em uma única transação: (1) confirmação repetida
+devolve o fechamento existente, mesmo com versão obsoleta; (2) o previsto de N+1 é gravado a partir do
+demonstrativo de N e do percentual do histórico de rateios (0% é válido); sem percentual (ou sem a tabela)
+o fechamento **não conclui** e nada fica pela metade; (3) o previsto que N usa é **congelado** em
+`fechamento.previstoAprovado`, para reproduzir o comparativo depois; (4) refechar N sem mudar nada não cria
+nova versão; se N+1 já estiver fechado e o previsto mudaria, o fechamento é bloqueado até reabrir N+1;
+reabrir N mantém o previsto de N+1 até o novo fechamento, que o substitui por nova versão.
+
+`exigir_mes_fora_de_exercicio_fechado` bloqueia salvar, mover e excluir relatório mensal (DRE mensal ou
+Comparativo Financeiro, que geram um relatório por competência) e a confirmação de importação cuja
+competência caia no período de um exercício fechado do mesmo condomínio. A competência é derivada no
+servidor com a mesma regra de `competenciaMensal`. Limitação: o fechamento continua copiando todos os
+relatórios mensais do condomínio (comportamento anterior), não só os do período.
+
+## 2026-11-21 — previsto aprovado persistido em `kr_previsoes_aprovadas` (issue #285)
+
+O previsto aprovado (simples, percentual do histórico de rateios) passa a ter tabela própria, com uma
+linha vigente por condomínio e exercício de destino (`UNIQUE (condo_id, exercicio_destino)`), o
+detalhamento por grupo e conta (nome, chave normalizada, realizado de origem e previsto), o total
+fechado pela soma das linhas, a origem (`aprovacao` ou `carga_inicial`), quem e quando aprovou e a
+versão. Substituir um previsto grava uma versão nova e deixa o resumo da anterior em `anterior`.
+
+Decidido: (1) o cliente só **lê** a store `previsoes_aprovadas`; a escrita é do servidor, no fechamento
+da prestação (#286) ou na carga inicial; (2) a leitura tolera a ausência da tabela (lista vazia), então
+o código pode ser publicado antes da migration; já a **carga só roda com a tabela criada**; (3) exercício
+aberto usa o registro gravado, exercício fechado usa o previsto congelado no fechamento, e exercício
+fechado sem congelado mantém o derivado, para não mudar números já emitidos; (4) a carga inicial começa
+sempre por **simulação sem gravar**, só grava o que tem demonstrativo e percentual identificáveis, nunca
+substitui previsto existente e nunca altera prestações de contas; (5) o cálculo PHP e o TypeScript são
+conferidos pelas mesmas fixtures (`domain/fixtures/previsto-aprovado.json`).
+
+## 2026-11-21 — previsto aprovado simples e percentual do histórico de rateios (issues #284 a #286)
+
+Decisões do responsável: (1) o previsto aprovado é o **simples**, `realizado da conta do exercício anterior
+× (1 + %)`, sem dedução, ajustes ou variação de despesas sugeridas (isso fica só na previsão do rateio);
+(2) o percentual vem do **histórico de rateios** do ano-base (exercício − 1), e `0%` é válido;
+(3) alterar período fechado exige **reabrir a prestação de contas**; importação em mês fechado é bloqueada.
+
+`domain/previstoAprovado.ts` (`previstoDoExercicio`) é a fonte única do previsto para Previsão para
+relatórios, Previsto × Realizado, Previsto × Realizado mensal e comparativo do relatório final. A base é
+sempre o exercício **anterior**; sem ele não há previsão aprovada. Sem percentual no histórico, usa-se a
+variação explícita do exercício, com aviso; sem ambos, o previsto fica pendente. Isso resolve a pendência
+da entrada anterior sobre `demonstrativoBasePrevisao` nas telas de comparação; a função continua servindo
+apenas à previsão do rateio. Próximas etapas: persistir em `kr_previsoes_aprovadas` (#285) e aprovação
+transacional com bloqueio na API (#286).
+
+## 2026-11-21 — Previsão para relatórios: realizado dos mensais, previsto do ano anterior e variação (realizado − previsto) ÷ previsto
+
+Regra confirmada pelo responsável (issue #282): o **realizado** é o que foi lançado no exercício avaliado
+e vem dos relatórios mensais (DRE mensal ou comparativo mensal) dentro do período; a prestação de contas de
+2025 só carrega os primeiros dados, sem detalhe mensal. O **previsto** é o realizado do exercício anterior
+× (1 + % considerado na prestação), proporcional aos meses com realizado. A **variação** é
+`(realizado − previsto) ÷ previsto`, o mesmo sentido de `classificar` em `domain/previstoRealizado.ts`.
+Sem exercício anterior (ex.: 2025) não existe base histórica e a tela não calcula previsto nem variação.
+
+Implementado em `domain/previsaoRelatorios.ts` (`calcularPrevisaoParaRelatorios`). Sem relatório mensal no
+período, o realizado cai no demonstrativo da prestação, com aviso da origem. Grupos e contas que só existem
+no ano anterior entram no previsto.
+
+Pendência registrada: `demonstrativoBasePrevisao` (`domain/previsao.ts`) ainda devolve o demonstrativo do
+**próprio** exercício e alimenta Previsto × Realizado, relatório final e orçado × realizado mensal; só o modo
+relatórios usa o exercício anterior. Unificar a base nessas telas muda números já publicados e fica para uma
+issue própria, com decisão do responsável.
+
+## 2026-11-11 — cartório exato volta a vir antes da cidade na escolha do modelo de ata
+
+O PR #263 (modelos de ata prontos) inverteu a regra da #256: o campo `tipo` passou a desempatar
+antes do cartório, então `escolherModeloAta` escolhia `cidade+tipo` mesmo quando havia
+`cidade+cartório` com o mesmo tipo. O cartório perdia para a cidade, contra o texto da issue.
+
+Decidido: a prioridade volta a ser `cidade+cartório > cidade > geral`, e o `tipo` desempata
+dentro de cada nível, nunca por cima do cartório exato. Dois testes cobrem o caso, que nenhum
+deles alcançava antes. Corrigido na sessão de 11/11/2026 antes de a #256 ser encerrada.
+
+## 2026-11-11 — modelos de ata por cidade copiando o layout praticado nas atas reais
+
+O acervo de atas tem práticas de redação diferentes por município: Balneário Camboriú, Camboriú e
+Itajaí escrevem em prosa corrida, enquanto Rancho Queimado usa títulos e listas. Decidido: cadastrar
+um par ordinária/extraordinária por município, com o texto tirado das atas reais daquele município,
+em vez de um modelo genérico para todos.
+
+Decidido também que a ata **não leva logotipo nem rodapé do escritório e leva borda de página**, e
+que o documento sai em Liberation Sans 12 pt — a métrica da Arial usada nas atas —, com o restante do
+sistema mantendo a tipografia da interface. Sem timbre, o rodapé do escritório deixa de aparecer; a
+numeração de páginas permanece.
+
+A cidade do endereço do condomínio passa a ser reconhecida com `/`, travessão ou hífen antes da UF,
+porque cadastros reais usam "Balneário Camboriú – SC" e sem isso o modelo por cidade não casava.
+
+## 2026-11-10 — modelo de ata escolhido pela cidade do condomínio e pelo tipo da assembleia
+
+A #256 criou a store `modelos_ata`, mas a escolha automática comparava o campo `cidade` do modelo
+com a cidade do **edital** e, quando o edital não tinha cidade, com a do **escritório** — que é
+Balneário Camboriú. Resultado: ata de um condomínio de Rancho Queimado saía assinada em Balneário
+Camboriú e nenhum modelo por cidade casava. E os dois modelos de Lago Negro (ordinária e
+extraordinária) disputavam a mesma cidade, sem nada que os separasse.
+
+Decidido: a cidade de comparação passa a sair do **endereço do condomínio**
+(`enderecoEdital`, via `extrairCidadeDoEndereco`), e o modelo ganha o campo **`tipo`**
+(ordinária, extraordinária ou vazio = as duas). A assinatura do documento (`{{cidade}}`) **não**
+muda: continua vindo do edital/escritório, porque ali a cidade é a do local da assembleia, não a
+do imóvel.
+
+Decidido também que os dois modelos do Lago Negro passam a vir **cadastrados**: `schema.sql` para
+instalação nova e migration `20261110_modelos_ata_lago_negro.sql` para as existentes, com
+`domain/modelosAtaSeed.ts` como fonte única e um teste que compara código, SQL e o documento de
+origem — para o texto não se dividir entre três cópias.
+
+`cidadeDoCondominio` devolve vazio quando o endereço não segue o padrão `... CIDADE/UF ...`; nesse
+caso só o modelo geral responde. Cadastrar o endereço no formato é o que ativa o modelo por cidade.
+
+## 2026-11-10 — plano de desenvolvimento por etapa, com modelo e esforço próprios
+
+O responsável perguntou se dava para usar um tipo diferente de modelo em cada etapa do trabalho.
+Decidido: sim, mas por risco, não por variedade. Etapa que decide o sistema (regra de negócio,
+contrato de dados, backend, publicação) roda em Opus 5.5 com esforço alto; o projeto técnico roda
+uma vez em Fable 5.1; etapa de leitura ampla (triagem, investigação) e de acabamento (documentação)
+roda em Haiku 5.5 com esforço baixo; interface e validação rodam em Sonnet 5.5.
+
+Cada etapa vira um arquivo em `.claude/agents/`, com `model`, `effort` e `tools` no frontmatter.
+Por isso `.gitignore` deixou de ignorar `.claude/` inteiro e passa a ignorar só `.claude/*`,
+liberando `.claude/agents/`: a definição só vale para os dois agentes (Claude e Codex) se estiver
+versionada. `.claude/settings.local.json` continua ignorado.
+
+A matriz completa, o contrato de passagem entre etapas e a regra de quando subir de nível ficam em
+[PLANO-ETAPAS-MODELOS.md](PLANO-ETAPAS-MODELOS.md). Nenhum agente publica: deploy é irreversível e
+fica na sessão principal, com o responsável presente e registro na issue.
+
+## 2026-11-09 — três níveis de acesso, com o SuperADM editando a matriz de perfis
+
+O pedido era separar um nível acima do administrador. Havia dois perfis (`admin` e `user`) e o
+risco de renomear o valor gravado `admin` estava em reescrever a coluna, as guardas do PHP e a
+sessão. Decidido: **o valor gravado continua `admin`** e a interface passa a chamá-lo **SuperADM**;
+o perfil novo é `adm` (**ADM**) e o existente `user` continua **Usuário**. Nenhuma linha de
+`kr_usuarios` muda e nenhum login quebra.
+
+O SuperADM tem acesso total e é o único que administra usuários, perfis e a matriz. O ADM nasce
+com **tudo menos as telas de administração** (`usuarios`, `backup`, `escritorio`); o Usuário
+nasce igual ao ADM e é restringido caso a caso. A matriz fica em `kr_perfil_permissoes`, editada
+na tela **Perfis e permissões** dentro de Usuários, chave por chave. As exceções individuais
+(`kr_usuario_permissoes`) continuam valendo por cima do perfil.
+
+`permissoes_usuario()` segue devolvendo `['*']` para `admin`, o que dispensa consultar a matriz
+no caminho mais comum e mantém o comportamento anterior ao SuperADM.
+
+## 2026-11-08 — modelo de edital por condomínio, com modelos gerais
+
+O responsável reuniu modelos reais de ata e edital de um ou dois condomínios e perguntou como
+aproveitá-los sem obrigar todos os clientes a um texto único. Entre uma biblioteca de cláusulas e
+o modelo por condomínio, escolheu o segundo. Decidido que cada modelo pertence a um condomínio e
+que `condoId` vazio significa **geral** — é o que todo modelo gravado antes desta entrega passa a
+ser, sem migração de dados, e é o que atende um condomínio que ainda não tem modelo próprio.
+
+A regra de quais modelos valem num condomínio fica em `modelosDoCondominio()`
+(`domain/modelo.ts`), fonte única usada pela lista, pelo diálogo de novo edital e pelo seletor
+dentro do edital. Sem condomínio escolhido, só os gerais aparecem: nunca oferecer o modelo de um
+condomínio para o edital de outro. Um edital que já aponta para modelo de outro condomínio
+continua exibindo essa escolha com etiqueta, em vez de descartá-la silenciosamente.
+
+Não há migração de banco: `kr_modelos` guarda o registro em `dados` (LONGTEXT), então o campo
+novo viaja no JSON. Uma cláusula compartilhada entre condomínios continua sendo cópia explícita
+de um modelo para outro, não herança — decisão revista se a manutenção de cópias se mostrar
+custosa.
+
+## 2026-11-13 — a previsão do relatório final é a folha do Systemar, sem o cálculo do Krieger
+
+O responsável reclamou do bloco "Referência histórica importada do Systemar" e mandou o print da
+folha 7 do balanço: *"deixa essa parte do relatório final igual ao print"*. Decidido, substituindo a
+decisão de 2026-11-08 (que exigia imprimir os critérios do cálculo):
+
+- A seção de previsão do relatório final é **uma só**, no layout da folha: rateio atual → histórico
+  por categoria → dedução → total ordinário → variação → rateio anual e mensal → índice, com
+  pontilhado condutor entre rótulo e valor. A pedido posterior, a folha não imprime cidade/data ao final.
+- O **cálculo do Krieger não é impresso** nessa seção. Ele continua existindo e sendo editável nos
+  menus de Previsão orçamentária e Previsto × Realizado; o que saiu foi a impressão duplicada.
+- A folha é montada por `domain/previsaoFolha.ts` (`montarFolhaPrevisao`), fonte única dos textos e
+  da ordem das linhas para o PDF/Word (`frontend/src/documentos/relatorioFinal.ts`) e para a prévia
+  na tela (`PreviaRelatorio.tsx`). Nenhum dos dois reescreve rótulo por conta própria.
+- Os dados de origem continuam salvos (`Exercicio.previsaoSugerida`) e a importação/divergências não
+  mudou.
+
+**Arredondamento.** O rateio mensal sugerido passa a respeitar `Exercicio.arredondamento` (padrão
+`truncar`), como o resto do sistema e como a folha: 590.938,48 ÷ 12 = 49.244,87, impresso 49.244,00.
+A conferência contra os totais do PDF usa tolerância de R$ 1,00 nesse campo justamente porque o
+truncamento é legítimo, não erro de leitura.
+
+**Duas variantes do rateio atual.** A folha ora traz o total mensal do condomínio (única forma que
+permite o índice), ora o valor por unidade com o número de lotes. As duas são lidas
+(`rateioMensalAtual` e `rateioUnidadeAtual`/`unidadesRateio`), sem misturar as grandezas: o índice só
+aparece quando existe o total mensal.
+
+## 2026-11-13 — consolidar pelos mensais é ação explícita, não efeito de abrir a tela
+
+A prestação de contas do Lago Negro 2025 foi gravada com o demonstrativo errado porque a tela somava
+os relatórios mensais do período no próprio render e o Salvar gravava essa soma. O exercício tinha
+11 meses e um único mensal dentro dele (o primeiro mês de um comparativo): a soma representava um mês
+e substituiu as contas do balanço, gerando 77 divergências na reimportação.
+
+Decidido: **o demonstrativo gravado é a fonte da prestação**. Uma série de mensais só substitui o
+salvo quando cobre o período inteiro (um relatório por mês); com cobertura parcial a consolidação é
+recusada e o usuário é avisado. Consolidar é a ação do botão **Atualizar dados**, com o resultado
+passando pelo Salvar como qualquer edição — nunca um efeito colateral de abrir a tela. O diagnóstico
+de cobertura vem de `consolidarPeriodo` (`frontend/src/domain/demonstrativoDinamico.ts`), que também
+é o que a tela usa para explicar por que não consolidou.
+
+## 2026-11-08 — relatório final repete os critérios da previsão, não só os números
+
+O responsável apontou que o relatório final divergia dos menus de manutenção da previsão
+orçamentária. O cálculo já era o mesmo (`calcularPrevisao` sobre `demonstrativoBasePrevisao`); o que
+faltava era o documento dizer com que parâmetros o valor foi obtido. Decidido: o relatório final
+mostra, junto dos números, modo, método da variação, índices usados na média, variação aplicada e
+arredondamento, e usa a mesma tabela da tela (realizado × média prevista mensal por grupo, com total
+dos grupos). Os rótulos ficam em `domain/previsaoCriterios.ts`, fonte única para a tela de Previsão
+orçamentária, o cadastro do condomínio e o relatório — nenhum lugar reescreve o texto por conta
+própria. A previsão sugerida importada do Systemar continua como referência histórica e nunca
+substitui o cálculo do Krieger.
+
+## 2026-10-22 — Histórico interno e menu do usuário recolhível (#81)
+
+O responsável determinou que o Registro de Alterações fique dentro do sistema,
+após login, e que o bloco inferior do usuário abra sob demanda para economizar
+espaço. O login conserva autoria Therafinancial e versão. Essa decisão substitui
+a localização pública inicialmente solicitada na #77; não altera a evidência
+da crítica já realizada sobre a tela então publicada. O menu mantém permissões,
+troca de senha e saída existentes. Autoria frontend Lovable; integração, testes,
+PR e publicação Hostinger pelo fluxo documentado. Entrega Lovable #81 integrada
+ao PR #80, com publicação condicionada ao CI do SHA final.
+
+## 2026-10-20 — conexões separadas da publicação
+
+Auditoria #24 confirmou acesso Codex/GitHub/Hostinger e Claude Code autenticado
+com MCP Hostinger conectado. A Hostinger já possui auto-deploy, mas segue a branch
+antiga; main é a integração desejada. Não renovar tokens ou reinstalar conectores
+que respondem corretamente apenas para resolver essa divergência de branch.
+Trocar a branch pelo hosting_deploy também publica e requer confirmação específica,
+backup e preservação de config.php. Estado detalhado em CONEXOES.md e #19.
+
+PRs #21/#23 trouxeram frontend/ para main; isso resolve localização dos fontes,
+mas não demonstra build reproduzível nem centralização das regras duplicadas (#16).
+
+## 2026-10-20 — main como integração
+
+Decisão: `main` é a branch padrão e origem de publicações. Foi criada no commit
+823d88d, preservando o estado da antiga `claude/youthful-pascal-lkmbs7`.
+As branches antigas foram preservadas para rastreabilidade. PR #18 foi redirecionado.
+Não foi feito deploy nessa mudança. A integração Hostinger é acompanhada na #19.
+
+## 2026-10-20 — domínio separado do frontend
+
+Mantém-se a regra da #1: TypeScript puro em `domain/`; UI consome essas funções.
+Não mover bundles para `frontend/` apenas para satisfazer um nome de pasta.
+A recuperação dos fontes e do processo de build está na #16, vinculada à #2.
+O projeto Lovable na especificação é referência histórica, não dependência do
+fluxo operacional atual de desenvolvimento Claude/Codex.
+
+## 2026-10-20 — pacote explícito e deploy desacoplado
+
+O pacote contém apenas arquivos necessários à execução, incluindo PHP e .htaccess.
+Configuração real e dados não entram no Git nem no artefato. O CI valida e gera
+artefato, sem credenciais de produção. Publicação ocorre pelo conector/API a partir
+de main, após verificar capacidades reais e preservar o ambiente (#15, #19).
+
+## 2026-10-20 — documentação como parte da entrega
+
+AGENTS.md concentra regras comuns; CLAUDE.md aponta para ele. README indexa os
+documentos, issues mantêm pendências e PRs registram mudanças/testes. Estado atual
+é um snapshot datado, não substitui consulta ao GitHub. Check automático valida
+links locais e presença dos documentos; revisão humana/agente avalia conteúdo.
+
+## 2026-10-20 — branch de deploy dedicada (deploy-hostinger) e incidente de config.php
+
+Decisão: em vez de apontar o auto-deploy do Hostinger direto para `main` (que tem
+a árvore inteira do repositório — testes, domain/, docs/, scripts/), foi criada uma
+branch órfã `deploy-hostinger`, cuja raiz é exatamente o conteúdo de
+`npm run package:hostinger` (gerado a partir de `main`). O auto-deploy do Hostinger
+foi apontado para essa branch, com a confirmação do responsável.
+
+**Incidente ocorrido na troca**: ao mudar a branch/repositório do auto-deploy, a
+ferramenta não preservou `config.php` (nunca esteve no Git) como a descrição da
+API sugeria ("reset + pull, preservando o que não é rastreado") — na prática, a
+troca de branch limpou a pasta inteira do site antes de clonar o novo conteúdo, e
+`config.php` foi apagado junto. O site ficou fora do ar (erro de conexão com banco)
+até o responsável recriar `config.php` manualmente pelo Gerenciador de Arquivos do
+hPanel. O banco de dados em si não foi afetado, só o arquivo de conexão.
+
+**Regra daqui pra frente**: qualquer troca futura de branch ou repositório no
+auto-deploy do Hostinger deve ser seguida imediatamente de reupload manual de
+`config.php` — não confiar na preservação automática de arquivos fora do Git.
+
+**Pendência conhecida**: a branch `deploy-hostinger` não é atualizada automaticamente
+quando `main` muda — é um processo manual (rodar `npm run package:hostinger` e
+sobrescrever o conteúdo da branch). Não há CI/automação disso ainda. Detalhes em #19.
+
+## 2026-10-21 — frontend React novo em produção; config.php some em qualquer push, não só na troca de branch
+
+Decisão do responsável: publicar o frontend React (build de `frontend/`) em produção,
+substituindo o sistema legado (HTML/JS estático). Commit publicado: `10a40ca` (main) →
+pacote gerado por `npm run package:hostinger` → branch `deploy-hostinger` em `b784b74`.
+Essa publicação trouxe a tela "Previsão Orçamentária" (menu próprio, lê/edita a folha
+do Systemar) e o backup com histórico no servidor (gerar/baixar/restaurar/excluir).
+
+**Correção à regra registrada em 2026-10-20**: na época, o `config.php` sumir foi
+atribuído à troca de branch/repositório do auto-deploy. Hoje, um push normal à mesma
+branch já configurada (`deploy-hostinger`, sem trocar nada na configuração) também
+apagou `config.php`. Ou seja, **qualquer deploy pelo auto-deploy do Hostinger (troca
+de configuração OU push novo na branch já configurada) limpa a pasta do site antes de
+aplicar o novo conteúdo**, não preservando arquivos fora do Git — a regra vale pra
+_todo_ deploy, não só pra trocas de configuração.
+
+**Regra atualizada**: depois de qualquer publicação via `deploy-hostinger` (push ou
+atualização das configurações de auto-deploy), checar se `config.php` ainda existe
+(`hosting_files_list-website-and-directories` na raiz do site) e, se não existir,
+pedir ao responsável para recriá-lo pelo Gerenciador de Arquivos do hPanel. O
+Claude/Codex nunca devem digitar ou repassar a senha real do banco — só o
+responsável a insere diretamente no servidor.
+
+## 2026-10-21 — frontend exclusivamente no Lovable
+
+Regra permanente determinada pelo responsável: Codex/ChatGPT nunca edita o
+frontend do Krieger. O Lovable é responsável pelas correções de componentes,
+estilos, layout, assets e comportamento da interface. Pedidos genéricos de
+correção não revogam essa regra. Codex faz auditoria, revisão, testes e
+rastreabilidade no GitHub; backend, integração e publicação continuam sujeitos
+às suas instruções específicas. Não foi feita alteração de frontend nesta etapa.
+As issues #30/#31/#32/#47/#48 devem ser implementadas no Lovable e posteriormente
+revisadas com evidências antes de encerrar os critérios de aceite.
+
+## 2026-10-21 — sincronização permitida; exclusividade se refere à autoria
+
+O responsável esclareceu que a sincronização dos arquivos de hoje entre Lovable,
+Claude e GitHub não deve ser proibida. A regra de frontend exclusivo no Lovable
+limita quem implementa a interface, não o transporte fiel dos arquivos produzidos.
+Sincronização é permitida e necessária; comparar versões e preservar avanços,
+sem inventar correções de frontend localmente no Codex.
+
+## 2026-10-24 — Lovable descontinuado: frontend e todo o código passam a ser do Claude
+
+Decisão do responsável: o Lovable deixou de fazer parte do projeto, em qualquer
+frente. **Isto revoga as duas decisões acima** ("2026-10-21 — frontend
+exclusivamente no Lovable" e "2026-10-21 — sincronização permitida; exclusividade
+se refere à autoria"): não existe mais frontend exclusivo do Lovable, nem
+sincronização de arquivos com um projeto Lovable — essas entradas ficam só como
+histórico de como o projeto funcionou até 24/10/2026, não como regra vigente.
+
+A partir desta data, Claude edita `frontend/src/**` diretamente, do mesmo jeito
+que o resto do repositório (`domain/`, `lib/`, PHP), seguindo os padrões já
+estabelecidos (lógica de negócio nos shims `@/domain`/`@/lib`, nunca duplicada
+inline). Codex mantém auditoria, revisão, CI, integração e publicação, e passa a
+poder revisar/testar o frontend também (deixou de ser território exclusivo do
+Lovable) — mas quem implementa correções de frontend é o Claude. Detalhes
+técnicos em `docs/ARQUITETURA.md` ("Frontend: Claude, não mais Lovable") e regra
+operacional em `AGENTS.md`.
+
+## 2026-10-22 — versão pública e marcos de alteração
+
+O responsável definiu1.0 como implantação do sistema. Rodapé do login identifica
+Therafinancial e versão; Registro de Alterações acessível sem sessão. Versões
+seguintes, como1.01, representam mudanças estruturais/importantes, não pequenos
+ajustes. A fonte única é frontend/src/data/versoes.json, mantida no Lovable;
+CHANGELOG.md é gerado a partir dela e verificado pelo CI. Não preencher releases
+futuros nem renumerar os commits anteriores. Procedimento em VERSIONAMENTO.md.

@@ -9,6 +9,7 @@ require __DIR__ . '/lib_backup.php';
 require __DIR__ . '/lib_anexos.php';
 require_once __DIR__ . '/lib_indices.php';
 require_once __DIR__ . '/lib_exercicios.php';
+require_once __DIR__ . '/lib_previsoes.php';
 aplicar_cabecalhos_seguranca();
 
 function erro(string $msg, int $codigo = 400): never { json_erro($msg, $codigo); }
@@ -60,7 +61,7 @@ function resolver_id_condominio(PDO $pdo, array $o, string $idProposto): string 
 
 $ALVOS_LIMPEZA = [
   'condominios' => ['kr_indices_condominio', 'kr_condominios'],
-  'exercicios' => ['kr_historico_rateios', 'kr_exercicios'],
+  'exercicios' => ['kr_previsoes_aprovadas', 'kr_historico_rateios', 'kr_exercicios'],
   'mensais' => ['kr_mensais'],
   'assembleias' => ['kr_assembleias'],
   'atas' => ['kr_atas'],
@@ -82,7 +83,7 @@ function contar_tabela_seguro(PDO $pdo, string $tb): int {
   }
 }
 
-$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'modelos_ata', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao', 'historico_rateios'];
+$STORES = ['condominios', 'exercicios', 'mensais', 'assembleias', 'modelos', 'modelos_ata', 'config', 'importacoes', 'atas', 'anexos_importacao', 'decisoes_previsao', 'decisoes_importacao', 'historico_rateios', 'previsoes_aprovadas'];
 $tabela = fn(string $s) => 'kr_' . $s;
 
 try { $pdo = conectar(); }
@@ -111,6 +112,7 @@ $permissaoStore = [
   'decisoes_previsao' => 'previsao_orcamentaria',
   'decisoes_importacao' => 'importador',
   'historico_rateios' => 'previsao_orcamentaria',
+  'previsoes_aprovadas' => 'previsao_orcamentaria',
   'config' => 'escritorio',
 ];
 if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permissaoStore[$s])) {
@@ -121,6 +123,7 @@ if (in_array($a, ['listar', 'obter', 'salvar', 'excluir'], true) && isset($permi
     'condominios' => ['painel', 'prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'relatorio_mensal', 'editais', 'atas', 'importador', 'drive_documentos', 'consulta_documentos'],
     'exercicios' => ['painel', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
     'historico_rateios' => ['previsao_orcamentaria'],
+    'previsoes_aprovadas' => ['previsao_orcamentaria', 'previsto_realizado', 'prestacao_contas', 'relatorio_mensal', 'painel'],
     'mensais' => ['prestacao_contas', 'previsao_orcamentaria', 'previsto_realizado', 'importador'],
     'assembleias' => ['painel', 'atas'],
     'modelos' => ['editais'],
@@ -188,6 +191,11 @@ function validar_backup_dados(array $dados, PDO $pdo, bool $substituir, array $s
 
   // Verifica se registros que exigem condomínio apontam para condomínio existente
   $dependentes = ['exercicios', 'assembleias'];
+  // Previstos aprovados: referência de condomínio, unicidade condomínio/exercício e totais que fecham.
+  if (in_array('previsoes_aprovadas', $stores, true) && is_array($dados['previsoes_aprovadas'] ?? null)) {
+    $problema = validar_previsoes_backup($dados['previsoes_aprovadas'], $condoIds);
+    if ($problema !== null) erro($problema);
+  }
   foreach ($dependentes as $dep) {
     $lista = $dados[$dep] ?? [];
     foreach ($lista as $item) {
@@ -225,6 +233,8 @@ function restaurar_dados(PDO $pdo, array $dados, bool $substituir, array $stores
   try {
     exigir_exercicios_abertos($pdo);
     foreach ($stores as $st) {
+      // Tabelas com colunas próprias (histórico de rateios e previstos aprovados) não usam o REPLACE genérico.
+      if (backup_store_especial($st)) { restaurar_store_especial($pdo, $st, $dados, $substituir); continue; }
       if ($substituir) {
         if ($st === 'condominios') $pdo->exec('DELETE FROM kr_indices_condominio');
         $pdo->exec('DELETE FROM ' . $tabela($st));
@@ -343,6 +353,23 @@ try {
     saida(['ok' => true]);
   }
 
+  // Carga inicial do previsto aprovado: `modo=simular` (padrão) não grava; `modo=aplicar` grava só o
+  // que estiver pronto e nunca substitui um previsto existente.
+  if ($a === 'previsoes_carga') {
+    if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem executar a carga inicial do previsto aprovado.', 403);
+    $aplicar = $param('modo') === 'aplicar';
+    try {
+      if ($param('modo') === 'atualizar') {
+        if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') erro('Use POST.', 405);
+        $anoDestino = $param('anoDestino');
+        if (!is_scalar($anoDestino) || !ctype_digit((string)$anoDestino)) erro('Informe o exercício de destino.');
+        saida(previsao_atualizar($pdo, id_valido($param('condoId')), (int)$anoDestino, (string)$usuario['id']));
+      }
+      saida(previsoes_carga_inicial($pdo, $aplicar, (string)$usuario['id']));
+    }
+    catch (RuntimeException $e) { if ($e->getCode() === 409) erro($e->getMessage(), 409); throw $e; }
+  }
+
   if ($a === 'limpar_contagens') {
     if ($usuario['perfil'] !== 'admin') erro('Apenas administradores podem consultar ou limpar cadastros em massa.', 403);
     $contagens = [];
@@ -390,6 +417,13 @@ try {
       throw $e;
     }
     saida(['ok' => true, 'apagados' => $apagados]);
+  }
+
+  // Previsto aprovado: leitura pelo cliente; a escrita é só do servidor (fechamento da prestação ou
+  // carga inicial). Sem a tabela (migration pendente) a leitura devolve lista vazia.
+  if ($s === 'previsoes_aprovadas') {
+    if ($a === 'listar') saida(listar_previsoes_aprovadas($pdo));
+    erro('O previsto aprovado só é gravado pelo fechamento da prestação de contas ou pela carga inicial.', 403);
   }
 
   if (!in_array($s, $STORES, true)) erro('Store inválida.');
@@ -448,6 +482,11 @@ try {
           $e = ler_registro_exercicio($pdo, 'exercicios', (string)($o['exercicioId'] ?? ''));
           if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de alterar anexos.', 409);
         }
+        if ($s === 'historico_rateios') validar_historico_rateio($o);
+        if ($s === 'mensais') {
+          exigir_mes_fora_de_exercicio_fechado($pdo, ler_registro_exercicio($pdo, 'mensais', $id));
+          exigir_mes_fora_de_exercicio_fechado($pdo, $o);
+        }
         if ($s === 'exercicios') {
           $anterior = ler_registro_exercicio($pdo, 'exercicios', $id);
           validar_edicao_exercicio($anterior, $o);
@@ -464,6 +503,7 @@ try {
       $id = id_valido($param('id'));
       $pdo->beginTransaction();
       try {
+        if ($s === 'mensais') exigir_mes_fora_de_exercicio_fechado($pdo, ler_registro_exercicio($pdo, 'mensais', $id));
         if ($s === 'exercicios') { $e = ler_registro_exercicio($pdo, $s, $id); if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de excluir.', 409); }
         if ($s === 'anexos_importacao') { $anexo = ler_registro_exercicio($pdo, $s, $id); $e = ler_registro_exercicio($pdo, 'exercicios', (string)($anexo['exercicioId'] ?? '')); if (!empty($e['fechado'])) throw new RuntimeException('Reabra o exercício antes de excluir anexos.', 409); }
         if ($s === 'condominios') { exigir_exercicios_abertos($pdo, $id); $pdo->prepare('DELETE FROM kr_indices_condominio WHERE condo_id = ?')->execute([$id]); }

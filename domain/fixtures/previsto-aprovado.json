@@ -1,0 +1,280 @@
+[
+  {
+    "nome": "exemplo da especificação: 120.000 com 10% gera 132.000",
+    "percentual": 10,
+    "mapeamento": [],
+    "grupos": [
+      {
+        "nome": "Pessoal",
+        "itens": [
+          {
+            "nome": "Salários",
+            "valor": 120000
+          }
+        ]
+      }
+    ],
+    "esperado": {
+      "totalPrevisto": 132000,
+      "grupos": [
+        {
+          "nome": "Pessoal",
+          "chave": "pessoal",
+          "contas": [
+            {
+              "grupo": "Pessoal",
+              "nome": "Salários",
+              "chave": "salarios",
+              "realizadoOrigem": 120000,
+              "previsto": 132000
+            }
+          ],
+          "totalPrevisto": 132000
+        }
+      ]
+    }
+  },
+  {
+    "nome": "arredondamento por linha e total pela soma das linhas",
+    "percentual": 10,
+    "mapeamento": [],
+    "grupos": [
+      {
+        "nome": "G",
+        "itens": [
+          {
+            "nome": "A",
+            "valor": 0.05
+          },
+          {
+            "nome": "B",
+            "valor": 0.05
+          },
+          {
+            "nome": "C",
+            "valor": 0.05
+          },
+          {
+            "nome": "D",
+            "valor": 1234.567
+          }
+        ]
+      }
+    ],
+    "esperado": {
+      "totalPrevisto": 1358.2,
+      "grupos": [
+        {
+          "nome": "G",
+          "chave": "g",
+          "contas": [
+            {
+              "grupo": "G",
+              "nome": "A",
+              "chave": "a",
+              "realizadoOrigem": 0.05,
+              "previsto": 0.06
+            },
+            {
+              "grupo": "G",
+              "nome": "B",
+              "chave": "b",
+              "realizadoOrigem": 0.05,
+              "previsto": 0.06
+            },
+            {
+              "grupo": "G",
+              "nome": "C",
+              "chave": "c",
+              "realizadoOrigem": 0.05,
+              "previsto": 0.06
+            },
+            {
+              "grupo": "G",
+              "nome": "D",
+              "chave": "d",
+              "realizadoOrigem": 1234.57,
+              "previsto": 1358.02
+            }
+          ],
+          "totalPrevisto": 1358.2
+        }
+      ]
+    }
+  },
+  {
+    "nome": "acentos, caixa, de-para e contas repetidas",
+    "percentual": 15.26,
+    "mapeamento": [
+      {
+        "de": "Folha",
+        "para": "Salários"
+      }
+    ],
+    "grupos": [
+      {
+        "nome": "Pessoal",
+        "itens": [
+          {
+            "nome": "Salários",
+            "valor": 851955.11
+          },
+          {
+            "nome": "FOLHA",
+            "valor": 100
+          }
+        ]
+      },
+      {
+        "nome": "ÁGUA e Gás",
+        "itens": [
+          {
+            "nome": "Água  ",
+            "valor": 1500.55
+          }
+        ]
+      },
+      {
+        "nome": "agua e gas",
+        "itens": [
+          {
+            "nome": "Gás",
+            "valor": 300.45
+          }
+        ]
+      }
+    ],
+    "esperado": {
+      "totalPrevisto": 984154.55,
+      "grupos": [
+        {
+          "nome": "Pessoal",
+          "chave": "pessoal",
+          "contas": [
+            {
+              "grupo": "Pessoal",
+              "nome": "Salários",
+              "chave": "salarios",
+              "realizadoOrigem": 852055.11,
+              "previsto": 982078.72
+            }
+          ],
+          "totalPrevisto": 982078.72
+        },
+        {
+          "nome": "ÁGUA e Gás",
+          "chave": "agua e gas",
+          "contas": [
+            {
+              "grupo": "ÁGUA e Gás",
+              "nome": "Água  ",
+              "chave": "agua",
+              "realizadoOrigem": 1500.55,
+              "previsto": 1729.53
+            },
+            {
+              "grupo": "ÁGUA e Gás",
+              "nome": "Gás",
+              "chave": "gas",
+              "realizadoOrigem": 300.45,
+              "previsto": 346.3
+            }
+          ],
+          "totalPrevisto": 2075.83
+        }
+      ]
+    }
+  },
+  {
+    "nome": "percentual zero e valor negativo (estorno)",
+    "percentual": 0,
+    "mapeamento": [],
+    "grupos": [
+      {
+        "nome": "Diversas",
+        "itens": [
+          {
+            "nome": "Estorno",
+            "valor": -250.5
+          },
+          {
+            "nome": "Outras",
+            "valor": 99.99
+          }
+        ]
+      }
+    ],
+    "esperado": {
+      "totalPrevisto": -150.51,
+      "grupos": [
+        {
+          "nome": "Diversas",
+          "chave": "diversas",
+          "contas": [
+            {
+              "grupo": "Diversas",
+              "nome": "Estorno",
+              "chave": "estorno",
+              "realizadoOrigem": -250.5,
+              "previsto": -250.5
+            },
+            {
+              "grupo": "Diversas",
+              "nome": "Outras",
+              "chave": "outras",
+              "realizadoOrigem": 99.99,
+              "previsto": 99.99
+            }
+          ],
+          "totalPrevisto": -150.51
+        }
+      ]
+    }
+  },
+  {
+    "nome": "percentual negativo",
+    "percentual": -2.5,
+    "mapeamento": [],
+    "grupos": [
+      {
+        "nome": "Manutenção",
+        "itens": [
+          {
+            "nome": "Elevadores",
+            "valor": 24000
+          },
+          {
+            "nome": "Jardim",
+            "valor": 3333.33
+          }
+        ]
+      }
+    ],
+    "esperado": {
+      "totalPrevisto": 26650,
+      "grupos": [
+        {
+          "nome": "Manutenção",
+          "chave": "manutencao",
+          "contas": [
+            {
+              "grupo": "Manutenção",
+              "nome": "Elevadores",
+              "chave": "elevadores",
+              "realizadoOrigem": 24000,
+              "previsto": 23400
+            },
+            {
+              "grupo": "Manutenção",
+              "nome": "Jardim",
+              "chave": "jardim",
+              "realizadoOrigem": 3333.33,
+              "previsto": 3250
+            }
+          ],
+          "totalPrevisto": 26650
+        }
+      ]
+    }
+  }
+]

@@ -101,6 +101,7 @@ function confirmar_importacao(PDO $pdo, array $pedido): array {
         }
       }
     }
+    if ($destino === 'mensais') exigir_mes_fora_de_exercicio_fechado($pdo, $registro);
     if ($destino === 'exercicios') { validar_edicao_exercicio(null, $registro); inicializar_indices_importados($pdo, $registro); }
     $salvo = $gravar($destino, $registro, true);
     $imp['status'] = 'confirmado';
