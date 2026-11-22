@@ -283,13 +283,13 @@ function Ajuda() {
               </p>
               <p>
                 Esta lista, o <strong>Previsto × Realizado</strong> (anual e mensal) e as{" "}
-                <strong>prestações de contas</strong> exportam em <strong>XLSX</strong> e imprimem em{" "}
-                <strong>A4 paisagem</strong>. Todas as telas com exportação usam o mesmo botão
+                <strong>prestações de contas</strong> exportam em <strong>XLSX</strong> e imprimem
+                em <strong>A4 paisagem</strong>. Todas as telas com exportação usam o mesmo botão
                 <em> Exportar</em>, com PDF, Word (quando a tela tem documento próprio), XLSX e
-                Imprimir. A tela, a planilha e o papel saem das mesmas colunas,
-                inclusive as colunas opcionais marcadas na tela do mensal. O Previsto × Realizado
-                mensal também gera <strong>PDF</strong> em paisagem, com o timbre do escritório e os
-                totais por linha e por coluna.
+                Imprimir. A tela, a planilha e o papel saem das mesmas colunas, inclusive as colunas
+                opcionais marcadas na tela do mensal. O Previsto × Realizado mensal também gera{" "}
+                <strong>PDF</strong> em paisagem, com o timbre do escritório e os totais por linha e
+                por coluna.
               </p>
             </Texto>
           </SectionCard>
@@ -310,8 +310,8 @@ function Ajuda() {
                 Escolha o condomínio e o período (mm/aaaa) ou use o atalho de um exercício. Meses
                 sem relatório mensal aparecem como <strong>Sem dados</strong>, nunca como zero. Como
                 o valor a receber é um saldo, o rodapé mostra a <strong>média</strong> dos meses com
-                dados, e não a soma. Exporta em PDF e Word (com timbre), XLSX e
-                impressão A4 paisagem, todos com as mesmas colunas.
+                dados, e não a soma. Exporta em PDF e Word (com timbre), XLSX e impressão A4
+                paisagem, todos com as mesmas colunas.
               </p>
             </Texto>
           </SectionCard>
@@ -331,8 +331,7 @@ function Ajuda() {
                 Grupos com o mesmo nome escrito de forma diferente (maiúsculas, acentos, espaços)
                 são somados juntos. Um grupo que não existe num exercício fica com a célula vazia,
                 nunca com zero. O total de cada exercício é a soma das linhas e fecha com a
-                prestação de contas. Exporta em PDF e Word (com timbre), XLSX e
-                impressão.
+                prestação de contas. Exporta em PDF e Word (com timbre), XLSX e impressão.
               </p>
             </Texto>
           </SectionCard>
