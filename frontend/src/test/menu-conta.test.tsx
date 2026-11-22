@@ -132,6 +132,24 @@ describe("expansão dos grupos do menu", () => {
   });
 });
 
+describe("favoritos recolhíveis", () => {
+  it("recolhe e reabre o bloco Favoritos, com o estado salvo por usuário", async () => {
+    localStorage.setItem("krieger.favoritos.u-teste", JSON.stringify(["/painel"]));
+    const { user, pronto } = montar();
+    await pronto();
+    const menu = screen.getByRole("navigation", { name: "Menu principal" });
+    const cabecalho = within(menu).getByRole("button", { name: "Favoritos" });
+    expect(cabecalho).toHaveAttribute("aria-expanded", "true");
+    await user.click(cabecalho);
+    expect(cabecalho).toHaveAttribute("aria-expanded", "false");
+    expect(
+      JSON.parse(localStorage.getItem("krieger.menu.grupos-fechados.u-teste") ?? "[]"),
+    ).toContain("Favoritos");
+    await user.click(cabecalho);
+    expect(cabecalho).toHaveAttribute("aria-expanded", "true");
+  });
+});
+
 describe("atalhos favoritos", () => {
   it("limita a cinco atalhos, mantém a ordem salva e sinaliza o limite", async () => {
     const salvos = [

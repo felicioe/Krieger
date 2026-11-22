@@ -258,6 +258,8 @@ function gravarFavoritos(userId: string | undefined, favoritos: string[]) {
 }
 
 const TITULOS_GRUPOS = GRUPOS_MENU.flatMap((grupo) => (grupo.titulo ? [grupo.titulo] : []));
+/** Título do bloco de favoritos; recolhível como os grupos, com o mesmo estado salvo por usuário. */
+const TITULO_FAVORITOS = "Favoritos";
 
 /** Preferência por usuário (#257); sem a do usuário, aproveita a chave antiga, que era única. */
 function lerGruposFechados(userId: string | undefined): string[] {
@@ -476,20 +478,22 @@ export function ConteudoMenu({
   }
 
   function alternarTodos(abrir: boolean) {
-    const proximo = abrir ? [] : TITULOS_GRUPOS;
+    const proximo = abrir ? [] : [...TITULOS_GRUPOS, TITULO_FAVORITOS];
     gravarGruposFechados(usuario?.id, proximo);
     setFechados(proximo);
     setAbertoDaRota(null);
   }
 
   const visiveis = (g: Grupo) => g.itens.filter(itemVisivel);
-  const todosAbertos = GRUPOS_MENU.every(
-    (g) =>
-      !g.titulo ||
-      visiveis(g).length === 0 ||
-      !fechados.includes(g.titulo) ||
-      g.titulo === abertoDaRota,
-  );
+  const todosAbertos =
+    GRUPOS_MENU.every(
+      (g) =>
+        !g.titulo ||
+        visiveis(g).length === 0 ||
+        !fechados.includes(g.titulo) ||
+        g.titulo === abertoDaRota,
+    ) &&
+    (itensFavoritos.length === 0 || !fechados.includes(TITULO_FAVORITOS));
 
   async function encerrar() {
     aoNavegar?.();
@@ -523,18 +527,37 @@ export function ConteudoMenu({
         </div>
         {/* Seção Favoritos (#296): aparece apenas quando há itens favoritados. */}
         {itensFavoritos.length > 0 && (
-          <div className="mb-2 border-b border-sidebar-border/60 pb-2">
-            <p className="px-4 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-sidebar-muted">
-              Favoritos
-            </p>
-            <ul>
-              {itensFavoritos.map((item) => (
-                <li key={item.to}>
-                  <ItemMenu item={item} aoNavegar={aoNavegar} />
-                </li>
-              ))}
-            </ul>
-          </div>
+          <Collapsible
+            open={!fechados.includes(TITULO_FAVORITOS)}
+            onOpenChange={(v) => alternarGrupo(TITULO_FAVORITOS, v)}
+            className="mb-2 border-b border-sidebar-border/60 pb-2"
+          >
+            <CollapsibleTrigger
+              className={cn(
+                classeItem,
+                "group gap-2 py-2.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-sidebar-muted hover:text-sidebar-accent-foreground",
+              )}
+            >
+              <Star className="size-4 shrink-0 opacity-80" aria-hidden="true" />
+              <span className="min-w-0 flex-1 text-left break-words">{TITULO_FAVORITOS}</span>
+              <ChevronRight
+                aria-hidden="true"
+                className={cn(
+                  "size-4 shrink-0 transition-transform duration-200",
+                  !fechados.includes(TITULO_FAVORITOS) && "rotate-90",
+                )}
+              />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <ul aria-label="Itens favoritos">
+                {itensFavoritos.map((item) => (
+                  <li key={item.to}>
+                    <ItemMenu item={item} aoNavegar={aoNavegar} />
+                  </li>
+                ))}
+              </ul>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
         {GRUPOS_MENU.map((g, i) => {
