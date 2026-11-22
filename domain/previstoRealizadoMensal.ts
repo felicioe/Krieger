@@ -1,11 +1,24 @@
-import { previstoDoExercicio } from "./previstoAprovado";
-import { competenciaMensal, mesesDoExercicioSeguinte, chaveRotulo } from "./previstoRealizado";
 import { centavos } from "./demonstrativo";
-import type { Condominio, Demonstrativo, Exercicio, HistoricoRateio, Mensal, PrevisaoAprovada } from "./types";
+import {
+  compararPrevistoRealizado,
+  competenciaMensal,
+  mesesDoExercicioSeguinte,
+  chaveRotulo,
+  type OpcoesComparativo,
+} from "./previstoRealizado";
+import type { Demonstrativo, Mensal } from "./types";
 
 export type CelulaMensal = { previsto: number; realizado: number; diferenca: number; horizontal: number | null; verticalPrevisto: number | null; verticalRealizado: number | null };
 export type LinhaMensal = { grupo: string; mensal: CelulaMensal[]; total: CelulaMensal };
-export type ResultadoMensalDetalhado = { meses: { posicao: number; rotulo: string; relatorios: number }[]; linhas: LinhaMensal[]; total: CelulaMensal; avisos: string[]; relatoriosUsados: number; situacaoPrevisto: "ok" | "sem_base" | "sem_percentual" };
+export type ResultadoMensalDetalhado = {
+  meses: { posicao: number; rotulo: string; relatorios: number }[];
+  linhas: LinhaMensal[];
+  total: CelulaMensal;
+  avisos: string[];
+  relatoriosUsados: number;
+  /** Situação do previsto aprovado usado (ok, sem_base ou sem_percentual). */
+  situacaoPrevisto: "ok" | "sem_base" | "sem_percentual";
+};
 
 const pct = (n: number, base: number) => base === 0 ? null : Math.round((n / Math.abs(base)) * 10000) / 100;
 const fechar = (previsto: number, realizado: number, totalPrevisto: number, totalRealizado: number): CelulaMensal => {
@@ -13,43 +26,100 @@ const fechar = (previsto: number, realizado: number, totalPrevisto: number, tota
   return { previsto: p, realizado: r, diferenca: centavos(r - p), horizontal: pct(r - p, p), verticalPrevisto: pct(p, totalPrevisto), verticalRealizado: pct(r, totalRealizado) };
 };
 
+/**
+ * Previsto × Realizado mês a mês. Usa a MESMA premissa do comparativo anual (base = ano anterior,
+ * previsto = base × (1 + variação% da prestação), realizado = relatórios mensais do período): o
+ * previsto anual de cada grupo vem de `compararPrevistoRealizado` e é dividido em 12; o realizado
+ * de cada mês é o do relatório daquele mês. Assim o total do período fecha com o relatório anual.
+ */
 export function compararPrevistoRealizadoMensal(
-  exercicio: Exercicio,
+  exercicio: Parameters<typeof compararPrevistoRealizado>[0],
   mensais: Mensal[],
-  opcoes: {
-    condominio?: Pick<Condominio, "unidades" | "mapeamento"> | null;
-    inicio?: number;
-    fim?: number;
-    /** Demonstrativo do exercício ANTERIOR (base do previsto aprovado). Sem ele não há previsão. */
-    demonstrativoBase?: Demonstrativo | null | undefined;
-    /** Histórico de rateios — fonte do percentual aprovado. */
-    historicoRateios?: HistoricoRateio[];
-    previsoesAprovadas?: PrevisaoAprovada[];
-  } = {},
+  opcoes: OpcoesComparativo & { inicio?: number; fim?: number } = {},
 ): ResultadoMensalDetalhado {
-  if (exercicio.fechado && exercicio.fechamento) {
-    mensais = exercicio.fechamento.mensais;
-    opcoes = { ...opcoes, condominio: exercicio.fechamento.condominio, demonstrativoBase: exercicio.fechamento.exercicioAnterior?.demonstrativo ?? opcoes.demonstrativoBase };
-  }
+  const anual = compararPrevistoRealizado(exercicio, mensais, opcoes);
   const janela = mesesDoExercicioSeguinte(exercicio);
   const inicio = Math.max(1, Math.min(12, opcoes.inicio ?? 1));
   const fim = Math.max(inicio, Math.min(12, opcoes.fim ?? 12));
   const selecionados = janela.slice(inicio - 1, fim);
   const ch = (m: { mes: number; ano: number }) => m.ano * 100 + m.mes;
-  const porPos = new Map<number, Mensal[]>();
   const pos = new Map(janela.map((m, i) => [ch(m), i + 1]));
-  for (const m of mensais) { if (m.condoId !== exercicio.condoId) continue; const c = competenciaMensal(m); const p = c ? pos.get(ch(c)) : undefined; if (p && p >= inicio && p <= fim) porPos.set(p, [...(porPos.get(p) ?? []), m]); }
-  const aprovado = previstoDoExercicio(exercicio, { demonstrativoBase: opcoes.demonstrativoBase, historicoRateios: opcoes.historicoRateios, condominio: opcoes.condominio, previsoesAprovadas: opcoes.previsoesAprovadas });
-  const mapa = new Map((opcoes.condominio?.mapeamento ?? []).filter((x) => x.de?.trim()).map((x) => [chaveRotulo(x.de), x.para]));
-  const nome = (s: string) => mapa.get(chaveRotulo(s)) ?? s;
-  const grupos = new Map<string, { nome: string; previsto: number; realizado: number[] }>();
-  for (const ag of aprovado.grupos) { const g = nome(ag.nome); const x = grupos.get(chaveRotulo(g)) ?? { nome: g, previsto: 0, realizado: Array(selecionados.length).fill(0) }; x.previsto += ag.totalPrevisto; grupos.set(chaveRotulo(g), x); }
+  const fonte = exercicio.fechado && exercicio.fechamento ? exercicio.fechamento.mensais : mensais;
+  const porPos = new Map<number, Mensal[]>();
+  for (const m of fonte) {
+    if (m.condoId !== exercicio.condoId) continue;
+    const c = competenciaMensal(m);
+    const p = c ? pos.get(ch(c)) : undefined;
+    if (p && p >= inicio && p <= fim) porPos.set(p, [...(porPos.get(p) ?? []), m]);
+  }
+
   let relatoriosUsados = 0;
-  for (let i = 0; i < selecionados.length; i++) for (const m of porPos.get(inicio + i) ?? []) { relatoriosUsados++; for (const g of m.demonstrativo?.despesas?.grupos ?? []) { const key = chaveRotulo(nome(g.nome)); const x = grupos.get(key) ?? { nome: nome(g.nome), previsto: 0, realizado: Array(selecionados.length).fill(0) }; for (const it of g.itens ?? []) x.realizado[i] += Number(it.valor) || 0; grupos.set(key, x); } }
-  const totalPrevisto = [...grupos.values()].reduce((s, g) => s + g.previsto, 0) / 12 * selecionados.length;
-  const totalRealizado = [...grupos.values()].reduce((s, g) => s + g.realizado.reduce((a, b) => a + b, 0), 0);
-  const linhas = [...grupos.values()].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((g) => { const p = g.previsto / 12; const r = g.realizado.reduce((a, b) => a + b, 0); return { grupo: g.nome, mensal: g.realizado.map((v) => fechar(p, v, totalPrevisto / selecionados.length, totalRealizado / selecionados.length)), total: fechar(p * selecionados.length, r, totalPrevisto, totalRealizado) }; });
-  const meses = selecionados.map((m, i) => ({ posicao: inicio + i, rotulo: `${String(m.mes).padStart(2, "0")}/${m.ano}`, relatorios: porPos.get(inicio + i)?.length ?? 0 }));
+  const realizadoPorGrupo = new Map<string, number[]>();
+  for (let i = 0; i < selecionados.length; i++) {
+    for (const m of porPos.get(inicio + i) ?? []) {
+      relatoriosUsados++;
+      for (const g of m.demonstrativo?.despesas?.grupos ?? []) {
+        const k = chaveRotulo(g.nome);
+        const serie = realizadoPorGrupo.get(k) ?? Array(selecionados.length).fill(0);
+        for (const it of g.itens ?? []) serie[i] += Number(it.valor) || 0;
+        realizadoPorGrupo.set(k, serie);
+      }
+    }
+  }
+
+  // Grupos do comparativo anual (já sem as deduções e com o previsto pulverizado). Grupos que só
+  // aparecem no realizado de um mês sem previsto entram com previsto zero, como no anual.
+  const grupos = anual.grupos.map((g) => ({
+    nome: g.nome,
+    previstoAnual: g.totais.previstoAnual,
+    serie: realizadoPorGrupo.get(chaveRotulo(g.nome)) ?? Array<number>(selecionados.length).fill(0),
+  }));
+  const conhecidos = new Set(grupos.map((g) => chaveRotulo(g.nome)));
+  for (const [k, serie] of realizadoPorGrupo) {
+    if (conhecidos.has(k) || serie.every((v) => v === 0)) continue;
+    grupos.push({ nome: k, previstoAnual: 0, serie });
+  }
+
+  const situacaoPrevisto: "ok" | "sem_base" | "sem_percentual" =
+    !opcoes.demonstrativoBase || !temGruposComDespesas(opcoes.demonstrativoBase) ? "sem_base" : "ok";
+  // Sem demonstrativo base o previsto não se aplica: linhas e total ficam zerados, para fecharem entre si.
+  const fatorPrevisto = situacaoPrevisto === "ok" ? 1 : 0;
+  const totalPrevisto = (grupos.reduce((s, g) => s + g.previstoAnual, 0) / 12) * selecionados.length * fatorPrevisto;
+  const totalRealizado = grupos.reduce((s, g) => s + g.serie.reduce((a, b) => a + b, 0), 0);
+  const mediaPrev = totalPrevisto / Math.max(1, selecionados.length);
+  const mediaReal = totalRealizado / Math.max(1, selecionados.length);
+  const linhas: LinhaMensal[] = grupos
+    .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
+    .map((g) => {
+      const p = (g.previstoAnual / 12) * fatorPrevisto;
+      const r = g.serie.reduce((a, b) => a + b, 0);
+      return {
+        grupo: g.nome,
+        mensal: g.serie.map((v) => fechar(p, v, mediaPrev, mediaReal)),
+        total: fechar(p * selecionados.length, r, totalPrevisto, totalRealizado),
+      };
+    });
+  const meses = selecionados.map((m, i) => ({
+    posicao: inicio + i,
+    rotulo: `${String(m.mes).padStart(2, "0")}/${m.ano}`,
+    relatorios: porPos.get(inicio + i)?.length ?? 0,
+  }));
   const avisos = meses.filter((m) => m.relatorios === 0).map((m) => m.rotulo);
-  return { meses, linhas, total: fechar(totalPrevisto, totalRealizado, totalPrevisto, totalRealizado), avisos: [...aprovado.avisos, ...(avisos.length ? [`Sem relatório mensal em: ${avisos.join(", ")}. O realizado desses meses conta como zero.`] : [])], relatoriosUsados, situacaoPrevisto: aprovado.situacao };
+  return {
+    meses,
+    linhas,
+    total: fechar(totalPrevisto, totalRealizado, totalPrevisto, totalRealizado),
+    avisos: [
+      ...(situacaoPrevisto === "sem_base"
+        ? ["Sem demonstrativo base para o previsto: o previsto não se aplica e aparece zerado. O realizado segue o relatório mensal."]
+        : []),
+      ...(avisos.length ? [`Sem relatório mensal em: ${avisos.join(", ")}. O realizado desses meses conta como zero.`] : []),
+    ],
+    relatoriosUsados,
+    situacaoPrevisto,
+  };
+}
+
+function temGruposComDespesas(demo: Demonstrativo | undefined): boolean {
+  return !!demo?.despesas?.grupos?.some((g) => g.itens?.some((i) => !!i.nome || (Number(i.valor) || 0) !== 0));
 }

@@ -31,13 +31,14 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAbrirRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
 import { Marca } from "./Marca";
 import { sair, temPermissao, useUsuario } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { Star } from "lucide-react";
 
 type Item = {
   titulo: string;
@@ -71,6 +72,7 @@ export const GRUPOS_MENU: Grupo[] = [
         icone: Building2,
         permissao: "condominios.visualizar",
       },
+      { titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp },
     ],
   },
   {
@@ -128,18 +130,6 @@ export const GRUPOS_MENU: Grupo[] = [
       { titulo: "Editais", to: "/editais", icone: Megaphone, permissao: "editais.visualizar" },
       { titulo: "Atas", to: "/atas", icone: ScrollText, permissao: "atas.visualizar" },
       {
-        titulo: "Modelos de edital",
-        to: "/modelos",
-        icone: FileText,
-        permissao: "modelos.visualizar",
-      },
-      {
-        titulo: "Modelos de ata",
-        to: "/modelos-ata",
-        icone: ScrollText,
-        permissao: "modelos_ata.visualizar",
-      },
-      {
         titulo: "Drive de Documentos",
         to: "/drive-documentos",
         icone: FolderOpen,
@@ -154,8 +144,10 @@ export const GRUPOS_MENU: Grupo[] = [
     ],
   },
   {
-    titulo: "Administração",
-    icone: Settings2,
+    // Cadastros e modelos que só o ADM configura. O Usuário vê o item apenas se a matriz de
+    // permissões liberar (kr_perfil_permissoes); nenhuma permissão nova é criada aqui.
+    titulo: "Cadastro e configuração",
+    icone: FileUp,
     itens: [
       {
         titulo: "Importador",
@@ -163,7 +155,24 @@ export const GRUPOS_MENU: Grupo[] = [
         icone: FileUp,
         permissao: "importador.visualizar",
       },
-      { titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp },
+      {
+        titulo: "Modelos de edital",
+        to: "/modelos",
+        icone: FileText,
+        permissao: "modelos.visualizar",
+      },
+      {
+        titulo: "Modelos de ata",
+        to: "/modelos-ata",
+        icone: ScrollText,
+        permissao: "modelos_ata.visualizar",
+      },
+    ],
+  },
+  {
+    titulo: "Administração",
+    icone: Settings2,
+    itens: [
       {
         titulo: "Escritório",
         to: "/escritorio",
@@ -192,6 +201,30 @@ const classeAtivo =
 
 /** Chave do navegador com os grupos fechados pela pessoa (só os fechados, para o padrão ser aberto). */
 const CHAVE_GRUPOS_FECHADOS = "krieger.menu.grupos-fechados";
+
+/** Chave base para favoritos por usuário. */
+const CHAVE_FAVORITOS_BASE = "krieger.favoritos";
+
+function lerFavoritos(userId: string | undefined): string[] {
+  if (!userId) return [];
+  try {
+    const bruto = localStorage.getItem(`${CHAVE_FAVORITOS_BASE}.${userId}`);
+    if (!bruto) return [];
+    const valor: unknown = JSON.parse(bruto);
+    return Array.isArray(valor) ? valor.filter((v): v is string => typeof v === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function gravarFavoritos(userId: string | undefined, favoritos: string[]) {
+  if (!userId) return;
+  try {
+    localStorage.setItem(`${CHAVE_FAVORITOS_BASE}.${userId}`, JSON.stringify(favoritos));
+  } catch {
+    // Navegador sem armazenamento: favoritos só não lembram entre visitas.
+  }
+}
 
 function lerGruposFechados(): string[] {
   try {
@@ -233,7 +266,17 @@ function itemMenuAtivo(to: string, pathname: string, searchStr: string) {
   return Array.from(itemParams.entries()).every(([key, value]) => currentParams.get(key) === value);
 }
 
-function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | undefined }) {
+function ItemMenu({
+  item,
+  aoNavegar,
+  favorito,
+  onToggleFavorito,
+}: {
+  item: Item;
+  aoNavegar?: (() => void) | undefined;
+  favorito?: boolean;
+  onToggleFavorito?: (to: string) => void;
+}) {
   const Icone = item.icone;
   const location = useRouterState({ select: (state) => state.location });
   const ativo = itemMenuAtivo(item.to, location.pathname, location.searchStr);
@@ -246,23 +289,52 @@ function ItemMenu({ item, aoNavegar }: { item: Item; aoNavegar?: (() => void) | 
       : undefined;
   // A seleção de exercício pode acrescentar parâmetros sem trocar o modo da previsão.
   return (
-    <Link
-      to={caminho!}
-      {...(modo ? { search: { modo } } : {})}
-      activeOptions={{ exact: !modo, includeSearch: true }}
-      onClick={aoNavegar}
-      className={cn(
-        classeItem,
-        item.perigoso && "text-red-400 hover:bg-red-950/60 hover:text-red-300 font-medium",
-        ativo &&
-          (item.perigoso ? "bg-red-950/80 border-red-500 text-red-200 font-semibold" : classeAtivo),
+    <div className="group relative flex items-center">
+      <Link
+        to={caminho!}
+        {...(modo ? { search: { modo } } : {})}
+        activeOptions={{ exact: !modo, includeSearch: true }}
+        onClick={aoNavegar}
+        className={cn(
+          classeItem,
+          "flex-1",
+          item.perigoso && "text-red-400 hover:bg-red-950/60 hover:text-red-300 font-medium",
+          ativo &&
+            (item.perigoso
+              ? "bg-red-950/80 border-red-500 text-red-200 font-semibold"
+              : classeAtivo),
+        )}
+      >
+        <Icone
+          className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-400 opacity-100")}
+        />
+        <span className="min-w-0 break-words">{item.titulo}</span>
+      </Link>
+      {onToggleFavorito && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleFavorito(item.to);
+          }}
+          aria-label={
+            favorito
+              ? `Remover ${item.titulo} dos favoritos`
+              : `Adicionar ${item.titulo} aos favoritos`
+          }
+          title={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          className={cn(
+            "mr-2 shrink-0 rounded p-1 transition-colors",
+            favorito
+              ? "text-yellow-400 hover:text-yellow-300"
+              : "text-sidebar-muted opacity-0 group-hover:opacity-100 hover:text-yellow-400 focus:opacity-100",
+          )}
+        >
+          <Star className="size-3.5" fill={favorito ? "currentColor" : "none"} />
+        </button>
       )}
-    >
-      <Icone
-        className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-400 opacity-100")}
-      />
-      <span className="min-w-0 break-words">{item.titulo}</span>
-    </Link>
+    </div>
   );
 }
 
@@ -304,7 +376,29 @@ export function ConteudoMenu({
   const abrirRegistro = useAbrirRegistroAlteracoes();
   const [contaAberta, setContaAberta] = useState(false);
   const [fechados, setFechados] = useState<string[]>(() => lerGruposFechados());
+  const [favoritos, setFavoritos] = useState<string[]>(() => lerFavoritos(usuario?.id));
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  // Recarrega favoritos quando o usuário muda.
+  useEffect(() => {
+    setFavoritos(lerFavoritos(usuario?.id));
+  }, [usuario?.id]);
+
+  const toggleFavorito = useCallback(
+    (to: string) => {
+      setFavoritos((prev) => {
+        const proximo = prev.includes(to) ? prev.filter((t) => t !== to) : [...prev, to];
+        gravarFavoritos(usuario?.id, proximo);
+        return proximo;
+      });
+    },
+    [usuario?.id],
+  );
+
+  const itensFavoritos = useMemo(
+    () => ITENS_MENU.filter((item) => favoritos.includes(item.to)),
+    [favoritos],
+  );
 
   // Grupo aberto por causa da página atual. Some quando a pessoa recolhe esse grupo na mão, para ela
   // poder ver o menu recolhido mesmo estando dentro da página; volta a abrir na próxima navegação.
@@ -355,6 +449,27 @@ export function ConteudoMenu({
         className="min-h-28 flex-1 overflow-y-auto overflow-x-hidden pb-2"
         aria-label="Menu principal"
       >
+        {/* Seção Favoritos (#296): aparece apenas quando há itens favoritados. */}
+        {itensFavoritos.length > 0 && (
+          <div className="mb-2 border-b border-sidebar-border/60 pb-2">
+            <p className="px-4 py-1.5 text-[0.6875rem] font-semibold uppercase tracking-wider text-sidebar-muted">
+              Favoritos
+            </p>
+            <ul>
+              {itensFavoritos.map((item) => (
+                <li key={item.to}>
+                  <ItemMenu
+                    item={item}
+                    aoNavegar={aoNavegar}
+                    favorito
+                    onToggleFavorito={toggleFavorito}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {GRUPOS_MENU.map((g, i) => {
           const itens = visiveis(g);
           if (itens.length === 0) return null;
@@ -366,7 +481,12 @@ export function ConteudoMenu({
               <ul key="inicio" className="pb-1">
                 {itens.map((item) => (
                   <li key={item.to}>
-                    <ItemMenu item={item} aoNavegar={aoNavegar} />
+                    <ItemMenu
+                      item={item}
+                      aoNavegar={aoNavegar}
+                      favorito={favoritos.includes(item.to)}
+                      onToggleFavorito={toggleFavorito}
+                    />
                   </li>
                 ))}
               </ul>
@@ -410,7 +530,12 @@ export function ConteudoMenu({
                 >
                   {itens.map((item) => (
                     <li key={item.to}>
-                      <ItemMenu item={item} aoNavegar={aoNavegar} />
+                      <ItemMenu
+                        item={item}
+                        aoNavegar={aoNavegar}
+                        favorito={favoritos.includes(item.to)}
+                        onToggleFavorito={toggleFavorito}
+                      />
                     </li>
                   ))}
                 </ul>

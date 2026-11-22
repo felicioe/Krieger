@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import { DialogoNovoModelo } from "@/components/modelos/DialogoNovoModelo";
 import { listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
@@ -57,9 +59,11 @@ function ListaModelos() {
     );
   }, [normalizados, assembleias, condominios, condo]);
 
+  const usuario = useUsuario();
+  const { recentes } = useCondominiosRecentes(usuario?.id);
   const opcoesCondo = [
     { valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" },
-    ...opcoesCondominio(condominios),
+    ...opcoesCondominio(condominios, false, recentes),
   ];
 
   return (

@@ -19,6 +19,8 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { opcoesCondominio, Selecao, SelecaoBusca } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import { PainelPrevisao } from "@/components/previsao/PainelPrevisao";
 import { HistoricoRateiosPrevisao } from "@/components/previsao/HistoricoRateiosPrevisao";
 import { api } from "@/lib/api";
@@ -83,6 +85,8 @@ export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
 function PaginaPrevisao() {
   const busca = Route.useSearch();
   const navigate = useNavigate({ from: "/previsao-orcamentaria" });
+  const usuario = useUsuario();
+  const { recentes, adicionarRecente } = useCondominiosRecentes(usuario?.id);
   const { data: exerciciosRaw } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: historicoRateios } = useSuspenseQuery(
@@ -136,6 +140,7 @@ function PaginaPrevisao() {
   });
   const primeiraPrestacao = exerciciosDoCondominio[0];
   const selecionarCondominio = (condoId: string) => {
+    adicionarRecente(condoId);
     const primeira = exercicios.find((e) => e.condoId === condoId);
     if (primeira)
       void navigate({
@@ -150,7 +155,7 @@ function PaginaPrevisao() {
         <SelecaoBusca
           value={condoIdSelecionado}
           onChange={selecionarCondominio}
-          opcoes={opcoesCondominio(condominios)}
+          opcoes={opcoesCondominio(condominios, false, recentes)}
           placeholder="Escolha o condomínio"
           placeholderBusca="Pesquisar condomínio por nome, código ou CNPJ..."
         />

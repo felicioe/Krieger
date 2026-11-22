@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable } from "@/components/app/DataTable";
 import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import { DialogoNovoEdital } from "@/components/editais/DialogoNovoEdital";
 import { itemQuery, listaQuery } from "@/lib/queries";
 import { dataParaISO, formatData } from "@/lib/format";
@@ -52,6 +54,8 @@ function ListaEditais() {
   const { data: escritorio } = useSuspenseQuery(
     itemQuery<ConfigEscritorio>("config", "escritorio"),
   );
+  const usuario = useUsuario();
+  const { recentes, adicionarRecente } = useCondominiosRecentes(usuario?.id);
   const [condo, setCondo] = useState(busca.condo ?? TODOS);
   const novoAberto = busca.novo !== undefined;
 
@@ -77,7 +81,7 @@ function ListaEditais() {
 
   const opcoesCondo = [
     { valor: TODOS, rotulo: "Todos os condomínios", busca: "todos" },
-    ...opcoesCondominio(condominios),
+    ...opcoesCondominio(condominios, false, recentes),
   ];
 
   const abrirNovo = (v: boolean) =>

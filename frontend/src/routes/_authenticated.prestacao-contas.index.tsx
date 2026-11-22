@@ -24,6 +24,8 @@ import { DataTable } from "@/components/app/DataTable";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { Field } from "@/components/app/Field";
 import { DataInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { formatBRL } from "@/lib/format";
@@ -75,6 +77,8 @@ function temDivergenciaEmConferencia(e: Exercicio): boolean {
 
 function ListaExercicios() {
   const navigate = useNavigate();
+  const usuario = useUsuario();
+  const { recentes } = useCondominiosRecentes(usuario?.id);
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: historicoRateios } = useSuspenseQuery(
@@ -297,9 +301,11 @@ function DialogoNovo({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const usuario = useUsuario();
   const { data: escritorio } = useSuspenseQuery(
     itemQuery<ConfigEscritorio>("config", "escritorio"),
   );
+  const { recentes } = useCondominiosRecentes(usuario?.id);
   const [condoId, setCondoId] = useState("");
   const [periodo, setPeriodo] = useState({ ini: "", fim: "" });
   const [erro, setErro] = useState<string | null>(null);
@@ -344,7 +350,7 @@ function DialogoNovo({
     );
   }
 
-  const opcoes = opcoesCondominio(condominios);
+  const opcoes = opcoesCondominio(condominios, false, recentes);
 
   return (
     <Dialog open={aberto} onOpenChange={(v) => !criar.isPending && aoMudar(v)}>

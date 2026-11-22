@@ -49,4 +49,17 @@ describe("compararPrevistoRealizadoMensal", () => {
     expect(semBase.total.previsto).toBe(0); // não usa o demonstrativo do próprio exercício
     expect(semBase.situacaoPrevisto).toBe("sem_base");
   });
+
+  it("sem base: linhas e total do previsto ficam zerados e o aviso aparece; com base não há aviso", () => {
+    const e = exercicio();
+    e.ano = 2026;
+    const base = demo([{ nome: "Pessoal", itens: [{ nome: "Salários", valor: 240000 }] }]);
+    const semBase = compararPrevistoRealizadoMensal(e, [], { historicoRateios: hist(10) });
+    expect(semBase.linhas.every((l) => l.total.previsto === 0)).toBe(true);
+    expect(semBase.total.previsto).toBe(0);
+    expect(semBase.avisos.some((a) => a.startsWith("Sem demonstrativo base"))).toBe(true);
+    const comBase = compararPrevistoRealizadoMensal(e, [], { demonstrativoBase: base, historicoRateios: hist(10) });
+    expect(comBase.avisos.some((a) => a.startsWith("Sem demonstrativo base"))).toBe(false);
+    expect(comBase.linhas[0]?.total.previsto).toBe(264000);
+  });
 });

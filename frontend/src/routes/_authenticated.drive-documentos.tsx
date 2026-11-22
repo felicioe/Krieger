@@ -50,6 +50,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
 import {
   extrairPastaDoDocumento,
   gerarSlugCategoria,
@@ -177,6 +178,7 @@ function PaginaDriveDocumentos() {
   );
   const pastaOutros = useMemo(() => pastaPadraoOutros(categoriasAtivas), [categoriasAtivas]);
 
+  const { recentes } = useCondominiosRecentes(usuario?.id);
   const ordenados = useMemo(
     () =>
       [...condominios].sort((a, b) =>
@@ -327,7 +329,7 @@ function PaginaDriveDocumentos() {
 
   const opcoesCondo = useMemo(() => {
     const mapaResumo = resumoQuery.data ?? {};
-    return opcoesCondominio(ordenados, true).map((op) => {
+    return opcoesCondominio(ordenados, true, recentes).map((op) => {
       const qtd = mapaResumo[op.valor] ?? 0;
       return {
         ...op,
