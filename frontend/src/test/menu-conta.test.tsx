@@ -132,6 +132,34 @@ describe("expansão dos grupos do menu", () => {
   });
 });
 
+describe("atalhos favoritos", () => {
+  it("limita a cinco atalhos, mantém a ordem salva e sinaliza o limite", async () => {
+    const salvos = [
+      "/usuarios",
+      "/backup",
+      "/painel",
+      "/importador",
+      "/condominios",
+      "/prestacao-contas",
+    ];
+    localStorage.setItem("krieger.favoritos.u-teste", JSON.stringify(salvos));
+    const { user, pronto } = montar();
+    await pronto();
+    const menu = screen.getByRole("navigation", { name: "Menu principal" });
+    expect(
+      within(menu)
+        .getAllByRole("link")
+        .slice(0, 5)
+        .map((link) => link.textContent),
+    ).toEqual(["Usuários", "Backup", "Painel", "Importador", "Condomínios"]);
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
+    const adicionar = screen.getAllByRole("button", {
+      name: /Adicionar .* aos favoritos: limite/,
+    })[0];
+    expect(adicionar).toHaveAttribute("aria-disabled", "true");
+  });
+});
+
 describe("bloco da conta no menu lateral", () => {
   it("começa recolhido: opções fora da página (sem foco) e módulos principais intactos", async () => {
     const { user } = montar();
