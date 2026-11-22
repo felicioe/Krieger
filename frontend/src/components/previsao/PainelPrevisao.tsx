@@ -420,14 +420,13 @@ function AjusteResumo({
   negativo: boolean;
 }) {
   return (
-    <div className="flex min-w-0 items-center justify-between gap-3 py-1 text-sm">
-      <span
-        className="min-w-0 flex-1 truncate text-muted-foreground"
-        title={`(+/−) Ajustes da previsão (${descricao})`}
-      >
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1 text-sm">
+      <span className="min-w-0 flex-[1_1_9rem] wrap-anywhere text-muted-foreground">
         (+/−) Ajustes da previsão <span className="font-medium text-foreground">({descricao})</span>
       </span>
-      <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
+      <span className={cn("num ml-auto whitespace-nowrap", negativo && "text-destructive")}>
+        {valor}
+      </span>
     </div>
   );
 }
