@@ -63,7 +63,7 @@ const SITUACOES: { valor: SituacaoCarga | "todas"; rotulo: string }[] = [
 ];
 const COR_SITUACAO: Record<SituacaoCarga, string> = {
   atrasado: "text-destructive",
-  incompleto: "text-warning",
+  incompleto: "text-amber-800",
   em_dia: "text-success",
 };
 
