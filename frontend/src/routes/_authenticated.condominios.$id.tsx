@@ -543,28 +543,27 @@ export function FormCondominio({
                     onChange={(v) => set("areaTotalM2", v)}
                   />
                 </Field>
-                <Field
-                  rotulo="Endereço (edital)"
-                  dica="O botão preenche a partir do CNPJ, usando os dados públicos da Receita Federal — revise antes de salvar."
-                  className="sm:col-span-6"
-                >
-                  <div className="flex gap-2">
+                <div className="flex flex-wrap items-end gap-2 sm:col-span-6">
+                  <Field
+                    rotulo="Endereço (edital)"
+                    dica="O botão preenche a partir do CNPJ, usando os dados públicos da Receita Federal — revise antes de salvar."
+                    className="min-w-0 flex-1"
+                  >
                     <Input
                       value={c.enderecoEdital}
                       onChange={(e) => set("enderecoEdital", e.target.value)}
-                      className="flex-1"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={atualizarPelaReceita}
-                      disabled={buscandoReceita}
-                    >
-                      {buscandoReceita ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-                      Atualizar pela Receita
-                    </Button>
-                  </div>
-                </Field>
+                  </Field>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={atualizarPelaReceita}
+                    disabled={buscandoReceita}
+                  >
+                    {buscandoReceita ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                    Atualizar pela Receita
+                  </Button>
+                </div>
                 <Field
                   rotulo="Pasta de documentos"
                   dica="Caminho da pasta deste condomínio no servidor de arquivos da empresa (NAS), usado pelo agente de indexação da Consulta de Documentos para localizar convenção/regimento/atas. Deixe em branco para não indexar este condomínio."

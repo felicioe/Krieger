@@ -110,7 +110,7 @@ function ListaEditais() {
       />
       <div className="mb-4 max-w-sm">
         <SelecaoBusca
-          aria-label="Filtrar por condomínio"
+          aria-label={`Filtrar por condomínio: ${opcoesCondo.find((o) => o.valor === condo)?.rotulo ?? "Todos os condomínios"}`}
           value={condo}
           onChange={(v) => {
             setCondo(v);
@@ -179,7 +179,7 @@ function ListaEditais() {
         aoClicar={(a) => navigate({ to: "/editais/$id", params: { id: a.id } })}
         colunaAcao="condoNome"
         rotuloAcao={(a) =>
-          `Abrir edital de ${a.condoNome}${a.futura ? " (agendada)" : ""}, ${formatData(a.data)}`
+          `Abrir edital de ${a.condoNome}${a.futura ? ", agendada" : ""}, ${formatData(a.data)}`
         }
         vazio={
           condominios.length === 0
