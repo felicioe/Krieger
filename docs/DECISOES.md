@@ -1,5 +1,18 @@
 # Decisões do projeto
 
+## 2026-11-22 — sequência geral: menu antes da Etapa 1 (revisão do plano)
+
+Decisão do responsável: o trabalho segue uma ordem única, registrada em
+`docs/PLANO-ETAPAS-MODELOS.md` ("Sequência geral"). O menu por perfil (#310) vem
+antes das subissues da Etapa 1, porque a aba Configuração depende da mesma regra
+de permissão. Antes de tudo, fica o aviso de "sem base" no Previsto × Realizado
+mensal (#311), consequência da mudança já publicada em `e388145`.
+
+Pendência de regra, a confirmar: o README define que o Usuário começa com o
+conjunto do ADM. A proposta do responsável é que o Usuário comece só com o
+operacional. Isso altera o padrão da matriz e precisa de autorização antes da
+implementação.
+
 ## 2026-11-22 — entrada de dados: fonte única e organização por etapa (inventário em INVENTARIO-ENTRADA-DADOS.md)
 
 Decisão do responsável, seguindo as recomendações do inventário:
