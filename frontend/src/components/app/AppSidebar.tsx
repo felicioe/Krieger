@@ -72,7 +72,6 @@ export const GRUPOS_MENU: Grupo[] = [
         icone: Building2,
         permissao: "condominios.visualizar",
       },
-      { titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp },
     ],
   },
   {
@@ -478,7 +477,7 @@ export function ConteudoMenu({
           // Itens soltos no topo (Painel, Condomínios): sem nó de árvore.
           if (!g.titulo) {
             return (
-              <ul key="inicio" className="pb-1">
+              <ul key={idTitulo} className="pb-1">
                 {itens.map((item) => (
                   <li key={item.to}>
                     <ItemMenu
@@ -592,6 +591,12 @@ export function ConteudoMenu({
             <li>
               <ItemMenu
                 item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }}
+                aoNavegar={aoNavegar}
+              />
+            </li>
+            <li>
+              <ItemMenu
+                item={{ titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp }}
                 aoNavegar={aoNavegar}
               />
             </li>
