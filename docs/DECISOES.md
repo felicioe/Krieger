@@ -6,6 +6,16 @@ Aprovado pelo responsável. A fração ideal (fração prevista do cadastro) dec
 unidade paga do total mensal; o rateio sugerido e o índice da previsão continuam iguais, porque o
 reajuste % é o mesmo para todas as unidades. Sem relação de frações válida, a base é a quantidade
 de unidades, com o motivo na tela. Detalhes em `docs/AVALIACAO-FRACOES.md`.
+## 2026-11-22 — rateio atual: histórico prevalece; digitado só sem histórico (issue #308)
+
+Decisão do responsável: o rateio atual de um exercício aberto é o aprovado do ano anterior no
+histórico de rateios. O valor digitado na prestação só vale quando não existe histórico para o
+ano anterior. No histórico, a linha digitada à mão prevalece sobre a importada do PDF (a
+importação só grava quando não há linha para o ano). Exercícios fechados não mudam.
+
+Na prática: `aplicarRateioBase` passou a preferir o histórico mesmo com valor digitado; a
+prestação mostra o rateio do histórico como somente leitura e grava esse valor ao salvar; o
+cadastro do condomínio mostra o último aprovado. Para alterar, usa-se a Previsão orçamentária.
 
 ## 2026-11-22 — sequência geral: menu antes da Etapa 1 (revisão do plano)
 

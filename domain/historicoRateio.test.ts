@@ -142,8 +142,18 @@ describe("aplicarRateioBase", () => {
     expect(aplicarRateioBase(e, linhas).rateioAtual).toBe(370);
   });
 
-  it("não sobrescreve um rateio atual já informado", () => {
+  it("histórico prevalece sobre o rateio digitado no exercício (#308)", () => {
     const e = { condoId: "c1", ano: 2026, rateioAtual: 500 };
+    expect(aplicarRateioBase(e, linhas).rateioAtual).toBe(370);
+  });
+
+  it("sem histórico do ano anterior, vale o digitado (#308)", () => {
+    const e = { condoId: "c1", ano: 2030, rateioAtual: 500 };
+    expect(aplicarRateioBase(e, linhas).rateioAtual).toBe(500);
+  });
+
+  it("exercício fechado não muda (#308)", () => {
+    const e = { condoId: "c1", ano: 2026, rateioAtual: 500, fechado: true };
     expect(aplicarRateioBase(e, linhas).rateioAtual).toBe(500);
   });
 });
