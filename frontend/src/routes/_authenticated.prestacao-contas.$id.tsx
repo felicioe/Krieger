@@ -40,7 +40,13 @@ import { useUsuario } from "@/lib/auth";
 import { demonstrativoVazio, mesesNoPeriodo } from "@/domain/demonstrativo";
 import { consolidarPeriodo } from "@/domain/demonstrativoDinamico";
 import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
-import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
+import {
+  condominioComConsid,
+  considEfetiva,
+  normalizarExercicio,
+  prepararExercicio,
+  validarNovoExercicio,
+} from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
 import { historicoDoExercicio } from "@/domain/historicoRateio";
 import { novoId } from "@/lib/id";
@@ -84,8 +90,13 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const { refetch: atualizarMensais, isFetching: atualizandoMensais } = useSuspenseQuery(
     listaQuery<Mensal>("mensais"),
   );
-  const [e, setE] = useState<Exercicio>(inicial);
-  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
+  // Exercício aberto: as considerações vêm do cadastro, que é a fonte única (#307). Fechado: o congelado.
+  const condoDoExercicio = condominios.find((c) => c.id === inicial.condoId) ?? null;
+  const inicialComCadastro: Exercicio = inicial.fechado
+    ? inicial
+    : { ...inicial, consid: considEfetiva(inicial, condoDoExercicio) };
+  const [e, setE] = useState<Exercicio>(inicialComCadastro);
+  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicialComCadastro));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [confirmarFechamento, setConfirmarFechamento] = useState(false);
   const [motivoReabertura, setMotivoReabertura] = useState("");
@@ -141,7 +152,15 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   });
 
   const salvar = useMutation({
-    mutationFn: (dados: Exercicio) => api.salvar("exercicios", dados),
+    mutationFn: async (dados: Exercicio) => {
+      // Exercício aberto: o que foi editado nas considerações grava também no cadastro (#307).
+      // Fechado não toca no cadastro, para não voltar dados antigos sobre alterações posteriores.
+      if (!dados.fechado && condo) {
+        await api.salvar("condominios", condominioComConsid(condo, dados.consid));
+        queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
+      }
+      return api.salvar("exercicios", dados);
+    },
     onSuccess: (salvo) => {
       const n = normalizarExercicio(salvo);
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
