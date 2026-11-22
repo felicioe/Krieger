@@ -50,6 +50,7 @@ import {
   linhaRateioAlterada,
   linhasRateioDoCondominio,
   planejarHistorico,
+  ultimoRateioAprovado,
   validarLinhasRateio,
   type LinhaRateioForm,
 } from "@/domain/historicoRateio";
@@ -115,6 +116,7 @@ function CondominioExistente({ id }: { id: string }) {
       inicial={normalizarCondominio(data ?? { id })}
       historicoIndices={historicoIndices}
       linhasRateioIniciais={linhasRateioDoCondominio(historicoRateios, id)}
+      ultimoAprovado={ultimoRateioAprovado(historicoRateios, id)}
       previsoes={previsoes}
       exerciciosFechados={exercicios.filter((e) => e.fechado)}
     />
@@ -231,8 +233,11 @@ export function FormCondominio({
   linhasRateioIniciais = [],
   previsoes = [],
   exerciciosFechados = [],
+  ultimoAprovado = null,
 }: {
   inicial: Condominio;
+  /** Último rateio aprovado no histórico (#308): quando existe, é ele que vale e o campo é só leitura. */
+  ultimoAprovado?: { ano: number; valor: number } | null;
   linhasRateioIniciais?: LinhaRateioForm[];
   previsoes?: PrevisaoAprovada[];
   exerciciosFechados?: { condoId: string; ano: number | string }[];
@@ -515,9 +520,19 @@ export function FormCondominio({
                 <Field rotulo="Unidades" className="sm:col-span-2">
                   <InteiroInput value={c.unidades} onChange={(v) => set("unidades", v)} />
                 </Field>
-                <Field rotulo="Rateio mensal atual" className="sm:col-span-2">
-                  <DinheiroInput value={c.rateioAtual} onChange={(v) => set("rateioAtual", v)} />
-                </Field>
+                {ultimoAprovado ? (
+                  <Field
+                    rotulo="Rateio mensal atual"
+                    className="sm:col-span-2"
+                    dica={`Aprovado para ${ultimoAprovado.ano}, do histórico de rateios. Para alterar, use a Previsão orçamentária.`}
+                  >
+                    <DinheiroInput value={ultimoAprovado.valor} onChange={() => {}} disabled />
+                  </Field>
+                ) : (
+                  <Field rotulo="Rateio mensal atual" className="sm:col-span-2">
+                    <DinheiroInput value={c.rateioAtual} onChange={(v) => set("rateioAtual", v)} />
+                  </Field>
+                )}
                 <Field
                   rotulo="Área total (m²)"
                   dica="Informativo, lido da Listagem de Condomínios."

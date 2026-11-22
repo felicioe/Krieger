@@ -34,7 +34,7 @@ import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { AnexosPrestacao, anexosQuery } from "@/components/importacao/AnexosPrestacao";
 import { excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
 import { api } from "@/lib/api";
-import { chaves, itemQuery, listaQuery } from "@/lib/queries";
+import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { demonstrativoVazio, mesesNoPeriodo } from "@/domain/demonstrativo";
@@ -48,8 +48,9 @@ import {
   validarNovoExercicio,
 } from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
-import { historicoDoExercicio } from "@/domain/historicoRateio";
+import { historicoDoExercicio, rateioBaseDivergente } from "@/domain/historicoRateio";
 import { novoId } from "@/lib/id";
+import { formatBRL } from "@/lib/format";
 import type { Condominio, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
@@ -60,6 +61,7 @@ export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(anexosQuery(params.id)),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
     ]);
     if (!e) throw notFound();
     return null;
@@ -96,6 +98,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
     ? inicial
     : { ...inicial, consid: considEfetiva(inicial, condoDoExercicio) };
   const [e, setE] = useState<Exercicio>(inicialComCadastro);
+  // Histórico de rateios: fonte do rateio atual (#308). Só avisa a divergência; não troca sozinho.
+  const { data: historicoRateios = [] } = useSuspenseQuery(
+    listaQueryTolerante<HistoricoRateio>("historico_rateios"),
+  );
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicialComCadastro));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [confirmarFechamento, setConfirmarFechamento] = useState(false);
@@ -115,6 +121,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   // foi o que apagou as despesas do balanço na reimportação do Lago Negro 2025.
   const demonstrativo = demonstrativoSalvo;
   const sujo = JSON.stringify(e) !== salvoJson;
+  const rateioDoHistorico = rateioBaseDivergente(e, historicoRateios);
   const mesesPeriodo = mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim);
 
   const mudar = (parcial: Partial<Exercicio>) =>
@@ -436,6 +443,19 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
                   disabled={e.fechado}
                 />
               </Field>
+              {!e.fechado && rateioDoHistorico !== null && (
+                <p className="col-span-full text-xs text-warning">
+                  O histórico de rateios tem {formatBRL(rateioDoHistorico)} aprovado para{" "}
+                  {Number(e.ano) - 1}.{" "}
+                  <button
+                    type="button"
+                    className="underline underline-offset-2"
+                    onClick={() => mudar({ rateioAtual: rateioDoHistorico })}
+                  >
+                    Usar o do histórico
+                  </button>
+                </p>
+              )}
               <Field
                 rotulo="Rateio aprovado"
                 dica="Valor aprovado em assembleia."

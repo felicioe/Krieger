@@ -24,7 +24,11 @@ vi.stubGlobal(
 const { definirUsuario } = await import("@/lib/auth");
 const { FormCondominio } = await import("@/routes/_authenticated.condominios.$id");
 
-function montar(perfil: Usuario["perfil"], permissoes?: string[]) {
+function montar(
+  perfil: Usuario["perfil"],
+  permissoes?: string[],
+  ultimoAprovado: { ano: number; valor: number } | null = null,
+) {
   definirUsuario({
     id: "u1",
     login: "teste",
@@ -34,7 +38,9 @@ function montar(perfil: Usuario["perfil"], permissoes?: string[]) {
     ...(permissoes ? { permissoes } : {}),
   } as Usuario);
   const inicial = { ...condominioPadrao(), id: "c1", nome: "Condomínio Teste" };
-  const raiz = createRootRoute({ component: () => <FormCondominio inicial={inicial} /> });
+  const raiz = createRootRoute({
+    component: () => <FormCondominio inicial={inicial} ultimoAprovado={ultimoAprovado} />,
+  });
   const router = createRouter({
     routeTree: raiz,
     history: createMemoryHistory({ initialEntries: ["/"] }),
@@ -86,5 +92,19 @@ describe("histórico de rateios no cadastro é só consulta (#304)", () => {
       "href",
       "/previsao-orcamentaria",
     );
+  });
+});
+
+describe("rateio atual vem do histórico (#308)", () => {
+  it("com histórico, o rateio do cadastro é só leitura e mostra o último aprovado", async () => {
+    montar("admin", undefined, { ano: 2025, valor: 450 });
+    const campo = await screen.findByLabelText(/Rateio mensal atual/);
+    expect(campo).toBeDisabled();
+    expect(screen.getByText(/Aprovado para 2025, do histórico de rateios/)).toBeInTheDocument();
+  });
+
+  it("sem histórico, o rateio do cadastro continua editável", async () => {
+    montar("admin");
+    expect(await screen.findByLabelText(/Rateio mensal atual/)).not.toBeDisabled();
   });
 });
