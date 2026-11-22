@@ -1,5 +1,39 @@
 # Decisões do projeto
 
+## 2026-11-22 — entrada de dados: fonte única e organização por etapa (inventário em INVENTARIO-ENTRADA-DADOS.md)
+
+Decisão do responsável, seguindo as recomendações do inventário:
+
+- **Considerações finais têm fonte única no cadastro.** Com o exercício aberto, a
+  prestação de contas lê e grava no cadastro (`considDoCondominio`); no fechamento,
+  os valores são congelados no exercício. Exercícios já fechados mantêm o que têm.
+  Evita divergência entre cópias e alerta de vencimento errado no Painel.
+- **Histórico de rateios é editado só na Previsão Orçamentária.** O cadastro do
+  condomínio apenas consulta, com link para a Previsão.
+- **Aba Configuração do cadastro fica restrita por permissão (administração).**
+  Campos técnicos (palavras-chave, de-para, regras do relatório, arredondamento,
+  método da variação) saem da visão do uso diário.
+- **Ordem de execução:** Etapa 1 primeiro (organização em abas, sem mudar regra),
+  depois Etapa 2 (considerações), Etapa 3 (rateio atual) e Etapa 4 (fluxo guiado do
+  exercício). Detalhes e critérios em `docs/PLANO-ETAPAS-MODELOS.md`.
+
+## 2026-11-22 — reorganização do menu por perfil (proposta, aguarda aprovação)
+
+Proposta: separar funções de cadastro e configuração (ADM ou SuperADM) das
+operacionais, para que o perfil Usuário veja um menu enxuto. Perfis e regras:
+
+- **SuperADM** (`admin`): acesso total (`['*']`), incluindo Usuários, Backup e Escritório.
+- **ADM** (`adm`): tudo, exceto Usuários, Backup e Escritório.
+- **Usuário** (`user`): começa com o conjunto do ADM e é restringido pela matriz
+  `kr_perfil_permissoes`.
+
+Mudança de código limitada a `frontend/src/components/app/AppSidebar.tsx`
+(`GRUPOS_MENU`) e à leitura das permissões. Chaves existentes são reaproveitadas
+(`modulo.acao`, com `visualizar`/`editar`). Nova chave (por exemplo
+`condominios.configurar`) exige migration e só entra com autorização expressa do
+responsável. Até lá, a Aba Configuração é controlada pela permissão de
+administração já existente.
+
 ## 2026-11-21 — histórico de rateios dentro da Previsão Orçamentária (issue #294)
 
 A Previsão Orçamentária (modo rateio) ganhou o bloco **Histórico de rateios**: o **rateio histórico** e o **% histórico**
