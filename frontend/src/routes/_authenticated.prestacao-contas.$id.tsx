@@ -51,7 +51,16 @@ import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
 import { historicoDoExercicio, rateioBaseDivergente } from "@/domain/historicoRateio";
 import { novoId } from "@/lib/id";
 import { formatBRL } from "@/lib/format";
-import type { Condominio, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
+import type {
+  Assembleia,
+  Ata,
+  Condominio,
+  Exercicio,
+  HistoricoRateio,
+  Mensal,
+} from "@/domain/types";
+import { etapasDoExercicio } from "@/domain/etapasExercicio";
+import { EtapasExercicio } from "@/components/app/EtapasExercicio";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
   head: () => cabecalho("Prestação de contas", "Dados e demonstrativo do exercício."),
@@ -62,6 +71,8 @@ export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(anexosQuery(params.id)),
       queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQuery<Assembleia>("assembleias")),
+      queryClient.ensureQueryData(listaQuery<Ata>("atas")),
     ]);
     if (!e) throw notFound();
     return null;
@@ -122,6 +133,10 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const demonstrativo = demonstrativoSalvo;
   const sujo = JSON.stringify(e) !== salvoJson;
   const rateioDoHistorico = rateioBaseDivergente(e, historicoRateios);
+  // Fluxo guiado (#309): estado de cada etapa a partir do que já existe.
+  const { data: editais } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
+  const { data: atas } = useSuspenseQuery(listaQuery<Ata>("atas"));
+  const etapas = etapasDoExercicio(e, editais, atas);
   const mesesPeriodo = mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim);
 
   const mudar = (parcial: Partial<Exercicio>) =>
@@ -383,6 +398,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           </>
         }
       />
+
+      <EtapasExercicio etapas={etapas} exercicioId={e.id} />
 
       {e.fechado && (
         <Alert className="mb-4">
