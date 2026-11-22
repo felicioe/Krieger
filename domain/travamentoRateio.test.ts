@@ -18,7 +18,7 @@ function falhaEm(etapa: "exercicio" | "historico" | "propagacao") {
   return {
     chamadas,
     entrada: {
-      gravarExercicio: () => falhar("exercicio") as Promise<Exercicio>,
+      gravarExercicio: () => falhar("exercicio") as unknown as Promise<Exercicio>,
       planejar: () => plano,
       gravarHistorico: () => falhar("historico"),
       gravarProximo: () => falhar("propagacao"),
