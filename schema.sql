@@ -354,3 +354,10 @@ CREATE TABLE IF NOT EXISTS kr_previsoes_aprovadas (
   INDEX idx_previsao_condo (condo_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+
+-- Aba Configuração do condomínio (ver migrations/20261122_condominio_configurar.sql). Fica no fim para não
+-- herdar o grant amplo do perfil user acima; só o ADM recebe.
+INSERT IGNORE INTO kr_permissoes (chave,modulo,tela,acao,descricao,criado_em) VALUES
+('condominios.configurar','cadastros','condominios','configurar','Alterar a configuração do condomínio (regras, rubricas, arredondamento e de-para)',NOW());
+INSERT IGNORE INTO kr_perfil_permissoes (perfil_id, permissao_chave)
+SELECT 'adm', chave FROM kr_permissoes WHERE chave = 'condominios.configurar';

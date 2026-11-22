@@ -1,6 +1,15 @@
 {
-  "versaoAtual": "1.15",
+  "versaoAtual": "1.16",
   "versoes": [
+    {
+      "versao": "1.16",
+      "titulo": "Permissões da aba Configuração e menu conferido com a matriz",
+      "alteracoes": [
+        "A aba Configuração do cadastro do condomínio passa a depender da permissão Configurar condomínio, na matriz de perfis. Antes, aparecia por perfil fixo e não podia ser ajustada.",
+        "Salvar alterações em regras, rubricas, arredondamento ou de-para exige essa permissão também no servidor.",
+        "Um teste confere que cada item do menu abre apenas para quem tem a permissão correspondente."
+      ]
+    },
     {
       "versao": "1.15",
       "titulo": "Exportação padronizada e Relatório final no menu Relatórios",
@@ -151,9 +160,7 @@
     {
       "versao": "1.0",
       "titulo": "Implantação do sistema",
-      "alteracoes": [
-        "Implantação inicial do Sistema Krieger."
-      ]
+      "alteracoes": ["Implantação inicial do Sistema Krieger."]
     }
   ]
 }

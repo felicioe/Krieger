@@ -472,6 +472,20 @@ try {
           $id = resolver_id_condominio($pdo, $o, $id);
           $o['id'] = $id;
           $existente = ler_registro_exercicio($pdo, 'condominios', $id);
+          // Campos da aba Configuração: alterá-los exige condominios.configurar (ver PERMISSOES-GRANULARES.md).
+          // Registros antigos não gravam estes campos; o valor efetivo é o padrão de condominioPadrao() (domain/condominio.ts).
+          if ($existente) {
+            $padraoConfig = ['deducaoRegex' => 'fundo de caixa p/ obras', 'aguaRubrica' => '^[áa]gua', 'energiaRubrica' => 'energia el[ée]trica', 'elevadorRubrica' => 'manuten[çc][ãa]o.*elevador', 'elevadorFornecedor' => '', 'arredondamento' => 'truncar', 'mapeamento' => []];
+            foreach ($padraoConfig as $campoConfig => $padrao) {
+              $atual = array_key_exists($campoConfig, $existente) ? $existente[$campoConfig] : $padrao;
+              $novo = array_key_exists($campoConfig, $o) ? $o[$campoConfig] : $atual;
+              if ($atual != $novo) { exigir_permissao($usuario, 'condominios.configurar'); break; }
+            }
+            // Campo omitido no payload não pode sumir do registro gravado (a gravação substitui o JSON inteiro).
+            foreach (array_keys($padraoConfig) as $campoConfig) {
+              if (!array_key_exists($campoConfig, $o) && array_key_exists($campoConfig, $existente)) $o[$campoConfig] = $existente[$campoConfig];
+            }
+          }
           $indicesAlterados = !empty($o['indicesInicializados']) || ($existente['indices'] ?? []) !== ($o['indices'] ?? []);
           if ($indicesAlterados || !empty($existente['indicesInicializados']) || !empty($o['indices'])) $o = substituir_indices_condominio($pdo, $o);
           else unset($o['indicesInicializados']);

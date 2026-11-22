@@ -613,26 +613,6 @@ export function ConteudoMenu({
           );
         })}
       </nav>
-      <nav aria-label="Ajuda e versão" className="shrink-0 border-t border-sidebar-border py-1">
-        <ul>
-          <li>
-            <ItemMenu
-              item={{ titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp }}
-              aoNavegar={aoNavegar}
-            />
-          </li>
-          {abrirRegistro && (
-            <li>
-              <BotaoMenu
-                icone={History}
-                onClick={() => (depoisDeFechar ? depoisDeFechar(abrirRegistro) : abrirRegistro())}
-              >
-                Registro de Alterações
-              </BotaoMenu>
-            </li>
-          )}
-        </ul>
-      </nav>
       <Collapsible
         open={contaAberta}
         onOpenChange={setContaAberta}
@@ -656,6 +636,22 @@ export function ConteudoMenu({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <ul aria-label="Opções da conta" className="pb-2">
+            <li>
+              <ItemMenu
+                item={{ titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp }}
+                aoNavegar={aoNavegar}
+              />
+            </li>
+            {abrirRegistro && (
+              <li>
+                <BotaoMenu
+                  icone={History}
+                  onClick={() => (depoisDeFechar ? depoisDeFechar(abrirRegistro) : abrirRegistro())}
+                >
+                  Registro de Alterações
+                </BotaoMenu>
+              </li>
+            )}
             <li>
               <ItemMenu
                 item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }}
