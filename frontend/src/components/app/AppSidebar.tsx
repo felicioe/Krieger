@@ -252,18 +252,20 @@ function gravarFavoritos(userId: string | undefined, favoritos: string[]) {
   }
 }
 
+const TITULOS_GRUPOS = GRUPOS_MENU.flatMap((grupo) => (grupo.titulo ? [grupo.titulo] : []));
+
 /** Preferência por usuário (#257); sem a do usuário, aproveita a chave antiga, que era única. */
 function lerGruposFechados(userId: string | undefined): string[] {
   try {
     const bruto =
       (userId ? localStorage.getItem(`${CHAVE_GRUPOS_FECHADOS}.${userId}`) : null) ??
       localStorage.getItem(CHAVE_GRUPOS_FECHADOS);
-    if (!bruto) return [];
-    const valor: unknown = JSON.parse(bruto);
-    return Array.isArray(valor) ? valor.filter((v): v is string => typeof v === "string") : [];
+    const valor: unknown = bruto === null ? null : JSON.parse(bruto);
+    if (Array.isArray(valor)) return valor.filter((v): v is string => typeof v === "string");
   } catch {
-    return [];
+    // Uma preferência indisponível usa o mesmo padrão do primeiro acesso.
   }
+  return TITULOS_GRUPOS;
 }
 
 function gravarGruposFechados(userId: string | undefined, fechados: string[]) {
@@ -409,6 +411,10 @@ export function ConteudoMenu({
   const [favoritos, setFavoritos] = useState<string[]>(() => lerFavoritos(usuario?.id));
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
+  useEffect(() => {
+    setFechados(lerGruposFechados(usuario?.id));
+  }, [usuario?.id]);
+
   // Recarrega favoritos quando o usuário muda.
   useEffect(() => {
     setFavoritos(lerFavoritos(usuario?.id));
@@ -438,7 +444,7 @@ export function ConteudoMenu({
   const [abertoDaRota, setAbertoDaRota] = useState<string | null>(() => grupoDaRota(pathname));
   useEffect(() => {
     setAbertoDaRota(grupoDaRota(pathname));
-  }, [pathname]);
+  }, [pathname, usuario?.id]);
 
   function alternarGrupo(titulo: string, aberto: boolean) {
     if (!aberto && abertoDaRota === titulo) setAbertoDaRota(null);
@@ -450,16 +456,20 @@ export function ConteudoMenu({
   }
 
   function alternarTodos(abrir: boolean) {
-    const proximo = abrir ? [] : GRUPOS_MENU.flatMap((g) => (g.titulo ? [g.titulo] : []));
+    const proximo = abrir ? [] : TITULOS_GRUPOS;
     gravarGruposFechados(usuario?.id, proximo);
     setFechados(proximo);
     setAbertoDaRota(null);
   }
 
-  const gruposComTitulo = GRUPOS_MENU.filter((g) => g.titulo);
-  const todosAbertos = gruposComTitulo.every((g) => !fechados.includes(g.titulo!));
-
   const visiveis = (g: Grupo) => g.itens.filter(itemVisivel);
+  const todosAbertos = GRUPOS_MENU.every(
+    (g) =>
+      !g.titulo ||
+      visiveis(g).length === 0 ||
+      !fechados.includes(g.titulo) ||
+      g.titulo === abertoDaRota,
+  );
 
   async function encerrar() {
     aoNavegar?.();
@@ -477,6 +487,20 @@ export function ConteudoMenu({
         className="min-h-28 flex-1 overflow-y-auto overflow-x-hidden pb-2"
         aria-label="Menu principal"
       >
+        <div className="sticky top-0 z-10 border-b border-sidebar-border/60 bg-sidebar px-2 py-1">
+          <button
+            type="button"
+            onClick={() => alternarTodos(!todosAbertos)}
+            className="flex w-full items-center gap-2 rounded px-3 py-2 text-xs text-sidebar-muted transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring max-md:min-h-11 pointer-coarse:min-h-11"
+          >
+            {todosAbertos ? (
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="size-3.5 shrink-0" aria-hidden="true" />
+            )}
+            {todosAbertos ? "Recolher todos os grupos" : "Expandir todos os grupos"}
+          </button>
+        </div>
         {/* Seção Favoritos (#296): aparece apenas quando há itens favoritados. */}
         {itensFavoritos.length > 0 && (
           <div className="mb-2 border-b border-sidebar-border/60 pb-2">
@@ -571,20 +595,6 @@ export function ConteudoMenu({
             </Collapsible>
           );
         })}
-        <div className="mt-2 border-t border-sidebar-border/60 px-2 pt-2">
-          <button
-            type="button"
-            onClick={() => alternarTodos(!todosAbertos)}
-            className="flex w-full items-center gap-2 rounded px-3 py-2 text-xs text-sidebar-muted transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring max-md:min-h-11 pointer-coarse:min-h-11"
-          >
-            {todosAbertos ? (
-              <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
-            ) : (
-              <ChevronDown className="size-3.5 shrink-0" aria-hidden="true" />
-            )}
-            {todosAbertos ? "Recolher todos os grupos" : "Expandir todos os grupos"}
-          </button>
-        </div>
       </nav>
       <Collapsible
         open={contaAberta}

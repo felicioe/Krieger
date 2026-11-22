@@ -1,5 +1,11 @@
 # Estado atual e passagem de contexto
 
+## Auditoria de navegação — 22/11/2026
+
+- #338: sem preferência salva, o menu inicia recolhido e abre o grupo da rota
+  atual. O controle geral fica no início do menu e a preferência explícita
+  continua associada ao usuário.
+
 
 ## Acessibilidade da previsão e do relatório final — 22/11/2026
 
