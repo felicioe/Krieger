@@ -242,7 +242,7 @@ function PaginaComparativo() {
           <Link
             to="/previsao-orcamentaria"
             search={{ exercicio: exercicio.id }}
-            className="text-primary underline-offset-2 hover:underline"
+            className="rounded-sm text-primary underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             Abrir a previsão do exercício {exercicio.ano}
           </Link>

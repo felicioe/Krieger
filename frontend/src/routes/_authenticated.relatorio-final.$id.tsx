@@ -358,6 +358,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
                               id="secao-pizza"
+                              className="size-6"
                               checked={e.mostrarPizza !== false}
                               onCheckedChange={(v) => mudar({ mostrarPizza: v === true })}
                             />
@@ -374,6 +375,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                             <Checkbox
                               disabled={e.fechado}
                               id="secao-evolucao-mensal"
+                              className="size-6"
                               checked={e.mostrarEvolucaoMensal !== false}
                               onCheckedChange={(v) => mudar({ mostrarEvolucaoMensal: v === true })}
                             />

@@ -1,5 +1,13 @@
 # Estado atual e passagem de contexto
 
+
+## Acessibilidade da previsão e do relatório final — 22/11/2026
+
+O link para a previsão em **Previsto × Realizado** tem sublinhado permanente e
+indicador de foco por teclado (#329). No **Relatório final**, as opções de pizza
+por grupo e evolução mensal têm caixas de 24 × 24 px no desktop e mantêm a área
+de toque ampliada em telas estreitas ou com ponteiro de toque (#330).
+
 ## Histórico de rateios na Previsão Orçamentária — 21/11/2026 (issue #294)
 
 Componente `components/previsao/HistoricoRateiosPrevisao.tsx` (modo rateio): rateio histórico e % histórico do ano anterior,
