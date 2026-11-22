@@ -400,7 +400,7 @@ function LinhaResumo({
       )}
     >
       <span
-        className={cn("min-w-0 flex-1 truncate", !forte && "text-muted-foreground")}
+        className={cn("min-w-0 flex-1 break-words", !forte && "text-muted-foreground")}
         title={rotulo}
       >
         {rotulo}
