@@ -38,6 +38,8 @@ describe("Permissões de navegação", () => {
     };
     expect(podeAcessarRota(comRelatorios, "/relatorios/orcado-realizado-mensal")).toBe(true);
     expect(podeAcessarRota(comRelatorios, "/relatorios/inadimplencia")).toBe(true);
+    expect(podeAcessarRota(usuario, "/relatorios/consolidado-escritorio")).toBe(false);
+    expect(podeAcessarRota(comRelatorios, "/relatorios/consolidado-escritorio")).toBe(true);
   });
 
   it("nega navegação sem sessão", () => {
