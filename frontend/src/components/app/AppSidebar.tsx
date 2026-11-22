@@ -31,7 +31,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAbrirRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
@@ -394,9 +394,12 @@ export function ConteudoMenu({
     [usuario?.id],
   );
 
-  const itensFavoritos = useMemo(
-    () => ITENS_MENU.filter((item) => favoritos.includes(item.to)),
-    [favoritos],
+  // Mesmo filtro dos grupos: um favorito de módulo sem permissão não aparece (#296).
+  const itemVisivel = (item: Item) =>
+    (!item.apenasAdmin || usuario?.perfil === "admin") &&
+    (!item.permissao || temPermissao(usuario, item.permissao));
+  const itensFavoritos = ITENS_MENU.filter(
+    (item) => favoritos.includes(item.to) && itemVisivel(item),
   );
 
   // Grupo aberto por causa da página atual. Some quando a pessoa recolhe esse grupo na mão, para ela
@@ -425,12 +428,7 @@ export function ConteudoMenu({
   const gruposComTitulo = GRUPOS_MENU.filter((g) => g.titulo);
   const todosAbertos = gruposComTitulo.every((g) => !fechados.includes(g.titulo!));
 
-  const visiveis = (g: Grupo) =>
-    g.itens.filter(
-      (item) =>
-        (!item.apenasAdmin || usuario?.perfil === "admin") &&
-        (!item.permissao || temPermissao(usuario, item.permissao)),
-    );
+  const visiveis = (g: Grupo) => g.itens.filter(itemVisivel);
 
   async function encerrar() {
     aoNavegar?.();

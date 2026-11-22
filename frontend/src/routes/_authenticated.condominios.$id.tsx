@@ -224,7 +224,8 @@ function resumos(c: Condominio): Omit<Record<Secao, string>, "rateios"> {
   };
 }
 
-function FormCondominio({
+/** Exportado também para os testes de tela (#303, #304). */
+export function FormCondominio({
   inicial,
   historicoIndices = [],
   linhasRateioIniciais = [],
@@ -470,6 +471,7 @@ function FormCondominio({
           <TabsContent
             value="cadastro"
             forceMount
+            hidden={aba !== "cadastro"}
             className="space-y-6 data-[state=inactive]:hidden"
           >
             <SectionCard
@@ -1015,6 +1017,7 @@ function FormCondominio({
           <TabsContent
             value="anoaano"
             forceMount
+            hidden={aba !== "anoaano"}
             className="space-y-6 data-[state=inactive]:hidden"
           >
             <SecaoRecolhivel
@@ -1203,6 +1206,7 @@ function FormCondominio({
             <TabsContent
               value="configuracao"
               forceMount
+              hidden={aba !== "configuracao"}
               className="space-y-6 data-[state=inactive]:hidden"
             >
               <SecaoRecolhivel
