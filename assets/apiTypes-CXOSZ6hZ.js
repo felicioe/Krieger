@@ -1,0 +1,1 @@
+function e(){return(Date.now().toString(36)+Math.random().toString(36).slice(2,10)).slice(0,64)}var t=class extends Error{status;constructor(e,t){super(e),this.name=`ApiError`,this.status=t}};export{e as n,t};

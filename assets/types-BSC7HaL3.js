@@ -1,0 +1,1 @@
+var e=[`condominios`,`exercicios`,`mensais`,`assembleias`,`modelos`,`modelos_ata`,`config`,`importacoes`,`atas`,`anexos_importacao`,`decisoes_previsao`,`decisoes_importacao`,`historico_rateios`,`previsoes_aprovadas`];export{e as t};
