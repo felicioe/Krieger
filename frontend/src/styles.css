@@ -100,7 +100,7 @@
   --warning-foreground: oklch(0.3 0.06 60);
   /* #d9e0e8 */
   --border: oklch(0.904 0.013 251.6);
-  --input: oklch(0.88 0.015 251.6);
+  --input: oklch(0.45 0.03 252);
   /*
    * Borda de controles de formulário (campo, seleção, área de texto, chave desligada, sinal +/−).
    * #798898: 3,63:1 no branco, 3,35:1 no fundo #f4f6f9 e 3,19:1 na linha cinza das listas —
