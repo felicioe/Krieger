@@ -1,0 +1,33 @@
+# Tipo correto para o worker de PDF (.mjs); sem isso o navegador recusa o módulo.
+AddType text/javascript .mjs .js
+Options -Indexes
+
+# As telas HTML legadas foram substituídas pelo SPA React. Redireciona acessos antigos
+# para impedir que uma cópia residual do servidor volte a ser exibida.
+Redirect 302 /login.html /#/login
+Redirect 302 /usuarios.html /#/usuarios
+Redirect 302 /index.html /
+RedirectMatch 404 "^/(auth-guard\.js|acesso\.css)$"
+
+# Cabeçalhos de segurança (proteção contra clickjacking, MIME-sniffing e vazamento de referrer)
+<IfModule mod_headers.c>
+  # O HTML aponta para assets versionados; nunca manter o shell antigo em cache.
+  <FilesMatch "^(index\.html|login\.html)$">
+    Header always set Cache-Control "no-cache, no-store, must-revalidate"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+  </FilesMatch>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# Nunca expor o repositório Git nem pastas de apoio/cópias.
+RedirectMatch 404 "(^|/)\.git(/|$)"
+RedirectMatch 404 "^/(krieger|importador)(/|$)"
+
+# Bloqueia o acesso direto a arquivos internos, configurações, scripts e documentos sensíveis.
+<FilesMatch "(\.(sql|md|log|env|bak|old|json|lock)$|^\.git|^lib_.*\.php$|^config\.php$|^config\..*\.php$)">
+  Require all denied
+</FilesMatch>
