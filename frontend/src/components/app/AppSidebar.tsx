@@ -72,6 +72,7 @@ export const GRUPOS_MENU: Grupo[] = [
         icone: Building2,
         permissao: "condominios.visualizar",
       },
+      { titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp },
     ],
   },
   {
@@ -129,18 +130,6 @@ export const GRUPOS_MENU: Grupo[] = [
       { titulo: "Editais", to: "/editais", icone: Megaphone, permissao: "editais.visualizar" },
       { titulo: "Atas", to: "/atas", icone: ScrollText, permissao: "atas.visualizar" },
       {
-        titulo: "Modelos de edital",
-        to: "/modelos",
-        icone: FileText,
-        permissao: "modelos.visualizar",
-      },
-      {
-        titulo: "Modelos de ata",
-        to: "/modelos-ata",
-        icone: ScrollText,
-        permissao: "modelos_ata.visualizar",
-      },
-      {
         titulo: "Drive de Documentos",
         to: "/drive-documentos",
         icone: FolderOpen,
@@ -155,8 +144,10 @@ export const GRUPOS_MENU: Grupo[] = [
     ],
   },
   {
-    titulo: "Administração",
-    icone: Settings2,
+    // Cadastros e modelos que só o ADM configura. O Usuário vê o item apenas se a matriz de
+    // permissões liberar (kr_perfil_permissoes); nenhuma permissão nova é criada aqui.
+    titulo: "Cadastro e configuração",
+    icone: FileUp,
     itens: [
       {
         titulo: "Importador",
@@ -164,7 +155,24 @@ export const GRUPOS_MENU: Grupo[] = [
         icone: FileUp,
         permissao: "importador.visualizar",
       },
-      { titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp },
+      {
+        titulo: "Modelos de edital",
+        to: "/modelos",
+        icone: FileText,
+        permissao: "modelos.visualizar",
+      },
+      {
+        titulo: "Modelos de ata",
+        to: "/modelos-ata",
+        icone: ScrollText,
+        permissao: "modelos_ata.visualizar",
+      },
+    ],
+  },
+  {
+    titulo: "Administração",
+    icone: Settings2,
+    itens: [
       {
         titulo: "Escritório",
         to: "/escritorio",
