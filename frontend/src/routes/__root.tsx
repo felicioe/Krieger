@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
+  ClientOnly,
   Link,
   createRootRouteWithContext,
   useRouter,
@@ -119,7 +120,10 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      {/* O servidor não recebe o fragmento da URL. Monte a rota só após hidratar o shell. */}
+      <ClientOnly>
+        <Outlet />
+      </ClientOnly>
       <Toaster position="bottom-right" richColors closeButton />
     </QueryClientProvider>
   );
