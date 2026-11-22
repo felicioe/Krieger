@@ -56,6 +56,7 @@ export function PainelPrevisao({
   condoId,
   onChange,
   aoTravar,
+  travando,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
@@ -64,6 +65,8 @@ export function PainelPrevisao({
   onChange: (parcial: Partial<Exercicio>) => void;
   /** Grava o rateio no histórico acumulativo (store `historico_rateios`). Sem isso, só aprova. */
   aoTravar?: (() => void | Promise<void>) | undefined;
+  /** Trava em andamento: desabilita o botão para evitar cliques repetidos. */
+  travando?: boolean | undefined;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
@@ -285,6 +288,7 @@ export function PainelPrevisao({
           onVariacaoHistoricaChange={(v) => onChange({ variacaoHistoricaManual: v })}
           aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })}
           aoTravar={aoTravar}
+          travando={travando}
         />
       </aside>
     </div>
@@ -449,6 +453,7 @@ function Resumo({
   onVariacaoHistoricaChange,
   aoAprovar,
   aoTravar,
+  travando,
 }: {
   r: ResultadoPrevisao;
   arredondamento: Arredondamento;
@@ -470,6 +475,7 @@ function Resumo({
   aoAprovar: () => void;
   /** Grava o rateio no histórico acumulativo. Sem isso, o botão não aparece. */
   aoTravar?: (() => void | Promise<void>) | undefined;
+  travando?: boolean | undefined;
 }) {
   const ausente = (n: number | null, motivo?: string) =>
     n === null ? <SemValor motivo={motivo} /> : formatBRL(n);
@@ -612,8 +618,15 @@ function Resumo({
               Usar como rateio aprovado
             </Button>
             {aoTravar && (
-              <Button type="button" size="sm" className="w-full" onClick={() => void aoTravar()}>
-                Travar rateio no histórico
+              <Button
+                type="button"
+                size="sm"
+                className="w-full"
+                disabled={travando}
+                aria-busy={travando}
+                onClick={() => void aoTravar()}
+              >
+                {travando ? "Travando…" : "Travar rateio no histórico"}
               </Button>
             )}
           </div>

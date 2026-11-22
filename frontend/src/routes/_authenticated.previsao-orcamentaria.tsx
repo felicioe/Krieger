@@ -30,6 +30,7 @@ import { calcularPrevisaoParaRelatorios } from "@/domain/previsaoRelatorios";
 import {
   aplicarRateioBase,
   aplicarVariacaoDoHistorico,
+  executarTravamentoRateio,
   planejarTravamentoRateio,
 } from "@/domain/historicoRateio";
 import type {
@@ -283,6 +284,8 @@ function EditorPrevisao({
     salvar.mutate(prepararExercicio(e));
   }
 
+  const [travando, setTravando] = useState(false);
+  const travandoRef = useRef(false);
   /**
    * Trava o rateio: grava o valor aprovado no exercício, registra a linha no histórico
    * acumulativo (`historico_rateios`) e propaga o valor como `rateioAtual` do exercício seguinte,
@@ -290,53 +293,74 @@ function EditorPrevisao({
    */
   async function aoTravar() {
     const aprovado = resultado.rateioSugerido;
-    if (aprovado === null || e.fechado) return;
+    if (aprovado === null || e.fechado || travandoRef.current) return;
+    travandoRef.current = true;
+    setTravando(true);
+    const anterior = e;
     const atualizado = prepararExercicio({ ...e, rateioAprovado: aprovado });
-    setE(atualizado);
-    try {
-      const salvo = await api.salvar("exercicios", atualizado);
-      const n = normalizarExercicio(salvo);
-      setE(n);
-      setSalvoJson(JSON.stringify(n));
-      queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
-      queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
-
-      // Linha do histórico (herda o rateio atual do ano anterior, calcula o %, preserva o % informado e a
-      // observação da linha existente) e propagação do aprovado ao exercício seguinte: ver
-      // `planejarTravamentoRateio` (domain/historicoRateio.ts), coberto por testes.
-      const plano = planejarTravamentoRateio({
-        exercicio: n,
-        aprovado,
-        historico: historicoRateios,
-        exercicios,
-        agora: new Date().toISOString(),
-        novoId,
-      });
-      await api.salvar("historico_rateios", plano.linha);
-      queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
-
-      // Propaga como base do exercício seguinte, se ainda não tiver rateio atual.
-      const proximo = plano.proximo
-        ? exercicios.find((x) => x.id === plano.proximo?.id)
-        : undefined;
-      if (proximo && plano.proximo) {
-        await api.salvar("exercicios", { ...proximo, rateioAtual: plano.proximo.rateioAtual });
+    const resultado_ = await executarTravamentoRateio({
+      gravarExercicio: async () => {
+        const salvo = await api.salvar("exercicios", atualizado);
+        const n = normalizarExercicio(salvo);
+        setE(n);
+        setSalvoJson(JSON.stringify(n));
         queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
+        queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
+        return n;
+      },
+      planejar: (n) =>
+        planejarTravamentoRateio({
+          exercicio: n,
+          aprovado,
+          historico: historicoRateios,
+          exercicios,
+          agora: new Date().toISOString(),
+          novoId,
+        }),
+      gravarHistorico: async (linha) => {
+        await api.salvar("historico_rateios", linha);
+        queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
+      },
+      gravarProximo: async (id, rateioAtual) => {
+        const proximo = exercicios.find((x) => x.id === id);
+        if (!proximo) return;
+        await api.salvar("exercicios", { ...proximo, rateioAtual });
+        queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
+      },
+    });
+    try {
+      if (resultado_.ok) {
+        const proximo = resultado_.proximoId
+          ? exercicios.find((x) => x.id === resultado_.proximoId)
+          : undefined;
+        toast.success(
+          proximo
+            ? `Rateio de ${formatBRL(aprovado)} travado. Aplicado como base de ${proximo.ano} e registrado no histórico do cadastro do condomínio.`
+            : `Rateio de ${formatBRL(aprovado)} travado e registrado no histórico do cadastro do condomínio.`,
+        );
+        return;
       }
-
-      toast.success(
-        proximo
-          ? `Rateio de ${formatBRL(aprovado)} travado. Aplicado como base de ${proximo.ano} e registrado no histórico do cadastro do condomínio.`
-          : `Rateio de ${formatBRL(aprovado)} travado e registrado no histórico do cadastro do condomínio.`,
-      );
-    } catch (erro) {
-      // O rateio aprovado já foi gravado no exercício antes deste ponto; o que falhou foi o
-      // histórico acumulativo. Dizer isso evita o usuário achar que nada foi salvo.
-      toast.error(
-        `Rateio aprovado salvo no exercício, mas o histórico não gravou: ${
-          erro instanceof Error ? erro.message : "erro desconhecido."
-        }`,
-      );
+      const motivo =
+        resultado_.erro instanceof Error ? resultado_.erro.message : "erro desconhecido.";
+      if (resultado_.etapa === "exercicio") {
+        // Nada foi gravado: volta ao estado anterior, sem marcar o rateio como aprovado.
+        setE(anterior);
+        toast.error(
+          `Não foi possível salvar o rateio aprovado no exercício. Nada foi travado; tente de novo. (${motivo})`,
+        );
+      } else if (resultado_.etapa === "historico") {
+        toast.error(
+          `O rateio aprovado foi salvo no exercício, mas o histórico não gravou. Tente travar de novo; nada foi duplicado. (${motivo})`,
+        );
+      } else {
+        const ano = exercicios.find((x) => x.id === resultado_.proximoId)?.ano;
+        toast.error(
+          `O histórico foi gravado, mas o rateio não foi aplicado como base de ${ano ?? "exercício seguinte"}. Tente travar de novo. (${motivo})`,
+        );
+      }
+    } finally {
+      travandoRef.current = false;
+      setTravando(false);
     }
   }
 
@@ -436,6 +460,7 @@ function EditorPrevisao({
             condoId={e.condoId}
             onChange={mudar}
             aoTravar={aoTravar}
+            travando={travando}
           />
         </fieldset>
       </form>
