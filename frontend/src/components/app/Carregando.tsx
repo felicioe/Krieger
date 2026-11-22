@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
 /**
@@ -17,4 +18,15 @@ export function Carregando({ texto = "Carregando…" }: { texto?: string }) {
       <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {texto}
     </div>
   );
+}
+
+/**
+ * Aviso de carregamento só depois da primeira montagem no cliente. O HTML pré-renderizado não
+ * conhece a rota do hash, então no primeiro render da hidratação um aviso aqui causa o erro #418
+ * do React (issue #353). Antes disso, o componente não renderiza nada, igual ao servidor.
+ */
+export function CarregandoAposMontar() {
+  const [montado, setMontado] = useState(false);
+  useEffect(() => setMontado(true), []);
+  return montado ? <Carregando /> : null;
 }
