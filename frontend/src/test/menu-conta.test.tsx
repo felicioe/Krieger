@@ -171,10 +171,11 @@ describe("bloco da conta no menu lateral", () => {
     expect(screen.getByRole("link", { name: "Usuários" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Minha senha" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Sair" })).toBeNull();
-    const ajuda = screen.getByRole("navigation", { name: "Ajuda e versão" });
-    expect(within(ajuda).getByRole("link", { name: "Central de ajuda" })).toBeInTheDocument();
+    await user.click(botaoConta());
+    const opcoes = screen.getByRole("list", { name: "Opções da conta" });
+    expect(within(opcoes).getByRole("link", { name: "Central de ajuda" })).toBeInTheDocument();
     expect(
-      within(ajuda).getByRole("button", { name: "Registro de Alterações" }),
+      within(opcoes).getByRole("button", { name: "Registro de Alterações" }),
     ).toBeInTheDocument();
     const principal = screen.getByRole("navigation", { name: "Menu principal" });
     expect(
@@ -235,6 +236,7 @@ describe("bloco da conta no menu lateral", () => {
   it("Registro de Alterações: abre a versão atual, fecha com Escape, devolve o foco e mantém o digitado", async () => {
     const { user } = montar();
     await user.type(await screen.findByLabelText("Observação"), "rascunho");
+    await user.click(botaoConta());
     const abrir = screen.getByRole("button", { name: "Registro de Alterações" });
     await user.click(abrir);
     const janela = await screen.findByRole("dialog", { name: "Registro de Alterações" });
@@ -270,6 +272,7 @@ describe("Registro de Alterações pela gaveta do celular", () => {
     // Gaveta remonta o menu: o bloco da conta começa recolhido também aqui.
     const conta = within(gaveta).getByRole("button", { name: /Conta: Maria Souza/ });
     expect(conta).toHaveAttribute("aria-expanded", "false");
+    await user.click(conta);
     await user.click(within(gaveta).getByRole("button", { name: "Registro de Alterações" }));
 
     const janela = await screen.findByRole("dialog", { name: "Registro de Alterações" });
@@ -352,6 +355,7 @@ describe("menu por perfil (#310)", () => {
     for (const nome of ["Importador", "Modelos de edital", "Modelos de ata", "Escritório"])
       expect(link(nome)).toBeNull();
     expect(botaoConta("João")).toHaveAttribute("aria-expanded", "false");
+    await user.click(botaoConta("João"));
     expect(link("Central de ajuda")).toBeInTheDocument();
   });
 });
