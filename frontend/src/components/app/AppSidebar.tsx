@@ -35,7 +35,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAbrirRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
@@ -230,6 +230,7 @@ const CHAVE_GRUPOS_FECHADOS = "krieger.menu.grupos-fechados";
 
 /** Chave base para favoritos por usuário. */
 const CHAVE_FAVORITOS_BASE = "krieger.favoritos";
+const LIMITE_FAVORITOS = 5;
 
 function lerFavoritos(userId: string | undefined): string[] {
   if (!userId) return [];
@@ -302,14 +303,17 @@ function ItemMenu({
   item,
   aoNavegar,
   favorito,
+  atingiuLimite,
   onToggleFavorito,
 }: {
   item: Item;
   aoNavegar?: (() => void) | undefined;
   favorito?: boolean;
+  atingiuLimite?: boolean;
   onToggleFavorito?: (to: string) => void;
 }) {
   const Icone = item.icone;
+  const limiteBloqueia = atingiuLimite && !favorito;
   const location = useRouterState({ select: (state) => state.location });
   const ativo = itemMenuAtivo(item.to, location.pathname, location.searchStr);
   const [caminho] = item.to.split("?");
@@ -348,19 +352,28 @@ function ItemMenu({
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            onToggleFavorito(item.to);
+            if (!limiteBloqueia) onToggleFavorito(item.to);
           }}
           aria-label={
             favorito
               ? `Remover ${item.titulo} dos favoritos`
-              : `Adicionar ${item.titulo} aos favoritos`
+              : limiteBloqueia
+                ? `Adicionar ${item.titulo} aos favoritos: limite de ${LIMITE_FAVORITOS} atingido`
+                : `Adicionar ${item.titulo} aos favoritos`
           }
-          title={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          aria-disabled={limiteBloqueia || undefined}
+          title={
+            favorito
+              ? "Remover dos favoritos"
+              : limiteBloqueia
+                ? "Limite de favoritos atingido"
+                : "Adicionar aos favoritos"
+          }
           className={cn(
-            "mr-2 shrink-0 rounded p-1 transition-colors",
+            "mr-1 grid size-8 shrink-0 place-items-center rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sidebar-ring max-md:size-11 pointer-coarse:size-11 aria-disabled:opacity-50",
             favorito
               ? "text-yellow-400 hover:text-yellow-300"
-              : "text-sidebar-muted opacity-0 group-hover:opacity-100 hover:text-yellow-400 focus:opacity-100",
+              : "text-sidebar-muted hover:text-yellow-400",
           )}
         >
           <Star className="size-3.5" fill={favorito ? "currentColor" : "none"} />
@@ -420,24 +433,27 @@ export function ConteudoMenu({
     setFavoritos(lerFavoritos(usuario?.id));
   }, [usuario?.id]);
 
-  const toggleFavorito = useCallback(
-    (to: string) => {
-      setFavoritos((prev) => {
-        const proximo = prev.includes(to) ? prev.filter((t) => t !== to) : [...prev, to];
-        gravarFavoritos(usuario?.id, proximo);
-        return proximo;
-      });
-    },
-    [usuario?.id],
-  );
-
-  // Mesmo filtro dos grupos: um favorito de módulo sem permissão não aparece (#296).
+  // Mesmo filtro dos grupos: favoritos indisponíveis não aparecem nem ocupam o limite.
   const itemVisivel = (item: Item) =>
     (!item.apenasAdmin || usuario?.perfil === "admin") &&
     (!item.permissao || temPermissao(usuario, item.permissao));
-  const itensFavoritos = ITENS_MENU.filter(
-    (item) => favoritos.includes(item.to) && itemVisivel(item),
-  );
+  const destinosVisiveis = new Map(ITENS_MENU.filter(itemVisivel).map((item) => [item.to, item]));
+  const quantidadeVisivel = (salvos: string[]) =>
+    new Set(salvos.filter((to) => destinosVisiveis.has(to))).size;
+  const itensFavoritos = [...new Set(favoritos)]
+    .filter((to) => destinosVisiveis.has(to))
+    .slice(0, LIMITE_FAVORITOS)
+    .map((to) => destinosVisiveis.get(to)!);
+  const atingiuLimite = quantidadeVisivel(favoritos) >= LIMITE_FAVORITOS;
+
+  function toggleFavorito(to: string) {
+    setFavoritos((prev) => {
+      if (!prev.includes(to) && quantidadeVisivel(prev) >= LIMITE_FAVORITOS) return prev;
+      const proximo = prev.includes(to) ? prev.filter((t) => t !== to) : [...prev, to];
+      gravarFavoritos(usuario?.id, proximo);
+      return proximo;
+    });
+  }
 
   // Grupo aberto por causa da página atual. Some quando a pessoa recolhe esse grupo na mão, para ela
   // poder ver o menu recolhido mesmo estando dentro da página; volta a abrir na próxima navegação.
@@ -510,12 +526,7 @@ export function ConteudoMenu({
             <ul>
               {itensFavoritos.map((item) => (
                 <li key={item.to}>
-                  <ItemMenu
-                    item={item}
-                    aoNavegar={aoNavegar}
-                    favorito
-                    onToggleFavorito={toggleFavorito}
-                  />
+                  <ItemMenu item={item} aoNavegar={aoNavegar} />
                 </li>
               ))}
             </ul>
@@ -537,6 +548,7 @@ export function ConteudoMenu({
                       item={item}
                       aoNavegar={aoNavegar}
                       favorito={favoritos.includes(item.to)}
+                      atingiuLimite={atingiuLimite}
                       onToggleFavorito={toggleFavorito}
                     />
                   </li>
@@ -586,6 +598,7 @@ export function ConteudoMenu({
                         item={item}
                         aoNavegar={aoNavegar}
                         favorito={favoritos.includes(item.to)}
+                        atingiuLimite={atingiuLimite}
                         onToggleFavorito={toggleFavorito}
                       />
                     </li>

@@ -5,6 +5,10 @@
 - #338: sem preferência salva, o menu inicia recolhido e abre o grupo da rota
   atual. O controle geral fica no início do menu e a preferência explícita
   continua associada ao usuário.
+- #337: estrelas visíveis também no toque, com alvos de 44 px. O menu exibe
+  até cinco atalhos na ordem em que foram adicionados. Os destinos e os
+  controles permanecem nos grupos de origem, inclusive para remover escolhas
+  antigas que excedam o limite.
 
 
 ## Acessibilidade da previsão e do relatório final — 22/11/2026
