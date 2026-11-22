@@ -210,6 +210,8 @@ function EditorPrevisao({
   const [e, setE] = useState<Exercicio>(inicial);
   const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const sujo = JSON.stringify(e) !== salvoJson;
+  const travamentoEmAndamento = useRef(false);
+  const [travando, setTravando] = useState(false);
   const unidades =
     e.fechado && e.fechamento ? e.fechamento.condominio.unidades : (condominio?.unidades ?? null);
   const demonstrativo = e.demonstrativo ?? demonstrativoVazio(e.condoNome);
@@ -278,7 +280,7 @@ function EditorPrevisao({
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
-    if (e.fechado) return;
+    if (e.fechado || travamentoEmAndamento.current || salvar.isPending) return;
     salvar.mutate(prepararExercicio(e));
   }
 
@@ -289,9 +291,11 @@ function EditorPrevisao({
    */
   async function aoTravar() {
     const aprovado = resultado.rateioSugerido;
-    if (aprovado === null || e.fechado) return;
+    if (aprovado === null || e.fechado || travamentoEmAndamento.current || salvar.isPending) return;
+    travamentoEmAndamento.current = true;
+    setTravando(true);
+    let falha = "Não foi possível confirmar a gravação do rateio no exercício";
     const atualizado = prepararExercicio({ ...e, rateioAprovado: aprovado });
-    setE(atualizado);
     try {
       const salvo = await api.salvar("exercicios", atualizado);
       const n = normalizarExercicio(salvo);
@@ -303,10 +307,13 @@ function EditorPrevisao({
       // Linha do histórico (herda o rateio atual do ano anterior, calcula o %, preserva o % informado e a
       // observação da linha existente) e propagação do aprovado ao exercício seguinte: ver
       // `planejarTravamentoRateio` (domain/historicoRateio.ts), coberto por testes.
+      falha =
+        "Rateio aprovado no exercício, mas não foi possível confirmar a gravação no histórico";
+      const historicoAtual = await api.listar<HistoricoRateio>("historico_rateios");
       const plano = planejarTravamentoRateio({
         exercicio: n,
         aprovado,
-        historico: historicoRateios,
+        historico: historicoAtual,
         exercicios,
         agora: new Date().toISOString(),
         novoId,
@@ -315,27 +322,27 @@ function EditorPrevisao({
       queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
 
       // Propaga como base do exercício seguinte, se ainda não tiver rateio atual.
+      falha =
+        "Rateio aprovado e registrado no histórico, mas não foi possível confirmar a aplicação no exercício seguinte";
       const proximo = plano.proximo
-        ? exercicios.find((x) => x.id === plano.proximo?.id)
-        : undefined;
-      if (proximo && plano.proximo) {
+        ? await api.obter<Exercicio>("exercicios", plano.proximo.id)
+        : null;
+      const podePropagar = proximo && plano.proximo && proximo.rateioAtual == null;
+      if (podePropagar) {
         await api.salvar("exercicios", { ...proximo, rateioAtual: plano.proximo.rateioAtual });
         queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
       }
 
       toast.success(
-        proximo
+        podePropagar
           ? `Rateio de ${formatBRL(aprovado)} travado. Aplicado como base de ${proximo.ano} e registrado no histórico do cadastro do condomínio.`
           : `Rateio de ${formatBRL(aprovado)} travado e registrado no histórico do cadastro do condomínio.`,
       );
     } catch (erro) {
-      // O rateio aprovado já foi gravado no exercício antes deste ponto; o que falhou foi o
-      // histórico acumulativo. Dizer isso evita o usuário achar que nada foi salvo.
-      toast.error(
-        `Rateio aprovado salvo no exercício, mas o histórico não gravou: ${
-          erro instanceof Error ? erro.message : "erro desconhecido."
-        }`,
-      );
+      toast.error(`${falha}: ${erro instanceof Error ? erro.message : "erro desconhecido."}`);
+    } finally {
+      travamentoEmAndamento.current = false;
+      setTravando(false);
     }
   }
 
@@ -398,7 +405,7 @@ function EditorPrevisao({
               permissao="previsao_orcamentaria.editar"
               type="submit"
               form="form-previsao"
-              disabled={salvar.isPending || e.fechado}
+              disabled={salvar.isPending || travando || e.fechado}
             >
               {salvar.isPending ? <Loader2 className="animate-spin" /> : <Save />}
               Salvar
@@ -425,7 +432,11 @@ function EditorPrevisao({
         </p>
       )}
       <form id="form-previsao" onSubmit={enviar} noValidate>
-        <fieldset disabled={e.fechado} className="min-w-0">
+        <fieldset
+          disabled={e.fechado || travando || salvar.isPending}
+          aria-busy={travando}
+          className="min-w-0"
+        >
           <PainelPrevisao
             exercicio={e}
             resultado={resultado}

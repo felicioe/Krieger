@@ -1,5 +1,12 @@
 # Estado atual e passagem de contexto
 
+## Recuperação do fechamento financeiro — 22/11/2026
+
+- #351: o travamento mostra o aprovado após confirmação do exercício e
+  identifica separadamente falhas no exercício, no histórico e na aplicação
+  ao exercício seguinte. O editor bloqueia ações concorrentes e consulta o
+  histórico novamente antes de gravar, inclusive em uma nova tentativa.
+
 ## Auditoria de navegação — 22/11/2026
 
 - #338: sem preferência salva, o menu inicia recolhido e abre o grupo da rota
