@@ -80,20 +80,18 @@ export function compararPrevistoRealizadoMensal(
     grupos.push({ nome: k, previstoAnual: 0, serie });
   }
 
-  let situacaoPrevisto: "ok" | "sem_base" | "sem_percentual" = "ok";
-  if (!opcoes.demonstrativoBase || !temGruposComDespesas(opcoes.demonstrativoBase)) {
-    situacaoPrevisto = "sem_base";
-  }
-  let totalPrevisto = grupos.reduce((s, g) => s + g.previstoAnual, 0) / 12 * selecionados.length;
+  const situacaoPrevisto: "ok" | "sem_base" | "sem_percentual" =
+    !opcoes.demonstrativoBase || !temGruposComDespesas(opcoes.demonstrativoBase) ? "sem_base" : "ok";
+  // Sem demonstrativo base o previsto não se aplica: linhas e total ficam zerados, para fecharem entre si.
+  const fatorPrevisto = situacaoPrevisto === "ok" ? 1 : 0;
+  const totalPrevisto = (grupos.reduce((s, g) => s + g.previstoAnual, 0) / 12) * selecionados.length * fatorPrevisto;
   const totalRealizado = grupos.reduce((s, g) => s + g.serie.reduce((a, b) => a + b, 0), 0);
-  // Quando não há demonstrativo base explícito, previsto não se aplica: zerar totais.
-  if (situacaoPrevisto === "sem_base") totalPrevisto = 0;
   const mediaPrev = totalPrevisto / Math.max(1, selecionados.length);
   const mediaReal = totalRealizado / Math.max(1, selecionados.length);
   const linhas: LinhaMensal[] = grupos
     .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"))
     .map((g) => {
-      const p = g.previstoAnual / 12;
+      const p = (g.previstoAnual / 12) * fatorPrevisto;
       const r = g.serie.reduce((a, b) => a + b, 0);
       return {
         grupo: g.nome,
@@ -111,7 +109,12 @@ export function compararPrevistoRealizadoMensal(
     meses,
     linhas,
     total: fechar(totalPrevisto, totalRealizado, totalPrevisto, totalRealizado),
-    avisos: avisos.length ? [`Sem relatório mensal em: ${avisos.join(", ")}. O realizado desses meses conta como zero.`] : [],
+    avisos: [
+      ...(situacaoPrevisto === "sem_base"
+        ? ["Sem demonstrativo base para o previsto: o previsto não se aplica e aparece zerado. O realizado segue o relatório mensal."]
+        : []),
+      ...(avisos.length ? [`Sem relatório mensal em: ${avisos.join(", ")}. O realizado desses meses conta como zero.`] : []),
+    ],
     relatoriosUsados,
     situacaoPrevisto,
   };
