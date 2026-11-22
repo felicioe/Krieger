@@ -1,5 +1,5 @@
 import { Link } from "@/components/app/LinkPermitido";
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import {
@@ -252,6 +252,19 @@ export function FormCondominio({
   const usuario = useUsuario();
   const novo = !inicial.id;
   const [c, setC] = useState<Condominio>(inicial);
+  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
+  const podeEditar = temPermissao(usuario, "condominios.editar");
+  const sujo = podeEditar && JSON.stringify(c) !== salvoJson;
+  const sujoRef = useRef(sujo);
+  sujoRef.current = sujo;
+  const liberado = useRef(false);
+  useBlocker({
+    shouldBlockFn: () =>
+      !liberado.current &&
+      sujoRef.current &&
+      !window.confirm("Há alterações não salvas neste condomínio. Sair mesmo assim?"),
+    enableBeforeUnload: () => !liberado.current && sujoRef.current,
+  });
   // Histórico de rateios (issue #297): gravado junto do cadastro, só quando há permissão de previsão.
   const podeVerRateios = temPermissao(usuario, "previsao_orcamentaria.visualizar");
   const [rateios, setRateios] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
@@ -343,8 +356,14 @@ export function FormCondominio({
       queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
       queryClient.setQueryData(chaves.item("condominios", salvo.id), salvo);
       toast.success("Condomínio salvo.");
-      if (novo) navigate({ to: "/condominios/$id", params: { id: salvo.id }, replace: true });
-      else setC(normalizarCondominio(salvo));
+      const normalizado = normalizarCondominio(salvo);
+      setSalvoJson(JSON.stringify(normalizado));
+      if (novo) {
+        liberado.current = true;
+        navigate({ to: "/condominios/$id", params: { id: salvo.id }, replace: true });
+      } else {
+        setC(normalizado);
+      }
     },
   });
 
@@ -352,6 +371,7 @@ export function FormCondominio({
     mutationFn: () => api.excluir("condominios", c.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
+      liberado.current = true;
       toast.success("Condomínio excluído.");
       navigate({ to: "/condominios" });
     },
@@ -359,6 +379,7 @@ export function FormCondominio({
 
   function enviar(e: FormEvent) {
     e.preventDefault();
+    if (!podeEditar || salvar.isPending) return;
     const r = prepararCondominio(c);
     if (!r.ok) {
       setErroNome(r.erro);
@@ -566,7 +587,7 @@ export function FormCondominio({
                 </div>
                 <Field
                   rotulo="Pasta de documentos"
-                  dica="Caminho da pasta deste condomínio no servidor de arquivos da empresa (NAS), usado pelo agente de indexação da Consulta de Documentos para localizar convenção/regimento/atas. Deixe em branco para não indexar este condomínio."
+                  dica="Caminho da pasta deste condomínio na rede do escritório, usado para localizar convenção, regimento e atas na Consulta Inteligente. Deixe em branco se não utilizar pasta em rede."
                   className="sm:col-span-6"
                 >
                   <Input

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@/components/app/LinkPermitido";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -179,13 +180,31 @@ function Pagina() {
                   {colunas.map((c) => (
                     <TableCell
                       key={c.titulo}
-                      title={c.titulo === "Situação" ? l.motivo : undefined}
                       className={cn(
                         c.alinhamento === "direita" && "num text-right",
                         c.titulo === "Situação" && cn("font-medium", COR_SITUACAO[l.situacao]),
                       )}
                     >
-                      {celulaTexto(c, l)}
+                      {c.titulo === "Condomínio" ? (
+                        <Link
+                          to="/condominios/$id"
+                          params={{ id: l.condoId }}
+                          className="font-medium text-primary hover:underline"
+                        >
+                          {celulaTexto(c, l)}
+                        </Link>
+                      ) : c.titulo === "Situação" ? (
+                        <div>
+                          <div>{celulaTexto(c, l)}</div>
+                          {l.motivo && (
+                            <div className="text-xs font-normal text-muted-foreground">
+                              {l.motivo}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        celulaTexto(c, l)
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>

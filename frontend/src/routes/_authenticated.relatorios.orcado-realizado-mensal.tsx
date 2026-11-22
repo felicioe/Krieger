@@ -6,7 +6,9 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
-import { Selecao } from "@/components/app/inputs";
+import { opcoesCondominio, Selecao, SelecaoBusca } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import { itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { Exportacoes } from "@/components/app/Exportacoes";
 import { baixarXlsx } from "@/lib/exportar";
@@ -54,6 +56,8 @@ function Pagina() {
   const { data: previsoesAprovadas } = useSuspenseQuery(
     listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
   );
+  const usuario = useUsuario();
+  const { recentes, adicionarRecente: registrarRecente } = useCondominiosRecentes(usuario?.id);
   const exercicios = useMemo(
     () => raw.map(normalizarExercicio).sort((a, b) => Number(b.ano) - Number(a.ano)),
     [raw],
@@ -66,6 +70,16 @@ function Pagina() {
   const [vertical, setVertical] = useState(false);
   const e = exercicios.find((x) => x.id === exercicioId) ?? exercicios[0];
   const condo = e ? condominios.find((c) => c.id === e.condoId) : null;
+  const condominiosComExercicio = useMemo(() => {
+    const ids = new Set(exercicios.map((x) => x.condoId));
+    return condominios
+      .filter((c) => ids.has(c.id))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [condominios, exercicios]);
+  const exerciciosDoCondo = useMemo(
+    () => (e ? exercicios.filter((x) => x.condoId === e.condoId) : []),
+    [exercicios, e],
+  );
   // Previsto aprovado simples: base é o realizado do exercício ANTERIOR (nunca o próprio) e o
   // percentual vem do histórico de rateios — a mesma fonte das demais telas de comparação.
   const demonstrativoBase = e
@@ -81,21 +95,41 @@ function Pagina() {
         previsoesAprovadas,
       })
     : null;
-  const opEx = exercicios.map((x) => ({
+  const rMesesCompletos = e
+    ? compararPrevistoRealizadoMensal(e, mensais, {
+        condominio: condo ?? null,
+        inicio: 1,
+        fim: 12,
+        demonstrativoBase,
+        historicoRateios,
+        previsoesAprovadas,
+      })
+    : null;
+  const opCondos = useMemo(
+    () => opcoesCondominio(condominiosComExercicio, true, recentes),
+    [condominiosComExercicio, recentes],
+  );
+  const opEx = exerciciosDoCondo.map((x) => ({
     valor: x.id,
-    rotulo: `${x.condoNome || condominios.find((c) => c.id === x.condoId)?.nome || "Condomínio"} · previsão ${x.ano}`,
+    rotulo: `Previsão ${x.ano}`,
   }));
   const opMes = Array.from({ length: 12 }, (_, i) => ({
     valor: String(i + 1),
-    rotulo: `Mês ${i + 1}`,
+    rotulo: rMesesCompletos?.meses[i]?.rotulo ?? `Mês ${i + 1}`,
   }));
   if (!r || !e)
     return (
-      <SectionCard titulo="Nenhuma previsão disponível">
-        <p className="text-sm text-muted-foreground">
-          Crie uma previsão orçamentária para gerar este relatório.
-        </p>
-      </SectionCard>
+      <>
+        <PageHeader
+          titulo="Previsto × Realizado por mês"
+          descricao="Conferência mês a mês, com totais por linha e por coluna."
+        />
+        <SectionCard titulo="Nenhuma previsão disponível">
+          <p className="text-sm text-muted-foreground">
+            Crie uma previsão orçamentária para gerar este relatório.
+          </p>
+        </SectionCard>
+      </>
     );
   const opcoesExport = { orcado, horizontal, vertical };
   const colunasExport = colunasMensalExport(r, opcoesExport);
@@ -140,25 +174,38 @@ function Pagina() {
         titulo="Parâmetros"
         descricao="Todas as análises respeitam exclusivamente o período selecionado."
       >
-        <div className="grid gap-4 sm:grid-cols-4">
-          <Field rotulo="Previsão">
+        <div className="grid gap-4 sm:grid-cols-6">
+          <Field rotulo="Condomínio" className="sm:col-span-2">
+            <SelecaoBusca
+              value={e.condoId}
+              onChange={(cid) => {
+                registrarRecente(cid);
+                const primeiro = exercicios.find((x) => x.condoId === cid);
+                if (primeiro) setExercicioId(primeiro.id);
+              }}
+              opcoes={opCondos}
+              placeholder="Escolha o condomínio"
+              placeholderBusca="Pesquisar por nome, código ou CNPJ…"
+            />
+          </Field>
+          <Field rotulo="Exercício" className="sm:col-span-1">
             <Selecao value={e.id} onChange={setExercicioId} opcoes={opEx} />
           </Field>
-          <Field rotulo="De">
+          <Field rotulo="De" className="sm:col-span-1">
             <Selecao
               value={String(inicio)}
               onChange={(v) => setInicio(Math.min(Number(v), fim))}
               opcoes={opMes}
             />
           </Field>
-          <Field rotulo="Até">
+          <Field rotulo="Até" className="sm:col-span-1">
             <Selecao
               value={String(fim)}
               onChange={(v) => setFim(Math.max(Number(v), inicio))}
               opcoes={opMes}
             />
           </Field>
-          <div className="flex flex-wrap items-end gap-x-4 gap-y-2 pb-2">
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2 pb-2 sm:col-span-6">
             <Op id="mr-orcado" checked={orcado} onChange={setOrcado}>
               Mostrar previsto
             </Op>

@@ -14,7 +14,9 @@ import { imprimirColunas } from "@/lib/imprimirColunas";
 import { colunasComparativoExport, linhasComparativoExport } from "@/lib/colunasRelatorios";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
-import { PercentualInput, Selecao } from "@/components/app/inputs";
+import { opcoesCondominio, PercentualInput, Selecao, SelecaoBusca } from "@/components/app/inputs";
+import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
+import { useUsuario } from "@/lib/auth";
 import { GraficoComparativo } from "@/components/previsto-realizado/GraficoComparativo";
 import {
   SituacaoBadge,
@@ -88,6 +90,8 @@ function PaginaComparativo() {
   const { data: previsoesAprovadas } = useSuspenseQuery(
     listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
   );
+  const usuario = useUsuario();
+  const { recentes, adicionarRecente: registrarRecente } = useCondominiosRecentes(usuario?.id);
   const [tolerancia, setTolerancia] = useState<number | null>(TOLERANCIA_PADRAO);
   const [mostrarAnaliticas, setMostrarAnaliticas] = useState(true);
 
@@ -157,10 +161,22 @@ function PaginaComparativo() {
     );
   }
 
-  const opcoesExercicio = exercicios.map((e) => ({
-    valor: e.id,
-    rotulo: `${e.condoNome || condominios.find((c) => c.id === e.condoId)?.nome || "Sem condomínio"} · previsão ${e.ano} → ${Number(e.ano) + 1}`,
-  }));
+  const condominiosComExercicio = useMemo(() => {
+    const ids = new Set(exercicios.map((e) => e.condoId));
+    return condominios
+      .filter((c) => ids.has(c.id))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [condominios, exercicios]);
+  const opcoesCondos = useMemo(
+    () => opcoesCondominio(condominiosComExercicio, true, recentes),
+    [condominiosComExercicio, recentes],
+  );
+  const opcoesExercicio = exercicios
+    .filter((e) => e.condoId === exercicio.condoId)
+    .map((e) => ({
+      valor: e.id,
+      rotulo: `Previsão ${e.ano} → ${Number(e.ano) + 1}`,
+    }));
   const opcoesMes = r.meses.map((m) => ({
     valor: String(m.posicao),
     rotulo: `${m.rotulo}${m.relatorios === 0 ? " (sem relatório)" : ""}`,
@@ -213,7 +229,20 @@ function PaginaComparativo() {
 
       <SectionCard titulo="Parâmetros">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
-          <Field rotulo="Previsão (prestação de contas)" className="sm:col-span-3">
+          <Field rotulo="Condomínio" className="sm:col-span-2">
+            <SelecaoBusca
+              value={exercicio.condoId}
+              onChange={(cid) => {
+                registrarRecente(cid);
+                const primeiro = exercicios.find((e) => e.condoId === cid);
+                if (primeiro) navigate({ search: { exercicio: primeiro.id }, replace: true });
+              }}
+              opcoes={opcoesCondos}
+              placeholder="Escolha o condomínio"
+              placeholderBusca="Pesquisar por nome, código ou CNPJ…"
+            />
+          </Field>
+          <Field rotulo="Previsão" className="sm:col-span-1">
             <Selecao
               value={exercicio.id}
               onChange={(id) => navigate({ search: { exercicio: id }, replace: true })}

@@ -28,7 +28,7 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
     ],
   },
   {
-    titulo: "Apuração do rateio",
+    titulo: "Rateio e orçamento",
     itens: [
       { id: "prestacao-contas", titulo: "Prestação de contas" },
       { id: "previsao-orcamentaria", titulo: "Previsão do rateio" },
@@ -36,10 +36,18 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
     ],
   },
   {
-    titulo: "Relatórios",
+    titulo: "Dados e importação",
     itens: [
-      { id: "previsto-realizado", titulo: "Previsto × Realizado acumulado" },
+      { id: "importador", titulo: "Importador" },
       { id: "relatorio-mensal", titulo: "Carga de dados mensais" },
+    ],
+  },
+  {
+    titulo: "Relatórios e análises",
+    itens: [
+      { id: "relatorio-final", titulo: "Relatório final" },
+      { id: "previsto-realizado", titulo: "Previsto × Realizado acumulado" },
+      { id: "orcado-realizado-mensal", titulo: "Previsto × Realizado por mês" },
       { id: "inadimplencia", titulo: "Evolução da inadimplência" },
       { id: "comparativo-despesas", titulo: "Comparativo de despesas" },
       { id: "consolidado-escritorio", titulo: "Consolidado do escritório" },
@@ -50,14 +58,12 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
     itens: [
       { id: "editais-atas", titulo: "Editais e Atas" },
       { id: "drive-documentos", titulo: "Drive de Documentos" },
+      { id: "consulta-documentos", titulo: "Consulta Inteligente" },
     ],
   },
   {
     titulo: "Administração",
-    itens: [
-      { id: "importador", titulo: "Importador" },
-      { id: "administracao", titulo: "Escritório, usuários e backup" },
-    ],
+    itens: [{ id: "administracao", titulo: "Escritório, usuários e backup" }],
   },
 ];
 
@@ -110,10 +116,13 @@ function Ajuda() {
                 específico, acessado pela tela <strong>Prestação de contas</strong>.
               </p>
               <p>
-                O menu lateral segue a ordem do trabalho: primeiro Apuração do rateio (lançar e
-                fechar as contas), depois Relatórios (conferir), Assembleias e documentos e, por
-                fim, Cadastro e configuração (cadastros e modelos, para quem administra) e
-                Administração (escritório, backup e limpeza, restritos ao SuperADM).
+                O menu lateral segue a ordem do trabalho: primeiro{" "}
+                <strong>Rateio e orçamento</strong> (prestação de contas e previsões), depois{" "}
+                <strong>Dados e importação</strong> (importador e carga mensal),{" "}
+                <strong>Relatórios e análises</strong> (relatório final e comparativos),{" "}
+                <strong>Assembleias e documentos</strong> (editais, atas, Drive e Consulta
+                Inteligente) e, por fim, <strong>Administração</strong> (escritório, usuários,
+                backup e limpeza, restritos ao SuperADM).
               </p>
             </Texto>
           </SectionCard>
@@ -377,15 +386,57 @@ function Ajuda() {
           </SectionCard>
 
           <SectionCard
-            id="drive-documentos"
-            titulo="Drive de Documentos"
-            descricao="Arquivos do condomínio e busca inteligente por conteúdo."
+            id="relatorio-final"
+            titulo="Relatório final"
+            descricao="Consolidação do exercício para emissão em PDF ou Word."
           >
             <Texto>
               <p>
-                Guarda documentos do condomínio (atas antigas, contratos, regimentos) e permite
-                buscar por conteúdo, não só pelo nome do arquivo — útil para achar uma cláusula ou
-                decisão antiga sem lembrar em qual documento ela está.
+                Reúne demonstrativo, comparativos, gráficos, previsão orçamentária e considerações
+                finais em um único documento pronto para a assembleia. Você pode ativar ou ocultar
+                cada seção antes de emitir.
+              </p>
+            </Texto>
+          </SectionCard>
+
+          <SectionCard
+            id="orcado-realizado-mensal"
+            titulo="Previsto × Realizado por mês"
+            descricao="Conferência mês a mês do orçamento previsto frente ao realizado."
+          >
+            <Texto>
+              <p>
+                Permite selecionar o condomínio, o exercício e o intervalo de competências para
+                acompanhar cada mês lado a lado, com análise horizontal, vertical e exportação em
+                PDF, Word, planilha ou impressão.
+              </p>
+            </Texto>
+          </SectionCard>
+
+          <SectionCard
+            id="drive-documentos"
+            titulo="Drive de Documentos"
+            descricao="Arquivos do condomínio organizados em pastas e subpastas."
+          >
+            <Texto>
+              <p>
+                Guarda documentos do condomínio (convenções, regimentos, atas, contratos e apólices)
+                com visualização em PDF diretamente na tela. Ao enviar uma pasta do computador, as
+                pastas e subpastas são cadastradas automaticamente.
+              </p>
+            </Texto>
+          </SectionCard>
+
+          <SectionCard
+            id="consulta-documentos"
+            titulo="Consulta Inteligente"
+            descricao="Pesquisa por conteúdo nos documentos e emissão opcional de notificação."
+          >
+            <Texto>
+              <p>
+                Permite fazer perguntas em linguagem natural sobre um condomínio específico ou sobre
+                todos os condomínios com documentos na base, trazendo a resposta com a referência de
+                arquivo e página e a opção de gerar notificação ou multa editável em Word (.DOCX).
               </p>
             </Texto>
           </SectionCard>

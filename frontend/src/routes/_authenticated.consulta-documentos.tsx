@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Copy, Eye, FileDown, FolderOpen, Loader2, Send, Sparkles } from "lucide-react";
+import { AlertTriangle, Copy, Eye, FileDown, FolderOpen, Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -9,11 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { SecaoRecolhivel } from "@/components/app/SecaoRecolhivel";
 import { Field } from "@/components/app/Field";
+import { contagem } from "@/components/app/textos";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
 import { useUsuario } from "@/lib/auth";
@@ -64,8 +66,8 @@ export const Route = createFileRoute("/_authenticated/consulta-documentos")({
 });
 
 const ORIGEM_ROTULO: Record<ConsultaOrigem, string> = {
-  cache: "Resposta em cache (0 tokens)",
-  local: "Busca local (0 tokens)",
+  cache: "Resposta reaproveitada",
+  local: "Consulta rápida nos arquivos",
   claude: "Analisado por IA",
 };
 const ORIGEM_VARIANTE: Record<ConsultaOrigem, "secondary" | "outline" | "success"> = {
@@ -255,7 +257,10 @@ function PaginaConsultaDocumentos() {
       const qtd = mapa[op.valor] ?? 0;
       return {
         ...op,
-        detalhe: [op.detalhe, qtd > 0 ? `${qtd} doc(s) na base` : "Sem docs na base"]
+        detalhe: [
+          op.detalhe,
+          qtd > 0 ? `${contagem(qtd, "documento", "documentos")} na base` : "Sem documentos na base",
+        ]
           .filter(Boolean)
           .join(" • "),
       };
@@ -263,9 +268,9 @@ function PaginaConsultaDocumentos() {
     return [
       {
         valor: "*",
-        rotulo: "🌐 Todos os condomínios com documentos na base",
+        rotulo: "Todos os condomínios com documentos na base",
         codigo: "TODOS",
-        detalhe: `${condosComDoc} condomínio(s) com acervo • ${totalDocs} documento(s) indexado(s)`,
+        detalhe: `${contagem(condosComDoc, "condomínio", "condomínios")} com acervo • ${contagem(totalDocs, "documento indexado", "documentos indexados")}`,
       },
       ...listaCondos,
     ];
@@ -411,6 +416,21 @@ function PaginaConsultaDocumentos() {
                 ]}
               />
             </Field>
+            {docsDoCondominioQuery.isError && escopoId !== "*" && (
+              <div className="mt-2 flex items-center justify-between gap-2 rounded-md border border-destructive/40 bg-destructive/5 px-2.5 py-1.5 text-xs text-destructive">
+                <span>Não foi possível carregar os documentos deste condomínio.</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-6 px-2 text-xs"
+                  onClick={() => void docsDoCondominioQuery.refetch()}
+                >
+                  <RefreshCw className="mr-1 size-3" />
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </SectionCard>
@@ -438,8 +458,8 @@ function PaginaConsultaDocumentos() {
               Consultar Base e Analisar
             </Button>
             <span className="text-xs text-muted-foreground">
-              Economia inteligente de tokens: pré-filtragem local + cache automático de perguntas
-              repetidas.
+              Consulta otimizada: reaproveita respostas já analisadas e lê apenas os trechos
+              relevantes dos documentos.
             </span>
           </div>
         </form>
@@ -531,9 +551,9 @@ function PaginaConsultaDocumentos() {
               Emitir Notificação / Multa em Word (.DOCX) a partir desta base legal
             </label>
             <p className="mt-1 pl-7 text-xs text-muted-foreground">
-              Gera o documento `.DOCX` formatado no padrão oficial do escritório (Times New Roman
-              12pt, cabeçalho do condomínio, valor por extenso e rodapé), pronto para edição ou
-              envio.
+              Gera o documento Word (.DOCX) formatado no padrão oficial do escritório (Times New
+              Roman 12pt, cabeçalho do condomínio, valor por extenso e rodapé), pronto para edição
+              ou envio.
             </p>
 
             {emitirNotificacao && (
@@ -579,15 +599,15 @@ function PaginaConsultaDocumentos() {
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-3">
-                  <Field rotulo="Condômino / Proprietário(a) *">
+                  <Field rotulo="Condômino / Proprietário(a)" obrigatorio>
                     <Input
                       value={destinatarioNome}
                       onChange={(e) => setDestinatarioNome(e.target.value)}
-                      placeholder="Ex.: APARECIDO GRANZOTTO"
+                      placeholder="Ex.: Nome completo do proprietário"
                     />
                   </Field>
 
-                  <Field rotulo="Unidade / Apartamento *">
+                  <Field rotulo="Unidade / Apartamento" obrigatorio>
                     <Input
                       value={unidade}
                       onChange={(e) => setUnidade(e.target.value)}
@@ -599,7 +619,7 @@ function PaginaConsultaDocumentos() {
                     <Input
                       value={inquilinoNome}
                       onChange={(e) => setInquilinoNome(e.target.value)}
-                      placeholder="Ex.: Pamela (deixe vazio se não houver)"
+                      placeholder="Deixe vazio se não houver"
                     />
                   </Field>
                 </div>
@@ -701,7 +721,19 @@ function PaginaConsultaDocumentos() {
         aberta={historicoAberto}
         aoMudar={setHistoricoAberto}
       >
-        {historico.data && historico.data.length > 0 ? (
+        {historico.isError ? (
+          <Alert variant="destructive">
+            <AlertTriangle />
+            <AlertTitle>Não foi possível carregar o histórico</AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>{mensagemErro(historico.error)}</p>
+              <Button variant="outline" size="sm" onClick={() => void historico.refetch()}>
+                <RefreshCw className="mr-1.5 size-4" />
+                Tentar novamente
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : historico.data && historico.data.length > 0 ? (
           <ul className="divide-y text-sm">
             {historico.data.map((h) => (
               <li key={h.id} className="flex flex-wrap items-center justify-between gap-2 py-2">

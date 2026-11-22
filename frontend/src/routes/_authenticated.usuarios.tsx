@@ -139,6 +139,8 @@ function Usuarios() {
                   variant="ghost"
                   size="icon"
                   aria-label={`Excluir ${u.login}`}
+                  title={u.id === eu?.id ? "Você não pode excluir o próprio usuário" : undefined}
+                  disabled={u.id === eu?.id}
                   className="text-destructive hover:text-destructive"
                   onClick={() => setExcluindo(u)}
                 >
@@ -191,6 +193,7 @@ function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFech
   >([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState<string | null>(null);
+  const [filtro, setFiltro] = useState("");
   useEffect(() => {
     api.auth
       .permissoes()
@@ -241,50 +244,78 @@ function DialogPermissoes({ usuario, aoFechar }: { usuario: UsuarioAdmin; aoFech
             </AlertDescription>
           </Alert>
         ) : (
-          <div className="grid gap-2">
-            {catalogo.map((p) => (
-              <div
-                key={p.chave}
-                className="flex flex-col items-start justify-between gap-3 rounded border p-2 sm:flex-row sm:items-center"
-              >
-                <div>
-                  <div className="font-medium">
-                    {p.tela} · {p.acao}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {p.modulo} · {p.chave}
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant={estado[p.chave] === "permitir" ? "default" : "outline"}
-                    disabled={!!salvando || usuario.perfil === "admin"}
-                    onClick={() => salvar(p.chave, "permitir")}
-                  >
-                    Permitir
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={estado[p.chave] === "negar" ? "destructive" : "outline"}
-                    disabled={!!salvando || usuario.perfil === "admin"}
-                    onClick={() => salvar(p.chave, "negar")}
-                  >
-                    Negar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabled={
-                      !!salvando ||
-                      usuario.perfil === "admin" ||
-                      !estado[p.chave] ||
-                      estado[p.chave] === "remover"
-                    }
-                    onClick={() => salvar(p.chave, "remover")}
-                  >
-                    Padrão
-                  </Button>
+          <div className="space-y-4">
+            <Input
+              value={filtro}
+              onChange={(e) => setFiltro(e.target.value)}
+              placeholder="Filtrar por módulo, tela ou ação…"
+              aria-label="Filtrar permissões"
+            />
+            {Object.entries(
+              catalogo
+                .filter((p) => {
+                  const t = filtro.trim().toLowerCase();
+                  if (!t) return true;
+                  return `${p.modulo} ${p.tela} ${p.acao} ${p.descricao ?? ""}`
+                    .toLowerCase()
+                    .includes(t);
+                })
+                .reduce<Record<string, typeof catalogo>>((acc, p) => {
+                  (acc[p.modulo] ??= []).push(p);
+                  return acc;
+                }, {}),
+            ).map(([modulo, itens]) => (
+              <div key={modulo} className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {modulo}
+                </p>
+                <div className="grid gap-2">
+                  {itens.map((p) => (
+                    <div
+                      key={p.chave}
+                      className="flex flex-col items-start justify-between gap-3 rounded border p-2 sm:flex-row sm:items-center"
+                    >
+                      <div>
+                        <div className="font-medium">
+                          {p.tela} · {p.acao}
+                        </div>
+                        {p.descricao && (
+                          <div className="text-xs text-muted-foreground">{p.descricao}</div>
+                        )}
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={estado[p.chave] === "permitir" ? "default" : "outline"}
+                          disabled={!!salvando || usuario.perfil === "admin"}
+                          onClick={() => salvar(p.chave, "permitir")}
+                        >
+                          Permitir
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={estado[p.chave] === "negar" ? "destructive" : "outline"}
+                          disabled={!!salvando || usuario.perfil === "admin"}
+                          onClick={() => salvar(p.chave, "negar")}
+                        >
+                          Negar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={
+                            !!salvando ||
+                            usuario.perfil === "admin" ||
+                            !estado[p.chave] ||
+                            estado[p.chave] === "remover"
+                          }
+                          onClick={() => salvar(p.chave, "remover")}
+                        >
+                          Padrão
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}

@@ -260,6 +260,7 @@ function Conferencia({ imp }: { imp: Importacao }) {
             {pendente && (
               <>
                 <Button
+                  permissao="importador.editar"
                   variant="outline"
                   onClick={() => setDescartar(true)}
                   disabled={confirmar.isPending}
@@ -267,6 +268,7 @@ function Conferencia({ imp }: { imp: Importacao }) {
                   <X /> Descartar
                 </Button>
                 <Button
+                  permissao="importador.editar"
                   onClick={() => {
                     if (!existente && !cad.nome.trim()) {
                       setErroNome("Informe o nome do condomínio.");

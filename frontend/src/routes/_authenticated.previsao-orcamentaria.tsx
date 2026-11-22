@@ -6,6 +6,7 @@ import { CircleHelp, FileSpreadsheet, Loader2, RefreshCw, Save } from "lucide-re
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -420,9 +421,11 @@ function EditorPrevisao({
       )}
 
       {e.fechado && (
-        <p className="mb-4 text-sm">
-          Exercício fechado. Reabra na prestação de contas para alterar a previsão.
-        </p>
+        <Alert className="mb-4">
+          <AlertDescription>
+            Exercício fechado. Reabra na prestação de contas para alterar a previsão.
+          </AlertDescription>
+        </Alert>
       )}
       <form id="form-previsao" onSubmit={enviar} noValidate>
         <fieldset disabled={e.fechado} className="min-w-0">

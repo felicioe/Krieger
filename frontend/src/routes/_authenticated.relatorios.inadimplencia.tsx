@@ -84,11 +84,17 @@ function Pagina() {
 
   if (!condominios.length)
     return (
-      <SectionCard titulo="Nenhum condomínio cadastrado">
-        <p className="text-sm text-muted-foreground">
-          Cadastre um condomínio e importe os relatórios mensais para ver este relatório.
-        </p>
-      </SectionCard>
+      <>
+        <PageHeader
+          titulo="Evolução da inadimplência"
+          descricao="Contas a receber mês a mês, com o percentual sobre as receitas e a comparação com o ano anterior."
+        />
+        <SectionCard titulo="Nenhum condomínio cadastrado">
+          <p className="text-sm text-muted-foreground">
+            Cadastre um condomínio e importe os relatórios mensais para ver este relatório.
+          </p>
+        </SectionCard>
+      </>
     );
 
   const r = de && ate ? evolucaoInadimplencia(mensais, condoId, de, ate) : null;

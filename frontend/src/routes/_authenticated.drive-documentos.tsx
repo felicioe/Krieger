@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent } from "react";
 import {
+  AlertTriangle,
+  Building2,
   ChevronRight,
   Download,
   Edit3,
@@ -13,11 +15,13 @@ import {
   FolderInput,
   FolderOpen,
   FolderPlus,
+  Globe,
   Loader2,
   MoreVertical,
   Package,
   Plus,
   Printer,
+  RefreshCw,
   Search,
   Settings2,
   Sparkles,
@@ -31,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import { temPermissao, useUsuario } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -48,7 +53,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
+import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { Field } from "@/components/app/Field";
+import { contagem } from "@/components/app/textos";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
 import {
@@ -211,6 +218,9 @@ function PaginaDriveDocumentos() {
   );
   const [pdfUrlInline, setPdfUrlInline] = useState<string | null>(null);
   const [carregandoConteudoId, setCarregandoConteudoId] = useState<string | null>(null);
+  const [baixandoDocId, setBaixandoDocId] = useState<string | null>(null);
+  const [docExcluindo, setDocExcluindo] = useState<DocumentoDrive | null>(null);
+  const visualizadorSeqRef = useRef(0);
 
   // Menu de contexto (botão direito do mouse)
   const [menuContexto, setMenuContexto] = useState<MenuContextoEstado>(null);
@@ -237,8 +247,15 @@ function PaginaDriveDocumentos() {
 
   useEffect(() => {
     const fechar = () => setMenuContexto(null);
+    const aoTeclar = (ev: KeyboardEvent) => {
+      if (ev.key === "Escape") setMenuContexto(null);
+    };
     window.addEventListener("click", fechar);
-    return () => window.removeEventListener("click", fechar);
+    window.addEventListener("keydown", aoTeclar);
+    return () => {
+      window.removeEventListener("click", fechar);
+      window.removeEventListener("keydown", aoTeclar);
+    };
   }, []);
 
   useEffect(() => {
@@ -319,7 +336,10 @@ function PaginaDriveDocumentos() {
       const qtd = mapaResumo[op.valor] ?? 0;
       return {
         ...op,
-        detalhe: [op.detalhe, qtd > 0 ? `${qtd} doc(s) no Drive` : "Sem docs no Drive"]
+        detalhe: [
+          op.detalhe,
+          qtd > 0 ? `${contagem(qtd, "documento", "documentos")} no Drive` : "Sem documentos no Drive",
+        ]
           .filter(Boolean)
           .join(" • "),
       };
@@ -403,7 +423,7 @@ function PaginaDriveDocumentos() {
       }
 
       toast.success(
-        `${itensPendentesCalculados.length} documento(s) enviados e alocados nas respectivas pastas do Drive!`,
+        `${contagem(itensPendentesCalculados.length, "documento enviado", "documentos enviados")} e alocados nas respectivas pastas do Drive.`,
       );
       await qc.invalidateQueries({ queryKey: ["documentos"] });
     } catch (e) {
@@ -442,31 +462,36 @@ function PaginaDriveDocumentos() {
   }
 
   async function abrirVisualizadorInline(doc: DocumentoDrive) {
+    const seq = ++visualizadorSeqRef.current;
     setCarregandoConteudoId(doc.id);
     try {
       const conteudo = await api.documentos.conteudo(doc.id);
-      if (pdfUrlInline) URL.revokeObjectURL(pdfUrlInline);
-      if (conteudo.pdfDataUrl) {
-        setPdfUrlInline(base64ParaBlobUrl(conteudo.pdfDataUrl, "application/pdf"));
-      } else {
-        setPdfUrlInline(null);
-      }
+      if (seq !== visualizadorSeqRef.current) return;
+      const novaUrl = conteudo.pdfDataUrl
+        ? base64ParaBlobUrl(conteudo.pdfDataUrl, "application/pdf")
+        : null;
+      setPdfUrlInline((anterior) => {
+        if (anterior) URL.revokeObjectURL(anterior);
+        return novaUrl;
+      });
       setDocMetadadosVisualizando(doc);
       setDocVisualizando(conteudo);
     } catch (e) {
-      toast.error(mensagemErro(e));
+      if (seq === visualizadorSeqRef.current) toast.error(mensagemErro(e));
     } finally {
-      setCarregandoConteudoId(null);
+      if (seq === visualizadorSeqRef.current) setCarregandoConteudoId(null);
     }
   }
 
   async function acaoBaixarPdf(doc: DocumentoDrive) {
+    if (baixandoDocId === doc.id) return;
+    setBaixandoDocId(doc.id);
     try {
       const c =
         docVisualizando?.id === doc.id ? docVisualizando : await api.documentos.conteudo(doc.id);
       if (!c.pdfDataUrl) {
         toast.error(
-          "Este documento foi indexado apenas como texto pelo agente local e não possui binário PDF salvo online.",
+          "Este documento foi indexado apenas como texto e não possui arquivo PDF salvo online.",
         );
         return;
       }
@@ -476,36 +501,48 @@ function PaginaDriveDocumentos() {
       baixarBase64(c.pdfDataUrl, nomePdf, "application/pdf");
     } catch (e) {
       toast.error(mensagemErro(e));
+    } finally {
+      setBaixandoDocId(null);
     }
   }
 
   async function acaoBaixarOriginal(doc: DocumentoDrive) {
+    if (baixandoDocId === doc.id) return;
+    setBaixandoDocId(doc.id);
     try {
       const c =
         docVisualizando?.id === doc.id ? docVisualizando : await api.documentos.conteudo(doc.id);
       if (!c.originalDataUrl) {
         toast.error(
-          "O arquivo original não foi mantido para este documento (apenas a versão PDF está disponível).",
+          "O arquivo original não foi mantido para este documento (apenas a versão em PDF está disponível).",
         );
         return;
       }
       baixarBase64(c.originalDataUrl, c.nomeArquivo, "application/octet-stream");
     } catch (e) {
       toast.error(mensagemErro(e));
+    } finally {
+      setBaixandoDocId(null);
     }
   }
 
   async function acaoImprimirOnline(doc: DocumentoDrive) {
+    if (baixandoDocId === doc.id) return;
+    setBaixandoDocId(doc.id);
     try {
       const c =
         docVisualizando?.id === doc.id ? docVisualizando : await api.documentos.conteudo(doc.id);
       if (!c.pdfDataUrl) {
-        toast.error("Binário PDF indisponível para impressão online.");
+        toast.error("Arquivo PDF indisponível para impressão online.");
         return;
       }
-      imprimirPdfBase64(c.pdfDataUrl);
+      if (!imprimirPdfBase64(c.pdfDataUrl)) {
+        toast.error("O navegador bloqueou a janela de impressão. Libere pop-ups para este site.");
+      }
     } catch (e) {
       toast.error(mensagemErro(e));
+    } finally {
+      setBaixandoDocId(null);
     }
   }
 
@@ -668,8 +705,8 @@ function PaginaDriveDocumentos() {
   function abrirMenuDireito(e: MouseEvent, doc: DocumentoDrive) {
     e.preventDefault();
     setMenuContexto({
-      x: Math.min(e.clientX, window.innerWidth - 260),
-      y: Math.min(e.clientY, window.innerHeight - 310),
+      x: Math.max(8, Math.min(e.clientX, window.innerWidth - 264)),
+      y: Math.max(8, Math.min(e.clientY, window.innerHeight - 320)),
       doc,
     });
   }
@@ -708,29 +745,33 @@ function PaginaDriveDocumentos() {
         descricao="Pastas e subpastas criadas automaticamente na importação, classificação inteligente e pasta padrão Outros Documentos."
         acoes={
           <div className="flex flex-wrap items-center gap-2">
-            <Button
-              permissao="drive_documentos.editar"
-              variant="outline"
-              onClick={abrirModalCategorias}
-            >
-              <Settings2 className="size-4" />
-              Categorias e Pastas ({categoriasAtivas.length})
-            </Button>
-            <Button
-              permissao="drive_documentos.editar"
-              variant="outline"
-              onClick={abrirModalCaminhos}
-            >
-              <FolderInput className="size-4" />
-              Caminhos Locais ({totalCaminhosConfigurados})
-            </Button>
+            {podeEditar && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <Settings2 className="size-4" />
+                    Configurar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-60">
+                  <DropdownMenuItem onClick={abrirModalCategorias}>
+                    <Settings2 className="mr-2 size-4" />
+                    Categorias e Pastas ({categoriasAtivas.length})
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={abrirModalCaminhos}>
+                    <FolderInput className="mr-2 size-4" />
+                    Caminhos Locais ({totalCaminhosConfigurados})
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button
               variant="outline"
               permissao="consulta_documentos.visualizar"
               onClick={() => navigate({ to: "/consulta-documentos", search: { condoId } })}
             >
               <Sparkles className="size-4 text-amber-500" />
-              Consulta Inteligente (IA)
+              Consulta Inteligente
             </Button>
             <Button
               permissao="drive_documentos.editar"
@@ -739,7 +780,7 @@ function PaginaDriveDocumentos() {
               disabled={Boolean(progressoEnvio)}
             >
               <FolderOpen className="size-4" />
-              Subir Pasta c/ Subpastas
+              Enviar pasta
             </Button>
             <Button
               permissao="drive_documentos.editar"
@@ -751,7 +792,7 @@ function PaginaDriveDocumentos() {
               ) : (
                 <Upload className="size-4" />
               )}
-              Subir Arquivos
+              Enviar arquivos
             </Button>
           </div>
         }
@@ -805,10 +846,13 @@ function PaginaDriveDocumentos() {
             </Field>
             {condoAtual?.pastaDocumentos && (
               <p
-                className="mt-2 truncate text-xs text-muted-foreground"
+                className="mt-2 flex items-center gap-1.5 truncate text-xs text-muted-foreground"
                 title={condoAtual.pastaDocumentos}
               >
-                📁 Pasta vinculada: <span className="font-mono">{condoAtual.pastaDocumentos}</span>
+                <Folder className="size-3.5 shrink-0" />
+                <span className="truncate">
+                  Pasta vinculada: <span className="font-mono">{condoAtual.pastaDocumentos}</span>
+                </span>
               </p>
             )}
           </SectionCard>
@@ -834,30 +878,10 @@ function PaginaDriveDocumentos() {
               {progressoEnvio ?? "Arraste arquivos aqui ou importe uma pasta inteira com subpastas"}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Ao subir uma pasta, as{" "}
-              <strong>pastas e subpastas são cadastradas automaticamente</strong>. Arquivos fora de
-              pasta não identificados vão automaticamente para <strong>{pastaOutros.rotulo}</strong>
-              .
+              Ao enviar uma pasta, as{" "}
+              <strong>pastas e subpastas são cadastradas automaticamente</strong>. Arquivos avulsos
+              não identificados vão para <strong>{pastaOutros.rotulo}</strong>.
             </p>
-            <div className="mt-3 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-              <Button
-                permissao="drive_documentos.editar"
-                size="sm"
-                variant="secondary"
-                onClick={() => inputArquivosRef.current?.click()}
-              >
-                Selecionar arquivos avulsos
-              </Button>
-              <Button
-                permissao="drive_documentos.editar"
-                size="sm"
-                variant="outline"
-                onClick={() => inputPastaRef.current?.click()}
-              >
-                <FolderOpen className="size-3.5" />
-                Subir pasta com subpastas
-              </Button>
-            </div>
           </div>
         </div>
       </div>
@@ -947,13 +971,17 @@ function PaginaDriveDocumentos() {
               <button
                 type="button"
                 onClick={() => setPastaAtiva("todas")}
-                className="font-medium text-primary hover:underline"
+                className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
               >
-                🏠 {condoAtual?.nomeRelatorio || condoAtual?.nome}
+                <Building2 className="size-3.5" />
+                {condoAtual?.nomeRelatorio || condoAtual?.nome}
               </button>
               <ChevronRight className="size-3.5 text-muted-foreground" />
               {pastaAtiva === "todas" ? (
-                <span className="font-semibold">🌐 Todas as Pastas e Subpastas</span>
+                <span className="inline-flex items-center gap-1 font-semibold">
+                  <Globe className="size-3.5 text-muted-foreground" />
+                  Todas as pastas e subpastas
+                </span>
               ) : (
                 pastaAtiva.split("/").map((parte, idx, arr) => {
                   const caminhoAteAqui = arr.slice(0, idx + 1).join("/");
@@ -963,11 +991,12 @@ function PaginaDriveDocumentos() {
                       <button
                         type="button"
                         onClick={() => setPastaAtiva(caminhoAteAqui)}
-                        className={
+                        className={`inline-flex items-center gap-1 ${
                           ultimo ? "font-bold text-foreground" : "text-primary hover:underline"
-                        }
+                        }`}
                       >
-                        📁 {parte}
+                        <Folder className="size-3.5 text-muted-foreground" />
+                        {parte}
                       </button>
                       {!ultimo && <ChevronRight className="size-3.5 text-muted-foreground" />}
                     </span>
@@ -1018,8 +1047,20 @@ function PaginaDriveDocumentos() {
                 {docsQuery.isLoading ? (
                   <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
                     <Loader2 className="mr-2 size-4 animate-spin" />
-                    Carregando documentos do Drive...
+                    Carregando documentos do Drive…
                   </div>
+                ) : docsQuery.isError ? (
+                  <Alert variant="destructive">
+                    <AlertTriangle />
+                    <AlertTitle>Não foi possível carregar os documentos</AlertTitle>
+                    <AlertDescription className="space-y-3">
+                      <p>{mensagemErro(docsQuery.error)}</p>
+                      <Button variant="outline" size="sm" onClick={() => void docsQuery.refetch()}>
+                        <RefreshCw className="mr-1.5 size-4" />
+                        Tentar novamente
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
                 ) : documentosFiltrados.length === 0 ? (
                   <div className="rounded-lg border border-dashed p-8 text-center">
                     <FolderOpen className="mx-auto mb-2 size-8 text-muted-foreground" />
@@ -1096,7 +1137,7 @@ function PaginaDriveDocumentos() {
                               </td>
                               <td className="px-3 py-2.5 text-xs text-muted-foreground">
                                 <div>{doc.dataDocumento || "Sem data"}</div>
-                                <div>{doc.paginas ?? 1} pág(s)</div>
+                                <div>{contagem(doc.paginas ?? 1, "página", "páginas")}</div>
                               </td>
                               <td
                                 className="px-3 py-2.5 text-right"
@@ -1175,7 +1216,7 @@ function PaginaDriveDocumentos() {
                                       {podeEditar && (
                                         <DropdownMenuItem
                                           className="text-destructive focus:text-destructive"
-                                          onClick={() => excluirDoc.mutate(doc.id)}
+                                          onClick={() => setDocExcluindo(doc)}
                                         >
                                           <Trash2 className="mr-2 size-4" />
                                           Excluir do Drive
@@ -1210,28 +1251,36 @@ function PaginaDriveDocumentos() {
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          navigate({
-                            to: "/consulta-documentos",
-                            search: { condoId, docId: docVisualizando.id },
-                          })
-                        }
-                      >
-                        <Sparkles className="size-3.5 text-amber-500" />
-                        Perguntar à IA
-                      </Button>
+                      {podeConsultar && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            navigate({
+                              to: "/consulta-documentos",
+                              search: { condoId, docId: docVisualizando.id },
+                            })
+                          }
+                        >
+                          <Sparkles className="size-3.5 text-amber-500" />
+                          Perguntar à IA
+                        </Button>
+                      )}
                       {pdfUrlInline && docVisualizando.pdfDataUrl && (
                         <>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() =>
-                              docVisualizando.pdfDataUrl &&
-                              imprimirPdfBase64(docVisualizando.pdfDataUrl)
-                            }
+                            onClick={() => {
+                              if (
+                                docVisualizando.pdfDataUrl &&
+                                !imprimirPdfBase64(docVisualizando.pdfDataUrl)
+                              ) {
+                                toast.error(
+                                  "O navegador bloqueou a janela de impressão. Libere pop-ups para este site.",
+                                );
+                              }
+                            }}
                           >
                             <Printer className="size-3.5" />
                             Imprimir
@@ -1408,7 +1457,7 @@ function PaginaDriveDocumentos() {
               onClick={() => {
                 const d = menuContexto.doc;
                 setMenuContexto(null);
-                excluirDoc.mutate(d.id);
+                setDocExcluindo(d);
               }}
             >
               <Trash2 className="size-4" />
@@ -1423,7 +1472,7 @@ function PaginaDriveDocumentos() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              Confirmar envio de {itensPendentesCalculados.length} documento(s) para o Drive
+              Confirmar envio de {contagem(itensPendentesCalculados.length, "documento", "documentos")} para o Drive
             </DialogTitle>
             <DialogDescription>
               Pastas e subpastas são cadastradas automaticamente. Arquivos fora de pasta não
@@ -1891,6 +1940,20 @@ function PaginaDriveDocumentos() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        aberto={!!docExcluindo}
+        aoMudar={(v) => !v && setDocExcluindo(null)}
+        titulo="Excluir documento do Drive?"
+        descricao={
+          docExcluindo
+            ? `O arquivo “${docExcluindo.nomeArquivo}” (pasta ${extrairPastaDoDocumento(docExcluindo, categoriasAtivas)}) será removido definitivamente do Drive e da Consulta Inteligente.`
+            : undefined
+        }
+        rotuloConfirmar="Excluir documento"
+        destrutivo
+        aoConfirmar={() => (docExcluindo ? excluirDoc.mutateAsync(docExcluindo.id) : undefined)}
+      />
     </>
   );
 }

@@ -1,5 +1,13 @@
 # Estado atual e passagem de contexto
 
+## Auditoria Impeccable (`harden` + `critique`) e correções — 22/11/2026
+
+Relatório completo em `docs/auditorias/IMPECCABLE-HARDEN-CRITIQUE-2026-11-22.md`. Foram abertas e corrigidas todas as 15 pendências (`#369`–`#383`):
+
+- **P1 (`#369`–`#372`)**: confirmação destrutiva ao excluir no Drive e em Modelos de Ata; `throw notFound()` no `loader` + tratamento de erro em Modelos de Ata; permissões granulares em Importações, Backup, Modelos de Ata, Escritório, Condomínio (`onSubmit`) e visualizador do Drive; confirmação por digitação (`APAGAR TUDO`), link para `/backup` com data do último backup e inclusão de `modelos_ata` no total da Limpeza de Dados.
+- **P2 (`#373`–`#380`)**: alertas de erro com "Tentar novamente" no Drive e Consulta IA; `useBlocker` em Condomínio, Escritório e Modelos de Ata; `max-h-[90vh] overflow-y-auto` em `DialogContent`; proteção contra corrida no visualizador PDF, `opener = null`, revogação de Blob URL e aviso de pop-up bloqueado; redução de ações duplicadas no topo do Drive; `<SelecaoBusca>` + rótulos reais de competência em Previsto × Realizado e Orçado × Realizado Mensal; navegação direta e motivo visível no Consolidado; linguagem contábil PT-BR, `contagem()` e ícones Lucide no lugar de jargões/emojis.
+- **P3 (`#381`–`#383`)**: contenção na viewport, `Escape` e trava de clique duplo no Drive; Central de Ajuda sincronizada com `AppSidebar.tsx`; padronização de checkboxes/`disabled` no Relatório final, `<PageHeader>` em estados vazios, `<Alert>` para exercício fechado, bloqueio de autoexclusão e agrupamento/filtro por módulo em Permissões de Usuários.
+
 ## Auditoria de navegação — 22/11/2026
 
 - #338: sem preferência salva, o menu inicia recolhido e abre o grupo da rota

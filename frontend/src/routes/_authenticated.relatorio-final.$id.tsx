@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -275,9 +276,11 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
       />
 
       {e.fechado && (
-        <p className="mb-4 text-sm">
-          Relatório consolidado. As fontes e os valores foram preservados no fechamento.
-        </p>
+        <Alert className="mb-4">
+          <AlertDescription>
+            Relatório consolidado. As fontes e os valores foram preservados no fechamento.
+          </AlertDescription>
+        </Alert>
       )}
       <form id="form-relatorio" onSubmit={enviar} noValidate>
         <Tabs value={aba} onValueChange={setAba}>
@@ -371,8 +374,8 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                         {s.id === "analise" && rel.secoes.analise && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
+                              disabled={e.fechado}
                               id="secao-pizza"
-                              className="size-6"
                               checked={e.mostrarPizza !== false}
                               onCheckedChange={(v) => mudar({ mostrarPizza: v === true })}
                             />
@@ -389,7 +392,6 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                             <Checkbox
                               disabled={e.fechado}
                               id="secao-evolucao-mensal"
-                              className="size-6"
                               checked={e.mostrarEvolucaoMensal !== false}
                               onCheckedChange={(v) => mudar({ mostrarEvolucaoMensal: v === true })}
                             />
