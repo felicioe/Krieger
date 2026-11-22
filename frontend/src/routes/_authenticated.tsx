@@ -2,7 +2,7 @@ import { Outlet, createFileRoute, redirect, useRouterState } from "@tanstack/rea
 import { ConteudoMenu } from "@/components/app/AppSidebar";
 import { Marca } from "@/components/app/Marca";
 import { MenuMovel } from "@/components/app/MenuMovel";
-import { Carregando } from "@/components/app/Carregando";
+import { CarregandoAposMontar } from "@/components/app/Carregando";
 import { ID_CONTEUDO } from "@/components/app/foco";
 import { PularParaConteudo } from "@/components/app/PularParaConteudo";
 import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { usuario };
   },
-  pendingComponent: () => <Carregando />,
+  pendingComponent: () => <CarregandoAposMontar />,
   component: LayoutSistema,
 });
 
