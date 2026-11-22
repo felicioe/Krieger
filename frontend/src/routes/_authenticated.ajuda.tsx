@@ -40,6 +40,7 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
     itens: [
       { id: "previsto-realizado", titulo: "Previsto × Realizado" },
       { id: "relatorio-mensal", titulo: "Acompanhamento de carga de dados mensais" },
+      { id: "inadimplencia", titulo: "Evolução da inadimplência" },
     ],
   },
   {
@@ -286,6 +287,28 @@ function Ajuda() {
                 inclusive as colunas opcionais marcadas na tela do mensal. O Previsto × Realizado
                 mensal também gera <strong>PDF</strong> em paisagem, com o timbre do escritório e os
                 totais por linha e por coluna.
+              </p>
+            </Texto>
+          </SectionCard>
+
+          <SectionCard
+            id="inadimplencia"
+            titulo="Evolução da inadimplência"
+            descricao="Contas a receber de um condomínio, mês a mês."
+          >
+            <Texto>
+              <p>
+                Mostra, para cada mês do período, as unidades inadimplentes e o valor a receber que
+                constam no relatório mensal, o percentual sobre as receitas do mês e a comparação
+                com o mesmo mês do ano anterior. Nada é recalculado: o relatório só reúne o que os
+                mensais já guardam.
+              </p>
+              <p>
+                Escolha o condomínio e o período (mm/aaaa) ou use o atalho de um exercício. Meses
+                sem relatório mensal aparecem como <strong>Sem dados</strong>, nunca como zero. Como
+                o valor a receber é um saldo, o rodapé mostra a <strong>média</strong> dos meses com
+                dados, e não a soma. Exporta em CSV, XLSX, PDF (A4 paisagem, com timbre) e
+                impressão, todos com as mesmas colunas.
               </p>
             </Texto>
           </SectionCard>
