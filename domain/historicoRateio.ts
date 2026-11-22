@@ -87,6 +87,33 @@ export function rateioBaseDoAno(
 }
 
 /**
+ * Rateio aprovado do ano anterior no histórico, quando ele não bate com o rateio atual do
+ * exercício (#308). O histórico é a fonte do rateio; a tela avisa a divergência e oferece usar o
+ * valor do histórico, sem trocar nada sozinha. `null` quando não há histórico ou os dois batem.
+ */
+export function rateioBaseDivergente(
+  e: Pick<Exercicio, "condoId" | "ano" | "rateioAtual">,
+  linhas: HistoricoRateio[],
+): number | null {
+  const base = rateioBaseDoAno(linhas, e.condoId, Number(e.ano));
+  if (base === null || base === undefined || !Number.isFinite(base)) return null;
+  const atual = e.rateioAtual;
+  if (atual !== null && atual !== undefined && Math.abs(atual - base) < 0.005) return null;
+  return base;
+}
+
+/** Último rateio aprovado no histórico do condomínio, com o ano (#308). */
+export function ultimoRateioAprovado(
+  linhas: HistoricoRateio[],
+  condoId: string,
+): { ano: number; valor: number } | null {
+  const ultima = linhas
+    .filter((l) => l.condoId === condoId && Number.isFinite(l.rateioAprovado))
+    .sort((a, b) => Number(b.ano) - Number(a.ano))[0];
+  return ultima ? { ano: Number(ultima.ano), valor: ultima.rateioAprovado } : null;
+}
+
+/**
  * Variação % do exercício `ano` sobre o ano anterior, usando o histórico travado.
  * Prefere o valor travado do próprio ano; se ainda não travou, usa o sugerido.
  */
