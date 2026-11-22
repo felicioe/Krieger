@@ -7,6 +7,7 @@ import { ID_CONTEUDO } from "@/components/app/foco";
 import { PularParaConteudo } from "@/components/app/PularParaConteudo";
 import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
 import { recarregarSessao } from "@/lib/auth";
+import { definirUsuarioRecentes } from "@/lib/condominiosRecentes";
 import { podeAcessarRota } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated")({
     const usuario = await recarregarSessao();
     if (!usuario) throw redirect({ to: "/login" });
     if (usuario.trocarSenha) throw redirect({ to: "/trocar-senha" });
+    definirUsuarioRecentes(usuario.id);
 
     const permissoesPorRota: Array<[string, string]> = [
       ["/painel", "painel.visualizar"],

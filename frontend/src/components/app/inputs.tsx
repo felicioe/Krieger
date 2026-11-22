@@ -26,6 +26,7 @@ import {
   parseNumeroBR,
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { LIMITE_RECENTES, registrarCondominioEscolhido } from "@/lib/condominiosRecentes";
 import type { Condominio } from "@/domain/types";
 
 type BaseProps = Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "defaultValue">;
@@ -222,6 +223,8 @@ export interface OpcaoBusca<V extends string = string> {
   busca?: string | undefined;
   /** Etiqueta curta exibida ao lado do rótulo (ex.: código do condomínio). */
   detalhe?: string | undefined;
+  /** Quando true, escolher a opção grava o condomínio entre os recentes (#295). */
+  ehCondominio?: boolean | undefined;
 }
 
 function normalizarTextoBusca(s: string): string {
@@ -248,19 +251,21 @@ export function opcoesCondominio(
     rotulo: obterRotulo(c),
     detalhe: c.codigo?.trim() || undefined,
     busca: [c.codigo, c.nome, c.nomeRelatorio, c.cnpj].filter(Boolean).join(" "),
+    ehCondominio: true,
   }));
 
   if (!recenteIds || recenteIds.length === 0) {
     return mapeados.sort((a, b) => a.rotulo.localeCompare(b.rotulo, "pt-BR"));
   }
 
-  // Separa recentes (na ordem fornecida) dos demais (alfabéticos).
-  const recentesSet = new Set(recenteIds);
+  // Separa os últimos (até LIMITE_RECENTES, na ordem fornecida) dos demais (alfabéticos).
+  const ultimos = recenteIds.slice(0, LIMITE_RECENTES);
+  const recentesSet = new Set(ultimos);
   const recentes: typeof mapeados = [];
   const demais: typeof mapeados = [];
   const mapaPorId = new Map(mapeados.map((o) => [o.valor, o]));
 
-  for (const id of recenteIds) {
+  for (const id of ultimos) {
     const opt = mapaPorId.get(id);
     if (opt) recentes.push(opt);
   }
@@ -341,6 +346,7 @@ export function SelecaoBusca<V extends string>({
   }, [aberto, indiceAtivo]);
 
   function escolher(valor: V) {
+    if (opcoes.find((o) => o.valor === valor)?.ehCondominio) registrarCondominioEscolhido(valor);
     onChange(valor);
     setAberto(false);
     triggerRef.current?.focus();
