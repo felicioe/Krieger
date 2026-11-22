@@ -188,11 +188,6 @@ export const GRUPOS_MENU: Grupo[] = [
       },
     ],
   },
-  {
-    // Ajuda fica no rodapé do menu, fora das rotinas de uso, e está disponível para todos.
-    titulo: null,
-    itens: [{ titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp }],
-  },
 ];
 
 /** Lista plana (mesma ordem do menu), para quem precisa percorrer todos os módulos. */
@@ -596,6 +591,12 @@ export function ConteudoMenu({
             <li>
               <ItemMenu
                 item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }}
+                aoNavegar={aoNavegar}
+              />
+            </li>
+            <li>
+              <ItemMenu
+                item={{ titulo: "Central de ajuda", to: "/ajuda", icone: CircleHelp }}
                 aoNavegar={aoNavegar}
               />
             </li>
