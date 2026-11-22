@@ -6,17 +6,21 @@ import {
   Building2,
   Calculator,
   CalendarRange,
+  CalendarClock,
   ChartColumn,
   ChevronDown,
   ChevronRight,
   CircleHelp,
   DatabaseBackup,
   FileCheck2,
+  FileChartColumn,
+  Files,
   FileSearch,
   FileSpreadsheet,
   FileText,
   FileUp,
   FolderOpen,
+  Database,
   FolderTree,
   GitCompareArrows,
   History,
@@ -89,7 +93,7 @@ export const GRUPOS_MENU: Grupo[] = [
         permissao: "prestacao_contas.visualizar",
       },
       {
-        titulo: "Previsão orçamentária",
+        titulo: "Previsão do rateio",
         to: "/previsao-orcamentaria",
         icone: Calculator,
         permissao: "previsao_orcamentaria.visualizar",
@@ -97,7 +101,7 @@ export const GRUPOS_MENU: Grupo[] = [
       {
         titulo: "Previsão para relatórios",
         to: "/previsao-orcamentaria?modo=relatorios",
-        icone: Calculator,
+        icone: FileChartColumn,
         permissao: "previsao_orcamentaria.visualizar",
       },
       {
@@ -110,7 +114,7 @@ export const GRUPOS_MENU: Grupo[] = [
   },
   {
     titulo: "Dados e importação",
-    icone: FileUp,
+    icone: Database,
     itens: [
       {
         titulo: "Importador",
@@ -119,7 +123,7 @@ export const GRUPOS_MENU: Grupo[] = [
         permissao: "importador.visualizar",
       },
       {
-        titulo: "Acompanhamento de carga de dados mensais",
+        titulo: "Carga de dados mensais",
         to: "/relatorio-mensal",
         icone: CalendarRange,
         permissao: "relatorio_mensal.visualizar",
@@ -131,15 +135,15 @@ export const GRUPOS_MENU: Grupo[] = [
     icone: ChartColumn,
     itens: [
       {
-        titulo: "Previsto × Realizado",
+        titulo: "Previsto × Realizado acumulado",
         to: "/previsto-realizado",
         icone: GitCompareArrows,
         permissao: "previsto_realizado.visualizar",
       },
       {
-        titulo: "Previsto × Realizado mensal",
+        titulo: "Previsto × Realizado por mês",
         to: "/relatorios/orcado-realizado-mensal",
-        icone: CalendarRange,
+        icone: CalendarClock,
         permissao: "previsto_realizado.visualizar",
       },
       {
@@ -177,7 +181,7 @@ export const GRUPOS_MENU: Grupo[] = [
       {
         titulo: "Modelos de ata",
         to: "/modelos-ata",
-        icone: ScrollText,
+        icone: Files,
         permissao: "modelos_ata.visualizar",
       },
       {
@@ -333,7 +337,7 @@ function ItemMenu({
         onClick={aoNavegar}
         className={cn(
           classeItem,
-          "flex-1",
+          "min-w-0 flex-1",
           item.perigoso && "text-red-400 hover:bg-red-950/60 hover:text-red-300 font-medium",
           ativo &&
             (item.perigoso
@@ -344,7 +348,7 @@ function ItemMenu({
         <Icone
           className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-400 opacity-100")}
         />
-        <span className="min-w-0 break-words">{item.titulo}</span>
+        <span className="min-w-0 wrap-anywhere">{item.titulo}</span>
       </Link>
       {onToggleFavorito && (
         <button

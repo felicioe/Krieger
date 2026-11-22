@@ -31,7 +31,7 @@ type Busca = { condo?: string; novo?: string };
 export const Route = createFileRoute("/_authenticated/relatorio-mensal/")({
   head: () =>
     cabecalho(
-      "Acompanhamento de carga de dados mensais",
+      "Carga de dados mensais",
       "Conferência dos dados mensais carregados dos condomínios.",
     ),
   validateSearch: (s: Record<string, unknown>): Busca => {
@@ -150,7 +150,7 @@ function ListaMensais() {
   return (
     <>
       <PageHeader
-        titulo="Acompanhamento de carga de dados mensais"
+        titulo="Carga de dados mensais"
         descricao="Demonstrativo do mês, contas a receber e notas explicativas de cada condomínio."
         acoes={
           <>
@@ -159,7 +159,7 @@ function ListaMensais() {
                 xlsx: () => baixarXlsx("relatorio-mensal", "Mensais", colunasExport, linhas),
                 imprimir: () =>
                   imprimirColunas({
-                    titulo: "Acompanhamento de carga de dados mensais",
+                    titulo: "Carga de dados mensais",
                     subtitulo: condo === TODOS ? "Todos os condomínios" : linhas[0]?.condoNome,
                     colunas: colunasExport,
                     linhas,

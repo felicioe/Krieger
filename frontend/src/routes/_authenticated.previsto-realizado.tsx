@@ -48,7 +48,10 @@ type Busca = { exercicio?: string; ate?: number };
 
 export const Route = createFileRoute("/_authenticated/previsto-realizado")({
   head: () =>
-    cabecalho("Previsto × Realizado", "Comparativo entre o orçamento previsto e o realizado."),
+    cabecalho(
+      "Previsto × Realizado acumulado",
+      "Comparativo entre o orçamento previsto e o realizado.",
+    ),
   validateSearch: (s: Record<string, unknown>): Busca => {
     const ate = Number(s["ate"]);
     const exercicio = s["exercicio"];
@@ -133,7 +136,7 @@ function PaginaComparativo() {
 
   const cabeca = (
     <PageHeader
-      titulo="Previsto × Realizado"
+      titulo="Previsto × Realizado acumulado"
       descricao="Previsão orçamentária do exercício (já com os ajustes) comparada ao realizado acumulado nos relatórios mensais do exercício seguinte."
     />
   );
@@ -173,7 +176,7 @@ function PaginaComparativo() {
   return (
     <>
       <PageHeader
-        titulo="Previsto × Realizado"
+        titulo="Previsto × Realizado acumulado"
         descricao="Previsão orçamentária do exercício (já com os ajustes) comparada ao realizado acumulado nos relatórios mensais do exercício seguinte."
         acoes={
           <>
@@ -194,7 +197,7 @@ function PaginaComparativo() {
                 xlsx: () => baixarXlsx(arquivoSaida, "Comparativo", colunasExport, linhasExport),
                 imprimir: () =>
                   imprimirColunas({
-                    titulo: "Previsto × Realizado",
+                    titulo: "Previsto × Realizado acumulado",
                     subtitulo: `${nomeCondo} · acumulado até ${ate}`,
                     colunas: colunasExport,
                     linhas: linhasExport,
