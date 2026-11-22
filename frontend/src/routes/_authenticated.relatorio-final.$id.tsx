@@ -18,7 +18,7 @@ import { PreviaRelatorio } from "@/components/relatorio/PreviaRelatorio";
 import { EditorConsideracoes } from "@/components/relatorio/EditorConsideracoes";
 import { DialogoConferencia } from "@/components/relatorio/DialogoConferencia";
 import { api } from "@/lib/api";
-import { baixarDocumento, ROTULO_FORMATO, type Formato } from "@/lib/documento/baixar";
+import { gerarArquivo, ROTULO_FORMATO, salvarArquivo, type Formato } from "@/lib/documento/baixar";
 import { documentoRelatorioFinal } from "@/documentos/relatorioFinal";
 import { useUsuario } from "@/lib/auth";
 import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
@@ -179,32 +179,46 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   }
 
   async function emitir(formato: Formato) {
-    const doc = await documentoRelatorioFinal({
-      rel,
-      exercicio: e,
-      condominio: condo,
-      escritorio: e.fechado && e.fechamento ? e.fechamento.escritorio : escritorio,
-    });
-    if (!e.fechado)
-      await salvar.mutateAsync({
-        dados: prepararExercicio({
-          ...e,
-          relatorioFinal: {
-            ...e.relatorioFinal,
-            emitidoEm: new Date().toISOString(),
-            emitidoPor: usuario?.nome || usuario?.login || "",
-          },
-        }),
-        mensagem: `Relatório emitido em ${ROTULO_FORMATO[formato]}.`,
-      });
+    let arquivo: Blob;
+    let nome: string;
     try {
-      await baixarDocumento(doc, formato);
+      const doc = await documentoRelatorioFinal({
+        rel,
+        exercicio: e,
+        condominio: condo,
+        escritorio: e.fechado && e.fechamento ? e.fechamento.escritorio : escritorio,
+      });
+      nome = `${doc.arquivo}.${formato}`;
+      // O arquivo é gerado antes de qualquer registro: se falhar, a emissão não fica marcada.
+      arquivo = await gerarArquivo(doc, formato);
     } catch (erro) {
       console.error(erro);
       toast.error(
-        `A emissão foi registrada, mas não foi possível gerar o ${ROTULO_FORMATO[formato]}. Tente emitir de novo.`,
+        `Não foi possível gerar o ${ROTULO_FORMATO[formato]}. Nada foi registrado; tente de novo.`,
       );
+      throw erro;
     }
+    if (!e.fechado) {
+      try {
+        await salvar.mutateAsync({
+          dados: prepararExercicio({
+            ...e,
+            relatorioFinal: {
+              ...e.relatorioFinal,
+              emitidoEm: new Date().toISOString(),
+              emitidoPor: usuario?.nome || usuario?.login || "",
+            },
+          }),
+          mensagem: `Relatório emitido em ${ROTULO_FORMATO[formato]}.`,
+        });
+      } catch (erro) {
+        toast.error(
+          `Não foi possível registrar a emissão. O ${ROTULO_FORMATO[formato]} não foi baixado; tente de novo.`,
+        );
+        throw erro;
+      }
+    }
+    salvarArquivo(arquivo, nome);
   }
 
   const opcoesMes = rel.comparativo.meses.map((m) => ({

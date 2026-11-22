@@ -4,13 +4,16 @@ export type Formato = "pdf" | "docx";
 
 export const ROTULO_FORMATO: Record<Formato, string> = { pdf: "PDF", docx: "Word" };
 
-/** Gera o arquivo no formato pedido e inicia o download. As bibliotecas só carregam aqui. */
+/** Gera o arquivo no formato pedido, sem baixar. As bibliotecas só carregam aqui. */
+export async function gerarArquivo(doc: Documento, formato: Formato): Promise<Blob> {
+  return formato === "pdf"
+    ? await (await import("./pdf")).gerarPdf(doc)
+    : await (await import("./word")).gerarWord(doc);
+}
+
+/** Gera o arquivo no formato pedido e inicia o download. */
 export async function baixarDocumento(doc: Documento, formato: Formato): Promise<void> {
-  const blob =
-    formato === "pdf"
-      ? await (await import("./pdf")).gerarPdf(doc)
-      : await (await import("./word")).gerarWord(doc);
-  salvarArquivo(blob, `${doc.arquivo}.${formato}`);
+  salvarArquivo(await gerarArquivo(doc, formato), `${doc.arquivo}.${formato}`);
 }
 
 export function salvarArquivo(blob: Blob, nome: string) {
