@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
 import { assembleiaPadrao } from "@/domain/edital";
-import { ataEmBranco, contarUnidadesPresentes, normalizarAta, novaAtaDeAssembleia, prepararAta, validarAta, validarNovaAta, novoItemAta } from "@/domain/ata";
+import { ataEmBranco, contarUnidadesPresentes, normalizarAta, novaAtaDeAssembleia, prepararAta, quorumAposPresentes, validarAta, validarNovaAta, novoItemAta } from "@/domain/ata";
 import type { Assembleia, Condominio } from "@/domain/types";
 
 const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias", unidades: 48 };
@@ -95,5 +95,19 @@ describe("atas", () => {
     expect(validarAta({ condoId: "", data: "", hora: "" })).toEqual({ condoId: "Escolha o condomínio.", data: "Informe a data da assembleia." });
     expect(validarAta({ condoId: "c1", data: "31/10/2026", hora: "7" })).toEqual({ hora: "Horário inválido (hh:mm)." });
     expect(validarAta({ condoId: "c1", data: "2026-10-31", hora: "" })).toEqual({});
+  });
+
+  it("quórum acompanha a lista enquanto o número é o da lista (#305)", () => {
+    const antes = [{ unidade: "101", nome: "A", procurador: false }];
+    const depois = [...antes, { unidade: "102", nome: "B", procurador: false }];
+    const q = quorumAposPresentes({ unidadesPresentes: 1, totalUnidades: 48 }, antes, depois);
+    expect(q).toEqual({ unidadesPresentes: 2, totalUnidades: 48 });
+  });
+
+  it("quórum ajustado à mão não é sobrescrito pela lista (#305)", () => {
+    const antes = [{ unidade: "101", nome: "A", procurador: false }];
+    const depois = [...antes, { unidade: "102", nome: "B", procurador: false }];
+    const q = quorumAposPresentes({ unidadesPresentes: 10, totalUnidades: 48 }, antes, depois);
+    expect(q.unidadesPresentes).toBe(10);
   });
 });

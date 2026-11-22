@@ -399,17 +399,22 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                 <SectionCard titulo="Capa e assinatura">
                   <div className="grid grid-cols-1 gap-3">
                     <Field rotulo="Cidade">
-                      <Input
-                        value={e.cidade}
-                        onChange={(ev) => mudar({ cidade: ev.target.value })}
-                      />
+                      <p className="text-sm">{e.cidade || "—"}</p>
                     </Field>
                     <Field rotulo="Data de emissão">
-                      <DataInput
-                        value={e.dataEmissao}
-                        onChange={(v) => mudar({ dataEmissao: v })}
-                      />
+                      <p className="text-sm">{e.dataEmissao || "—"}</p>
                     </Field>
+                    <p className="text-xs text-muted-foreground">
+                      Cidade e data de emissão são editadas na{" "}
+                      <Link
+                        to="/prestacao-contas/$id"
+                        params={{ id: e.id }}
+                        className="underline underline-offset-2"
+                      >
+                        prestação de contas
+                      </Link>
+                      .
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       Nome, assinatura e logo vêm do{" "}
                       <Link
