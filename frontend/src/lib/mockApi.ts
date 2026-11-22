@@ -59,7 +59,12 @@ function permissoesPadraoDoPerfil(perfil: Perfil): string[] {
   if (perfil === "admin") return ["*"];
   const todas = catalogoPermissoes().map((p) => p.chave);
   // ADM e Usuário começam iguais: tudo menos as telas de administração.
-  return todas.filter((chave) => !MODULOS_ADMINISTRACAO.includes(chave.split(".")[0] ?? ""));
+  // A configuração do condomínio segue a migração: só o ADM a recebe por padrão.
+  return todas.filter(
+    (chave) =>
+      !MODULOS_ADMINISTRACAO.includes(chave.split(".")[0] ?? "") &&
+      !(perfil === "user" && chave === "condominios.configurar"),
+  );
 }
 
 /** Matriz vigente: o que o SuperADM gravou para o perfil, ou o padrão quando ainda não mexeu. */

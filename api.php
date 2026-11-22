@@ -473,9 +473,13 @@ try {
           $o['id'] = $id;
           $existente = ler_registro_exercicio($pdo, 'condominios', $id);
           // Campos da aba Configuração: alterá-los exige condominios.configurar (ver PERMISSOES-GRANULARES.md).
+          // Registros antigos não gravam estes campos; o valor efetivo é o padrão de condominioPadrao() (domain/condominio.ts).
           if ($existente) {
-            foreach (['deducaoRegex', 'aguaRubrica', 'energiaRubrica', 'elevadorRubrica', 'elevadorFornecedor', 'arredondamento', 'mapeamento'] as $campoConfig) {
-              if (($existente[$campoConfig] ?? null) != ($o[$campoConfig] ?? null)) { exigir_permissao($usuario, 'condominios.configurar'); break; }
+            $padraoConfig = ['deducaoRegex' => 'fundo de caixa p/ obras', 'aguaRubrica' => '^[áa]gua', 'energiaRubrica' => 'energia el[ée]trica', 'elevadorRubrica' => 'manuten[çc][ãa]o.*elevador', 'elevadorFornecedor' => '', 'arredondamento' => 'truncar', 'mapeamento' => []];
+            foreach ($padraoConfig as $campoConfig => $padrao) {
+              $atual = array_key_exists($campoConfig, $existente) ? $existente[$campoConfig] : $padrao;
+              $novo = array_key_exists($campoConfig, $o) ? $o[$campoConfig] : $atual;
+              if ($atual != $novo) { exigir_permissao($usuario, 'condominios.configurar'); break; }
             }
           }
           $indicesAlterados = !empty($o['indicesInicializados']) || ($existente['indices'] ?? []) !== ($o['indices'] ?? []);
