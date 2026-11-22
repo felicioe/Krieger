@@ -48,6 +48,74 @@ export function considDoCondominio(c: Condominio): Exercicio["consid"] {
   };
 }
 
+/**
+ * Campos das considerações que moram no cadastro do condomínio (#307). Os demais (contas a
+ * receber e a pagar, consumos manuais e extras) são do exercício e continuam nele.
+ */
+const CAMPOS_CONSID_DO_CADASTRO = [
+  "administracao",
+  "seguradora",
+  "vigenciaSeguro",
+  "seguro",
+  "vigenciaExtintores",
+  "ultGordura",
+  "ultDedetizacao",
+  "ultCaixaDagua",
+  "vistoriaAno",
+  "vistoriaLei",
+  "vistoriaIntervalo",
+  "aguaRubrica",
+  "energiaRubrica",
+  "elevadorRubrica",
+  "elevadorFornecedor",
+  "documentosObrigatorios",
+  "indices",
+] as const satisfies readonly (keyof Exercicio["consid"])[];
+
+/**
+ * Considerações de um exercício. Aberto: os campos do cadastro vêm do cadastro atual, e os
+ * do exercício ficam como estão. Fechado: vale só o que foi congelado no fechamento.
+ */
+export function considEfetiva(
+  e: Pick<Exercicio, "fechado" | "consid">,
+  c: Condominio | null | undefined,
+): Exercicio["consid"] {
+  if (e.fechado || !c) return e.consid;
+  const doCadastro = considDoCondominio(c);
+  const efetiva: Exercicio["consid"] = { ...e.consid };
+  for (const campo of CAMPOS_CONSID_DO_CADASTRO) {
+    (efetiva as Record<string, unknown>)[campo] = doCadastro[campo];
+  }
+  return efetiva;
+}
+
+/** Leva as considerações de volta ao cadastro do condomínio (só os campos do cadastro). */
+export function condominioComConsid(
+  c: Condominio,
+  consid: Exercicio["consid"],
+): Condominio {
+  return {
+    ...c,
+    administracao: structuredClone(consid.administracao),
+    seguradora: consid.seguradora,
+    vigenciaSeguro: consid.vigenciaSeguro,
+    seguro: structuredClone(consid.seguro),
+    vigenciaExtintores: consid.vigenciaExtintores,
+    ultGordura: consid.ultGordura,
+    ultDedetizacao: consid.ultDedetizacao,
+    ultCaixaDagua: consid.ultCaixaDagua,
+    vistoriaAno: consid.vistoriaAno,
+    vistoriaLei: consid.vistoriaLei,
+    vistoriaIntervalo: consid.vistoriaIntervalo,
+    aguaRubrica: consid.aguaRubrica,
+    energiaRubrica: consid.energiaRubrica,
+    elevadorRubrica: consid.elevadorRubrica,
+    elevadorFornecedor: consid.elevadorFornecedor,
+    documentosObrigatorios: structuredClone(consid.documentosObrigatorios),
+    indices: structuredClone(consid.indices),
+  };
+}
+
 /** Novo exercício (prestação de contas) a partir do cadastro do condomínio. */
 export function periodoInicialDoExercicio(
   condoId: string,

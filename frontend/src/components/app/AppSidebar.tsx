@@ -75,7 +75,7 @@ export const GRUPOS_MENU: Grupo[] = [
     ],
   },
   {
-    titulo: "Financeiro",
+    titulo: "Apuração do rateio",
     icone: Wallet,
     itens: [
       {

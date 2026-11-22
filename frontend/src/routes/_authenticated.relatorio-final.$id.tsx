@@ -26,6 +26,8 @@ import { formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
 import {
+  condominioComConsid,
+  considEfetiva,
   encontrarExercicioAnterior,
   normalizarExercicio,
   prepararExercicio,
@@ -93,8 +95,13 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   const { data: previsoesAprovadas } = useSuspenseQuery(
     listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
   );
-  const [e, setE] = useState<Exercicio>(inicial);
-  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
+  // Exercício aberto: as considerações vêm do cadastro, que é a fonte única (#307). Fechado: o congelado.
+  const condoDoExercicio = condominios.find((c) => c.id === inicial.condoId) ?? null;
+  const inicialComCadastro: Exercicio = inicial.fechado
+    ? inicial
+    : { ...inicial, consid: considEfetiva(inicial, condoDoExercicio) };
+  const [e, setE] = useState<Exercicio>(inicialComCadastro);
+  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicialComCadastro));
   const [aba, setAba] = useState("previa");
   const [conferir, setConferir] = useState(false);
 
@@ -147,7 +154,14 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   });
 
   const salvar = useMutation({
-    mutationFn: (v: { dados: Exercicio; mensagem: string }) => api.salvar("exercicios", v.dados),
+    mutationFn: async (v: { dados: Exercicio; mensagem: string }) => {
+      // Exercício aberto: as considerações editadas aqui gravam também no cadastro (#307).
+      if (!v.dados.fechado && condoRaw) {
+        await api.salvar("condominios", condominioComConsid(condoRaw, v.dados.consid));
+        queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
+      }
+      return api.salvar("exercicios", v.dados);
+    },
     onSuccess: (salvo, { mensagem }) => {
       const n = normalizarExercicio(salvo);
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
