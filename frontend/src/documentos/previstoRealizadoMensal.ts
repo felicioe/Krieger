@@ -82,6 +82,18 @@ export function documentoPrevistoRealizadoMensal(o: {
           },
         ]
       : []),
+    // Mesmo aviso da tela quando não há demonstrativo base (#311).
+    ...(r.situacaoPrevisto === "sem_base"
+      ? [
+          {
+            tipo: "paragrafo" as const,
+            texto:
+              "Sem demonstrativo base para o previsto: o previsto não se aplica e aparece zerado. O realizado segue o relatório mensal.",
+            suave: true,
+            tamanho: "pequeno" as const,
+          },
+        ]
+      : []),
     { tipo: "tabela", pequena: true, colunas: colunasDoc, linhas },
   ];
 

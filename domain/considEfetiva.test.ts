@@ -54,6 +54,15 @@ describe("considerações finais: fonte única no cadastro (#307)", () => {
     expect(efetiva.seguradora).toBe("Congelada");
   });
 
+  it("exercício reaberto volta a ler o cadastro atual", () => {
+    const congelado = considDoCondominio(condo({ seguradora: "Congelada" }));
+    const reaberto = considEfetiva(
+      exercicio(congelado, false),
+      condo({ seguradora: "Atual" }),
+    );
+    expect(reaberto.seguradora).toBe("Atual");
+  });
+
   it("ida e volta: gravar no cadastro e ler de volta não perde nada", () => {
     const original = considDoCondominio(condo());
     const editado = {

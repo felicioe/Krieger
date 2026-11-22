@@ -1,10 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { condominioPadrao } from "@/domain/condominio";
 import { assembleiaPadrao } from "@/domain/edital";
-import { ataEmBranco, contarUnidadesPresentes, normalizarAta, novaAtaDeAssembleia, prepararAta, quorumAposPresentes, validarAta, validarNovaAta, novoItemAta } from "@/domain/ata";
+import {
+  ataEmBranco,
+  contarUnidadesPresentes,
+  normalizarAta,
+  novaAtaDeAssembleia,
+  prepararAta,
+  quorumAposPresentes,
+  validarAta,
+  validarNovaAta,
+  novoItemAta,
+} from "@/domain/ata";
 import type { Assembleia, Condominio } from "@/domain/types";
 
-const condo: Condominio = { ...condominioPadrao(), id: "c1", nome: "Acácias", unidades: 48 };
+const condo: Condominio = {
+  ...condominioPadrao(),
+  id: "c1",
+  nome: "Acácias",
+  unidades: 48,
+};
 const edital: Assembleia = {
   id: "e1",
   ...assembleiaPadrao({ condo, tipo: "ordinaria", data: "2026-10-31" }),
@@ -30,8 +45,18 @@ describe("atas", () => {
   it("cada linha da pauta vira um item com discussão e deliberação vazias", () => {
     const ata = novaAtaDeAssembleia(edital, condo);
     expect(ata.itens).toEqual([
-      { titulo: "Prestação de contas;", discussao: "", deliberacao: "", votos: { favor: 0, contra: 0, abstencao: 0 } },
-      { titulo: "Assuntos gerais.", discussao: "", deliberacao: "", votos: { favor: 0, contra: 0, abstencao: 0 } },
+      {
+        titulo: "Prestação de contas;",
+        discussao: "",
+        deliberacao: "",
+        votos: { favor: 0, contra: 0, abstencao: 0 },
+      },
+      {
+        titulo: "Assuntos gerais.",
+        discussao: "",
+        deliberacao: "",
+        votos: { favor: 0, contra: 0, abstencao: 0 },
+      },
     ]);
     expect(ata.mesa).toEqual({ presidente: "", secretario: "" }); // condo sem administração cadastrada
     expect(ata.presentes).toEqual([]);
@@ -50,12 +75,20 @@ describe("atas", () => {
   });
 
   it("ata em branco (sem edital) também vem com o presidente pré-preenchido", () => {
-    const comSindico: Condominio = { ...condo, administracao: [{ cargo: "Síndico", nome: "Ciclana Exemplo" }] };
-    expect(ataEmBranco(comSindico).mesa).toEqual({ presidente: "Ciclana Exemplo", secretario: "" });
+    const comSindico: Condominio = {
+      ...condo,
+      administracao: [{ cargo: "Síndico", nome: "Ciclana Exemplo" }],
+    };
+    expect(ataEmBranco(comSindico).mesa).toEqual({
+      presidente: "Ciclana Exemplo",
+      secretario: "",
+    });
   });
 
   it("um edital tem no máximo uma ata", () => {
-    expect(validarNovaAta("e1", [{ id: "a1", assembleiaId: "e1" }])).toBe("Este edital já tem uma ata.");
+    expect(validarNovaAta("e1", [{ id: "a1", assembleiaId: "e1" }])).toBe(
+      "Este edital já tem uma ata.",
+    );
     expect(validarNovaAta("e2", [{ id: "a1", assembleiaId: "e1" }])).toBeNull();
   });
 
@@ -77,37 +110,76 @@ describe("atas", () => {
         { unidade: " ", nome: "", procurador: false },
         { unidade: "101", nome: "Ana", procurador: false },
       ],
-      itens: [novoItemAta(), { ...novoItemAta(), votos: { favor: 3, contra: 0, abstencao: 0 } }],
+      itens: [
+        novoItemAta(),
+        { ...novoItemAta(), votos: { favor: 3, contra: 0, abstencao: 0 } },
+      ],
     });
-    expect(ata.presentes).toEqual([{ unidade: "101", nome: "Ana", procurador: false }]);
+    expect(ata.presentes).toEqual([
+      { unidade: "101", nome: "Ana", procurador: false },
+    ]);
     expect(ata.itens).toHaveLength(1);
   });
 
   it("normalizarAta preserva o modelo de ata escolhido (regressão issue #256)", () => {
     const base = { ...novaAtaDeAssembleia(edital, condo), id: "a1" };
-    expect(normalizarAta({ ...base, modeloAtaId: "m1" }).modeloAtaId).toBe("m1");
+    expect(normalizarAta({ ...base, modeloAtaId: "m1" }).modeloAtaId).toBe(
+      "m1",
+    );
     // vazio ou inválido vira ausente, sem gravar lixo
-    expect("modeloAtaId" in normalizarAta({ ...base, modeloAtaId: "  " })).toBe(false);
+    expect("modeloAtaId" in normalizarAta({ ...base, modeloAtaId: "  " })).toBe(
+      false,
+    );
     expect("modeloAtaId" in normalizarAta(base)).toBe(false);
   });
 
   it("exige condomínio e data válida; horário, se informado, em hh:mm", () => {
-    expect(validarAta({ condoId: "", data: "", hora: "" })).toEqual({ condoId: "Escolha o condomínio.", data: "Informe a data da assembleia." });
-    expect(validarAta({ condoId: "c1", data: "31/10/2026", hora: "7" })).toEqual({ hora: "Horário inválido (hh:mm)." });
-    expect(validarAta({ condoId: "c1", data: "2026-10-31", hora: "" })).toEqual({});
+    expect(validarAta({ condoId: "", data: "", hora: "" })).toEqual({
+      condoId: "Escolha o condomínio.",
+      data: "Informe a data da assembleia.",
+    });
+    expect(
+      validarAta({ condoId: "c1", data: "31/10/2026", hora: "7" }),
+    ).toEqual({ hora: "Horário inválido (hh:mm)." });
+    expect(validarAta({ condoId: "c1", data: "2026-10-31", hora: "" })).toEqual(
+      {},
+    );
   });
 
   it("quórum acompanha a lista enquanto o número é o da lista (#305)", () => {
     const antes = [{ unidade: "101", nome: "A", procurador: false }];
     const depois = [...antes, { unidade: "102", nome: "B", procurador: false }];
-    const q = quorumAposPresentes({ unidadesPresentes: 1, totalUnidades: 48 }, antes, depois);
+    const q = quorumAposPresentes(
+      { unidadesPresentes: 1, totalUnidades: 48 },
+      antes,
+      depois,
+    );
     expect(q).toEqual({ unidadesPresentes: 2, totalUnidades: 48 });
+  });
+
+  it("quórum com lista vazia começa em zero e acompanha o primeiro presente (#305)", () => {
+    const vazio = quorumAposPresentes(
+      { unidadesPresentes: 0, totalUnidades: 48 },
+      [],
+      [],
+    );
+    expect(vazio.unidadesPresentes).toBe(0);
+    const primeiro = quorumAposPresentes(
+      { unidadesPresentes: 0, totalUnidades: 48 },
+      [],
+      [{ unidade: "101", nome: "A", procurador: false }],
+    );
+    expect(primeiro.unidadesPresentes).toBe(1);
   });
 
   it("quórum ajustado à mão não é sobrescrito pela lista (#305)", () => {
     const antes = [{ unidade: "101", nome: "A", procurador: false }];
     const depois = [...antes, { unidade: "102", nome: "B", procurador: false }];
-    const q = quorumAposPresentes({ unidadesPresentes: 10, totalUnidades: 48 }, antes, depois);
+    const q = quorumAposPresentes(
+      { unidadesPresentes: 10, totalUnidades: 48 },
+      antes,
+      depois,
+    );
     expect(q.unidadesPresentes).toBe(10);
   });
 });

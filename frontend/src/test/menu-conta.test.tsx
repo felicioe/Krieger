@@ -30,8 +30,22 @@ function montar({
   nome = "Maria Souza",
   movel = false,
   comProvedor = true,
-}: { perfil?: Usuario["perfil"]; nome?: string; movel?: boolean; comProvedor?: boolean } = {}) {
-  definirUsuario({ id: "u-teste", login: "maria", nome, perfil, trocarSenha: false } as Usuario);
+  permissoes,
+}: {
+  perfil?: Usuario["perfil"];
+  nome?: string;
+  movel?: boolean;
+  comProvedor?: boolean;
+  permissoes?: string[];
+} = {}) {
+  definirUsuario({
+    id: "u-teste",
+    login: "maria",
+    nome,
+    perfil,
+    trocarSenha: false,
+    ...(permissoes ? { permissoes } : {}),
+  } as Usuario);
   const Menu = movel ? (
     <MenuMovel destinoFoco={() => document.getElementById("conteudo")}>
       {(aoNavegar, depoisDeFechar) => (
@@ -209,5 +223,73 @@ describe("Registro de Alterações pela gaveta do celular", () => {
     expect(document.body.style.pointerEvents).not.toBe("none");
     expect(screen.getByLabelText("Observação")).toHaveValue("rascunho");
     expect(sair).not.toHaveBeenCalled();
+  });
+});
+
+describe("menu por perfil (#310)", () => {
+  const link = (nome: string) => screen.queryByRole("link", { name: nome });
+
+  it("SuperADM vê Cadastro e configuração e a Administração completa", async () => {
+    const { pronto } = montar();
+    await pronto();
+    for (const nome of [
+      "Importador",
+      "Modelos de edital",
+      "Modelos de ata",
+      "Escritório",
+      "Backup",
+      "Limpeza de Dados",
+    ])
+      expect(link(nome)).toBeInTheDocument();
+  });
+
+  it("ADM vê Cadastro e configuração, mas não Escritório, Backup nem Limpeza", async () => {
+    const { pronto } = montar({
+      perfil: "adm",
+      nome: "Ana",
+      permissoes: [
+        "painel.visualizar",
+        "prestacao_contas.visualizar",
+        "importador.visualizar",
+        "modelos.visualizar",
+        "modelos_ata.visualizar",
+      ],
+    });
+    await pronto();
+    for (const nome of ["Importador", "Modelos de edital", "Modelos de ata"])
+      expect(link(nome)).toBeInTheDocument();
+    for (const nome of ["Escritório", "Backup", "Limpeza de Dados"]) expect(link(nome)).toBeNull();
+  });
+
+  it("favorito de módulo sem permissão não aparece na seção Favoritos (#296)", async () => {
+    localStorage.setItem(
+      "krieger.favoritos.u-teste",
+      JSON.stringify(["/backup", "/prestacao-contas"]),
+    );
+    const { pronto } = montar({
+      perfil: "user",
+      nome: "João",
+      permissoes: ["prestacao_contas.visualizar"],
+    });
+    await pronto();
+    expect(screen.getByText("Favoritos")).toBeInTheDocument();
+    expect(link("Backup")).toBeNull();
+    expect(screen.getAllByRole("link", { name: "Prestação de contas" }).length).toBeGreaterThan(0);
+    localStorage.removeItem("krieger.favoritos.u-teste");
+  });
+
+  it("Usuário só com rotinas de uso não vê Cadastro e configuração; a ajuda fica no bloco da conta", async () => {
+    const { user, pronto } = montar({
+      perfil: "user",
+      nome: "João",
+      permissoes: ["painel.visualizar", "prestacao_contas.visualizar"],
+    });
+    await pronto();
+    expect(link("Prestação de contas")).toBeInTheDocument();
+    for (const nome of ["Importador", "Modelos de edital", "Modelos de ata", "Escritório"])
+      expect(link(nome)).toBeNull();
+    expect(link("Central de ajuda")).toBeNull();
+    await user.click(botaoConta("João"));
+    expect(link("Central de ajuda")).toBeInTheDocument();
   });
 });

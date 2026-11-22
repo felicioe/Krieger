@@ -31,7 +31,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useAbrirRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
@@ -225,9 +225,12 @@ function gravarFavoritos(userId: string | undefined, favoritos: string[]) {
   }
 }
 
-function lerGruposFechados(): string[] {
+/** Preferência por usuário (#257); sem a do usuário, aproveita a chave antiga, que era única. */
+function lerGruposFechados(userId: string | undefined): string[] {
   try {
-    const bruto = localStorage.getItem(CHAVE_GRUPOS_FECHADOS);
+    const bruto =
+      (userId ? localStorage.getItem(`${CHAVE_GRUPOS_FECHADOS}.${userId}`) : null) ??
+      localStorage.getItem(CHAVE_GRUPOS_FECHADOS);
     if (!bruto) return [];
     const valor: unknown = JSON.parse(bruto);
     return Array.isArray(valor) ? valor.filter((v): v is string => typeof v === "string") : [];
@@ -236,9 +239,10 @@ function lerGruposFechados(): string[] {
   }
 }
 
-function gravarGruposFechados(fechados: string[]) {
+function gravarGruposFechados(userId: string | undefined, fechados: string[]) {
   try {
-    localStorage.setItem(CHAVE_GRUPOS_FECHADOS, JSON.stringify(fechados));
+    const chave = userId ? `${CHAVE_GRUPOS_FECHADOS}.${userId}` : CHAVE_GRUPOS_FECHADOS;
+    localStorage.setItem(chave, JSON.stringify(fechados));
   } catch {
     // Navegador sem armazenamento (modo privado): a árvore só não lembra entre visitas.
   }
@@ -374,7 +378,7 @@ export function ConteudoMenu({
   const idMenu = useId();
   const abrirRegistro = useAbrirRegistroAlteracoes();
   const [contaAberta, setContaAberta] = useState(false);
-  const [fechados, setFechados] = useState<string[]>(() => lerGruposFechados());
+  const [fechados, setFechados] = useState<string[]>(() => lerGruposFechados(usuario?.id));
   const [favoritos, setFavoritos] = useState<string[]>(() => lerFavoritos(usuario?.id));
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -394,9 +398,12 @@ export function ConteudoMenu({
     [usuario?.id],
   );
 
-  const itensFavoritos = useMemo(
-    () => ITENS_MENU.filter((item) => favoritos.includes(item.to)),
-    [favoritos],
+  // Mesmo filtro dos grupos: um favorito de módulo sem permissão não aparece (#296).
+  const itemVisivel = (item: Item) =>
+    (!item.apenasAdmin || usuario?.perfil === "admin") &&
+    (!item.permissao || temPermissao(usuario, item.permissao));
+  const itensFavoritos = ITENS_MENU.filter(
+    (item) => favoritos.includes(item.to) && itemVisivel(item),
   );
 
   // Grupo aberto por causa da página atual. Some quando a pessoa recolhe esse grupo na mão, para ela
@@ -410,14 +417,14 @@ export function ConteudoMenu({
     if (!aberto && abertoDaRota === titulo) setAbertoDaRota(null);
     setFechados((atual) => {
       const proximo = aberto ? atual.filter((t) => t !== titulo) : [...new Set([...atual, titulo])];
-      gravarGruposFechados(proximo);
+      gravarGruposFechados(usuario?.id, proximo);
       return proximo;
     });
   }
 
   function alternarTodos(abrir: boolean) {
     const proximo = abrir ? [] : GRUPOS_MENU.flatMap((g) => (g.titulo ? [g.titulo] : []));
-    gravarGruposFechados(proximo);
+    gravarGruposFechados(usuario?.id, proximo);
     setFechados(proximo);
     setAbertoDaRota(null);
   }
@@ -425,12 +432,7 @@ export function ConteudoMenu({
   const gruposComTitulo = GRUPOS_MENU.filter((g) => g.titulo);
   const todosAbertos = gruposComTitulo.every((g) => !fechados.includes(g.titulo!));
 
-  const visiveis = (g: Grupo) =>
-    g.itens.filter(
-      (item) =>
-        (!item.apenasAdmin || usuario?.perfil === "admin") &&
-        (!item.permissao || temPermissao(usuario, item.permissao)),
-    );
+  const visiveis = (g: Grupo) => g.itens.filter(itemVisivel);
 
   async function encerrar() {
     aoNavegar?.();
