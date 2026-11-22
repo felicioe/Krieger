@@ -31,12 +31,14 @@ function montar({
   movel = false,
   comProvedor = true,
   permissoes,
+  caminhoInicial = "/",
 }: {
   perfil?: Usuario["perfil"];
   nome?: string;
   movel?: boolean;
   comProvedor?: boolean;
   permissoes?: string[];
+  caminhoInicial?: string;
 } = {}) {
   definirUsuario({
     id: "u-teste",
@@ -88,7 +90,7 @@ function montar({
       pagina("/usuarios", "Usuários"),
       pagina("/login", "Entrar"),
     ]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
+    history: createMemoryHistory({ initialEntries: [caminhoInicial] }),
   });
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -103,15 +105,41 @@ const botaoConta = (nome = "Maria Souza") =>
 
 beforeEach(() => {
   sair.mockClear();
+  localStorage.clear();
+});
+
+describe("expansão dos grupos do menu", () => {
+  it("abre somente o grupo da rota no primeiro acesso", async () => {
+    montar({ caminhoInicial: "/usuarios" });
+    await screen.findByRole("heading", { name: "Usuários" });
+    const menu = screen.getByRole("navigation", { name: "Menu principal" });
+    expect(within(menu).getByRole("button", { name: "Administração" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(menu.querySelectorAll('button[aria-expanded="true"]')).toHaveLength(1);
+  });
+
+  it("mantém o foco e grava a escolha explícita para o usuário", async () => {
+    const { user, pronto } = montar();
+    await pronto();
+    const controle = screen.getByRole("button", { name: "Expandir todos os grupos" });
+    controle.focus();
+    await user.keyboard("{Enter}");
+    expect(controle).toHaveFocus();
+    expect(controle).toHaveAccessibleName("Recolher todos os grupos");
+    expect(localStorage.getItem("krieger.menu.grupos-fechados.u-teste")).toBe("[]");
+  });
 });
 
 describe("bloco da conta no menu lateral", () => {
   it("começa recolhido: opções fora da página (sem foco) e módulos principais intactos", async () => {
-    montar();
+    const { user } = montar();
     await screen.findByLabelText("Observação");
     const conta = botaoConta();
     expect(conta).toHaveAttribute("aria-expanded", "false");
     expect(conta).toHaveAccessibleName(/SuperADM/);
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
     expect(screen.getByRole("link", { name: "Usuários" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Minha senha" })).toBeNull();
     for (const nome of ["Registro de Alterações", "Sair"])
@@ -156,6 +184,7 @@ describe("bloco da conta no menu lateral", () => {
   it("Minha senha e Usuários mantêm os destinos, e Sair encerra uma vez", async () => {
     const { router, user, pronto } = montar();
     await pronto();
+    await user.click(screen.getByRole("button", { name: "Administração" }));
     await user.click(screen.getByRole("link", { name: "Usuários" }));
     await screen.findByRole("heading", { name: "Usuários" });
     expect(sair).not.toHaveBeenCalled();
@@ -231,8 +260,9 @@ describe("menu por perfil (#310)", () => {
   const link = (nome: string) => screen.queryByRole("link", { name: nome });
 
   it("SuperADM vê Dados, modelos e a Administração completa", async () => {
-    const { pronto } = montar();
+    const { user, pronto } = montar();
     await pronto();
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
     for (const nome of [
       "Importador",
       "Modelos de edital",
@@ -245,7 +275,7 @@ describe("menu por perfil (#310)", () => {
   });
 
   it("ADM vê Dados e modelos, mas não Escritório, Backup nem Limpeza", async () => {
-    const { pronto } = montar({
+    const { user, pronto } = montar({
       perfil: "adm",
       nome: "Ana",
       permissoes: [
@@ -257,6 +287,7 @@ describe("menu por perfil (#310)", () => {
       ],
     });
     await pronto();
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
     for (const nome of ["Importador", "Modelos de edital", "Modelos de ata"])
       expect(link(nome)).toBeInTheDocument();
     for (const nome of ["Escritório", "Backup", "Limpeza de Dados"]) expect(link(nome)).toBeNull();
@@ -286,6 +317,7 @@ describe("menu por perfil (#310)", () => {
       permissoes: ["painel.visualizar", "prestacao_contas.visualizar"],
     });
     await pronto();
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
     expect(link("Prestação de contas")).toBeInTheDocument();
     for (const nome of ["Importador", "Modelos de edital", "Modelos de ata", "Escritório"])
       expect(link(nome)).toBeNull();
