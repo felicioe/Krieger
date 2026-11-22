@@ -19,6 +19,10 @@
   cartões estreitos o valor passa para a linha seguinte, no mesmo ajuste.
 - #332: o adaptador de demonstração é buscado só na primeira operação em
   ambiente de demonstração. O ambiente de produção continua chamando o PHP.
+- #333: no Drive, autoidentificação por nome usa o selo compartilhado de
+  sucesso e documentos não identificados usam o de aviso. Os dois mantêm
+  rótulos textuais distintos. Num lote fictício, as medições de contraste
+  no Chromium foram 4,70:1 e 10,75:1, respectivamente.
 
 
 ## Acessibilidade da previsão e do relatório final — 22/11/2026
