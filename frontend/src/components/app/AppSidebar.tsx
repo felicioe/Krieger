@@ -338,7 +338,7 @@ function ItemMenu({
         className={cn(
           classeItem,
           "min-w-0 flex-1",
-          item.perigoso && "text-red-400 hover:bg-red-950/60 hover:text-red-300 font-medium",
+          item.perigoso && "text-red-300 hover:bg-red-950/60 hover:text-red-200 font-medium",
           ativo &&
             (item.perigoso
               ? "bg-red-950/80 border-red-500 text-red-200 font-semibold"
@@ -346,7 +346,7 @@ function ItemMenu({
         )}
       >
         <Icone
-          className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-400 opacity-100")}
+          className={cn("size-4 shrink-0 opacity-90", item.perigoso && "text-red-300 opacity-100")}
         />
         <span className="min-w-0 wrap-anywhere">{item.titulo}</span>
       </Link>

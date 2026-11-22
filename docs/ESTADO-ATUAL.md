@@ -11,6 +11,8 @@
   nova tentativa. Relatórios fechados continuam disponíveis para download.
 - #353: a rota em hash é montada depois de hidratar a estrutura comum da
   página, porque a URL vista pelo servidor não inclui o fragmento.
+- #354: o aviso Incompleto usa o token de texto para alertas, e Limpeza de
+  Dados usa um tom mais claro sobre o fundo do menu.
 
 ## Auditoria de navegação — 22/11/2026
 
