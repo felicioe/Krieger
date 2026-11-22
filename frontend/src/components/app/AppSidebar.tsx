@@ -300,7 +300,9 @@ function ItemMenu({
           "flex-1",
           item.perigoso && "text-red-400 hover:bg-red-950/60 hover:text-red-300 font-medium",
           ativo &&
-            (item.perigoso ? "bg-red-950/80 border-red-500 text-red-200 font-semibold" : classeAtivo),
+            (item.perigoso
+              ? "bg-red-950/80 border-red-500 text-red-200 font-semibold"
+              : classeAtivo),
         )}
       >
         <Icone
@@ -316,7 +318,11 @@ function ItemMenu({
             e.stopPropagation();
             onToggleFavorito(item.to);
           }}
-          aria-label={favorito ? `Remover ${item.titulo} dos favoritos` : `Adicionar ${item.titulo} aos favoritos`}
+          aria-label={
+            favorito
+              ? `Remover ${item.titulo} dos favoritos`
+              : `Adicionar ${item.titulo} aos favoritos`
+          }
           title={favorito ? "Remover dos favoritos" : "Adicionar aos favoritos"}
           className={cn(
             "mr-2 shrink-0 rounded p-1 transition-colors",

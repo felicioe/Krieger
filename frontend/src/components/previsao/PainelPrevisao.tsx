@@ -31,7 +31,12 @@ import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
 import { cn, irPara } from "@/lib/utils";
 import type { ResultadoPrevisao } from "@/domain/previsao";
-import { ARREDONDAMENTO_CURTO, ARREDONDAMENTOS, MODOS_PREVISAO, rotuloVariacao } from "@/domain/previsaoCriterios";
+import {
+  ARREDONDAMENTO_CURTO,
+  ARREDONDAMENTOS,
+  MODOS_PREVISAO,
+  rotuloVariacao,
+} from "@/domain/previsaoCriterios";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
 // Rótulos vêm de domain/previsaoCriterios.ts: o mesmo parâmetro precisa ter o mesmo nome aqui,
@@ -562,15 +567,19 @@ function Resumo({
                   value={rateioHistoricoManual ?? rateioHistoricoCalculado}
                   onChange={(v) => onRateioHistoricoChange(v ?? null)}
                 />
-                {rateioHistoricoManual !== null && rateioHistoricoManual !== rateioHistoricoCalculado && (
-                  <span className="text-[10px] font-medium text-warning">Editado manualmente</span>
-                )}
+                {rateioHistoricoManual !== null &&
+                  rateioHistoricoManual !== rateioHistoricoCalculado && (
+                    <span className="text-[10px] font-medium text-warning">
+                      Editado manualmente
+                    </span>
+                  )}
               </div>
             </Field>
             <Field
               rotulo="% histórico"
               dica={
-                variacaoHistoricaManual !== null && variacaoHistoricaManual !== variacaoHistoricaCalculada
+                variacaoHistoricaManual !== null &&
+                variacaoHistoricaManual !== variacaoHistoricaCalculada
                   ? `Editado manualmente. Calculado pelo sistema: ${pct(variacaoHistoricaCalculada)}. Deixe vazio para voltar ao valor calculado.`
                   : `Calculado pelo sistema a partir do histórico. Edite para sobrescrever.`
               }
@@ -581,9 +590,12 @@ function Resumo({
                   value={variacaoHistoricaManual ?? variacaoHistoricaCalculada}
                   onChange={(v) => onVariacaoHistoricaChange(v ?? null)}
                 />
-                {variacaoHistoricaManual !== null && variacaoHistoricaManual !== variacaoHistoricaCalculada && (
-                  <span className="text-[10px] font-medium text-warning">Editado manualmente</span>
-                )}
+                {variacaoHistoricaManual !== null &&
+                  variacaoHistoricaManual !== variacaoHistoricaCalculada && (
+                    <span className="text-[10px] font-medium text-warning">
+                      Editado manualmente
+                    </span>
+                  )}
               </div>
             </Field>
           </div>
