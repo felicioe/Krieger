@@ -19,7 +19,6 @@ import {
   type ConfirmarImportacaoPedido,
 } from "./apiTypes";
 import { realApi } from "./realApi";
-import { mockApi } from "./mockApi";
 
 export { ApiError } from "./apiTypes";
 export type {
@@ -40,8 +39,10 @@ export function usandoMock(): boolean {
   );
 }
 
-function impl(): ApiAdapter {
-  return usandoMock() ? mockApi : realApi;
+async function impl(): Promise<ApiAdapter> {
+  if (!usandoMock()) return realApi;
+  const { mockApi } = await import("./mockApi");
+  return mockApi;
 }
 
 // ---- Tratamento central de 401 ----
@@ -50,9 +51,9 @@ export function definirAoNaoAutorizado(fn: () => void) {
   aoNaoAutorizado = fn;
 }
 
-async function guarda<T>(fn: () => Promise<T>): Promise<T> {
+async function guarda<T>(fn: (adaptador: ApiAdapter) => Promise<T>): Promise<T> {
   try {
-    return await fn();
+    return await fn(await impl());
   } catch (e) {
     if (e instanceof ApiError && e.status === 401) aoNaoAutorizado?.();
     throw e;
@@ -67,66 +68,67 @@ export function mensagemErro(e: unknown): string {
 
 export const api = {
   fechamentoExercicio: (id: string, fechar: boolean, motivo: string, versao: string | null) =>
-    guarda(() => impl().fechamentoExercicio(id, fechar, motivo, versao)),
+    guarda((adaptador) => adaptador.fechamentoExercicio(id, fechar, motivo, versao)),
   anexos: {
-    listar: (exercicioId: string) => guarda(() => impl().anexos.listar(exercicioId)),
+    listar: (exercicioId: string) => guarda((adaptador) => adaptador.anexos.listar(exercicioId)),
   },
-  listar: <T>(store: Store) => guarda(() => impl().listar<T>(store)),
-  obter: <T>(store: Store, id: string) => guarda(() => impl().obter<T>(store, id)),
+  listar: <T>(store: Store) => guarda((adaptador) => adaptador.listar<T>(store)),
+  obter: <T>(store: Store, id: string) => guarda((adaptador) => adaptador.obter<T>(store, id)),
   salvar: <T extends { id?: string }>(store: Store, o: T) =>
-    guarda(() => impl().salvar<T>(store, { ...o, id: o.id || novoId() })),
-  excluir: (store: Store, id: string) => guarda(() => impl().excluir(store, id)),
-  exportar: () => guarda(() => impl().exportar()),
+    guarda((adaptador) => adaptador.salvar<T>(store, { ...o, id: o.id || novoId() })),
+  excluir: (store: Store, id: string) => guarda((adaptador) => adaptador.excluir(store, id)),
+  exportar: () => guarda((adaptador) => adaptador.exportar()),
   importar: (dados: Backup, substituir: boolean) =>
-    guarda(() => impl().importar(dados, substituir)),
+    guarda((adaptador) => adaptador.importar(dados, substituir)),
   confirmarImportacao: (pedido: ConfirmarImportacaoPedido) =>
-    guarda(() => impl().confirmarImportacao(pedido)),
+    guarda((adaptador) => adaptador.confirmarImportacao(pedido)),
   backup: {
-    criar: () => guarda(() => impl().backup.criar()),
-    listar: () => guarda(() => impl().backup.listar()),
-    baixar: (id: string) => guarda(() => impl().backup.baixar(id)),
+    criar: () => guarda((adaptador) => adaptador.backup.criar()),
+    listar: () => guarda((adaptador) => adaptador.backup.listar()),
+    baixar: (id: string) => guarda((adaptador) => adaptador.backup.baixar(id)),
     restaurar: (id: string, substituir: boolean) =>
-      guarda(() => impl().backup.restaurar(id, substituir)),
-    excluir: (id: string) => guarda(() => impl().backup.excluir(id)),
+      guarda((adaptador) => adaptador.backup.restaurar(id, substituir)),
+    excluir: (id: string) => guarda((adaptador) => adaptador.backup.excluir(id)),
   },
   manutencao: {
-    contagens: () => guarda(() => impl().manutencao.contagens()),
-    limpar: (alvo: AlvoLimpeza) => guarda(() => impl().manutencao.limpar(alvo)),
+    contagens: () => guarda((adaptador) => adaptador.manutencao.contagens()),
+    limpar: (alvo: AlvoLimpeza) => guarda((adaptador) => adaptador.manutencao.limpar(alvo)),
     cargaPrevistos: (modo: "simular" | "aplicar") =>
-      guarda(() => impl().manutencao.cargaPrevistos(modo)),
+      guarda((adaptador) => adaptador.manutencao.cargaPrevistos(modo)),
     atualizarPrevisto: (condoId: string, anoDestino: number) =>
-      guarda(() => impl().manutencao.atualizarPrevisto(condoId, anoDestino)),
+      guarda((adaptador) => adaptador.manutencao.atualizarPrevisto(condoId, anoDestino)),
   },
   auth: {
-    eu: () => impl().auth.eu(),
-    entrar: (login: string, senha: string) => impl().auth.entrar(login, senha),
-    sair: () => impl().auth.sair(),
-    minhaSenha: (atual: string, nova: string) => impl().auth.minhaSenha(atual, nova),
-    usuarios: () => guarda(() => impl().auth.usuarios()),
-    usuarioSalvar: (u: UsuarioSalvar) => guarda(() => impl().auth.usuarioSalvar(u)),
-    usuarioExcluir: (id: string) => guarda(() => impl().auth.usuarioExcluir(id)),
-    permissoes: () => guarda(() => impl().auth.permissoes()),
+    eu: async () => (await impl()).auth.eu(),
+    entrar: async (login: string, senha: string) => (await impl()).auth.entrar(login, senha),
+    sair: async () => (await impl()).auth.sair(),
+    minhaSenha: async (atual: string, nova: string) => (await impl()).auth.minhaSenha(atual, nova),
+    usuarios: () => guarda((adaptador) => adaptador.auth.usuarios()),
+    usuarioSalvar: (u: UsuarioSalvar) => guarda((adaptador) => adaptador.auth.usuarioSalvar(u)),
+    usuarioExcluir: (id: string) => guarda((adaptador) => adaptador.auth.usuarioExcluir(id)),
+    permissoes: () => guarda((adaptador) => adaptador.auth.permissoes()),
     permissaoSalvar: (usuarioId: string, chave: string, efeito: "permitir" | "negar" | "remover") =>
-      guarda(() => impl().auth.permissaoSalvar(usuarioId, chave, efeito)),
-    perfis: () => guarda(() => impl().auth.perfis()),
+      guarda((adaptador) => adaptador.auth.permissaoSalvar(usuarioId, chave, efeito)),
+    perfis: () => guarda((adaptador) => adaptador.auth.perfis()),
     perfilPermissaoSalvar: (perfil: Perfil, chave: string, permitida: boolean) =>
-      guarda(() => impl().auth.perfilPermissaoSalvar(perfil, chave, permitida)),
+      guarda((adaptador) => adaptador.auth.perfilPermissaoSalvar(perfil, chave, permitida)),
   },
   documentos: {
-    listar: (condoId: string) => guarda(() => impl().documentos.listar(condoId)),
-    resumo: () => guarda(() => impl().documentos.resumo()),
-    registrar: (doc: DocumentoDriveRegistro) => guarda(() => impl().documentos.registrar(doc)),
-    conteudo: (id: string) => guarda(() => impl().documentos.conteudo(id)),
+    listar: (condoId: string) => guarda((adaptador) => adaptador.documentos.listar(condoId)),
+    resumo: () => guarda((adaptador) => adaptador.documentos.resumo()),
+    registrar: (doc: DocumentoDriveRegistro) =>
+      guarda((adaptador) => adaptador.documentos.registrar(doc)),
+    conteudo: (id: string) => guarda((adaptador) => adaptador.documentos.conteudo(id)),
     atualizar: (dados: {
       id: string;
       nomeArquivo?: string;
       tipo?: TipoDocumentoConsulta;
       caminhoRelativo?: string;
       dataDocumento?: string;
-    }) => guarda(() => impl().documentos.atualizar(dados)),
-    excluir: (id: string) => guarda(() => impl().documentos.excluir(id)),
+    }) => guarda((adaptador) => adaptador.documentos.atualizar(dados)),
+    excluir: (id: string) => guarda((adaptador) => adaptador.documentos.excluir(id)),
     perguntar: (condoId: string, pergunta: string, documentoId?: string) =>
-      guarda(() => impl().documentos.perguntar(condoId, pergunta, documentoId)),
-    historico: (condoId: string) => guarda(() => impl().documentos.historico(condoId)),
+      guarda((adaptador) => adaptador.documentos.perguntar(condoId, pergunta, documentoId)),
+    historico: (condoId: string) => guarda((adaptador) => adaptador.documentos.historico(condoId)),
   },
 };
