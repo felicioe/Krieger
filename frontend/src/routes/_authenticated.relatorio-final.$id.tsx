@@ -18,7 +18,12 @@ import { PreviaRelatorio } from "@/components/relatorio/PreviaRelatorio";
 import { EditorConsideracoes } from "@/components/relatorio/EditorConsideracoes";
 import { DialogoConferencia } from "@/components/relatorio/DialogoConferencia";
 import { api } from "@/lib/api";
-import { baixarDocumento, ROTULO_FORMATO, type Formato } from "@/lib/documento/baixar";
+import {
+  gerarArquivoDocumento,
+  salvarArquivo,
+  ROTULO_FORMATO,
+  type Formato,
+} from "@/lib/documento/baixar";
 import { documentoRelatorioFinal } from "@/documentos/relatorioFinal";
 import { useUsuario } from "@/lib/auth";
 import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
@@ -179,12 +184,21 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   }
 
   async function emitir(formato: Formato) {
-    const doc = await documentoRelatorioFinal({
-      rel,
-      exercicio: e,
-      condominio: condo,
-      escritorio: e.fechado && e.fechamento ? e.fechamento.escritorio : escritorio,
-    });
+    let doc: Awaited<ReturnType<typeof documentoRelatorioFinal>>;
+    let blob: Blob;
+    try {
+      doc = await documentoRelatorioFinal({
+        rel,
+        exercicio: e,
+        condominio: condo,
+        escritorio: e.fechado && e.fechamento ? e.fechamento.escritorio : escritorio,
+      });
+      blob = await gerarArquivoDocumento(doc, formato);
+    } catch (erro) {
+      console.error(erro);
+      toast.error(`Não foi possível gerar o ${ROTULO_FORMATO[formato]}. Tente emitir novamente.`);
+      throw erro;
+    }
     if (!e.fechado)
       await salvar.mutateAsync({
         dados: prepararExercicio({
@@ -197,14 +211,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
         }),
         mensagem: `Relatório emitido em ${ROTULO_FORMATO[formato]}.`,
       });
-    try {
-      await baixarDocumento(doc, formato);
-    } catch (erro) {
-      console.error(erro);
-      toast.error(
-        `A emissão foi registrada, mas não foi possível gerar o ${ROTULO_FORMATO[formato]}. Tente emitir de novo.`,
-      );
-    }
+    salvarArquivo(blob, `${doc.arquivo}.${formato}`);
   }
 
   const opcoesMes = rel.comparativo.meses.map((m) => ({

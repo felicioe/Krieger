@@ -6,6 +6,9 @@
   identifica separadamente falhas no exercício, no histórico e na aplicação
   ao exercício seguinte. O editor bloqueia ações concorrentes e consulta o
   histórico novamente antes de gravar, inclusive em uma nova tentativa.
+- #352: o arquivo do relatório final é gerado antes de registrar a emissão.
+  Se a geração ou o registro falhar, a conferência permanece aberta para
+  nova tentativa. Relatórios fechados continuam disponíveis para download.
 
 ## Auditoria de navegação — 22/11/2026
 
