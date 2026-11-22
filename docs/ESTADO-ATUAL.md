@@ -9,6 +9,8 @@
 - #352: o arquivo do relatório final é gerado antes de registrar a emissão.
   Se a geração ou o registro falhar, a conferência permanece aberta para
   nova tentativa. Relatórios fechados continuam disponíveis para download.
+- #353: a rota em hash é montada depois de hidratar a estrutura comum da
+  página, porque a URL vista pelo servidor não inclui o fragmento.
 
 ## Auditoria de navegação — 22/11/2026
 
