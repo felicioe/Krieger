@@ -6,11 +6,19 @@ import {
   chaveRotulo,
   type OpcoesComparativo,
 } from "./previstoRealizado";
-import type { Mensal } from "./types";
+import type { Demonstrativo, Mensal } from "./types";
 
 export type CelulaMensal = { previsto: number; realizado: number; diferenca: number; horizontal: number | null; verticalPrevisto: number | null; verticalRealizado: number | null };
 export type LinhaMensal = { grupo: string; mensal: CelulaMensal[]; total: CelulaMensal };
-export type ResultadoMensalDetalhado = { meses: { posicao: number; rotulo: string; relatorios: number }[]; linhas: LinhaMensal[]; total: CelulaMensal; avisos: string[]; relatoriosUsados: number };
+export type ResultadoMensalDetalhado = {
+  meses: { posicao: number; rotulo: string; relatorios: number }[];
+  linhas: LinhaMensal[];
+  total: CelulaMensal;
+  avisos: string[];
+  relatoriosUsados: number;
+  /** Situação do previsto aprovado usado (ok, sem_base ou sem_percentual). */
+  situacaoPrevisto: "ok" | "sem_base" | "sem_percentual";
+};
 
 const pct = (n: number, base: number) => base === 0 ? null : Math.round((n / Math.abs(base)) * 10000) / 100;
 const fechar = (previsto: number, realizado: number, totalPrevisto: number, totalRealizado: number): CelulaMensal => {
@@ -72,8 +80,14 @@ export function compararPrevistoRealizadoMensal(
     grupos.push({ nome: k, previstoAnual: 0, serie });
   }
 
-  const totalPrevisto = grupos.reduce((s, g) => s + g.previstoAnual, 0) / 12 * selecionados.length;
+  let situacaoPrevisto: "ok" | "sem_base" | "sem_percentual" = "ok";
+  if (!opcoes.demonstrativoBase || !temGruposComDespesas(opcoes.demonstrativoBase)) {
+    situacaoPrevisto = "sem_base";
+  }
+  let totalPrevisto = grupos.reduce((s, g) => s + g.previstoAnual, 0) / 12 * selecionados.length;
   const totalRealizado = grupos.reduce((s, g) => s + g.serie.reduce((a, b) => a + b, 0), 0);
+  // Quando não há demonstrativo base explícito, previsto não se aplica: zerar totais.
+  if (situacaoPrevisto === "sem_base") totalPrevisto = 0;
   const mediaPrev = totalPrevisto / Math.max(1, selecionados.length);
   const mediaReal = totalRealizado / Math.max(1, selecionados.length);
   const linhas: LinhaMensal[] = grupos
@@ -99,5 +113,10 @@ export function compararPrevistoRealizadoMensal(
     total: fechar(totalPrevisto, totalRealizado, totalPrevisto, totalRealizado),
     avisos: avisos.length ? [`Sem relatório mensal em: ${avisos.join(", ")}. O realizado desses meses conta como zero.`] : [],
     relatoriosUsados,
+    situacaoPrevisto,
   };
+}
+
+function temGruposComDespesas(demo: Demonstrativo | undefined): boolean {
+  return !!demo?.despesas?.grupos?.some((g) => g.itens?.some((i) => !!i.nome || (Number(i.valor) || 0) !== 0));
 }
