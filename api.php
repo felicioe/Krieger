@@ -481,6 +481,10 @@ try {
               $novo = array_key_exists($campoConfig, $o) ? $o[$campoConfig] : $atual;
               if ($atual != $novo) { exigir_permissao($usuario, 'condominios.configurar'); break; }
             }
+            // Campo omitido no payload não pode sumir do registro gravado (a gravação substitui o JSON inteiro).
+            foreach (array_keys($padraoConfig) as $campoConfig) {
+              if (!array_key_exists($campoConfig, $o) && array_key_exists($campoConfig, $existente)) $o[$campoConfig] = $existente[$campoConfig];
+            }
           }
           $indicesAlterados = !empty($o['indicesInicializados']) || ($existente['indices'] ?? []) !== ($o['indices'] ?? []);
           if ($indicesAlterados || !empty($existente['indicesInicializados']) || !empty($o['indices'])) $o = substituir_indices_condominio($pdo, $o);
