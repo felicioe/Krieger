@@ -26,6 +26,7 @@ describe("arquitetura do menu principal", () => {
       "/relatorios/inadimplencia",
       "/relatorios/comparativo-despesas",
       "/relatorios/consolidado-escritorio",
+      "/relatorio-final",
     ]);
   });
 
