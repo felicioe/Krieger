@@ -617,3 +617,38 @@ export function planejarAnoAnterior(
   return planejarHistorico(iniciais, atuais, ctx);
 }
 
+
+/** Etapa em que o travamento parou. Cada uma grava uma coisa diferente. */
+export type EtapaTravamento = "exercicio" | "historico" | "propagacao";
+
+export type ResultadoTravamento =
+  | { ok: true; proximoId: string | null }
+  | { ok: false; etapa: EtapaTravamento; erro: unknown; proximoId: string | null };
+
+/**
+ * Trava o rateio em três gravações, nesta ordem: exercício (rateio aprovado), histórico
+ * (linha do ano) e propagação (base do exercício seguinte). Para na primeira que falha e diz em
+ * qual parou, para a tela não afirmar que algo foi salvo quando não foi. Tentar de novo é seguro:
+ * o plano reaproveita o id da linha existente e só propaga quando o seguinte ainda não tem base.
+ */
+export async function executarTravamentoRateio(entrada: {
+  gravarExercicio: () => Promise<Exercicio>;
+  planejar: (exercicioSalvo: Exercicio) => PlanoTravamento;
+  gravarHistorico: (linha: PlanoTravamento["linha"]) => Promise<unknown>;
+  gravarProximo: (id: string, rateioAtual: number) => Promise<unknown>;
+}): Promise<ResultadoTravamento> {
+  let etapa: EtapaTravamento = "exercicio";
+  let proximoId: string | null = null;
+  try {
+    const salvo = await entrada.gravarExercicio();
+    etapa = "historico";
+    const plano = entrada.planejar(salvo);
+    await entrada.gravarHistorico(plano.linha);
+    etapa = "propagacao";
+    proximoId = plano.proximo?.id ?? null;
+    if (plano.proximo) await entrada.gravarProximo(plano.proximo.id, plano.proximo.rateioAtual);
+    return { ok: true, proximoId };
+  } catch (erro) {
+    return { ok: false, etapa, erro, proximoId };
+  }
+}
