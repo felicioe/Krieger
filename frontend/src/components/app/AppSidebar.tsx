@@ -79,7 +79,7 @@ export const GRUPOS_MENU: Grupo[] = [
     ],
   },
   {
-    titulo: "Apuração do rateio",
+    titulo: "Rateio e orçamento",
     icone: Wallet,
     itens: [
       {
@@ -103,7 +103,25 @@ export const GRUPOS_MENU: Grupo[] = [
     ],
   },
   {
-    titulo: "Relatórios",
+    titulo: "Dados e importação",
+    icone: FileUp,
+    itens: [
+      {
+        titulo: "Importador",
+        to: "/importador",
+        icone: FileUp,
+        permissao: "importador.visualizar",
+      },
+      {
+        titulo: "Acompanhamento de carga de dados mensais",
+        to: "/relatorio-mensal",
+        icone: CalendarRange,
+        permissao: "relatorio_mensal.visualizar",
+      },
+    ],
+  },
+  {
+    titulo: "Relatórios e análises",
     icone: ChartColumn,
     itens: [
       {
@@ -117,12 +135,6 @@ export const GRUPOS_MENU: Grupo[] = [
         to: "/relatorios/orcado-realizado-mensal",
         icone: CalendarRange,
         permissao: "previsto_realizado.visualizar",
-      },
-      {
-        titulo: "Acompanhamento de carga de dados mensais",
-        to: "/relatorio-mensal",
-        icone: CalendarRange,
-        permissao: "relatorio_mensal.visualizar",
       },
       {
         titulo: "Evolução da inadimplência",
@@ -157,6 +169,18 @@ export const GRUPOS_MENU: Grupo[] = [
       { titulo: "Editais", to: "/editais", icone: Megaphone, permissao: "editais.visualizar" },
       { titulo: "Atas", to: "/atas", icone: ScrollText, permissao: "atas.visualizar" },
       {
+        titulo: "Modelos de edital",
+        to: "/modelos",
+        icone: FileText,
+        permissao: "modelos.visualizar",
+      },
+      {
+        titulo: "Modelos de ata",
+        to: "/modelos-ata",
+        icone: ScrollText,
+        permissao: "modelos_ata.visualizar",
+      },
+      {
         titulo: "Drive de Documentos",
         to: "/drive-documentos",
         icone: FolderOpen,
@@ -171,32 +195,6 @@ export const GRUPOS_MENU: Grupo[] = [
     ],
   },
   {
-    // Cadastros e modelos que só o ADM configura. O Usuário vê o item apenas se a matriz de
-    // permissões liberar (kr_perfil_permissoes); nenhuma permissão nova é criada aqui.
-    titulo: "Cadastro e configuração",
-    icone: FileUp,
-    itens: [
-      {
-        titulo: "Importador",
-        to: "/importador",
-        icone: FileUp,
-        permissao: "importador.visualizar",
-      },
-      {
-        titulo: "Modelos de edital",
-        to: "/modelos",
-        icone: FileText,
-        permissao: "modelos.visualizar",
-      },
-      {
-        titulo: "Modelos de ata",
-        to: "/modelos-ata",
-        icone: ScrollText,
-        permissao: "modelos_ata.visualizar",
-      },
-    ],
-  },
-  {
     titulo: "Administração",
     icone: Settings2,
     itens: [
@@ -206,6 +204,7 @@ export const GRUPOS_MENU: Grupo[] = [
         icone: Briefcase,
         permissao: "escritorio.visualizar",
       },
+      { titulo: "Usuários", to: "/usuarios", icone: Users, apenasAdmin: true },
       { titulo: "Backup", to: "/backup", icone: DatabaseBackup, permissao: "backup.visualizar" },
       {
         titulo: "Limpeza de Dados",
@@ -610,14 +609,6 @@ export function ConteudoMenu({
         </CollapsibleTrigger>
         <CollapsibleContent>
           <ul aria-label="Opções da conta" className="pb-2">
-            {usuario?.perfil === "admin" && (
-              <li>
-                <ItemMenu
-                  item={{ titulo: "Usuários", to: "/usuarios", icone: Users }}
-                  aoNavegar={aoNavegar}
-                />
-              </li>
-            )}
             <li>
               <ItemMenu
                 item={{ titulo: "Minha senha", to: "/minha-senha", icone: KeyRound }}
