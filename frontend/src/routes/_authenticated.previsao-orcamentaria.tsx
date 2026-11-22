@@ -329,7 +329,7 @@ function EditorPrevisao({
         : null;
       const podePropagar = proximo && plano.proximo && proximo.rateioAtual == null;
       if (podePropagar) {
-        await api.salvar("exercicios", { ...proximo, rateioAtual: plano.proximo.rateioAtual });
+        await api.salvar("exercicios", { ...proximo, rateioAtual: aprovado });
         queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
       }
 
