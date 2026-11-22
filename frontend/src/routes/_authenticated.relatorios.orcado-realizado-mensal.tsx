@@ -9,11 +9,10 @@ import { Field } from "@/components/app/Field";
 import { Selecao } from "@/components/app/inputs";
 import { itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { Exportacoes } from "@/components/app/Exportacoes";
-import { baixarCsv, baixarXlsx } from "@/lib/exportar";
+import { baixarXlsx } from "@/lib/exportar";
 import { imprimirColunas } from "@/lib/imprimirColunas";
 import { colunasMensalExport, linhasMensalExport } from "@/lib/colunasRelatorios";
 import { documentoPrevistoRealizadoMensal } from "@/documentos/previstoRealizadoMensal";
-import { baixarDocumento } from "@/lib/documento/baixar";
 import { TabelaMensal } from "@/components/previsto-realizado/TabelaMensal";
 import { cabecalho } from "@/lib/head";
 import { encontrarExercicioAnterior, normalizarExercicio } from "@/domain/exercicio";
@@ -111,21 +110,21 @@ function Pagina() {
         acoes={
           <Exportacoes
             acoes={{
-              csv: () => baixarCsv(arquivoSaida, colunasExport, linhasExport),
+              documentos: [
+                {
+                  rotulo: "Previsto × Realizado mensal",
+                  gerar: () =>
+                    documentoPrevistoRealizadoMensal({
+                      resultado: r,
+                      exercicio: e,
+                      condominio: condo ?? null,
+                      escritorio,
+                      mensais,
+                      opcoes: opcoesExport,
+                    }),
+                },
+              ],
               xlsx: () => baixarXlsx(arquivoSaida, "Mensal", colunasExport, linhasExport),
-              documento: () =>
-                baixarDocumento(
-                  documentoPrevistoRealizadoMensal({
-                    resultado: r,
-                    exercicio: e,
-                    condominio: condo ?? null,
-                    escritorio,
-                    mensais,
-                    opcoes: opcoesExport,
-                  }),
-                  "pdf",
-                ),
-              rotuloDocumento: "PDF (A4 paisagem)",
               imprimir: () =>
                 imprimirColunas({
                   titulo: "Previsto × Realizado mensal",

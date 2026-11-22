@@ -22,7 +22,7 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
-import { MenuDocumentos } from "@/components/documentos/MenuDocumentos";
+import { Exportacoes } from "@/components/app/Exportacoes";
 import {
   DataInput,
   HoraInput,
@@ -264,11 +264,7 @@ function FormEdital({ inicial }: { inicial: Assembleia }) {
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <MenuDocumentos
-              documentos={documentos}
-              bloqueio={bloqueioDocumentos}
-              rotulo="Gerar documentos"
-            />
+            <Exportacoes acoes={{ documentos }} bloqueio={bloqueioDocumentos} />
             {ata ? (
               <Button variant="outline" asChild>
                 <Link to="/atas/$id" params={{ id: ata.id }}>

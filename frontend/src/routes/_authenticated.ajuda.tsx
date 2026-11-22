@@ -216,7 +216,7 @@ function Ajuda() {
               <p>
                 Alterne entre <strong>Por grupo</strong> e <strong>Detalhado</strong> para conferir
                 os valores. Use PDF ou Imprimir para abrir a saída em uma janela própria, sem o menu
-                lateral; XLSX e CSV baixam os dados da apresentação selecionada.
+                lateral; XLSX baixa os dados da apresentação selecionada.
               </p>
             </Texto>
           </SectionCard>
@@ -283,9 +283,10 @@ function Ajuda() {
               </p>
               <p>
                 Esta lista, o <strong>Previsto × Realizado</strong> (anual e mensal) e as{" "}
-                <strong>prestações de contas</strong> exportam em <strong>CSV</strong> (abre no
-                Excel pt-BR com vírgula decimal) e <strong>XLSX</strong>, e imprimem em{" "}
-                <strong>A4 paisagem</strong>. A tela, a planilha e o papel saem das mesmas colunas,
+                <strong>prestações de contas</strong> exportam em <strong>XLSX</strong> e imprimem em{" "}
+                <strong>A4 paisagem</strong>. Todas as telas com exportação usam o mesmo botão
+                <em> Exportar</em>, com PDF, Word (quando a tela tem documento próprio), XLSX e
+                Imprimir. A tela, a planilha e o papel saem das mesmas colunas,
                 inclusive as colunas opcionais marcadas na tela do mensal. O Previsto × Realizado
                 mensal também gera <strong>PDF</strong> em paisagem, com o timbre do escritório e os
                 totais por linha e por coluna.
@@ -309,8 +310,8 @@ function Ajuda() {
                 Escolha o condomínio e o período (mm/aaaa) ou use o atalho de um exercício. Meses
                 sem relatório mensal aparecem como <strong>Sem dados</strong>, nunca como zero. Como
                 o valor a receber é um saldo, o rodapé mostra a <strong>média</strong> dos meses com
-                dados, e não a soma. Exporta em CSV, XLSX, PDF (A4 paisagem, com timbre) e
-                impressão, todos com as mesmas colunas.
+                dados, e não a soma. Exporta em PDF e Word (com timbre), XLSX e
+                impressão A4 paisagem, todos com as mesmas colunas.
               </p>
             </Texto>
           </SectionCard>
@@ -330,7 +331,7 @@ function Ajuda() {
                 Grupos com o mesmo nome escrito de forma diferente (maiúsculas, acentos, espaços)
                 são somados juntos. Um grupo que não existe num exercício fica com a célula vazia,
                 nunca com zero. O total de cada exercício é a soma das linhas e fecha com a
-                prestação de contas. Exporta em CSV, XLSX, PDF (A4 paisagem, com timbre) e
+                prestação de contas. Exporta em PDF e Word (com timbre), XLSX e
                 impressão.
               </p>
             </Texto>
@@ -354,8 +355,8 @@ function Ajuda() {
                 <strong>Incompleto</strong> quando há relatório, mas o saldo não fecha; e{" "}
                 <strong>Em dia</strong> quando o relatório está carregado e o saldo confere. Dá para
                 filtrar por situação, buscar por nome, código ou CNPJ e ordenar por atraso,
-                inadimplência ou saldo. O rodapé traz os totais do escritório. Exporta em CSV, XLSX
-                e impressão.
+                inadimplência ou saldo. O rodapé traz os totais do escritório. Exporta em XLSX e
+                impressão.
               </p>
             </Texto>
           </SectionCard>

@@ -17,9 +17,8 @@ import { Field } from "@/components/app/Field";
 import { MesAnoInput, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { Exportacoes } from "@/components/app/Exportacoes";
 import { itemQuery, listaQuery } from "@/lib/queries";
-import { baixarCsv, baixarXlsx, celulaTexto } from "@/lib/exportar";
+import { baixarXlsx, celulaTexto } from "@/lib/exportar";
 import { imprimirColunas } from "@/lib/imprimirColunas";
-import { baixarDocumento } from "@/lib/documento/baixar";
 import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
@@ -106,19 +105,19 @@ function Pagina() {
           r ? (
             <Exportacoes
               acoes={{
-                csv: () => baixarCsv(arquivo, colunas, linhas),
+                documentos: [
+                  {
+                    rotulo: "Evolução da inadimplência",
+                    gerar: () =>
+                      documentoInadimplencia({
+                        resultado: r,
+                        condominio: condo,
+                        nomeCondominio: nomeCondo,
+                        escritorio,
+                      }),
+                  },
+                ],
                 xlsx: () => baixarXlsx(arquivo, "Inadimplência", colunas, linhas),
-                documento: () =>
-                  baixarDocumento(
-                    documentoInadimplencia({
-                      resultado: r,
-                      condominio: condo,
-                      nomeCondominio: nomeCondo,
-                      escritorio,
-                    }),
-                    "pdf",
-                  ),
-                rotuloDocumento: "PDF (A4 paisagem)",
                 imprimir: () =>
                   imprimirColunas({
                     titulo: "Evolução da inadimplência",

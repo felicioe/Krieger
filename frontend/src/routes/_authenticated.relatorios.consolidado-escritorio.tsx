@@ -17,7 +17,7 @@ import { Field } from "@/components/app/Field";
 import { MesAnoInput, Selecao } from "@/components/app/inputs";
 import { Exportacoes } from "@/components/app/Exportacoes";
 import { listaQuery, listaQueryTolerante } from "@/lib/queries";
-import { baixarCsv, baixarXlsx, celulaTexto } from "@/lib/exportar";
+import { baixarXlsx, celulaTexto } from "@/lib/exportar";
 import { imprimirColunas } from "@/lib/imprimirColunas";
 import { cabecalho } from "@/lib/head";
 import { cn } from "@/lib/utils";
@@ -96,7 +96,6 @@ function Pagina() {
         acoes={
           <Exportacoes
             acoes={{
-              csv: () => baixarCsv(arquivo, colunas, linhas),
               xlsx: () => baixarXlsx(arquivo, "Consolidado", colunas, linhas),
               imprimir: () =>
                 imprimirColunas({

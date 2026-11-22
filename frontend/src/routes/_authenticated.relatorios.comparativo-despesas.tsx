@@ -18,9 +18,8 @@ import { Field } from "@/components/app/Field";
 import { Selecao, SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { Exportacoes } from "@/components/app/Exportacoes";
 import { itemQuery, listaQuery } from "@/lib/queries";
-import { baixarCsv, baixarXlsx, celulaTexto } from "@/lib/exportar";
+import { baixarXlsx, celulaTexto } from "@/lib/exportar";
 import { imprimirColunas } from "@/lib/imprimirColunas";
-import { baixarDocumento } from "@/lib/documento/baixar";
 import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
@@ -97,20 +96,20 @@ function Pagina() {
           r.anos.length > 0 ? (
             <Exportacoes
               acoes={{
-                csv: () => baixarCsv(arquivo, colunas, r.linhas),
+                documentos: [
+                  {
+                    rotulo: "Comparativo de despesas",
+                    gerar: () =>
+                      documentoComparativoDespesas({
+                        resultado: r,
+                        analitico,
+                        condominio: condo,
+                        nomeCondominio: nomeCondo,
+                        escritorio,
+                      }),
+                  },
+                ],
                 xlsx: () => baixarXlsx(arquivo, "Despesas", colunas, r.linhas),
-                documento: () =>
-                  baixarDocumento(
-                    documentoComparativoDespesas({
-                      resultado: r,
-                      analitico,
-                      condominio: condo,
-                      nomeCondominio: nomeCondo,
-                      escritorio,
-                    }),
-                    "pdf",
-                  ),
-                rotuloDocumento: "PDF (A4 paisagem)",
                 imprimir: () =>
                   imprimirColunas({
                     titulo: "Comparativo de despesas",

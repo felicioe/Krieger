@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Exportacoes } from "@/components/app/Exportacoes";
-import { baixarCsv, baixarXlsx } from "@/lib/exportar";
+import { baixarXlsx } from "@/lib/exportar";
 import { imprimirColunas } from "@/lib/imprimirColunas";
 import { colunasComparativoExport, linhasComparativoExport } from "@/lib/colunasRelatorios";
 import { SectionCard } from "@/components/app/SectionCard";
@@ -24,7 +24,6 @@ import {
 import { AvisoSemRealizado } from "@/components/previsto-realizado/AvisoSemRealizado";
 import { periodoComparacao, semRealizado } from "@/components/previsto-realizado/semRealizado";
 import { itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
-import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
 import { documentoPrevistoRealizado } from "@/documentos/previstoRealizado";
 import { formatBRL } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
@@ -180,7 +179,18 @@ function PaginaComparativo() {
           <>
             <Exportacoes
               acoes={{
-                csv: () => baixarCsv(arquivoSaida, colunasExport, linhasExport),
+                documentos: [
+                  {
+                    rotulo: "Comparativo",
+                    gerar: () =>
+                      documentoPrevistoRealizado({
+                        comparativo: r,
+                        exercicio,
+                        condominio: condo ?? null,
+                        escritorio,
+                      }),
+                  },
+                ],
                 xlsx: () => baixarXlsx(arquivoSaida, "Comparativo", colunasExport, linhasExport),
                 imprimir: () =>
                   imprimirColunas({
@@ -192,17 +202,6 @@ function PaginaComparativo() {
               }}
               bloqueio={
                 semDados ? "Sem relatório mensal no período: o realizado não existe." : null
-              }
-            />
-            <BotaoDocumento
-              rotulo="Gerar comparativo"
-              gerar={() =>
-                documentoPrevistoRealizado({
-                  comparativo: r,
-                  exercicio,
-                  condominio: condo ?? null,
-                  escritorio,
-                })
               }
             />
           </>
