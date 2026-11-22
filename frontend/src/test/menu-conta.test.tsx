@@ -112,8 +112,8 @@ describe("bloco da conta no menu lateral", () => {
     const conta = botaoConta();
     expect(conta).toHaveAttribute("aria-expanded", "false");
     expect(conta).toHaveAccessibleName(/SuperADM/);
-    for (const nome of ["Usuários", "Minha senha"])
-      expect(screen.queryByRole("link", { name: nome })).toBeNull();
+    expect(screen.getByRole("link", { name: "Usuários" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Minha senha" })).toBeNull();
     for (const nome of ["Registro de Alterações", "Sair"])
       expect(screen.queryByRole("button", { name: nome })).toBeNull();
     const principal = screen.getByRole("navigation", { name: "Menu principal" });
@@ -153,18 +153,19 @@ describe("bloco da conta no menu lateral", () => {
     expect(screen.getByRole("link", { name: "Minha senha" })).toBeInTheDocument();
   });
 
-  it("opções expandidas mantêm os destinos: Minha senha e Usuários navegam, Sair sai uma vez", async () => {
+  it("Minha senha e Usuários mantêm os destinos, e Sair encerra uma vez", async () => {
     const { router, user, pronto } = montar();
     await pronto();
+    await user.click(screen.getByRole("link", { name: "Usuários" }));
+    await screen.findByRole("heading", { name: "Usuários" });
+    expect(sair).not.toHaveBeenCalled();
+
     await user.click(botaoConta());
     await user.click(screen.getByRole("link", { name: "Minha senha" }));
     await screen.findByRole("heading", { name: "Minha senha" });
     expect(router.state.location.pathname).toBe("/minha-senha");
 
-    await user.click(screen.getByRole("link", { name: "Usuários" }));
-    await screen.findByRole("heading", { name: "Usuários" });
     expect(sair).not.toHaveBeenCalled();
-
     await user.click(screen.getByRole("button", { name: "Sair" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
     expect(sair).toHaveBeenCalledTimes(1);
@@ -229,7 +230,7 @@ describe("Registro de Alterações pela gaveta do celular", () => {
 describe("menu por perfil (#310)", () => {
   const link = (nome: string) => screen.queryByRole("link", { name: nome });
 
-  it("SuperADM vê Cadastro e configuração e a Administração completa", async () => {
+  it("SuperADM vê Dados, modelos e a Administração completa", async () => {
     const { pronto } = montar();
     await pronto();
     for (const nome of [
@@ -243,7 +244,7 @@ describe("menu por perfil (#310)", () => {
       expect(link(nome)).toBeInTheDocument();
   });
 
-  it("ADM vê Cadastro e configuração, mas não Escritório, Backup nem Limpeza", async () => {
+  it("ADM vê Dados e modelos, mas não Escritório, Backup nem Limpeza", async () => {
     const { pronto } = montar({
       perfil: "adm",
       nome: "Ana",
@@ -278,7 +279,7 @@ describe("menu por perfil (#310)", () => {
     localStorage.removeItem("krieger.favoritos.u-teste");
   });
 
-  it("Usuário só com rotinas de uso não vê Cadastro e configuração; a ajuda fica no bloco da conta", async () => {
+  it("Usuário só com rotinas de uso não vê Dados, modelos ou Administração; a ajuda fica no bloco da conta", async () => {
     const { user, pronto } = montar({
       perfil: "user",
       nome: "João",
