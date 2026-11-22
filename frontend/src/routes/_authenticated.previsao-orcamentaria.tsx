@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
           "Realizado e previsto por grupo ou conta, sem os ajustes exclusivos do rateio.",
         )
       : cabecalho(
-          "Previsão orçamentária",
+          "Previsão do rateio",
           "Apuração do reajuste do rateio a partir do realizado do período.",
         ),
   validateSearch: (s: Record<string, unknown>): Busca => {
@@ -109,7 +109,7 @@ function PaginaPrevisao() {
     return (
       <>
         <PageHeader
-          titulo="Previsão orçamentária"
+          titulo="Previsão do rateio"
           descricao="Previsão orçamentária de cada prestação de contas."
         />
         <SectionCard titulo="Nenhuma prestação de contas">
@@ -362,7 +362,7 @@ function EditorPrevisao({
   return (
     <>
       <PageHeader
-        titulo={`Previsão orçamentária — Exercício ${e.ano}`}
+        titulo={`Previsão do rateio — Exercício ${e.ano}`}
         descricao={
           <>
             {e.condoNome || condominio?.nome}
@@ -565,7 +565,7 @@ function RelatorioPrevisao({
       />
       <SectionCard className="mb-6">{seletor}</SectionCard>
       <SectionCard
-        titulo="Previsto × Realizado"
+        titulo="Previsto × Realizado acumulado"
         descricao={
           calculo.situacaoPrevisto === "sem_base"
             ? "Sem previsão aprovada: não há exercício anterior com despesas (base histórica). Mostrando só o realizado."

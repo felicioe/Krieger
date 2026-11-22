@@ -31,15 +31,15 @@ const INDICE: { titulo: string; itens: ItemIndice[] }[] = [
     titulo: "Apuração do rateio",
     itens: [
       { id: "prestacao-contas", titulo: "Prestação de contas" },
-      { id: "previsao-orcamentaria", titulo: "Previsão orçamentária" },
+      { id: "previsao-orcamentaria", titulo: "Previsão do rateio" },
       { id: "previsao-relatorios", titulo: "Previsão para relatórios" },
     ],
   },
   {
     titulo: "Relatórios",
     itens: [
-      { id: "previsto-realizado", titulo: "Previsto × Realizado" },
-      { id: "relatorio-mensal", titulo: "Acompanhamento de carga de dados mensais" },
+      { id: "previsto-realizado", titulo: "Previsto × Realizado acumulado" },
+      { id: "relatorio-mensal", titulo: "Carga de dados mensais" },
       { id: "inadimplencia", titulo: "Evolução da inadimplência" },
       { id: "comparativo-despesas", titulo: "Comparativo de despesas" },
       { id: "consolidado-escritorio", titulo: "Consolidado do escritório" },
@@ -161,7 +161,7 @@ function Ajuda() {
 
           <SectionCard
             id="previsao-orcamentaria"
-            titulo="Previsão orçamentária"
+            titulo="Previsão do rateio"
             descricao="Apura o reajuste do rateio a partir do realizado do período analisado."
           >
             <Texto>
@@ -252,7 +252,7 @@ function Ajuda() {
 
           <SectionCard
             id="previsto-realizado"
-            titulo="Previsto × Realizado"
+            titulo="Previsto × Realizado acumulado"
             descricao="Compara a previsão orçamentária aprovada com o que foi de fato gasto, mês a mês."
           >
             <Texto>
@@ -260,19 +260,19 @@ function Ajuda() {
                 Relatório só de leitura: mostra, por rubrica e por grupo, o previsto (anual e
                 acumulado até o mês escolhido) ao lado do realizado dos relatórios mensais lançados.
                 Não altera nem compõe a previsão — é só para acompanhar o quanto o condomínio está
-                dentro, acima ou abaixo do orçamento aprovado. A versão "Previsto × Realizado
-                mensal" mostra a mesma comparação mês a mês, numa tabela com totais por linha e
-                coluna. Sem relatórios mensais no período, o sistema informa a falta de dados. No
-                mensal, meses ausentes aparecem como “Sem dados”; com carga parcial, o total
-                realizado é identificado como parcial. Uma despesa efetivamente zerada em um mês com
-                relatório pode apresentar variação real de −100%.
+                dentro, acima ou abaixo do orçamento aprovado. A versão “Previsto × Realizado por
+                mês” mostra a mesma comparação mês a mês, numa tabela com totais por linha e coluna.
+                Sem relatórios mensais no período, o sistema informa a falta de dados. No mensal,
+                meses ausentes aparecem como “Sem dados”; com carga parcial, o total realizado é
+                identificado como parcial. Uma despesa efetivamente zerada em um mês com relatório
+                pode apresentar variação real de −100%.
               </p>
             </Texto>
           </SectionCard>
 
           <SectionCard
             id="relatorio-mensal"
-            titulo="Acompanhamento de carga de dados mensais"
+            titulo="Carga de dados mensais"
             descricao="O boletim mensal enviado ao condomínio."
           >
             <Texto>
@@ -282,12 +282,12 @@ function Ajuda() {
                 fechamento do exercício inteiro).
               </p>
               <p>
-                Esta lista, o <strong>Previsto × Realizado</strong> (anual e mensal) e as{" "}
+                Esta lista, o <strong>Previsto × Realizado</strong> (acumulado e por mês) e as{" "}
                 <strong>prestações de contas</strong> exportam em <strong>XLSX</strong> e imprimem
                 em <strong>A4 paisagem</strong>. Todas as telas com exportação usam o mesmo botão
                 <em> Exportar</em>, com PDF, Word (quando a tela tem documento próprio), XLSX e
                 Imprimir. A tela, a planilha e o papel saem das mesmas colunas, inclusive as colunas
-                opcionais marcadas na tela do mensal. O Previsto × Realizado mensal também gera{" "}
+                opcionais marcadas na tela do mensal. O Previsto × Realizado por mês também gera{" "}
                 <strong>PDF</strong> em paisagem, com o timbre do escritório e os totais por linha e
                 por coluna.
               </p>

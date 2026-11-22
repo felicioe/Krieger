@@ -28,7 +28,7 @@ import type {
 
 export const Route = createFileRoute("/_authenticated/relatorios/orcado-realizado-mensal")({
   head: () =>
-    cabecalho("Previsto × Realizado mensal", "Conferência mensal do previsto e do realizado."),
+    cabecalho("Previsto × Realizado por mês", "Conferência mensal do previsto e do realizado."),
   loader: ({ context: { queryClient } }) =>
     Promise.all([
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
@@ -105,14 +105,14 @@ function Pagina() {
   return (
     <>
       <PageHeader
-        titulo="Previsto × Realizado mensal"
+        titulo="Previsto × Realizado por mês"
         descricao="Conferência mês a mês, com totais por linha e por coluna."
         acoes={
           <Exportacoes
             acoes={{
               documentos: [
                 {
-                  rotulo: "Previsto × Realizado mensal",
+                  rotulo: "Previsto × Realizado por mês",
                   gerar: () =>
                     documentoPrevistoRealizadoMensal({
                       resultado: r,
@@ -127,7 +127,7 @@ function Pagina() {
               xlsx: () => baixarXlsx(arquivoSaida, "Mensal", colunasExport, linhasExport),
               imprimir: () =>
                 imprimirColunas({
-                  titulo: "Previsto × Realizado mensal",
+                  titulo: "Previsto × Realizado por mês",
                   subtitulo: `${nomeCondo} · ${r.meses[0]?.rotulo ?? "—"} a ${r.meses.at(-1)?.rotulo ?? "—"}`,
                   colunas: colunasExport,
                   linhas: linhasExport,

@@ -149,53 +149,56 @@ describe("#228 retorno de foco dos diálogos controlados", () => {
 });
 
 describe("#228 menu das previsões", () => {
-  it.each(["", "?modo=rateio", "?modo=rateio&exercicio=e1", "?modo=relatorios&exercicio=e1"])(
-    "alinha rota, destaque e página atual em %s",
-    async (busca) => {
-      definirUsuario({
-        id: "u1",
-        login: "admin",
-        nome: "Administrador",
-        perfil: "admin",
-        trocarSenha: false,
-        permissoes: ["*"],
-      } as Usuario);
-      const raiz = createRootRoute({
-        component: () => (
-          <ProvedorRegistroAlteracoes>
-            <ConteudoMenu />
-            <Outlet />
-          </ProvedorRegistroAlteracoes>
-        ),
-      });
-      const pagina = createRoute({
-        getParentRoute: () => raiz,
-        path: "/previsao-orcamentaria",
-        validateSearch: (s: Record<string, unknown>) => ({
-          modo: s["modo"] === "relatorios" ? "relatorios" : "rateio",
-          exercicio: s["exercicio"] as string | undefined,
-        }),
-        component: () => <h1>Previsão</h1>,
-      });
-      const router = createRouter({
-        routeTree: raiz.addChildren([pagina]),
-        history: createMemoryHistory({ initialEntries: [`/previsao-orcamentaria${busca}`] }),
-      });
-      render(
-        <QueryClientProvider client={new QueryClient()}>
-          <RouterProvider router={router} />
-        </QueryClientProvider>,
-      );
-      await screen.findByRole("heading", { name: "Previsão" });
-      const rateio = screen.getByRole("link", { name: "Previsão orçamentária" });
-      const relatorio = screen.getByRole("link", { name: "Previsão para relatórios" });
-      const atual = busca.includes("relatorios") ? relatorio : rateio;
-      const outro = atual === rateio ? relatorio : rateio;
-      await waitFor(() => expect(atual).toHaveAttribute("aria-current", "page"));
-      expect(atual).toHaveClass("bg-sidebar-accent");
-      expect(outro).not.toHaveAttribute("aria-current");
-      expect(outro).not.toHaveClass("bg-sidebar-accent");
-      expect(relatorio.getAttribute("href")).toContain("modo=relatorios");
-    },
-  );
+  it.each([
+    "",
+    "?modo=rateio",
+    "?modo=rateio&exercicio=e1",
+    "?modo=relatorios&exercicio=e1",
+    "?exercicio=e2&modo=relatorios",
+  ])("alinha rota, destaque e página atual em %s", async (busca) => {
+    definirUsuario({
+      id: "u1",
+      login: "admin",
+      nome: "Administrador",
+      perfil: "admin",
+      trocarSenha: false,
+      permissoes: ["*"],
+    } as Usuario);
+    const raiz = createRootRoute({
+      component: () => (
+        <ProvedorRegistroAlteracoes>
+          <ConteudoMenu />
+          <Outlet />
+        </ProvedorRegistroAlteracoes>
+      ),
+    });
+    const pagina = createRoute({
+      getParentRoute: () => raiz,
+      path: "/previsao-orcamentaria",
+      validateSearch: (s: Record<string, unknown>) => ({
+        modo: s["modo"] === "relatorios" ? "relatorios" : "rateio",
+        exercicio: s["exercicio"] as string | undefined,
+      }),
+      component: () => <h1>Previsão</h1>,
+    });
+    const router = createRouter({
+      routeTree: raiz.addChildren([pagina]),
+      history: createMemoryHistory({ initialEntries: [`/previsao-orcamentaria${busca}`] }),
+    });
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>,
+    );
+    await screen.findByRole("heading", { name: "Previsão" });
+    const rateio = screen.getByRole("link", { name: "Previsão do rateio" });
+    const relatorio = screen.getByRole("link", { name: "Previsão para relatórios" });
+    const atual = busca.includes("relatorios") ? relatorio : rateio;
+    const outro = atual === rateio ? relatorio : rateio;
+    await waitFor(() => expect(atual).toHaveAttribute("aria-current", "page"));
+    expect(atual).toHaveClass("bg-sidebar-accent");
+    expect(outro).not.toHaveAttribute("aria-current");
+    expect(outro).not.toHaveClass("bg-sidebar-accent");
+    expect(relatorio.getAttribute("href")).toContain("modo=relatorios");
+  });
 });

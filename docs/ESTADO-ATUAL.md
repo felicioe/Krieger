@@ -12,6 +12,9 @@
 - #336: Ajuda e versão reúne Central de ajuda e Registro de Alterações.
   Minha senha e Sair ficam na conta, e Usuários fica em Administração,
   restrito ao perfil SuperADM.
+- #335: a navegação distingue Previsão do rateio de Previsão para relatórios
+  e as visões Previsto × Realizado acumulado e por mês. Carga de dados
+  mensais identifica a tela de acompanhamento. Rotas e permissões permanecem.
 
 
 ## Acessibilidade da previsão e do relatório final — 22/11/2026
