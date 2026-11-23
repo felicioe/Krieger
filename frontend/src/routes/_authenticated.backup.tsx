@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DataTable, type Coluna } from "@/components/app/DataTable";
+import { RolagemTabela } from "@/components/ui/table";
 import { api, mensagemErro } from "@/lib/api";
 import type { CargaPrevistoLinha, CargaPrevistoResultado } from "@/lib/apiTypes";
 import { useUsuario } from "@/lib/auth";
@@ -117,7 +118,7 @@ function CargaPrevistos() {
         </Button>
       </div>
       {resultado && (
-        <div className="mt-4 overflow-x-auto rounded-md border">
+        <RolagemTabela className="mt-4 rounded-md border">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-muted/60">
               <tr className="border-b">
@@ -172,7 +173,7 @@ function CargaPrevistos() {
               ))}
             </tbody>
           </table>
-        </div>
+        </RolagemTabela>
       )}
       <ConfirmDialog
         aberto={!!atualizando}

@@ -6,6 +6,7 @@ import { api } from "./api";
 type Estado = { usuario: Usuario | null; carregado: boolean };
 
 let estado: Estado = { usuario: null, carregado: false };
+let atualizadoEm = 0;
 const ouvintes = new Set<() => void>();
 let carregando: Promise<Usuario | null> | null = null;
 
@@ -15,12 +16,14 @@ function definir(novo: Partial<Estado>) {
 }
 
 export function definirUsuario(u: Usuario | null) {
+  atualizadoEm = u ? Date.now() : 0;
   definir({ usuario: u, carregado: true });
 }
 
 /** Limpa a sessão local (ex.: após 401). */
 export function limparSessao() {
   carregando = null;
+  atualizadoEm = 0;
   definir({ usuario: null, carregado: true });
 }
 
@@ -42,8 +45,17 @@ export async function garantirSessao(): Promise<Usuario | null> {
   return carregando;
 }
 
+/** Reutiliza a sessão em memória dentro do TTL para evitar round-trip bloqueante a cada navegação. */
+export async function garantirSessaoRecente(ttlMs = 60_000): Promise<Usuario | null> {
+  if (estado.carregado && estado.usuario && Date.now() - atualizadoEm < ttlMs) {
+    return estado.usuario;
+  }
+  return recarregarSessao();
+}
+
 export async function recarregarSessao(): Promise<Usuario | null> {
   estado = { ...estado, carregado: false };
+  atualizadoEm = 0;
   carregando = null;
   return garantirSessao();
 }

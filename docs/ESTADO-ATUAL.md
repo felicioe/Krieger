@@ -1,5 +1,13 @@
 # Estado atual e passagem de contexto
 
+## Auditoria Impeccable 5 dimensões (`audit`, `adapt`, `optimize`, `clarify`, `distill`) — 22/11/2026
+
+Relatório em `docs/auditorias/IMPECCABLE-5-DIMENSOES-2026-11-22.md`. Foram abertas e corrigidas as 18 pendências (`#386`–`#403`):
+
+- **`optimize` (`#386`–`#388`, `#397`, `#398`, `#402`)**: cache de sessão com TTL de 60 s (`garantirSessaoRecente`) eliminando a chamada bloqueante a cada navegação; pré-carregamento em paralelo nos loaders de Condomínios e Atas e carga de `mensais` sob demanda em Prestação de contas; `ParecerMarkdown` carregado via `React.lazy` na Consulta Inteligente e imports nomeados de `recharts` em `chart.tsx`; memoização de `compararPrevistoRealizadoMensal` (sem execução duplicada) e validações de rateio; remoção de `JSON.stringify` morto em Prestação de contas; `staleTime` por perfil em `queries.ts` e invalidações restritas em Limpeza de Dados e Drive.
+- **`audit` + `adapt` (`#389`–`#391`, `#394`–`#396`)**: área de envio do Drive acessível por teclado e `aria-label` em campos/botões de ícone; `<textarea>` da ata diretamente dentro de `<Field>`; remoção de botão fechar duplicado e ajuste de contraste/hierarquia em `PainelVariaveis`; `<RolagemTabela>` nas tabelas dos modais do Drive e em Backup; `role="menu"` no Drive e remoção de `<h1>` duplicado / ajuste `<h4>` → `<h3>` em `PreviaRelatorio`; layouts responsivos nos modais do Drive, Consulta IA e `alvo-toque` nos botões nativos.
+- **`clarify` + `distill` (`#392`, `#393`, `#399`–`#401`, `#403`)**: terminologia alinhada ao menu lateral (`Previsão do rateio`, `Base prevista para relatórios`), remoção de jargões (`PDF inline`, `pop-ups`, `Layouts`) e pluralização natural via `contagem()`; cabeçalho da Prestação de contas enxugado com menu `Mais ações`; botão `Enviar` unificado no Drive; cartão `Listagem de Condomínios` abrindo diálogo direto no Importador.
+
 ## Auditoria Impeccable (`harden` + `critique`) e correções — 22/11/2026
 
 Relatório completo em `docs/auditorias/IMPECCABLE-HARDEN-CRITIQUE-2026-11-22.md`. Foram abertas e corrigidas todas as 15 pendências (`#369`–`#383`):

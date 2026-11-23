@@ -94,7 +94,7 @@ function Ajuda() {
                       <button
                         type="button"
                         onClick={() => irPara(item.id)}
-                        className="w-full rounded px-2 py-1.5 text-left text-sm text-foreground/85 hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        className="w-full rounded px-2 py-1.5 text-left text-sm text-foreground/85 hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring max-md:min-h-11 pointer-coarse:min-h-11"
                       >
                         {item.titulo}
                       </button>

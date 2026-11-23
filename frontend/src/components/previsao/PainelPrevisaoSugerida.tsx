@@ -412,7 +412,7 @@ function PainelDivergenciaPrevisao({
   return (
     <>
       {resolvida ? (
-        <button type="button" onClick={() => setAberto(true)} className="inline-block">
+        <button type="button" onClick={() => setAberto(true)} className="alvo-toque inline-block">
           <Badge variant="success" className="cursor-pointer gap-1.5 hover:opacity-90">
             <CircleCheck className="size-3.5" />
             Previsão confirmada

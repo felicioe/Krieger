@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { DataTable, type Coluna } from "@/components/app/DataTable";
 import { SectionCard } from "@/components/app/SectionCard";
+import { contagem } from "@/components/app/textos";
 import { api, mensagemErro } from "@/lib/api";
 import { novoId } from "@/lib/id";
 import { chaves, listaQuery } from "@/lib/queries";
@@ -190,7 +191,7 @@ export function ImportarListagemCondominios({ condominios }: { condominios: Cond
             {!r.existente
               ? "Novo"
               : r.camposAlterados.length
-                ? `Atualiza ${r.camposAlterados.length} campo(s)`
+                ? `Atualiza ${contagem(r.camposAlterados.length, "campo", "campos")}`
                 : "Sem mudança"}
           </Badge>
           {r.alertas.length > 0 && (

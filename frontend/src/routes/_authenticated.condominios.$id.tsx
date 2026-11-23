@@ -1,7 +1,7 @@
 import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   CalendarPlus,
@@ -72,7 +72,12 @@ export const Route = createFileRoute("/_authenticated/condominios/$id")({
   head: () => cabecalho("Condomínio", "Cadastro completo do condomínio."),
   loader: async ({ params, context: { queryClient } }) => {
     if (params.id === "novo") return null;
-    const c = await queryClient.ensureQueryData(itemQuery<Condominio>("condominios", params.id));
+    const [c] = await Promise.all([
+      queryClient.ensureQueryData(itemQuery<Condominio>("condominios", params.id)),
+      queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas")),
+    ]);
     if (!c) throw notFound();
     return null;
   },
@@ -270,15 +275,22 @@ export function FormCondominio({
   const [rateios, setRateios] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
   const [rateiosGravados, setRateiosGravados] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
   const [tentouRateios, setTentouRateios] = useState(false);
-  const validacaoRateios = validarLinhasRateio(rateios, c.id);
+  const validacaoRateios = useMemo(
+    () => validarLinhasRateio(rateios, c.id),
+    [rateios, c.id],
+  );
   // Só as linhas novas ou alteradas bloqueiam o salvamento; linhas antigas não são revalidadas.
-  const errosRateios = validacaoRateios.porLinha.map((m, i) => {
-    const l = rateios[i]!;
-    const antiga = l.idExistente
-      ? rateiosGravados.find((g) => g.idExistente === l.idExistente)
-      : undefined;
-    return antiga && !linhaRateioAlterada(antiga, l) ? null : m;
-  });
+  const errosRateios = useMemo(
+    () =>
+      validacaoRateios.porLinha.map((m, i) => {
+        const l = rateios[i]!;
+        const antiga = l.idExistente
+          ? rateiosGravados.find((g) => g.idExistente === l.idExistente)
+          : undefined;
+        return antiga && !linhaRateioAlterada(antiga, l) ? null : m;
+      }),
+    [validacaoRateios, rateios, rateiosGravados],
+  );
   const [apoliceSelecionada, setApoliceSelecionada] = useState<string>(
     inicial.historicoApolices?.at(-1)?.id ?? "",
   );
@@ -1220,8 +1232,8 @@ export function FormCondominio({
                       onChange={(e) => up({ fonte: e.target.value })}
                     />
                     <Input
-                      aria-label="Expressão de busca"
-                      placeholder="^energia"
+                      aria-label="Expressão de busca da conta (ex.: energia ou água)"
+                      placeholder="Ex.: energia (ou ^energia para início do nome)"
                       className="font-mono text-xs"
                       value={r.regex}
                       onChange={(e) => up({ regex: e.target.value })}

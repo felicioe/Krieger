@@ -166,18 +166,14 @@ export function PainelVariaveis() {
         </DialogTrigger>
         <DialogContent className="max-w-3xl max-h-[85vh] p-0">
           <DialogHeader className="p-4 border-b">
-            <div className="flex items-center justify-between">
-              <DialogTitle className="text-lg">
-                Variáveis disponíveis para modelos de ata
-              </DialogTitle>
-              <Button variant="ghost" size="icon" onClick={() => setAberto(false)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+            <DialogTitle className="text-lg">
+              Variáveis disponíveis para modelos de ata
+            </DialogTitle>
             <div className="relative mt-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Filtrar variáveis (caminho, descrição, categoria)..."
+                aria-label="Filtrar variáveis"
+                placeholder="Filtrar variáveis (caminho, descrição, categoria)…"
                 value={termo}
                 onChange={(e) => setTermo(e.target.value)}
                 className="pl-9 w-full"
@@ -195,9 +191,9 @@ export function PainelVariaveis() {
               if (filtradas.length === 0) return null;
               return (
                 <div key={cat} className="mb-6">
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
                     {cat}
-                  </h4>
+                  </h3>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {filtradas.map((v) => (
                       <div
@@ -216,8 +212,9 @@ export function PainelVariaveis() {
                           variant="ghost"
                           size="icon"
                           onClick={() => navigator.clipboard.writeText(`{{${v.caminho}}}`)}
+                          aria-label={`Copiar variável {{${v.caminho}}}`}
                           title="Copiar variável"
-                          className="h-7 w-7 opacity-50 hover:opacity-100"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         >
                           <svg
                             className="h-4 w-4"
@@ -249,7 +246,7 @@ export function PainelVariaveis() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
-      <div className="fixed bottom-4 right-4 text-xs text-muted-foreground bg-background/80 backdrop-blur px-3 py-1.5 rounded border">
+      <div className="fixed bottom-4 right-4 hidden rounded border bg-background/80 px-3 py-1.5 text-xs text-muted-foreground backdrop-blur md:block">
         Ctrl+/ para abrir variáveis
       </div>
     </>

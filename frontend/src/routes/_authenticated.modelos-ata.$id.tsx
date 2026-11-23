@@ -257,22 +257,22 @@ function RouteComponent() {
             ]}
           />
         </Field>
-        <Field
-          rotulo="Texto da ata"
-          dica="Use variáveis como {{ata.tipo}}, {{ata.data}}, {{condominio.nomeRelatorio}}. Pressione Ctrl+/ para ver todas."
-          obrigatorio
-        >
-          <div className="relative">
+        <div className="space-y-1.5">
+          <div className="flex justify-end">
+            <PainelVariaveis />
+          </div>
+          <Field
+            rotulo="Texto da ata"
+            dica="Use variáveis como {{ata.tipo}}, {{ata.data}}, {{condominio.nomeRelatorio}}. Pressione Ctrl+/ para ver todas."
+            obrigatorio
+          >
             <textarea
-              className="min-h-[320px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring pr-24"
+              className="min-h-[320px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               value={form.texto ?? ""}
               onChange={(e) => setForm({ ...form, texto: e.target.value })}
             />
-            <div className="absolute right-2 top-2">
-              <PainelVariaveis />
-            </div>
-          </div>
-        </Field>
+          </Field>
+        </div>
         <div className="flex flex-wrap gap-6">
           <label className="flex items-center gap-2 text-sm">
             <input

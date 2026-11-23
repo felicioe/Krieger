@@ -5,6 +5,7 @@ import { useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   Calculator,
+  ChevronDown,
   FileText,
   Loader2,
   RefreshCw,
@@ -17,6 +18,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -106,9 +114,7 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
-  const { refetch: atualizarMensais, isFetching: atualizandoMensais } = useSuspenseQuery(
-    listaQuery<Mensal>("mensais"),
-  );
+  const [atualizandoMensais, setAtualizandoMensais] = useState(false);
   // Exercício aberto: as considerações vêm do cadastro, que é a fonte única (#307). Fechado: o congelado.
   const condoDoExercicio = condominios.find((c) => c.id === inicial.condoId) ?? null;
   const inicialComCadastro: Exercicio = inicial.fechado
@@ -160,16 +166,24 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
    * apaga as contas que só o balanço tem.
    */
   async function atualizarPeloPeriodo() {
-    const novos = await atualizarMensais().then((r) => r.data ?? []);
-    const resultado = consolidarPeriodo(demonstrativoSalvo, novos, e.condoId);
-    if (resultado.estado !== "completa") {
-      toast.error(resultado.aviso ?? "Não foi possível consolidar os relatórios mensais.");
-      return;
+    setAtualizandoMensais(true);
+    try {
+      const novos = await queryClient.fetchQuery({
+        ...listaQuery<Mensal>("mensais"),
+        staleTime: 0,
+      });
+      const resultado = consolidarPeriodo(demonstrativoSalvo, novos, e.condoId);
+      if (resultado.estado !== "completa") {
+        toast.error(resultado.aviso ?? "Não foi possível consolidar os relatórios mensais.");
+        return;
+      }
+      mudar({ demonstrativo: resultado.demonstrativo });
+      toast.success(
+        `Demonstrativo consolidado com ${resultado.usados} ${resultado.usados === 1 ? "relatório mensal" : "relatórios mensais"}. Salve para gravar.`,
+      );
+    } finally {
+      setAtualizandoMensais(false);
     }
-    mudar({ demonstrativo: resultado.demonstrativo });
-    toast.success(
-      `Demonstrativo consolidado com ${resultado.usados} ${resultado.usados === 1 ? "relatório mensal" : "relatórios mensais"}. Salve para gravar.`,
-    );
   }
 
   // Avisa antes de sair com alterações não salvas (refs para ler o estado mais recente).
@@ -329,16 +343,6 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           <>
             {e.fechado && <Badge variant="success">Exercício fechado</Badge>}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => void atualizarPeloPeriodo()}
-              disabled={atualizandoMensais || e.fechado}
-              title="Somar os relatórios mensais do período neste demonstrativo"
-            >
-              {atualizandoMensais ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-              Atualizar dados
-            </Button>
             {!e.fechado && (
               <ImportarPdf
                 modo="editor"
@@ -365,16 +369,6 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               />
             )}
             <Button variant="outline" asChild>
-              <Link to="/previsao-orcamentaria" search={{ exercicio: e.id }}>
-                <Calculator /> Previsão orçamentária
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/previsto-realizado" search={{ exercicio: e.id }}>
-                Previsto × Realizado
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
               <Link to="/relatorio-final/$id" params={{ id: e.id }}>
                 <FileText /> Relatório final
               </Link>
@@ -383,27 +377,50 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               permissao="prestacao_contas.editar"
               variant="outline"
               type="button"
-              disabled={
-                salvar.isPending ||
-                fechamento.isPending ||
-                sujo ||
-                (!e.fechado && JSON.stringify(demonstrativo) !== JSON.stringify(demonstrativoSalvo))
-              }
+              disabled={salvar.isPending || fechamento.isPending || sujo}
               title="Salve os dados e a previsão antes de fechar o exercício."
               onClick={() => setConfirmarFechamento(true)}
             >
               {e.fechado ? "Reabrir exercício" : "Fechar exercício"}
             </Button>
-            <Button
-              permissao="prestacao_contas.editar"
-              variant="outline"
-              type="button"
-              disabled={e.fechado}
-              onClick={() => setConfirmarExclusao(true)}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 /> Excluir
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" type="button">
+                  Mais ações <ChevronDown className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  disabled={atualizandoMensais || e.fechado}
+                  onClick={() => void atualizarPeloPeriodo()}
+                >
+                  {atualizandoMensais ? (
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 size-4" />
+                  )}
+                  Atualizar dados pelos mensais
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/previsao-orcamentaria" search={{ exercicio: e.id }}>
+                    <Calculator className="mr-2 size-4" /> Previsão do rateio
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/previsto-realizado" search={{ exercicio: e.id }}>
+                    <FileText className="mr-2 size-4" /> Previsto × Realizado
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={e.fechado}
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setConfirmarExclusao(true)}
+                >
+                  <Trash2 className="mr-2 size-4" /> Excluir prestação de contas
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               permissao="prestacao_contas.editar"
               type="submit"

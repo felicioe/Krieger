@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent }
 import {
   AlertTriangle,
   Building2,
+  ChevronDown,
   ChevronRight,
   Download,
   Edit3,
@@ -36,6 +37,7 @@ import { temPermissao, useUsuario } from "@/lib/auth";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RolagemTabela } from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -87,7 +89,7 @@ import {
   processarArquivoParaRegistroDrive,
 } from "@/lib/driveProcessador";
 import { cabecalho } from "@/lib/head";
-import { documentosDriveQuery, documentosResumoQuery, itemQuery, listaQuery } from "@/lib/queries";
+import { chaves, documentosDriveQuery, documentosResumoQuery, itemQuery, listaQuery } from "@/lib/queries";
 
 type BuscaDrive = { condoId?: string; docId?: string };
 
@@ -95,7 +97,7 @@ export const Route = createFileRoute("/_authenticated/drive-documentos")({
   head: () =>
     cabecalho(
       "Drive de Documentos",
-      "Repositório online de documentos dos condomínios com pastas/subpastas automáticas, cadastro de categorias e visualização PDF inline.",
+      "Repositório online de documentos dos condomínios com pastas/subpastas automáticas, cadastro de categorias e visualização PDF na própria tela.",
     ),
   validateSearch: (s: Record<string, unknown>): BuscaDrive => {
     const condoId = typeof s["condoId"] === "string" && s["condoId"] ? s["condoId"] : undefined;
@@ -425,7 +427,10 @@ function PaginaDriveDocumentos() {
       toast.success(
         `${contagem(itensPendentesCalculados.length, "documento enviado", "documentos enviados")} e alocados nas respectivas pastas do Drive.`,
       );
-      await qc.invalidateQueries({ queryKey: ["documentos"] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: chaves.documentosDrive(condoId) }),
+        qc.invalidateQueries({ queryKey: chaves.documentosResumo }),
+      ]);
     } catch (e) {
       toast.error(mensagemErro(e));
     } finally {
@@ -537,7 +542,9 @@ function PaginaDriveDocumentos() {
         return;
       }
       if (!imprimirPdfBase64(c.pdfDataUrl)) {
-        toast.error("O navegador bloqueou a janela de impressão. Libere pop-ups para este site.");
+        toast.error(
+          "O navegador bloqueou a janela de impressão. Libere janelas de impressão para este site.",
+        );
       }
     } catch (e) {
       toast.error(mensagemErro(e));
@@ -570,7 +577,8 @@ function PaginaDriveDocumentos() {
     onSuccess: () => {
       toast.success("Documento e pasta atualizados.");
       setDocEditando(null);
-      void qc.invalidateQueries({ queryKey: ["documentos"] });
+      void qc.invalidateQueries({ queryKey: chaves.documentosDrive(condoId) });
+      void qc.invalidateQueries({ queryKey: chaves.documentosResumo });
     },
     onError: (e) => toast.error(mensagemErro(e)),
   });
@@ -585,7 +593,8 @@ function PaginaDriveDocumentos() {
         if (pdfUrlInline) URL.revokeObjectURL(pdfUrlInline);
         setPdfUrlInline(null);
       }
-      void qc.invalidateQueries({ queryKey: ["documentos"] });
+      void qc.invalidateQueries({ queryKey: chaves.documentosDrive(condoId) });
+      void qc.invalidateQueries({ queryKey: chaves.documentosResumo });
     },
     onError: (e) => toast.error(mensagemErro(e)),
   });
@@ -724,7 +733,7 @@ function PaginaDriveDocumentos() {
       <>
         <PageHeader
           titulo="Drive de Documentos"
-          descricao="Repositório online de documentos dos condomínios com visualização PDF inline e busca inteligente."
+          descricao="Repositório online de documentos dos condomínios com visualização PDF na própria tela e busca inteligente."
         />
         <SectionCard titulo="Nenhum condomínio cadastrado">
           <p className="text-sm text-muted-foreground">
@@ -773,27 +782,31 @@ function PaginaDriveDocumentos() {
               <Sparkles className="size-4 text-amber-500" />
               Consulta Inteligente
             </Button>
-            <Button
-              permissao="drive_documentos.editar"
-              variant="secondary"
-              onClick={() => inputPastaRef.current?.click()}
-              disabled={Boolean(progressoEnvio)}
-            >
-              <FolderOpen className="size-4" />
-              Enviar pasta
-            </Button>
-            <Button
-              permissao="drive_documentos.editar"
-              onClick={() => inputArquivosRef.current?.click()}
-              disabled={Boolean(progressoEnvio)}
-            >
-              {progressoEnvio ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Upload className="size-4" />
-              )}
-              Enviar arquivos
-            </Button>
+            {podeEditar && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button disabled={Boolean(progressoEnvio)}>
+                    {progressoEnvio ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Upload className="size-4" />
+                    )}
+                    Enviar
+                    <ChevronDown className="size-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => inputArquivosRef.current?.click()}>
+                    <Upload className="mr-2 size-4" />
+                    Enviar arquivos avulsos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => inputPastaRef.current?.click()}>
+                    <FolderOpen className="mr-2 size-4" />
+                    Enviar pasta com subpastas
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         }
       />
@@ -860,6 +873,9 @@ function PaginaDriveDocumentos() {
 
         <div className="lg:col-span-7">
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Arraste arquivos aqui ou pressione Enter para selecionar documentos"
             onDragOver={(e) => {
               e.preventDefault();
               setArrastando(true);
@@ -867,7 +883,13 @@ function PaginaDriveDocumentos() {
             onDragLeave={() => setArrastando(false)}
             onDrop={aoSoltarArquivos}
             onClick={() => !progressoEnvio && inputArquivosRef.current?.click()}
-            className={`flex h-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-5 text-center transition-colors ${
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.key === " ") && !progressoEnvio) {
+                e.preventDefault();
+                inputArquivosRef.current?.click();
+              }
+            }}
+            className={`flex h-full cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-3.5 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
               arrastando
                 ? "border-primary bg-primary/5"
                 : "border-border bg-card hover:border-primary/50 hover:bg-muted/30"
@@ -909,7 +931,7 @@ function PaginaDriveDocumentos() {
               <button
                 type="button"
                 onClick={() => setPastaAtiva("todas")}
-                className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-xs transition-colors ${
+                className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left text-xs transition-colors max-md:min-h-11 pointer-coarse:min-h-11 ${
                   pastaAtiva === "todas"
                     ? "bg-primary/10 font-semibold text-primary"
                     : "hover:bg-muted/60"
@@ -964,14 +986,14 @@ function PaginaDriveDocumentos() {
         <div className="min-w-0 lg:col-span-9">
           <SectionCard
             titulo={`Arquivos (${documentosFiltrados.length})`}
-            descricao="Clique duas vezes na linha para abrir o PDF inline ou use o botão direito do mouse para todas as ações."
+            descricao="Clique duas vezes na linha para abrir o PDF na própria tela ou use o botão direito do mouse para todas as ações."
           >
             {/* Trilha de Navegação (Breadcrumb) */}
             <div className="mb-3 flex flex-wrap items-center gap-1.5 rounded-md border bg-muted/30 px-3 py-2 text-xs">
               <button
                 type="button"
                 onClick={() => setPastaAtiva("todas")}
-                className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                className="alvo-toque inline-flex items-center gap-1 font-medium text-primary hover:underline"
               >
                 <Building2 className="size-3.5" />
                 {condoAtual?.nomeRelatorio || condoAtual?.nome}
@@ -991,7 +1013,7 @@ function PaginaDriveDocumentos() {
                       <button
                         type="button"
                         onClick={() => setPastaAtiva(caminhoAteAqui)}
-                        className={`inline-flex items-center gap-1 ${
+                        className={`alvo-toque inline-flex items-center gap-1 ${
                           ultimo ? "font-bold text-foreground" : "text-primary hover:underline"
                         }`}
                       >
@@ -1010,6 +1032,7 @@ function PaginaDriveDocumentos() {
               <div className="relative min-w-0 sm:col-span-8">
                 <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
+                  aria-label="Pesquisar documentos no Drive"
                   value={termoBusca}
                   onChange={(e) => setTermoBusca(e.target.value)}
                   placeholder="Pesquisar por nome do arquivo, pasta/subpasta, data ou formato (PDF, DOCX, JPG)..."
@@ -1028,6 +1051,7 @@ function PaginaDriveDocumentos() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Limpar filtros"
                     title="Limpar filtros"
                     onClick={() => {
                       setTermoBusca("");
@@ -1104,7 +1128,7 @@ function PaginaDriveDocumentos() {
                                       type="button"
                                       onClick={() => void abrirVisualizadorInline(doc)}
                                       className="block truncate text-left hover:underline"
-                                      title="Clique para visualizar o PDF inline"
+                                      title="Clique para visualizar o PDF na própria tela"
                                     >
                                       {doc.nomeArquivo}
                                     </button>
@@ -1119,7 +1143,7 @@ function PaginaDriveDocumentos() {
                                 <button
                                   type="button"
                                   onClick={() => setPastaAtiva(pastaDoc)}
-                                  className="inline-flex items-center gap-1 rounded border bg-muted/40 px-2 py-0.5 text-xs hover:bg-muted"
+                                  className="alvo-toque inline-flex items-center gap-1 rounded border bg-muted/40 px-2 py-0.5 text-xs hover:bg-muted"
                                   title="Filtrar por esta pasta"
                                 >
                                   {ehOutros ? (
@@ -1147,7 +1171,8 @@ function PaginaDriveDocumentos() {
                                   <Button
                                     size="icon"
                                     variant="ghost"
-                                    title="Abrir PDF inline"
+                                    aria-label={`Abrir ${doc.nomeArquivo} em PDF na própria tela`}
+                                    title="Abrir PDF na própria tela"
                                     onClick={() => void abrirVisualizadorInline(doc)}
                                   >
                                     {carregandoConteudoId === doc.id ? (
@@ -1171,7 +1196,7 @@ function PaginaDriveDocumentos() {
                                         onClick={() => void abrirVisualizadorInline(doc)}
                                       >
                                         <Eye className="mr-2 size-4" />
-                                        Abrir / Visualizar PDF inline
+                                        Abrir / Visualizar PDF na própria tela
                                       </DropdownMenuItem>
                                       {podeConsultar && (
                                         <DropdownMenuItem
@@ -1244,7 +1269,7 @@ function PaginaDriveDocumentos() {
                         {docVisualizando.nomeArquivo}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Visualização sempre em PDF inline •{" "}
+                        Visualização sempre em PDF na própria tela •{" "}
                         {docMetadadosVisualizando
                           ? extrairPastaDoDocumento(docMetadadosVisualizando, categoriasAtivas)
                           : "PDF"}
@@ -1347,7 +1372,7 @@ function PaginaDriveDocumentos() {
                         <FileText className="mb-2 size-8" />
                         <p>
                           Este documento foi sincronizado apenas com o texto extraído pelo agente
-                          local de pastas. Para visualizar o PDF inline no navegador, envie o
+                          local de pastas. Para visualizar o PDF na própria tela no navegador, envie o
                           arquivo diretamente pelo botão <strong>Subir Arquivos</strong>.
                         </p>
                       </div>
@@ -1363,6 +1388,8 @@ function PaginaDriveDocumentos() {
       {/* Menu de Contexto do Botão Direito do Mouse */}
       {menuContexto && (
         <div
+          role="menu"
+          aria-label={`Ações para ${menuContexto.doc.nomeArquivo}`}
           style={{ top: menuContexto.y, left: menuContexto.x }}
           className="fixed z-50 w-64 rounded-md border bg-popover p-1 text-popover-foreground shadow-lg"
           onClick={(e) => e.stopPropagation()}
@@ -1380,7 +1407,7 @@ function PaginaDriveDocumentos() {
             }}
           >
             <Eye className="size-4" />
-            Abrir / Visualizar PDF inline
+            Abrir / Visualizar PDF na própria tela
           </button>
           {podeConsultar && (
             <button
@@ -1482,7 +1509,7 @@ function PaginaDriveDocumentos() {
 
           <div className="space-y-4 py-2">
             {/* Tabela de prévia da alocação automática de cada arquivo */}
-            <div className="max-h-56 overflow-y-auto rounded-md border">
+            <RolagemTabela className="max-h-56 overflow-y-auto rounded-md border">
               <table className="w-full text-left text-xs">
                 <thead className="sticky top-0 border-b bg-muted text-[11px] uppercase text-muted-foreground">
                   <tr>
@@ -1508,7 +1535,7 @@ function PaginaDriveDocumentos() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </RolagemTabela>
 
             {itensPendentesCalculados.some((it) => arquivoPrecisaPerguntaConversao(it.arquivo)) && (
               <div className="space-y-2 rounded-lg border bg-amber-500/5 p-3">
@@ -1516,7 +1543,7 @@ function PaginaDriveDocumentos() {
                   Arquivo Word (.DOCX) ou Imagem (.JPG/.PNG) detectado
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  A visualização em tela será <strong>sempre em PDF inline</strong>. Como deseja
+                  A visualização em tela será <strong>sempre em PDF na própria tela</strong>. Como deseja
                   armazenar o arquivo no Drive?
                 </p>
                 <label className="flex cursor-pointer items-start gap-2.5 rounded border bg-background p-2.5 text-xs">
@@ -1532,7 +1559,7 @@ function PaginaDriveDocumentos() {
                       Converter para PDF e manter também o arquivo original (Recomendado)
                     </span>
                     <p className="text-muted-foreground">
-                      Permite visualizar/imprimir em PDF inline e baixar tanto o PDF quanto o
+                      Permite visualizar/imprimir em PDF na própria tela e baixar tanto o PDF quanto o
                       arquivo original (.DOCX / .JPG).
                     </p>
                   </div>
@@ -1548,7 +1575,7 @@ function PaginaDriveDocumentos() {
                   <div>
                     <span className="font-semibold">Converter e armazenar apenas em PDF</span>
                     <p className="text-muted-foreground">
-                      Converte para PDF para leitura inline e download único em PDF.
+                      Converte para PDF para leitura na própria tela e download único em PDF.
                     </p>
                   </div>
                 </label>
@@ -1629,6 +1656,7 @@ function PaginaDriveDocumentos() {
               <div className="grid gap-2 sm:grid-cols-12">
                 <div className="sm:col-span-4">
                   <Input
+                    aria-label="Nome da nova categoria ou pasta"
                     value={novoRotuloCat}
                     onChange={(e) => setNovoRotuloCat(e.target.value)}
                     placeholder="Nome (ex.: Obras e Reformas)"
@@ -1636,6 +1664,7 @@ function PaginaDriveDocumentos() {
                 </div>
                 <div className="sm:col-span-6">
                   <Input
+                    aria-label="Palavras-chave de identificação automática"
                     value={novasPalavrasCat}
                     onChange={(e) => setNovasPalavrasCat(e.target.value)}
                     placeholder="Palavras-chave separadas por vírgula (ex.: obra, reforma, cronograma)"
@@ -1656,8 +1685,10 @@ function PaginaDriveDocumentos() {
                 Criar Pasta ou Subpasta neste Condomínio (
                 {condoAtual?.nomeRelatorio || condoAtual?.nome})
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
+                  aria-label="Nome da nova pasta ou subpasta"
+                  className="min-w-0 flex-1"
                   value={novaSubpastaCondominio}
                   onChange={(e) => setNovaSubpastaCondominio(e.target.value)}
                   placeholder="Ex.: Atas de Assembleia/2026 ou Jurídico/Processos"
@@ -1675,7 +1706,7 @@ function PaginaDriveDocumentos() {
             </div>
 
             {/* Tabela editável das categorias cadastradas */}
-            <div className="max-h-72 overflow-y-auto rounded-md border">
+            <RolagemTabela className="max-h-72 overflow-y-auto rounded-md border">
               <table className="w-full text-left text-xs">
                 <thead className="sticky top-0 border-b bg-muted text-[11px] uppercase text-muted-foreground">
                   <tr>
@@ -1738,6 +1769,7 @@ function PaginaDriveDocumentos() {
                               size="icon"
                               variant="ghost"
                               className="size-7 text-destructive"
+                              aria-label={`Remover categoria ${cat.rotulo}`}
                               title="Remover categoria"
                               onClick={() =>
                                 setListaCategoriasEdicao((prev) => prev.filter((_, i) => i !== idx))
@@ -1752,7 +1784,7 @@ function PaginaDriveDocumentos() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </RolagemTabela>
           </div>
 
           <DialogFooter>
@@ -1859,8 +1891,10 @@ function PaginaDriveDocumentos() {
 
             <div className="space-y-2">
               <p className="text-xs font-medium">Outros caminhos locais adicionais para análise</p>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
+                  aria-label="Adicionar outro caminho local"
+                  className="min-w-0 flex-1"
                   value={novoCaminhoExtra}
                   onChange={(e) => setNovoCaminhoExtra(e.target.value)}
                   placeholder="Adicionar outro caminho local (ex.: D:\Atas_Antigas\Santa_Cecilia)..."
@@ -1887,6 +1921,8 @@ function PaginaDriveDocumentos() {
                       <Button
                         size="icon"
                         variant="ghost"
+                        aria-label={`Remover caminho ${c}`}
+                        title="Remover caminho"
                         className="size-6"
                         onClick={() =>
                           setCaminhosExtras((prev) => prev.filter((_, idx) => idx !== i))

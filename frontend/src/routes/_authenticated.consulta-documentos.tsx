@@ -1,10 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
 import { AlertTriangle, Copy, Eye, FileDown, FolderOpen, Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import ReactMarkdown, { type Components } from "react-markdown";
-import remarkGfm from "remark-gfm";
+const ParecerMarkdown = lazy(() => import("@/components/consulta/ParecerMarkdown"));
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -74,66 +73,6 @@ const ORIGEM_VARIANTE: Record<ConsultaOrigem, "secondary" | "outline" | "success
   cache: "secondary",
   local: "outline",
   claude: "success",
-};
-
-/** Estilo do parecer da IA (markdown vindo do Claude) — texto corrido, listas e negrito de verdade, sem "*" soltos. */
-const COMPONENTES_PARECER: Components = {
-  h1: ({ children }) => (
-    <h3 className="mb-2 mt-4 text-sm font-semibold uppercase tracking-wide text-primary first:mt-0">
-      {children}
-    </h3>
-  ),
-  h2: ({ children }) => (
-    <h3 className="mb-2 mt-4 text-sm font-semibold uppercase tracking-wide text-primary first:mt-0">
-      {children}
-    </h3>
-  ),
-  h3: ({ children }) => (
-    <h4 className="mb-1.5 mt-3 text-sm font-semibold text-foreground first:mt-0">{children}</h4>
-  ),
-  p: ({ children }) => <p className="mb-3 text-sm leading-relaxed last:mb-0">{children}</p>,
-  strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
-  em: ({ children }) => <em className="italic">{children}</em>,
-  ul: ({ children }) => (
-    <ul className="mb-3 list-disc space-y-1 pl-5 text-sm marker:text-primary last:mb-0">
-      {children}
-    </ul>
-  ),
-  ol: ({ children, start }) => (
-    <ol
-      start={start}
-      className="mb-3 list-decimal space-y-1 pl-5 text-sm marker:text-primary last:mb-0"
-    >
-      {children}
-    </ol>
-  ),
-  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
-  blockquote: ({ children }) => (
-    <blockquote className="my-3 border-l-2 border-primary/40 bg-primary/5 py-1.5 pl-3 text-sm italic text-muted-foreground">
-      {children}
-    </blockquote>
-  ),
-  a: ({ children, href }) => (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="text-primary underline underline-offset-2"
-    >
-      {children}
-    </a>
-  ),
-  hr: () => <hr className="my-3 border-border" />,
-  table: ({ children }) => (
-    <div className="mb-3 overflow-x-auto rounded-md border last:mb-0">
-      <table className="w-full text-left text-xs">{children}</table>
-    </div>
-  ),
-  thead: ({ children }) => (
-    <thead className="border-b bg-muted/50 text-muted-foreground">{children}</thead>
-  ),
-  th: ({ children }) => <th className="px-2.5 py-1.5 font-semibold">{children}</th>,
-  td: ({ children }) => <td className="px-2.5 py-1.5">{children}</td>,
 };
 
 function PaginaConsultaDocumentos() {
@@ -485,9 +424,11 @@ function PaginaConsultaDocumentos() {
           </div>
 
           <div className="rounded-lg border bg-muted/20 p-4">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={COMPONENTES_PARECER}>
-              {resposta.texto}
-            </ReactMarkdown>
+            <Suspense
+              fallback={<p className="text-sm text-muted-foreground">Formatando parecer…</p>}
+            >
+              <ParecerMarkdown texto={resposta.texto} />
+            </Suspense>
           </div>
 
           {resposta.fontes.length > 0 && (
@@ -683,7 +624,7 @@ function PaginaConsultaDocumentos() {
                 </div>
 
                 <div className="flex flex-wrap items-end justify-between gap-4 pt-2">
-                  <Field rotulo="Cargo na Assinatura" className="w-56">
+                  <Field rotulo="Cargo na Assinatura" className="w-full sm:w-56">
                     <Input
                       value={cargoAssinatura}
                       onChange={(e) => setCargoAssinatura(e.target.value)}

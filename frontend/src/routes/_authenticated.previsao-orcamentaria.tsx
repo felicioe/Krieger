@@ -573,7 +573,7 @@ function RelatorioPrevisao({
       });
       if (!abriu)
         toast.error(
-          "A janela de impressão foi bloqueada. Permita pop-ups deste site e tente novamente.",
+          "A janela de impressão foi bloqueada. Libere janelas de impressão para este site e tente novamente.",
         );
     } catch {
       toast.error("Não foi possível preparar a impressão. Tente novamente.");
@@ -593,7 +593,7 @@ function RelatorioPrevisao({
       />
       <SectionCard className="mb-6">{seletor}</SectionCard>
       <SectionCard
-        titulo="Previsto × Realizado acumulado"
+        titulo="Base prevista para relatórios"
         descricao={
           calculo.situacaoPrevisto === "sem_base"
             ? "Sem previsão aprovada: não há exercício anterior com despesas (base histórica). Mostrando só o realizado."

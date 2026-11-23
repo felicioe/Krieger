@@ -85,26 +85,46 @@ function Pagina() {
   const demonstrativoBase = e
     ? (encontrarExercicioAnterior(exercicios, e)?.demonstrativo ?? null)
     : null;
-  const r = e
-    ? compararPrevistoRealizadoMensal(e, mensais, {
-        condominio: condo ?? null,
-        inicio,
-        fim,
-        demonstrativoBase,
-        historicoRateios,
-        previsoesAprovadas,
-      })
-    : null;
-  const rMesesCompletos = e
-    ? compararPrevistoRealizadoMensal(e, mensais, {
-        condominio: condo ?? null,
-        inicio: 1,
-        fim: 12,
-        demonstrativoBase,
-        historicoRateios,
-        previsoesAprovadas,
-      })
-    : null;
+  const rMesesCompletos = useMemo(
+    () =>
+      e
+        ? compararPrevistoRealizadoMensal(e, mensais, {
+            condominio: condo ?? null,
+            inicio: 1,
+            fim: 12,
+            demonstrativoBase,
+            historicoRateios,
+            previsoesAprovadas,
+          })
+        : null,
+    [e, mensais, condo, demonstrativoBase, historicoRateios, previsoesAprovadas],
+  );
+  const r = useMemo(
+    () =>
+      !e
+        ? null
+        : inicio === 1 && fim === 12
+          ? rMesesCompletos
+          : compararPrevistoRealizadoMensal(e, mensais, {
+              condominio: condo ?? null,
+              inicio,
+              fim,
+              demonstrativoBase,
+              historicoRateios,
+              previsoesAprovadas,
+            }),
+    [
+      e,
+      inicio,
+      fim,
+      rMesesCompletos,
+      mensais,
+      condo,
+      demonstrativoBase,
+      historicoRateios,
+      previsoesAprovadas,
+    ],
+  );
   const opCondos = useMemo(
     () => opcoesCondominio(condominiosComExercicio, true, recentes),
     [condominiosComExercicio, recentes],
@@ -132,8 +152,6 @@ function Pagina() {
       </>
     );
   const opcoesExport = { orcado, horizontal, vertical };
-  const colunasExport = colunasMensalExport(r, opcoesExport);
-  const linhasExport = linhasMensalExport(r);
   const nomeCondo = condo?.nome || e.condoNome || "Condomínio";
   const arquivoSaida = `previsto-realizado-mensal ${nomeCondo} ${String(e.ano)}`;
   return (
@@ -158,13 +176,19 @@ function Pagina() {
                     }),
                 },
               ],
-              xlsx: () => baixarXlsx(arquivoSaida, "Mensal", colunasExport, linhasExport),
+              xlsx: () =>
+                baixarXlsx(
+                  arquivoSaida,
+                  "Mensal",
+                  colunasMensalExport(r, opcoesExport),
+                  linhasMensalExport(r),
+                ),
               imprimir: () =>
                 imprimirColunas({
                   titulo: "Previsto × Realizado por mês",
                   subtitulo: `${nomeCondo} · ${r.meses[0]?.rotulo ?? "—"} a ${r.meses.at(-1)?.rotulo ?? "—"}`,
-                  colunas: colunasExport,
-                  linhas: linhasExport,
+                  colunas: colunasMensalExport(r, opcoesExport),
+                  linhas: linhasMensalExport(r),
                 }),
             }}
           />

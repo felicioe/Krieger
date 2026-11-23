@@ -59,6 +59,7 @@ export const Route = createFileRoute("/_authenticated/atas/$id")({
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Assembleia>("assembleias")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
+      queryClient.ensureQueryData(listaQuery<ModeloAta>("modelos_ata")),
     ]);
     if (!a) throw notFound();
     return null;
@@ -318,7 +319,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
             <div className="mt-4 max-w-xs">
               <Field
                 rotulo="Modelo de ata"
-                dica="Escolha um layout por cartório/cidade ou use o padrão."
+                dica="Escolha um formato por cartório ou cidade, ou use o padrão."
               >
                 <Selecao
                   value={a.modeloAtaId ?? ""}

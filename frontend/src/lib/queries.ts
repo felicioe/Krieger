@@ -14,10 +14,20 @@ export const chaves = {
   documentosResumo: ["documentos", "resumo"] as const,
 };
 
+const STALE_CATALOGO = 5 * 60_000;
+const STALE_LISTA = 60_000;
+
+function staleDoStore(store: Store): number {
+  return store === "config" || store === "modelos" || store === "modelos_ata"
+    ? STALE_CATALOGO
+    : STALE_LISTA;
+}
+
 export const listaQuery = <T>(store: Store) =>
   queryOptions({
     queryKey: chaves.lista(store),
     queryFn: () => api.listar<T>(store),
+    staleTime: staleDoStore(store),
   });
 
 /**
@@ -28,6 +38,7 @@ export const listaQuery = <T>(store: Store) =>
 export const listaQueryTolerante = <T>(store: Store) =>
   queryOptions({
     queryKey: chaves.lista(store),
+    staleTime: staleDoStore(store),
     queryFn: async () => {
       try {
         return await api.listar<T>(store);
@@ -42,6 +53,7 @@ export const itemQuery = <T>(store: Store, id: string) =>
   queryOptions({
     queryKey: chaves.item(store, id),
     queryFn: () => api.obter<T>(store, id),
+    staleTime: staleDoStore(store),
   });
 
 export const usuariosQuery = () =>

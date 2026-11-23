@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { formatBRL } from "@/lib/format";
+import { contagem } from "@/components/app/textos";
 import { cn } from "@/lib/utils";
 import type { Formato } from "@/lib/documento/baixar";
 import type { RelatorioFinal, SituacaoConferencia } from "@/domain/relatorioFinal";
@@ -61,7 +62,7 @@ export function DialogoConferencia({
           <DialogTitle>Conferência antes de emitir</DialogTitle>
           <DialogDescription>
             {erros || avisos
-              ? `${erros ? `${erros} problema(s)` : ""}${erros && avisos ? " e " : ""}${avisos ? `${avisos} ponto(s) de atenção` : ""}. Revise antes de emitir.`
+              ? `${erros ? contagem(erros, "problema", "problemas") : ""}${erros && avisos ? " e " : ""}${avisos ? contagem(avisos, "ponto de atenção", "pontos de atenção") : ""}. Revise antes de emitir.`
               : "Tudo confere. Revise os totais e emita."}
           </DialogDescription>
         </DialogHeader>

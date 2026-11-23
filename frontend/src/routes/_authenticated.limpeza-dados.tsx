@@ -21,7 +21,7 @@ import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { Field } from "@/components/app/Field";
 import { api, mensagemErro, type AlvoLimpeza, type ContagensLimpeza } from "@/lib/api";
 import { useUsuario } from "@/lib/auth";
-import { itemQuery, limpezaContagensQuery } from "@/lib/queries";
+import { chaves, itemQuery, limpezaContagensQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { contagem } from "@/components/app/textos";
 import { formatDataHora } from "@/lib/format";
@@ -173,7 +173,27 @@ function PaginaLimpezaDados() {
   const limpar = useMutation({
     mutationFn: (alvo: AlvoLimpeza) => api.manutencao.limpar(alvo),
     onSuccess: async (_res, alvo) => {
-      await queryClient.invalidateQueries();
+      if (alvo === "tudo") {
+        await queryClient.invalidateQueries();
+      } else {
+        await queryClient.invalidateQueries({ queryKey: chaves.limpezaContagens });
+        if (alvo === "backups") {
+          await queryClient.invalidateQueries({ queryKey: chaves.backups });
+        } else if (alvo === "documentos") {
+          await queryClient.invalidateQueries({ queryKey: ["documentos"] });
+        } else if (
+          alvo === "condominios" ||
+          alvo === "exercicios" ||
+          alvo === "mensais" ||
+          alvo === "assembleias" ||
+          alvo === "atas" ||
+          alvo === "modelos" ||
+          alvo === "modelos_ata" ||
+          alvo === "importacoes"
+        ) {
+          await queryClient.invalidateQueries({ queryKey: chaves.store(alvo) });
+        }
+      }
       const item = ITENS_INDIVIDUAIS.find((i) => i.alvo === alvo);
       toast.success(
         alvo === "tudo"

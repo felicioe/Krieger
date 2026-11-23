@@ -579,7 +579,7 @@ function BlocoConsumoServico({
       ) : (
         <button
           type="button"
-          className="mt-2 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          className="alvo-toque mt-2 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
           onClick={() => setManualAberto(true)}
         >
           Informar valor manual em vez do calculado

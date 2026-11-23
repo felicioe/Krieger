@@ -6,13 +6,13 @@ import { CarregandoAposMontar } from "@/components/app/Carregando";
 import { ID_CONTEUDO } from "@/components/app/foco";
 import { PularParaConteudo } from "@/components/app/PularParaConteudo";
 import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
-import { recarregarSessao } from "@/lib/auth";
+import { garantirSessaoRecente } from "@/lib/auth";
 import { definirUsuarioRecentes } from "@/lib/condominiosRecentes";
 import { podeAcessarRota } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
-    const usuario = await recarregarSessao();
+    const usuario = await garantirSessaoRecente();
     if (!usuario) throw redirect({ to: "/login" });
     if (usuario.trocarSenha) throw redirect({ to: "/trocar-senha" });
     definirUsuarioRecentes(usuario.id);
