@@ -1,0 +1,256 @@
+- generic [active] [ref=e1]:
+  - link "Pular para o conteúdo" [ref=e2] [cursor=pointer]:
+    - /url: "#conteudo"
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - img "Krieger — Contabilidade Condominial" [ref=e7]
+        - navigation "Menu principal" [ref=e8]:
+          - list [ref=e9]:
+            - listitem [ref=e10]:
+              - link "Painel" [ref=e11] [cursor=pointer]:
+                - /url: /#/painel
+            - listitem [ref=e18]:
+              - link "Condomínios" [ref=e19] [cursor=pointer]:
+                - /url: /#/condominios
+          - generic [ref=e25]:
+            - button "Financeiro" [expanded] [ref=e26]
+            - list "Financeiro" [ref=e34]:
+              - listitem [ref=e35]:
+                - link "Prestação de contas" [ref=e36] [cursor=pointer]:
+                  - /url: /#/prestacao-contas
+              - listitem [ref=e41]:
+                - link "Previsão orçamentária" [ref=e42] [cursor=pointer]:
+                  - /url: /#/previsao-orcamentaria?modo=rateio
+              - listitem [ref=e46]:
+                - link "Previsão para relatórios" [ref=e47] [cursor=pointer]:
+                  - /url: /#/previsao-orcamentaria?modo=relatorios
+          - generic [ref=e51]:
+            - button "Relatórios" [expanded] [ref=e52]
+            - list "Relatórios" [ref=e59]:
+              - listitem [ref=e60]:
+                - link "Previsto × Realizado" [ref=e61] [cursor=pointer]:
+                  - /url: /#/previsto-realizado
+              - listitem [ref=e70]:
+                - link "Previsto × Realizado mensal" [ref=e71] [cursor=pointer]:
+                  - /url: /#/relatorios/orcado-realizado-mensal
+              - listitem [ref=e75]:
+                - link "Acompanhamento de carga de dados mensais" [ref=e76] [cursor=pointer]:
+                  - /url: /#/relatorio-mensal
+          - generic [ref=e80]:
+            - button "Assembleias e documentos" [expanded] [ref=e81]
+            - list "Assembleias e documentos" [ref=e91]:
+              - listitem [ref=e92]:
+                - link "Editais" [ref=e93] [cursor=pointer]:
+                  - /url: /#/editais
+              - listitem [ref=e98]:
+                - link "Atas" [ref=e99] [cursor=pointer]:
+                  - /url: /#/atas
+              - listitem [ref=e104]:
+                - link "Modelos de edital" [ref=e105] [cursor=pointer]:
+                  - /url: /#/modelos
+              - listitem [ref=e110]:
+                - link "Modelos de ata" [ref=e111] [cursor=pointer]:
+                  - /url: /#/modelos-ata
+              - listitem [ref=e116]:
+                - link "Drive de Documentos" [ref=e117] [cursor=pointer]:
+                  - /url: /#/drive-documentos
+              - listitem [ref=e121]:
+                - link "Consulta Inteligente" [ref=e122] [cursor=pointer]:
+                  - /url: /#/consulta-documentos
+          - generic [ref=e129]:
+            - button "Administração" [expanded] [ref=e130]
+            - list "Administração" [ref=e138]:
+              - listitem [ref=e139]:
+                - link "Importador" [ref=e140] [cursor=pointer]:
+                  - /url: /#/importador
+              - listitem [ref=e146]:
+                - link "Central de ajuda" [ref=e147] [cursor=pointer]:
+                  - /url: /#/ajuda
+              - listitem [ref=e152]:
+                - link "Escritório" [ref=e153] [cursor=pointer]:
+                  - /url: /#/escritorio
+              - listitem [ref=e158]:
+                - link "Backup" [ref=e159] [cursor=pointer]:
+                  - /url: /#/backup
+              - listitem [ref=e167]:
+                - link "Limpeza de Dados" [ref=e168] [cursor=pointer]:
+                  - /url: /#/limpeza-dados
+          - button "Recolher todos os grupos" [ref=e174]
+        - 'button "Conta: Administrador Krieger SuperADM" [ref=e178]':
+          - generic [ref=e182]:
+            - generic [ref=e183]: "Conta:"
+            - generic [ref=e184]: Administrador Krieger
+            - generic [ref=e185]: SuperADM
+    - main [ref=e189]:
+      - generic [ref=e191]:
+        - heading "Painel" [level=1] [ref=e192]
+        - paragraph [ref=e193]: Hoje, 19/11/2026
+      - generic [ref=e194]:
+        - link "Condomínios 189" [ref=e195] [cursor=pointer]:
+          - /url: /#/condominios
+          - generic [ref=e196]: Condomínios
+          - generic [ref=e202]: "189"
+        - link "Prestações de contas 4" [ref=e203] [cursor=pointer]:
+          - /url: /#/prestacao-contas
+          - generic [ref=e204]: Prestações de contas
+          - generic [ref=e209]: "4"
+        - link "Editais 0" [ref=e210] [cursor=pointer]:
+          - /url: /#/editais
+          - generic [ref=e211]: Editais
+          - generic [ref=e216]: "0"
+      - generic [ref=e217]:
+        - generic [ref=e218]:
+          - generic [ref=e220]:
+            - heading "Vencimentos e prazos" [level=2] [ref=e221]
+            - paragraph [ref=e222]: Próximos 90 dias e itens já vencidos.
+          - list [ref=e224]:
+            - listitem [ref=e225]:
+              - generic [ref=e230]:
+                - link "CONDOMINIO RURAL LAGO NEGRO" [ref=e231] [cursor=pointer]:
+                  - /url: /#/condominios/mvtzwi7r4j35mgl0
+                - generic [ref=e232]: Vigência do seguro · 21/05/2026
+              - generic [ref=e233]: Vencido há 182 dias
+            - listitem [ref=e234]:
+              - generic [ref=e239]:
+                - link "CONDOMINIO URBAN CLASSIC" [ref=e240] [cursor=pointer]:
+                  - /url: /#/condominios/mvtzwmr3c92ed68o
+                - generic [ref=e241]: Vigência do seguro · 23/12/2026
+              - generic [ref=e242]: Em 34 dias
+        - generic [ref=e243]:
+          - heading "Próximas assembleias" [level=2] [ref=e246]
+          - table [ref=e250]:
+            - rowgroup [ref=e251]:
+              - row [ref=e252]:
+                - columnheader "Data" [ref=e253]
+                - columnheader "Condomínio" [ref=e254]
+                - columnheader "Tipo" [ref=e255]
+            - rowgroup [ref=e256]:
+              - row [ref=e257]:
+                - cell "Nenhuma assembleia agendada." [ref=e258]
+      - generic [ref=e259]:
+        - generic [ref=e261]:
+          - heading "Pendências de ajuste" [level=2] [ref=e262]
+          - paragraph [ref=e263]: Precisam de atenção para os relatórios ficarem corretos — clique para abrir e resolver.
+        - list [ref=e265]:
+          - listitem [ref=e266]:
+            - link "CONDOMINIO RES. ANNE CHRISTINE SCHMITZ CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e267] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwgy1fj5dywva
+              - generic [ref=e273]:
+                - generic [ref=e274]: CONDOMINIO RES. ANNE CHRISTINE SCHMITZ
+                - generic [ref=e275]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e278]:
+            - link "CONDOMINIO RES. ELIZABETH WEBER CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e279] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwgzyq25nyazd
+              - generic [ref=e285]:
+                - generic [ref=e286]: CONDOMINIO RES. ELIZABETH WEBER
+                - generic [ref=e287]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e290]:
+            - link "CONDOMINIO RESIDENCIAL GARDEN HOME T2 CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e291] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwhp51hqm4cm2
+              - generic [ref=e297]:
+                - generic [ref=e298]: CONDOMINIO RESIDENCIAL GARDEN HOME T2
+                - generic [ref=e299]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e302]:
+            - link "CONDOMINIO SOLARES DA BRAVA CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e303] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwiayy2q1u2rp
+              - generic [ref=e309]:
+                - generic [ref=e310]: CONDOMINIO SOLARES DA BRAVA
+                - generic [ref=e311]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e314]:
+            - link "CONDOMINIO SOLARES DA BRAVA COMERCIAL CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e315] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwidrnan3atit
+              - generic [ref=e321]:
+                - generic [ref=e322]: CONDOMINIO SOLARES DA BRAVA COMERCIAL
+                - generic [ref=e323]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e326]:
+            - link "CONDOMÍNIO BRAVA VITA Sem CNPJ nesta listagem — casado pelo código." [ref=e327] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwinmwfg5g4sw
+              - generic [ref=e333]:
+                - generic [ref=e334]: CONDOMÍNIO BRAVA VITA
+                - generic [ref=e335]: Sem CNPJ nesta listagem — casado pelo código.
+          - listitem [ref=e338]:
+            - link "CONDOMÍNIO CALEDÔNIA CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e339] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwipmfzvsp6tp
+              - generic [ref=e345]:
+                - generic [ref=e346]: CONDOMÍNIO CALEDÔNIA
+                - generic [ref=e347]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e350]:
+            - link "CONDOMÍNIO DOS EDIFÍCIOS MATHIAS KNABBEN CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e351] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwiz9d0upw8mz
+              - generic [ref=e357]:
+                - generic [ref=e358]: CONDOMÍNIO DOS EDIFÍCIOS MATHIAS KNABBEN
+                - generic [ref=e359]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e362]:
+            - link "CONDOMÍNIO DOS EDIFÍCIOS WERNER KNABBEN CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e363] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwj29ocbubcz8
+              - generic [ref=e369]:
+                - generic [ref=e370]: CONDOMÍNIO DOS EDIFÍCIOS WERNER KNABBEN
+                - generic [ref=e371]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e374]:
+            - link "CONDOMÍNIO ED. DOM PEDRO II - GARAGENS CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e375] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwj654m4sbzjw
+              - generic [ref=e381]:
+                - generic [ref=e382]: CONDOMÍNIO ED. DOM PEDRO II - GARAGENS
+                - generic [ref=e383]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e386]:
+            - link "CONDOMÍNIO EDIFÍCIO DOM PEDRO II CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e387] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwjx8ud5y6o0e
+              - generic [ref=e393]:
+                - generic [ref=e394]: CONDOMÍNIO EDIFÍCIO DOM PEDRO II
+                - generic [ref=e395]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e398]:
+            - link "CONDOMÍNIO PIRIÁPOLIS Sem CNPJ nesta listagem — casado pelo código." [ref=e399] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwlmm2zcuqi2w
+              - generic [ref=e405]:
+                - generic [ref=e406]: CONDOMÍNIO PIRIÁPOLIS
+                - generic [ref=e407]: Sem CNPJ nesta listagem — casado pelo código.
+          - listitem [ref=e410]:
+            - link "CONDOMÍNIO RESIDENCIAL E COMERCIAL SANTA Sem CNPJ nesta listagem — casado pelo código." [ref=e411] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwlxflfspwlec
+              - generic [ref=e417]:
+                - generic [ref=e418]: CONDOMÍNIO RESIDENCIAL E COMERCIAL SANTA
+                - generic [ref=e419]: Sem CNPJ nesta listagem — casado pelo código.
+          - listitem [ref=e422]:
+            - link "CONDOMÍNIO RESIDENCIAL GARDEN HOME CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e423] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwm2elg0zvhk0
+              - generic [ref=e429]:
+                - generic [ref=e430]: CONDOMÍNIO RESIDENCIAL GARDEN HOME
+                - generic [ref=e431]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e434]:
+            - link "EDIFÍCIO AGATHA RESIDENCE Sem CNPJ nesta listagem — casado pelo código." [ref=e435] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwn7suo4z0lqf
+              - generic [ref=e441]:
+                - generic [ref=e442]: EDIFÍCIO AGATHA RESIDENCE
+                - generic [ref=e443]: Sem CNPJ nesta listagem — casado pelo código.
+          - listitem [ref=e446]:
+            - link "EDIFÍCIO DONA ANA Sem CNPJ nesta listagem — casado pelo código." [ref=e447] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwni740wmttbt
+              - generic [ref=e453]:
+                - generic [ref=e454]: EDIFÍCIO DONA ANA
+                - generic [ref=e455]: Sem CNPJ nesta listagem — casado pelo código.
+          - listitem [ref=e458]:
+            - link "GRUPO DE LOJAS MAÇONICAS Sem CNPJ nesta listagem — casado pelo código." [ref=e459] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwolmrdndq6yi
+              - generic [ref=e465]:
+                - generic [ref=e466]: GRUPO DE LOJAS MAÇONICAS
+                - generic [ref=e467]: Sem CNPJ nesta listagem — casado pelo código.
+          - listitem [ref=e470]:
+            - link "SUNSHINE STATE RESIDENCE Sem CNPJ nesta listagem — casado pelo código." [ref=e471] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwpl56hjm4p90
+              - generic [ref=e477]:
+                - generic [ref=e478]: SUNSHINE STATE RESIDENCE
+                - generic [ref=e479]: Sem CNPJ nesta listagem — casado pelo código.
+          - listitem [ref=e482]:
+            - link "TRADE PARK CENTRO EMPRESARIAL - GALPAO CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e483] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwpmvm56l3zzm
+              - generic [ref=e489]:
+                - generic [ref=e490]: TRADE PARK CENTRO EMPRESARIAL - GALPAO
+                - generic [ref=e491]: CNPJ também aparece em outro condomínio desta importação — verifique.
+          - listitem [ref=e494]:
+            - link "TRADE PARK CENTRO EMPRESARIAL - TORRE CNPJ também aparece em outro condomínio desta importação — verifique." [ref=e495] [cursor=pointer]:
+              - /url: /#/condominios/mvtzwpoyoyt43jam
+              - generic [ref=e501]:
+                - generic [ref=e502]: TRADE PARK CENTRO EMPRESARIAL - TORRE
+                - generic [ref=e503]: CNPJ também aparece em outro condomínio desta importação — verifique.
+  - region "Notifications alt+T"

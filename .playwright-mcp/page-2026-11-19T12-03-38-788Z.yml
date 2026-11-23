@@ -1,0 +1,271 @@
+- generic [active] [ref=f2e1]:
+  - link "Pular para o conteúdo" [ref=f2e2] [cursor=pointer]:
+    - /url: "#conteudo"
+  - generic [ref=f2e3]:
+    - complementary [ref=f2e4]:
+      - generic [ref=f2e5]:
+        - img "Krieger — Contabilidade Condominial" [ref=f2e7]
+        - navigation "Menu principal" [ref=f2e8]:
+          - list [ref=f2e9]:
+            - listitem [ref=f2e10]:
+              - link "Painel" [ref=f2e11] [cursor=pointer]:
+                - /url: /index.html?v=2#/painel
+            - listitem [ref=f2e18]:
+              - link "Condomínios" [ref=f2e19] [cursor=pointer]:
+                - /url: /index.html?v=2#/condominios
+          - generic [ref=f2e25]:
+            - button "Financeiro" [expanded] [ref=f2e26]
+            - list "Financeiro" [ref=f2e34]:
+              - listitem [ref=f2e35]:
+                - link "Prestação de contas" [ref=f2e36] [cursor=pointer]:
+                  - /url: /index.html?v=2#/prestacao-contas
+              - listitem [ref=f2e41]:
+                - link "Previsão orçamentária" [ref=f2e42] [cursor=pointer]:
+                  - /url: /index.html?v=2#/previsao-orcamentaria?modo=rateio
+              - listitem [ref=f2e46]:
+                - link "Previsão para relatórios" [ref=f2e47] [cursor=pointer]:
+                  - /url: /index.html?v=2#/previsao-orcamentaria?modo=relatorios
+          - generic [ref=f2e51]:
+            - button "Relatórios" [expanded] [ref=f2e52]
+            - list "Relatórios" [ref=f2e59]:
+              - listitem [ref=f2e60]:
+                - link "Previsto × Realizado" [ref=f2e61] [cursor=pointer]:
+                  - /url: /index.html?v=2#/previsto-realizado
+              - listitem [ref=f2e70]:
+                - link "Previsto × Realizado mensal" [ref=f2e71] [cursor=pointer]:
+                  - /url: /index.html?v=2#/relatorios/orcado-realizado-mensal
+              - listitem [ref=f2e75]:
+                - link "Acompanhamento de carga de dados mensais" [ref=f2e76] [cursor=pointer]:
+                  - /url: /index.html?v=2#/relatorio-mensal
+          - generic [ref=f2e80]:
+            - button "Assembleias e documentos" [expanded] [ref=f2e81]
+            - list "Assembleias e documentos" [ref=f2e91]:
+              - listitem [ref=f2e92]:
+                - link "Editais" [ref=f2e93] [cursor=pointer]:
+                  - /url: /index.html?v=2#/editais
+              - listitem [ref=f2e98]:
+                - link "Atas" [ref=f2e99] [cursor=pointer]:
+                  - /url: /index.html?v=2#/atas
+              - listitem [ref=f2e104]:
+                - link "Modelos de edital" [ref=f2e105] [cursor=pointer]:
+                  - /url: /index.html?v=2#/modelos
+              - listitem [ref=f2e110]:
+                - link "Modelos de ata" [ref=f2e111] [cursor=pointer]:
+                  - /url: /index.html?v=2#/modelos-ata
+              - listitem [ref=f2e116]:
+                - link "Drive de Documentos" [ref=f2e117] [cursor=pointer]:
+                  - /url: /index.html?v=2#/drive-documentos
+              - listitem [ref=f2e121]:
+                - link "Consulta Inteligente" [ref=f2e122] [cursor=pointer]:
+                  - /url: /index.html?v=2#/consulta-documentos
+          - generic [ref=f2e129]:
+            - button "Administração" [expanded] [ref=f2e130]
+            - list "Administração" [ref=f2e138]:
+              - listitem [ref=f2e139]:
+                - link "Importador" [ref=f2e140] [cursor=pointer]:
+                  - /url: /index.html?v=2#/importador
+              - listitem [ref=f2e146]:
+                - link "Central de ajuda" [ref=f2e147] [cursor=pointer]:
+                  - /url: /index.html?v=2#/ajuda
+              - listitem [ref=f2e152]:
+                - link "Escritório" [ref=f2e153] [cursor=pointer]:
+                  - /url: /index.html?v=2#/escritorio
+              - listitem [ref=f2e158]:
+                - link "Backup" [ref=f2e159] [cursor=pointer]:
+                  - /url: /index.html?v=2#/backup
+              - listitem [ref=f2e167]:
+                - link "Limpeza de Dados" [ref=f2e168] [cursor=pointer]:
+                  - /url: /index.html?v=2#/limpeza-dados
+          - button "Recolher todos os grupos" [ref=f2e174]
+        - 'button "Conta: Administrador Krieger SuperADM" [ref=f2e178]':
+          - generic [ref=f2e182]:
+            - generic [ref=f2e183]: "Conta:"
+            - generic [ref=f2e184]: Administrador Krieger
+            - generic [ref=f2e185]: SuperADM
+    - main [ref=f2e189]:
+      - generic [ref=f2e190]:
+        - generic [ref=f2e191]:
+          - heading "Previsão orçamentária — Exercício 2026" [level=1] [ref=f2e192]
+          - paragraph [ref=f2e193]:
+            - text: CONDOMINIO RURAL LAGO NEGRO
+            - generic [ref=f2e194]: · período 01/12/2025 a 30/11/2026
+        - generic [ref=f2e195]:
+          - link "Ajuda sobre a previsão orçamentária" [ref=f2e196] [cursor=pointer]:
+            - /url: /index.html?v=2#/ajuda?secao=previsao-orcamentaria
+          - link "Prestação de contas" [ref=f2e197] [cursor=pointer]:
+            - /url: /index.html?v=2#/prestacao-contas/mwmfbzpe0bv40ip4
+          - button "Salvar" [ref=f2e198] [cursor=pointer]
+      - generic [ref=f2e201]:
+        - generic [ref=f2e202]:
+          - generic [ref=f2e203]: Condomínio
+          - combobox "Condomínio" [ref=f2e204] [cursor=pointer]:
+            - generic [ref=f2e205]:
+              - generic [ref=f2e206]: "243"
+              - generic [ref=f2e207]: CONDOMINIO RURAL LAGO NEGRO
+        - generic [ref=f2e214]:
+          - generic [ref=f2e215]: Prestação de contas
+          - combobox "Prestação de contas" [ref=f2e216] [cursor=pointer]:
+            - generic: Exercício 2026 · 01/12/2025 a 30/11/2026
+      - group [ref=f2e220]:
+        - generic [ref=f2e221]:
+          - generic [ref=f2e222]:
+            - generic [ref=f2e223]:
+              - heading "Parâmetros da previsão" [level=2] [ref=f2e226]
+              - generic [ref=f2e228]:
+                - generic [ref=f2e229]:
+                  - generic [ref=f2e230]: Modo
+                  - combobox "Modo" [ref=f2e231] [cursor=pointer]:
+                    - generic: Tradicional (por grupo)
+                  - combobox [aria-hidden] [ref=f2e234]
+                - generic [ref=f2e235]:
+                  - generic [ref=f2e236]: Arredondamento do valor por unidade
+                  - combobox "Arredondamento do valor por unidade" [ref=f2e237] [cursor=pointer]:
+                    - generic: Truncar (sem centavos, para baixo)
+                  - combobox [aria-hidden] [ref=f2e240]
+                - generic [ref=f2e241]:
+                  - generic [ref=f2e242]: Percentual fixo
+                  - generic [ref=f2e243]:
+                    - textbox "Percentual fixo" [ref=f2e244]:
+                      - /placeholder: 0,00
+                      - text: 0,00
+                    - generic: "%"
+                  - paragraph [ref=f2e245]: Reajuste aplicado sobre a base realizada deste exercício.
+                - generic [ref=f2e246]:
+                  - generic [ref=f2e247]: Fundo de reserva
+                  - generic [ref=f2e248]:
+                    - textbox "Fundo de reserva" [ref=f2e249]:
+                      - /placeholder: 0,00
+                    - generic: "%"
+                  - paragraph [ref=f2e250]: Sobre o valor por unidade.
+                - generic [ref=f2e251]:
+                  - generic [ref=f2e252]: Dedução (retirar da base)
+                  - textbox "Dedução (retirar da base)" [ref=f2e253]: fundo de caixa p/ obras
+                  - paragraph [ref=f2e254]: Despesas cujo nome ou grupo contém este texto saem da base. Aceita expressão regular.
+                - generic [ref=f2e255]:
+                  - generic [ref=f2e256]: Unidades
+                  - generic [ref=f2e257]:
+                    - generic [ref=f2e258]: "156"
+                    - link "Alterar unidades no cadastro do condomínio" [ref=f2e259] [cursor=pointer]:
+                      - /url: /index.html?v=2#/condominios/mvtzwi7r4j35mgl0
+                      - text: alterar
+            - generic [ref=f2e260]:
+              - generic [ref=f2e262]:
+                - heading "Ajustes da previsão" [level=2] [ref=f2e263]
+                - paragraph [ref=f2e264]: "Acréscimos (+) e reduções (−) somados ao anual: obras programadas, contratos novos ou encerrados etc."
+              - generic [ref=f2e266]:
+                - paragraph [ref=f2e267]: Nenhum ajuste. A previsão usa só a base com a variação.
+                - button "Adicionar ajuste" [ref=f2e268] [cursor=pointer]
+            - generic [ref=f2e269]:
+              - generic [ref=f2e271]:
+                - heading "(+/−) Variação de despesas sugeridas" [level=2] [ref=f2e272]
+                - paragraph [ref=f2e273]: Valor anual somado (+) ou subtraído (−) do total ordinário, sem vínculo com grupo de despesas.
+              - generic [ref=f2e276]:
+                - group "Sinal da variação" [ref=f2e277]:
+                  - button "Acréscimo" [pressed] [ref=f2e278]
+                  - button "Redução" [ref=f2e280]
+                - generic [ref=f2e282]:
+                  - generic: R$
+                  - textbox "Valor da variação de despesas sugeridas" [ref=f2e283]:
+                    - /placeholder: 0,00
+                    - text: 0,00
+            - generic [ref=f2e284]:
+              - generic [ref=f2e286]:
+                - heading "Despesas previstas por grupo" [level=2] [ref=f2e287]
+                - paragraph [ref=f2e288]: Baseado exclusivamente no realizado reduzido do período analisado.
+              - generic [ref=f2e290]:
+                - table [ref=f2e292]:
+                  - rowgroup [ref=f2e293]:
+                    - row [ref=f2e294]:
+                      - columnheader "Grupo" [ref=f2e295]
+                      - columnheader "Realizado" [ref=f2e296]
+                      - columnheader "Média prevista dos grupos" [ref=f2e297]
+                  - rowgroup [ref=f2e298]:
+                    - row [ref=f2e299]:
+                      - cell "DEPARTAMENTO PESSOAL" [ref=f2e300]
+                      - cell "R$ 235.486,72" [ref=f2e301]
+                      - cell "R$ 19.623,89" [ref=f2e302]
+                    - row [ref=f2e303]:
+                      - cell "ADMINISTRATIVAS E AFINS" [ref=f2e304]
+                      - cell "R$ 62.370,00" [ref=f2e305]
+                      - cell "R$ 5.197,50" [ref=f2e306]
+                    - row [ref=f2e307]:
+                      - cell "SERVIÇOS ESSENCIAIS" [ref=f2e308]
+                      - cell "R$ 70.941,86" [ref=f2e309]
+                      - cell "R$ 5.911,82" [ref=f2e310]
+                    - row [ref=f2e311]:
+                      - cell "MANUTENÇÕES" [ref=f2e312]
+                      - cell "R$ 426.882,81" [ref=f2e313]
+                      - cell "R$ 35.573,57" [ref=f2e314]
+                    - row [ref=f2e315]:
+                      - cell "AQUISIÇÕES" [ref=f2e316]
+                      - cell "R$ 135.282,61" [ref=f2e317]
+                      - cell "R$ 11.273,55" [ref=f2e318]
+                    - row [ref=f2e319]:
+                      - cell "JUDICIAIS, CARTÓRIO E TAXAS" [ref=f2e320]
+                      - cell "R$ 742,16" [ref=f2e321]
+                      - cell "R$ 61,85" [ref=f2e322]
+                    - row [ref=f2e323]:
+                      - cell "DESPESAS COM ÁREA DE LAZER" [ref=f2e324]
+                      - cell "R$ 30.025,00" [ref=f2e325]
+                      - cell "R$ 2.502,08" [ref=f2e326]
+                    - row [ref=f2e327]:
+                      - cell "REFORMAS" [ref=f2e328]
+                      - cell "R$ 16.400,00" [ref=f2e329]
+                      - cell "R$ 1.366,67" [ref=f2e330]
+                    - row [ref=f2e331]:
+                      - cell "SEGURO E EXTINTORES" [ref=f2e332]
+                      - cell "R$ 4.081,71" [ref=f2e333]
+                      - cell "R$ 340,14" [ref=f2e334]
+                  - rowgroup [ref=f2e335]:
+                    - row [ref=f2e336]:
+                      - cell "Total dos grupos" [ref=f2e337]
+                      - cell "R$ 982.212,87" [ref=f2e338]
+                      - cell "R$ 81.851,07" [ref=f2e339]
+                - paragraph [ref=f2e340]: A média dos grupos considera as deduções e o percentual. Valores sem vínculo com grupos, como ajustes avulsos e variação de despesas sugeridas, aparecem no Resumo da previsão e compõem o anual ajustado.
+          - complementary [ref=f2e341]:
+            - region "Resumo da previsão" [ref=f2e342]:
+              - generic [ref=f2e343]:
+                - heading "Resumo da previsão" [level=2] [ref=f2e344]
+                - paragraph [ref=f2e345]: Atualiza a cada alteração.
+              - generic [ref=f2e346]:
+                - generic [ref=f2e347]: Cálculo completo.
+                - generic [ref=f2e353]:
+                  - generic "Base (despesas realizadas)" [ref=f2e354]
+                  - generic [ref=f2e355]: R$ 982.212,87
+                - generic [ref=f2e356]:
+                  - generic "(−) Dedução" [ref=f2e357]
+                  - generic [ref=f2e358]: R$ 0,00
+                - generic [ref=f2e359]:
+                  - generic "(+) Variação 0,00%" [ref=f2e360]
+                  - generic [ref=f2e361]: R$ 0,00
+                - generic [ref=f2e362]:
+                  - generic "Anual ajustado" [ref=f2e363]
+                  - generic [ref=f2e364]: R$ 982.212,87
+                - generic [ref=f2e365]:
+                  - generic [ref=f2e366]:
+                    - generic "Média mensal (÷ 12)" [ref=f2e367]
+                    - generic [ref=f2e368]: R$ 81.851,07
+                  - generic [ref=f2e369]:
+                    - generic "(÷) Unidades" [ref=f2e370]
+                    - generic [ref=f2e371]: "156"
+                  - generic [ref=f2e372]:
+                    - generic "Cota por unidade" [ref=f2e373]
+                    - generic [ref=f2e374]: R$ 524,69
+                  - generic [ref=f2e375]:
+                    - generic "(+) Reserva por unidade 0,00%" [ref=f2e376]
+                    - generic [ref=f2e377]: R$ 0,00
+                - generic [ref=f2e378]:
+                  - generic [ref=f2e379]: Valor por unidade
+                  - generic [ref=f2e380]: R$ 524,00
+                  - generic [ref=f2e381]: truncado, sem centavos
+                - generic [ref=f2e382]:
+                  - generic [ref=f2e383]:
+                    - generic "Rateio atual" [ref=f2e384]
+                    - generic [ref=f2e385]: R$ 370,00
+                  - generic [ref=f2e386]:
+                    - generic "Índice de reajuste" [ref=f2e387]
+                    - generic [ref=f2e388]: +41,62%
+                - generic [ref=f2e389]:
+                  - button "Usar como rateio aprovado" [ref=f2e390] [cursor=pointer]
+                  - button "Travar rateio no histórico" [ref=f2e391] [cursor=pointer]
+  - region "Notifications alt+T"

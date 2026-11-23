@@ -1,0 +1,10 @@
+[31804606ms] Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at pa (https://krieger.therafinancial.com.br/assets/index-D2hqHpYf.js:9:32137)
+    at hl (https://krieger.therafinancial.com.br/assets/index-D2hqHpYf.js:9:84235)
+    at Qd (https://krieger.therafinancial.com.br/assets/index-D2hqHpYf.js:9:127974)
+    at Zd (https://krieger.therafinancial.com.br/assets/index-D2hqHpYf.js:9:127947)
+    at Xd (https://krieger.therafinancial.com.br/assets/index-D2hqHpYf.js:9:127808)
+    at Id (https://krieger.therafinancial.com.br/assets/index-D2hqHpYf.js:9:123279)
+    at jf (https://krieger.therafinancial.com.br/assets/index-D2hqHpYf.js:9:135935)
+    at MessagePort.ne (https://krieger.therafinancial.com.br/assets/index-D2hqHpYf.js:2:3089)
+[31804737ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://krieger.therafinancial.com.br/auth.php?a=eu:0

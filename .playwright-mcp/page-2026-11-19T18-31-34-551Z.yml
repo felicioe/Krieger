@@ -1,0 +1,29 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - img "Krieger — Contabilidade Condominial" [ref=e4]
+      - paragraph [ref=e6]: Prestação de contas, relatórios mensais, editais e atas de assembleia.
+      - paragraph [ref=e8]: Krieger Assessoria Contábil e Condominial
+    - generic [ref=e9]:
+      - main [ref=e10]:
+        - generic [ref=e12]:
+          - generic [ref=e19]:
+            - heading "Entrar no sistema" [level=1] [ref=e20]
+            - paragraph [ref=e21]: Use seu usuário e senha.
+          - generic [ref=e22]:
+            - generic [ref=e23]:
+              - generic [ref=e24]: Usuário*
+              - textbox "Usuário" [active] [ref=e25]: admin
+            - generic [ref=e26]:
+              - generic [ref=e27]: Senha*
+              - generic [ref=e28]:
+                - textbox "Senha" [ref=e29]: "12345678"
+                - button "Mostrar senha" [ref=e30] [cursor=pointer]
+            - button "Entrar" [ref=e31] [cursor=pointer]
+          - paragraph [ref=e32]: Precisa de acesso ou esqueceu sua senha? Procure o administrador responsável pelo sistema.
+      - contentinfo [ref=e33]:
+        - generic [ref=e34]:
+          - generic [ref=e35]: Feito pela Therafinancial
+          - generic [aria-hidden] [ref=e36]: ·
+          - generic [ref=e37]: Versão 1.14
+  - region "Notifications alt+T"

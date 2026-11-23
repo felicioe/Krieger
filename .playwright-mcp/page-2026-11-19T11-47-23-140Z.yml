@@ -1,0 +1,175 @@
+- generic [ref=f1e1]:
+  - link "Pular para o conteúdo" [ref=f1e2] [cursor=pointer]:
+    - /url: "#conteudo"
+  - generic [ref=f1e3]:
+    - complementary [ref=f1e4]:
+      - generic [ref=f1e5]:
+        - img "Krieger — Contabilidade Condominial" [ref=f1e7]
+        - navigation "Menu principal" [ref=f1e8]:
+          - list [ref=f1e9]:
+            - listitem [ref=f1e10]:
+              - link "Painel" [ref=f1e11] [cursor=pointer]:
+                - /url: /#/painel
+            - listitem [ref=f1e18]:
+              - link "Condomínios" [ref=f1e19] [cursor=pointer]:
+                - /url: /#/condominios
+          - generic [ref=f1e25]:
+            - button "Financeiro" [expanded] [ref=f1e26]
+            - list "Financeiro" [ref=f1e34]:
+              - listitem [ref=f1e35]:
+                - link "Prestação de contas" [ref=f1e36] [cursor=pointer]:
+                  - /url: /#/prestacao-contas
+              - listitem [ref=f1e41]:
+                - link "Previsão orçamentária" [ref=f1e42] [cursor=pointer]:
+                  - /url: /#/previsao-orcamentaria?modo=rateio
+              - listitem [ref=f1e46]:
+                - link "Previsão para relatórios" [active] [ref=f1e47] [cursor=pointer]:
+                  - /url: /#/previsao-orcamentaria?modo=relatorios
+          - generic [ref=f1e51]:
+            - button "Relatórios" [expanded] [ref=f1e52]
+            - list "Relatórios" [ref=f1e59]:
+              - listitem [ref=f1e60]:
+                - link "Previsto × Realizado" [ref=f1e61] [cursor=pointer]:
+                  - /url: /#/previsto-realizado
+              - listitem [ref=f1e70]:
+                - link "Previsto × Realizado mensal" [ref=f1e71] [cursor=pointer]:
+                  - /url: /#/relatorios/orcado-realizado-mensal
+              - listitem [ref=f1e75]:
+                - link "Acompanhamento de carga de dados mensais" [ref=f1e76] [cursor=pointer]:
+                  - /url: /#/relatorio-mensal
+          - generic [ref=f1e80]:
+            - button "Assembleias e documentos" [expanded] [ref=f1e81]
+            - list "Assembleias e documentos" [ref=f1e91]:
+              - listitem [ref=f1e92]:
+                - link "Editais" [ref=f1e93] [cursor=pointer]:
+                  - /url: /#/editais
+              - listitem [ref=f1e98]:
+                - link "Atas" [ref=f1e99] [cursor=pointer]:
+                  - /url: /#/atas
+              - listitem [ref=f1e104]:
+                - link "Modelos de edital" [ref=f1e105] [cursor=pointer]:
+                  - /url: /#/modelos
+              - listitem [ref=f1e110]:
+                - link "Modelos de ata" [ref=f1e111] [cursor=pointer]:
+                  - /url: /#/modelos-ata
+              - listitem [ref=f1e116]:
+                - link "Drive de Documentos" [ref=f1e117] [cursor=pointer]:
+                  - /url: /#/drive-documentos
+              - listitem [ref=f1e121]:
+                - link "Consulta Inteligente" [ref=f1e122] [cursor=pointer]:
+                  - /url: /#/consulta-documentos
+          - generic [ref=f1e129]:
+            - button "Administração" [expanded] [ref=f1e130]
+            - list "Administração" [ref=f1e138]:
+              - listitem [ref=f1e139]:
+                - link "Importador" [ref=f1e140] [cursor=pointer]:
+                  - /url: /#/importador
+              - listitem [ref=f1e146]:
+                - link "Central de ajuda" [ref=f1e147] [cursor=pointer]:
+                  - /url: /#/ajuda
+              - listitem [ref=f1e152]:
+                - link "Escritório" [ref=f1e153] [cursor=pointer]:
+                  - /url: /#/escritorio
+              - listitem [ref=f1e158]:
+                - link "Backup" [ref=f1e159] [cursor=pointer]:
+                  - /url: /#/backup
+              - listitem [ref=f1e167]:
+                - link "Limpeza de Dados" [ref=f1e168] [cursor=pointer]:
+                  - /url: /#/limpeza-dados
+          - button "Recolher todos os grupos" [ref=f1e174]
+        - 'button "Conta: Administrador Krieger SuperADM" [ref=f1e178]':
+          - generic [ref=f1e182]:
+            - generic [ref=f1e183]: "Conta:"
+            - generic [ref=f1e184]: Administrador Krieger
+            - generic [ref=f1e185]: SuperADM
+    - main [ref=f1e189]:
+      - generic [ref=f1e190]:
+        - generic [ref=f1e191]:
+          - heading "Previsão para relatórios — Exercício 2026" [level=1] [ref=f1e192]
+          - paragraph [ref=f1e193]:
+            - text: CONDOMINIO RURAL LAGO NEGRO
+            - generic [ref=f1e194]: · período 01/12/2025 a 30/11/2026
+        - generic [ref=f1e196]:
+          - button "PDF" [ref=f1e197] [cursor=pointer]
+          - button "XLSX" [ref=f1e198] [cursor=pointer]
+          - button "CSV" [ref=f1e199] [cursor=pointer]
+          - button "Imprimir" [ref=f1e200] [cursor=pointer]
+      - generic [ref=f1e203]:
+        - generic [ref=f1e204]:
+          - generic [ref=f1e205]: Condomínio
+          - combobox "Condomínio" [ref=f1e206] [cursor=pointer]:
+            - generic [ref=f1e207]:
+              - generic [ref=f1e208]: "243"
+              - generic [ref=f1e209]: CONDOMINIO RURAL LAGO NEGRO
+        - generic [ref=f1e216]:
+          - generic [ref=f1e217]: Prestação de contas
+          - combobox "Prestação de contas" [ref=f1e218] [cursor=pointer]:
+            - generic: Exercício 2026 · 01/12/2025 a 30/11/2026
+      - generic [ref=f1e221]:
+        - generic [ref=f1e223]:
+          - heading "Previsto × Realizado" [level=2] [ref=f1e224]
+          - paragraph [ref=f1e225]: Realizado aplicado pelo reajuste de 15,26% · sem deduções, ajustes ou variação de despesas sugeridas.
+        - generic [ref=f1e226]:
+          - group "Modo de apresentação" [ref=f1e228]:
+            - button "Por grupo" [pressed] [ref=f1e229] [cursor=pointer]
+            - button "Detalhado" [ref=f1e230] [cursor=pointer]
+          - table [ref=f1e232]:
+            - rowgroup [ref=f1e233]:
+              - row [ref=f1e234]:
+                - columnheader "Grupo" [ref=f1e235]
+                - columnheader "Realizado" [ref=f1e236]
+                - columnheader "Previsto" [ref=f1e237]
+                - columnheader "Variação" [ref=f1e238]
+            - rowgroup [ref=f1e239]:
+              - row [ref=f1e240]:
+                - cell "DEPARTAMENTO PESSOAL" [ref=f1e241]
+                - cell "R$ 235.486,72" [ref=f1e242]
+                - cell "R$ 271.421,99" [ref=f1e243]
+                - cell "15,26%" [ref=f1e244]
+              - row [ref=f1e245]:
+                - cell "ADMINISTRATIVAS E AFINS" [ref=f1e246]
+                - cell "R$ 62.370,00" [ref=f1e247]
+                - cell "R$ 71.887,66" [ref=f1e248]
+                - cell "15,26%" [ref=f1e249]
+              - row [ref=f1e250]:
+                - cell "SERVIÇOS ESSENCIAIS" [ref=f1e251]
+                - cell "R$ 70.941,86" [ref=f1e252]
+                - cell "R$ 81.767,59" [ref=f1e253]
+                - cell "15,26%" [ref=f1e254]
+              - row [ref=f1e255]:
+                - cell "MANUTENÇÕES" [ref=f1e256]
+                - cell "R$ 426.882,81" [ref=f1e257]
+                - cell "R$ 492.025,13" [ref=f1e258]
+                - cell "15,26%" [ref=f1e259]
+              - row [ref=f1e260]:
+                - cell "AQUISIÇÕES" [ref=f1e261]
+                - cell "R$ 135.282,61" [ref=f1e262]
+                - cell "R$ 155.926,74" [ref=f1e263]
+                - cell "15,26%" [ref=f1e264]
+              - row [ref=f1e265]:
+                - cell "JUDICIAIS, CARTÓRIO E TAXAS" [ref=f1e266]
+                - cell "R$ 742,16" [ref=f1e267]
+                - cell "R$ 855,41" [ref=f1e268]
+                - cell "15,26%" [ref=f1e269]
+              - row [ref=f1e270]:
+                - cell "DESPESAS COM ÁREA DE LAZER" [ref=f1e271]
+                - cell "R$ 30.025,00" [ref=f1e272]
+                - cell "R$ 34.606,82" [ref=f1e273]
+                - cell "15,26%" [ref=f1e274]
+              - row [ref=f1e275]:
+                - cell "REFORMAS" [ref=f1e276]
+                - cell "R$ 16.400,00" [ref=f1e277]
+                - cell "R$ 18.902,64" [ref=f1e278]
+                - cell "15,26%" [ref=f1e279]
+              - row [ref=f1e280]:
+                - cell "SEGURO E EXTINTORES" [ref=f1e281]
+                - cell "R$ 4.081,71" [ref=f1e282]
+                - cell "R$ 4.704,58" [ref=f1e283]
+                - cell "15,26%" [ref=f1e284]
+            - rowgroup [ref=f1e285]:
+              - row [ref=f1e286]:
+                - cell "Total" [ref=f1e287]
+                - cell "R$ 982.212,87" [ref=f1e288]
+                - cell "R$ 1.132.098,55" [ref=f1e289]
+                - cell "15,26%" [ref=f1e290]
+  - region "Notifications alt+T"
