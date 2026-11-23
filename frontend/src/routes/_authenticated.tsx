@@ -2,18 +2,20 @@ import { Outlet, createFileRoute, redirect, useRouterState } from "@tanstack/rea
 import { ConteudoMenu } from "@/components/app/AppSidebar";
 import { Marca } from "@/components/app/Marca";
 import { MenuMovel } from "@/components/app/MenuMovel";
-import { Carregando } from "@/components/app/Carregando";
+import { CarregandoAposMontar } from "@/components/app/Carregando";
 import { ID_CONTEUDO } from "@/components/app/foco";
 import { PularParaConteudo } from "@/components/app/PularParaConteudo";
 import { ProvedorRegistroAlteracoes } from "@/components/versoes/RegistroAlteracoes";
-import { recarregarSessao } from "@/lib/auth";
+import { garantirSessaoRecente } from "@/lib/auth";
+import { definirUsuarioRecentes } from "@/lib/condominiosRecentes";
 import { podeAcessarRota } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async ({ location }) => {
-    const usuario = await recarregarSessao();
+    const usuario = await garantirSessaoRecente();
     if (!usuario) throw redirect({ to: "/login" });
     if (usuario.trocarSenha) throw redirect({ to: "/trocar-senha" });
+    definirUsuarioRecentes(usuario.id);
 
     const permissoesPorRota: Array<[string, string]> = [
       ["/painel", "painel.visualizar"],
@@ -42,7 +44,7 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { usuario };
   },
-  pendingComponent: () => <Carregando />,
+  pendingComponent: () => <CarregandoAposMontar />,
   component: LayoutSistema,
 });
 

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,7 +19,7 @@ import { PreviaRelatorio } from "@/components/relatorio/PreviaRelatorio";
 import { EditorConsideracoes } from "@/components/relatorio/EditorConsideracoes";
 import { DialogoConferencia } from "@/components/relatorio/DialogoConferencia";
 import { api } from "@/lib/api";
-import { baixarDocumento, ROTULO_FORMATO, type Formato } from "@/lib/documento/baixar";
+import { gerarArquivo, ROTULO_FORMATO, salvarArquivo, type Formato } from "@/lib/documento/baixar";
 import { documentoRelatorioFinal } from "@/documentos/relatorioFinal";
 import { useUsuario } from "@/lib/auth";
 import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
@@ -26,6 +27,8 @@ import { formatDataHora } from "@/lib/format";
 import { cabecalho } from "@/lib/head";
 import { normalizarCondominio } from "@/domain/condominio";
 import {
+  condominioComConsid,
+  considEfetiva,
   encontrarExercicioAnterior,
   normalizarExercicio,
   prepararExercicio,
@@ -93,8 +96,13 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   const { data: previsoesAprovadas } = useSuspenseQuery(
     listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas"),
   );
-  const [e, setE] = useState<Exercicio>(inicial);
-  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
+  // Exercício aberto: as considerações vêm do cadastro, que é a fonte única (#307). Fechado: o congelado.
+  const condoDoExercicio = condominios.find((c) => c.id === inicial.condoId) ?? null;
+  const inicialComCadastro: Exercicio = inicial.fechado
+    ? inicial
+    : { ...inicial, consid: considEfetiva(inicial, condoDoExercicio) };
+  const [e, setE] = useState<Exercicio>(inicialComCadastro);
+  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicialComCadastro));
   const [aba, setAba] = useState("previa");
   const [conferir, setConferir] = useState(false);
 
@@ -147,7 +155,14 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   });
 
   const salvar = useMutation({
-    mutationFn: (v: { dados: Exercicio; mensagem: string }) => api.salvar("exercicios", v.dados),
+    mutationFn: async (v: { dados: Exercicio; mensagem: string }) => {
+      // Exercício aberto: as considerações editadas aqui gravam também no cadastro (#307).
+      if (!v.dados.fechado && condoRaw) {
+        await api.salvar("condominios", condominioComConsid(condoRaw, v.dados.consid));
+        queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
+      }
+      return api.salvar("exercicios", v.dados);
+    },
     onSuccess: (salvo, { mensagem }) => {
       const n = normalizarExercicio(salvo);
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
@@ -165,32 +180,46 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
   }
 
   async function emitir(formato: Formato) {
-    const doc = await documentoRelatorioFinal({
-      rel,
-      exercicio: e,
-      condominio: condo,
-      escritorio: e.fechado && e.fechamento ? e.fechamento.escritorio : escritorio,
-    });
-    if (!e.fechado)
-      await salvar.mutateAsync({
-        dados: prepararExercicio({
-          ...e,
-          relatorioFinal: {
-            ...e.relatorioFinal,
-            emitidoEm: new Date().toISOString(),
-            emitidoPor: usuario?.nome || usuario?.login || "",
-          },
-        }),
-        mensagem: `Relatório emitido em ${ROTULO_FORMATO[formato]}.`,
-      });
+    let arquivo: Blob;
+    let nome: string;
     try {
-      await baixarDocumento(doc, formato);
+      const doc = await documentoRelatorioFinal({
+        rel,
+        exercicio: e,
+        condominio: condo,
+        escritorio: e.fechado && e.fechamento ? e.fechamento.escritorio : escritorio,
+      });
+      nome = `${doc.arquivo}.${formato}`;
+      // O arquivo é gerado antes de qualquer registro: se falhar, a emissão não fica marcada.
+      arquivo = await gerarArquivo(doc, formato);
     } catch (erro) {
       console.error(erro);
       toast.error(
-        `A emissão foi registrada, mas não foi possível gerar o ${ROTULO_FORMATO[formato]}. Tente emitir de novo.`,
+        `Não foi possível gerar o ${ROTULO_FORMATO[formato]}. Nada foi registrado; tente de novo.`,
       );
+      throw erro;
     }
+    if (!e.fechado) {
+      try {
+        await salvar.mutateAsync({
+          dados: prepararExercicio({
+            ...e,
+            relatorioFinal: {
+              ...e.relatorioFinal,
+              emitidoEm: new Date().toISOString(),
+              emitidoPor: usuario?.nome || usuario?.login || "",
+            },
+          }),
+          mensagem: `Relatório emitido em ${ROTULO_FORMATO[formato]}.`,
+        });
+      } catch (erro) {
+        toast.error(
+          `Não foi possível registrar a emissão. O ${ROTULO_FORMATO[formato]} não foi baixado; tente de novo.`,
+        );
+        throw erro;
+      }
+    }
+    salvarArquivo(arquivo, nome);
   }
 
   const opcoesMes = rel.comparativo.meses.map((m) => ({
@@ -247,9 +276,11 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
       />
 
       {e.fechado && (
-        <p className="mb-4 text-sm">
-          Relatório consolidado. As fontes e os valores foram preservados no fechamento.
-        </p>
+        <Alert className="mb-4">
+          <AlertDescription>
+            Relatório consolidado. As fontes e os valores foram preservados no fechamento.
+          </AlertDescription>
+        </Alert>
       )}
       <form id="form-relatorio" onSubmit={enviar} noValidate>
         <Tabs value={aba} onValueChange={setAba}>
@@ -343,6 +374,7 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                         {s.id === "analise" && rel.secoes.analise && (
                           <div className="ml-6 mt-1.5 flex items-center gap-2 max-md:mt-0 max-md:min-h-11 max-md:gap-3 pointer-coarse:mt-0 pointer-coarse:min-h-11 pointer-coarse:gap-3">
                             <Checkbox
+                              disabled={e.fechado}
                               id="secao-pizza"
                               checked={e.mostrarPizza !== false}
                               onCheckedChange={(v) => mudar({ mostrarPizza: v === true })}
@@ -399,17 +431,22 @@ function EditorRelatorio({ inicial }: { inicial: Exercicio }) {
                 <SectionCard titulo="Capa e assinatura">
                   <div className="grid grid-cols-1 gap-3">
                     <Field rotulo="Cidade">
-                      <Input
-                        value={e.cidade}
-                        onChange={(ev) => mudar({ cidade: ev.target.value })}
-                      />
+                      <p className="text-sm">{e.cidade || "—"}</p>
                     </Field>
                     <Field rotulo="Data de emissão">
-                      <DataInput
-                        value={e.dataEmissao}
-                        onChange={(v) => mudar({ dataEmissao: v })}
-                      />
+                      <p className="text-sm">{e.dataEmissao || "—"}</p>
                     </Field>
+                    <p className="text-xs text-muted-foreground">
+                      Cidade e data de emissão são editadas na{" "}
+                      <Link
+                        to="/prestacao-contas/$id"
+                        params={{ id: e.id }}
+                        className="underline underline-offset-2"
+                      >
+                        prestação de contas
+                      </Link>
+                      .
+                    </p>
                     <p className="text-xs text-muted-foreground">
                       Nome, assinatura e logo vêm do{" "}
                       <Link

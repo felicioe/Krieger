@@ -29,6 +29,19 @@ describe("Permissões de navegação", () => {
       true,
     );
   });
+  it("relatórios em /relatorios seguem a permissão do módulo, mesmo digitando o endereço", () => {
+    expect(podeAcessarRota(usuario, "/relatorios/orcado-realizado-mensal")).toBe(false);
+    expect(podeAcessarRota(usuario, "/relatorios/inadimplencia")).toBe(false);
+    const comRelatorios = {
+      ...usuario,
+      permissoes: ["previsto_realizado.visualizar", "relatorio_mensal.visualizar"],
+    };
+    expect(podeAcessarRota(comRelatorios, "/relatorios/orcado-realizado-mensal")).toBe(true);
+    expect(podeAcessarRota(comRelatorios, "/relatorios/inadimplencia")).toBe(true);
+    expect(podeAcessarRota(usuario, "/relatorios/consolidado-escritorio")).toBe(false);
+    expect(podeAcessarRota(comRelatorios, "/relatorios/consolidado-escritorio")).toBe(true);
+  });
+
   it("nega navegação sem sessão", () => {
     expect(podeAcessarRota(null, "/painel")).toBe(false);
   });

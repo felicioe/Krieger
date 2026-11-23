@@ -45,6 +45,27 @@ O rótulo da interface é novo, o valor gravado de `admin` não mudou: nenhuma l
 `migrations/20261108_perfis_tres_niveis.sql`, e o SuperADM edita a matriz em **Perfis e
 permissões** (tela de Usuários), chave por chave, com gravação imediata.
 
+## Quem controla cada função
+
+Itens controlados pela matriz (ADM e Usuário, com exceções por usuário):
+
+- Telas: as chaves `modulo.visualizar`, do menu e das rotas (`lib/permissoes.ts`).
+- Ações de edição: as chaves `modulo.editar`.
+- Aba **Configuração** do cadastro do condomínio: `condominios.configurar` (regras de dedução,
+  rubricas de água, energia e elevadores, fornecedor dos elevadores, arredondamento e de-para).
+  Ao salvar, o PHP exige a permissão quando algum desses campos muda; o ADM a recebe na migração.
+
+Exclusivo do SuperADM, fixo fora da matriz (decisão de 22/11/2026):
+
+- Usuários, perfis e a matriz de permissões (`usuarios`).
+- Validar, restaurar, excluir backups e criar backup integral.
+- Limpeza de dados em massa (consultar e apagar cadastros).
+- Carga inicial do previsto aprovado.
+
+Limitação conhecida: os fluxos de importação e de prestação de contas também gravam o cadastro do
+condomínio (`api.salvar("condominios")`). Por isso o salvamento aceita `importador.editar` além de
+`condominios.editar`. Separar esses caminhos exige mudar essas telas, e fica como próxima etapa.
+
 ## Navegação
 
 Botões que levam a uma tela devem verificar a permissão da tela de destino. Se o destino não for permitido, o botão não é renderizado. Links salvos ou hashes digitados devem cair em uma tela de acesso negado ou no primeiro módulo autorizado.

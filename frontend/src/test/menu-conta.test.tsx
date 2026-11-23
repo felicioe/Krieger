@@ -30,8 +30,24 @@ function montar({
   nome = "Maria Souza",
   movel = false,
   comProvedor = true,
-}: { perfil?: Usuario["perfil"]; nome?: string; movel?: boolean; comProvedor?: boolean } = {}) {
-  definirUsuario({ id: "u-teste", login: "maria", nome, perfil, trocarSenha: false } as Usuario);
+  permissoes,
+  caminhoInicial = "/",
+}: {
+  perfil?: Usuario["perfil"];
+  nome?: string;
+  movel?: boolean;
+  comProvedor?: boolean;
+  permissoes?: string[];
+  caminhoInicial?: string;
+} = {}) {
+  definirUsuario({
+    id: "u-teste",
+    login: "maria",
+    nome,
+    perfil,
+    trocarSenha: false,
+    ...(permissoes ? { permissoes } : {}),
+  } as Usuario);
   const Menu = movel ? (
     <MenuMovel destinoFoco={() => document.getElementById("conteudo")}>
       {(aoNavegar, depoisDeFechar) => (
@@ -74,7 +90,7 @@ function montar({
       pagina("/usuarios", "Usuários"),
       pagina("/login", "Entrar"),
     ]),
-    history: createMemoryHistory({ initialEntries: ["/"] }),
+    history: createMemoryHistory({ initialEntries: [caminhoInicial] }),
   });
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -89,19 +105,96 @@ const botaoConta = (nome = "Maria Souza") =>
 
 beforeEach(() => {
   sair.mockClear();
+  localStorage.clear();
+});
+
+describe("expansão dos grupos do menu", () => {
+  it("abre somente o grupo da rota no primeiro acesso", async () => {
+    montar({ caminhoInicial: "/usuarios" });
+    await screen.findByRole("heading", { name: "Usuários" });
+    const menu = screen.getByRole("navigation", { name: "Menu principal" });
+    expect(within(menu).getByRole("button", { name: "Administração" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(menu.querySelectorAll('button[aria-expanded="true"]')).toHaveLength(1);
+  });
+
+  it("mantém o foco e grava a escolha explícita para o usuário", async () => {
+    const { user, pronto } = montar();
+    await pronto();
+    const controle = screen.getByRole("button", { name: "Expandir todos os grupos" });
+    controle.focus();
+    await user.keyboard("{Enter}");
+    expect(controle).toHaveFocus();
+    expect(controle).toHaveAccessibleName("Recolher todos os grupos");
+    expect(localStorage.getItem("krieger.menu.grupos-fechados.u-teste")).toBe("[]");
+  });
+});
+
+describe("favoritos recolhíveis", () => {
+  it("recolhe e reabre o bloco Favoritos, com o estado salvo por usuário", async () => {
+    localStorage.setItem("krieger.favoritos.u-teste", JSON.stringify(["/painel"]));
+    const { user, pronto } = montar();
+    await pronto();
+    const menu = screen.getByRole("navigation", { name: "Menu principal" });
+    const cabecalho = within(menu).getByRole("button", { name: "Favoritos" });
+    expect(cabecalho).toHaveAttribute("aria-expanded", "true");
+    await user.click(cabecalho);
+    expect(cabecalho).toHaveAttribute("aria-expanded", "false");
+    expect(
+      JSON.parse(localStorage.getItem("krieger.menu.grupos-fechados.u-teste") ?? "[]"),
+    ).toContain("Favoritos");
+    await user.click(cabecalho);
+    expect(cabecalho).toHaveAttribute("aria-expanded", "true");
+  });
+});
+
+describe("atalhos favoritos", () => {
+  it("limita a cinco atalhos, mantém a ordem salva e sinaliza o limite", async () => {
+    const salvos = [
+      "/usuarios",
+      "/backup",
+      "/painel",
+      "/importador",
+      "/condominios",
+      "/prestacao-contas",
+    ];
+    localStorage.setItem("krieger.favoritos.u-teste", JSON.stringify(salvos));
+    const { user, pronto } = montar();
+    await pronto();
+    const menu = screen.getByRole("navigation", { name: "Menu principal" });
+    expect(
+      within(menu)
+        .getAllByRole("link")
+        .slice(0, 5)
+        .map((link) => link.textContent),
+    ).toEqual(["Usuários", "Backup", "Painel", "Importador", "Condomínios"]);
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
+    const adicionar = screen.getAllByRole("button", {
+      name: /Adicionar .* aos favoritos: limite/,
+    })[0];
+    expect(adicionar).toHaveAttribute("aria-disabled", "true");
+  });
 });
 
 describe("bloco da conta no menu lateral", () => {
   it("começa recolhido: opções fora da página (sem foco) e módulos principais intactos", async () => {
-    montar();
+    const { user } = montar();
     await screen.findByLabelText("Observação");
     const conta = botaoConta();
     expect(conta).toHaveAttribute("aria-expanded", "false");
     expect(conta).toHaveAccessibleName(/SuperADM/);
-    for (const nome of ["Usuários", "Minha senha"])
-      expect(screen.queryByRole("link", { name: nome })).toBeNull();
-    for (const nome of ["Registro de Alterações", "Sair"])
-      expect(screen.queryByRole("button", { name: nome })).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
+    expect(screen.getByRole("link", { name: "Usuários" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Minha senha" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Sair" })).toBeNull();
+    await user.click(botaoConta());
+    const opcoes = screen.getByRole("list", { name: "Opções da conta" });
+    expect(within(opcoes).getByRole("link", { name: "Central de ajuda" })).toBeInTheDocument();
+    expect(
+      within(opcoes).getByRole("button", { name: "Registro de Alterações" }),
+    ).toBeInTheDocument();
     const principal = screen.getByRole("navigation", { name: "Menu principal" });
     expect(
       within(principal)
@@ -139,18 +232,20 @@ describe("bloco da conta no menu lateral", () => {
     expect(screen.getByRole("link", { name: "Minha senha" })).toBeInTheDocument();
   });
 
-  it("opções expandidas mantêm os destinos: Minha senha e Usuários navegam, Sair sai uma vez", async () => {
+  it("Minha senha e Usuários mantêm os destinos, e Sair encerra uma vez", async () => {
     const { router, user, pronto } = montar();
     await pronto();
+    await user.click(screen.getByRole("button", { name: "Administração" }));
+    await user.click(screen.getByRole("link", { name: "Usuários" }));
+    await screen.findByRole("heading", { name: "Usuários" });
+    expect(sair).not.toHaveBeenCalled();
+
     await user.click(botaoConta());
     await user.click(screen.getByRole("link", { name: "Minha senha" }));
     await screen.findByRole("heading", { name: "Minha senha" });
     expect(router.state.location.pathname).toBe("/minha-senha");
 
-    await user.click(screen.getByRole("link", { name: "Usuários" }));
-    await screen.findByRole("heading", { name: "Usuários" });
     expect(sair).not.toHaveBeenCalled();
-
     await user.click(screen.getByRole("button", { name: "Sair" }));
     await waitFor(() => expect(router.state.location.pathname).toBe("/login"));
     expect(sair).toHaveBeenCalledTimes(1);
@@ -209,5 +304,76 @@ describe("Registro de Alterações pela gaveta do celular", () => {
     expect(document.body.style.pointerEvents).not.toBe("none");
     expect(screen.getByLabelText("Observação")).toHaveValue("rascunho");
     expect(sair).not.toHaveBeenCalled();
+  });
+});
+
+describe("menu por perfil (#310)", () => {
+  const link = (nome: string) => screen.queryByRole("link", { name: nome });
+
+  it("SuperADM vê Dados, modelos e a Administração completa", async () => {
+    const { user, pronto } = montar();
+    await pronto();
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
+    for (const nome of [
+      "Importador",
+      "Modelos de edital",
+      "Modelos de ata",
+      "Escritório",
+      "Backup",
+      "Limpeza de Dados",
+    ])
+      expect(link(nome)).toBeInTheDocument();
+  });
+
+  it("ADM vê Dados e modelos, mas não Escritório, Backup nem Limpeza", async () => {
+    const { user, pronto } = montar({
+      perfil: "adm",
+      nome: "Ana",
+      permissoes: [
+        "painel.visualizar",
+        "prestacao_contas.visualizar",
+        "importador.visualizar",
+        "modelos.visualizar",
+        "modelos_ata.visualizar",
+      ],
+    });
+    await pronto();
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
+    for (const nome of ["Importador", "Modelos de edital", "Modelos de ata"])
+      expect(link(nome)).toBeInTheDocument();
+    for (const nome of ["Escritório", "Backup", "Limpeza de Dados"]) expect(link(nome)).toBeNull();
+  });
+
+  it("favorito de módulo sem permissão não aparece na seção Favoritos (#296)", async () => {
+    localStorage.setItem(
+      "krieger.favoritos.u-teste",
+      JSON.stringify(["/backup", "/prestacao-contas"]),
+    );
+    const { pronto } = montar({
+      perfil: "user",
+      nome: "João",
+      permissoes: ["prestacao_contas.visualizar"],
+    });
+    await pronto();
+    expect(screen.getByText("Favoritos")).toBeInTheDocument();
+    expect(link("Backup")).toBeNull();
+    expect(screen.getAllByRole("link", { name: "Prestação de contas" }).length).toBeGreaterThan(0);
+    localStorage.removeItem("krieger.favoritos.u-teste");
+  });
+
+  it("Usuário só com rotinas de uso não vê Dados, modelos ou Administração; a ajuda permanece acessível", async () => {
+    const { user, pronto } = montar({
+      perfil: "user",
+      nome: "João",
+      permissoes: ["painel.visualizar", "prestacao_contas.visualizar"],
+    });
+    await pronto();
+    await user.click(screen.getByRole("button", { name: "Expandir todos os grupos" }));
+    expect(link("Prestação de contas")).toBeInTheDocument();
+    for (const nome of ["Importador", "Modelos de edital", "Modelos de ata", "Escritório"])
+      expect(link(nome)).toBeNull();
+    expect(botaoConta("João")).toHaveAttribute("aria-expanded", "false");
+    await user.click(botaoConta("João"));
+    expect(link("Central de ajuda")).toBeInTheDocument();
   });
 });

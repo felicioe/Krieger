@@ -116,3 +116,26 @@ sessão nova antes de concluir que a mudança não funcionou.
 
 O plano não cria agente para publicar. Deploy é irreversível e fica na sessão
 principal, com o responsável presente e registro na issue.
+
+## Sequência geral (revisada em 22/11/2026)
+
+Ordem única de execução do trabalho de entrada de dados e menus. Cada item
+só começa quando o anterior tem PR mergeado e validado pelo responsável.
+
+| Ordem | Item | Issue | Depende de |
+|---|---|---|---|
+| 0 | Aviso de "sem base" no Previsto × Realizado mensal (após `e388145`, já publicado) | #311 | — |
+| 1 | Menu por perfil (Operacional, Cadastro e configuração, Administração) | #310 | decisão 1 e 2 da issue |
+| 2a | Cadastro do condomínio em abas | #303 | 1 (regra da aba Configuração) |
+| 2b | Histórico de rateios com um único lugar de edição | #304 | 2a |
+| 2c | Unidades presentes da ata pela lista | #305 | 2a |
+| 2d | Cidade e data de emissão em uma só tela | #306 | 2a |
+| 3 | Considerações finais com fonte única e congelamento | #307 | 2a, migration autorizada |
+| 4 | Rateio atual com fonte única | #308 | 2b, migration autorizada |
+| 5 | Fluxo guiado do exercício | #309 | 3 e 4 |
+
+Itens que aguardam o responsável em produção, sem bloquear a sequência:
+Urban Classic 2026 (usar 12,42% calculado e salvar), Atualizar previsto nas
+linhas divergentes, testar Travar rateio e o fechamento de um exercício.
+
+Épico: #302.

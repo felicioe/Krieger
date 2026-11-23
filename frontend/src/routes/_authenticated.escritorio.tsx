@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useBlocker } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState, type FormEvent } from "react";
 import { ImagePlus, Loader2, Save, X } from "lucide-react";
@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { api, mensagemErro } from "@/lib/api";
+import { temPermissao, useUsuario } from "@/lib/auth";
 import { chaves, itemQuery } from "@/lib/queries";
 import { redimensionarImagem } from "@/lib/imagem";
 import { cabecalho } from "@/lib/head";
@@ -39,23 +40,39 @@ function Escritorio() {
 
 function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
   const queryClient = useQueryClient();
+  const usuario = useUsuario();
+  const podeEditar = temPermissao(usuario, "escritorio.editar");
   const [e, setE] = useState<ConfigEscritorio>(inicial);
+  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
   const [processando, setProcessando] = useState(false);
   const arquivo = useRef<HTMLInputElement>(null);
   const set = <K extends keyof ConfigEscritorio>(k: K, v: ConfigEscritorio[K]) =>
     setE((x) => ({ ...x, [k]: v }));
 
+  const sujo = JSON.stringify(e) !== salvoJson;
+  const sujoRef = useRef(sujo);
+  sujoRef.current = sujo;
+  useBlocker({
+    shouldBlockFn: () =>
+      sujoRef.current &&
+      !window.confirm("Há alterações não salvas nos dados do escritório. Sair mesmo assim?"),
+    enableBeforeUnload: () => sujoRef.current,
+  });
+
   const salvar = useMutation({
     mutationFn: (dados: ConfigEscritorio) => api.salvar("config", dados),
     onSuccess: (salvo) => {
-      queryClient.setQueryData(chaves.item("config", "escritorio"), salvo);
+      const normalizado: ConfigEscritorio = { ...VAZIO, ...salvo, id: "escritorio" };
+      queryClient.setQueryData(chaves.item("config", "escritorio"), normalizado);
       queryClient.invalidateQueries({ queryKey: chaves.store("config") });
+      setE(normalizado);
+      setSalvoJson(JSON.stringify(normalizado));
       toast.success("Dados do escritório salvos.");
     },
   });
 
   async function escolherLogo(f: File | undefined) {
-    if (!f) return;
+    if (!f || !podeEditar) return;
     if (!f.type.startsWith("image/")) {
       toast.error("Escolha um arquivo de imagem (PNG ou JPG).");
       return;
@@ -74,6 +91,7 @@ function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
 
   function enviar(ev: FormEvent) {
     ev.preventDefault();
+    if (!podeEditar || salvar.isPending) return;
     salvar.mutate(e);
   }
 
@@ -149,6 +167,7 @@ function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
             />
             <div className="flex flex-wrap gap-2">
               <Button
+                permissao="escritorio.editar"
                 type="button"
                 variant="outline"
                 size="sm"
@@ -160,6 +179,7 @@ function FormEscritorio({ inicial }: { inicial: ConfigEscritorio }) {
               </Button>
               {e.logo && (
                 <Button
+                  permissao="escritorio.editar"
                   type="button"
                   variant="ghost"
                   size="sm"

@@ -31,7 +31,12 @@ import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { novoId } from "@/lib/id";
 import { cn, irPara } from "@/lib/utils";
 import type { ResultadoPrevisao } from "@/domain/previsao";
-import { ARREDONDAMENTO_CURTO, ARREDONDAMENTOS, MODOS_PREVISAO, rotuloVariacao } from "@/domain/previsaoCriterios";
+import {
+  ARREDONDAMENTO_CURTO,
+  ARREDONDAMENTOS,
+  MODOS_PREVISAO,
+  rotuloVariacao,
+} from "@/domain/previsaoCriterios";
 import type { AjustePrevisao, Arredondamento, Exercicio, VariacaoMetodo } from "@/domain/types";
 
 // Rótulos vêm de domain/previsaoCriterios.ts: o mesmo parâmetro precisa ter o mesmo nome aqui,
@@ -51,6 +56,7 @@ export function PainelPrevisao({
   condoId,
   onChange,
   aoTravar,
+  travando,
 }: {
   exercicio: Exercicio;
   resultado: ResultadoPrevisao;
@@ -59,6 +65,8 @@ export function PainelPrevisao({
   onChange: (parcial: Partial<Exercicio>) => void;
   /** Grava o rateio no histórico acumulativo (store `historico_rateios`). Sem isso, só aprova. */
   aoTravar?: (() => void | Promise<void>) | undefined;
+  /** Trava em andamento: desabilita o botão para evitar cliques repetidos. */
+  travando?: boolean | undefined;
 }) {
   const prev: Prev = e.prev ?? { modo: "tradicional", ajustes: [] };
   const setPrev = (p: Partial<Prev>) => onChange({ prev: { ...prev, ...p } });
@@ -280,6 +288,7 @@ export function PainelPrevisao({
           onVariacaoHistoricaChange={(v) => onChange({ variacaoHistoricaManual: v })}
           aoAprovar={() => onChange({ rateioAprovado: r.rateioSugerido })}
           aoTravar={aoTravar}
+          travando={travando}
         />
       </aside>
     </div>
@@ -395,7 +404,7 @@ function LinhaResumo({
       )}
     >
       <span
-        className={cn("min-w-0 flex-1 truncate", !forte && "text-muted-foreground")}
+        className={cn("min-w-0 flex-1 break-words", !forte && "text-muted-foreground")}
         title={rotulo}
       >
         {rotulo}
@@ -415,14 +424,13 @@ function AjusteResumo({
   negativo: boolean;
 }) {
   return (
-    <div className="flex min-w-0 items-center justify-between gap-3 py-1 text-sm">
-      <span
-        className="min-w-0 flex-1 truncate text-muted-foreground"
-        title={`(+/−) Ajustes da previsão (${descricao})`}
-      >
+    <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5 py-1 text-sm">
+      <span className="min-w-0 flex-[1_1_9rem] wrap-anywhere text-muted-foreground">
         (+/−) Ajustes da previsão <span className="font-medium text-foreground">({descricao})</span>
       </span>
-      <span className={cn("num whitespace-nowrap", negativo && "text-destructive")}>{valor}</span>
+      <span className={cn("num ml-auto whitespace-nowrap", negativo && "text-destructive")}>
+        {valor}
+      </span>
     </div>
   );
 }
@@ -445,6 +453,7 @@ function Resumo({
   onVariacaoHistoricaChange,
   aoAprovar,
   aoTravar,
+  travando,
 }: {
   r: ResultadoPrevisao;
   arredondamento: Arredondamento;
@@ -466,6 +475,7 @@ function Resumo({
   aoAprovar: () => void;
   /** Grava o rateio no histórico acumulativo. Sem isso, o botão não aparece. */
   aoTravar?: (() => void | Promise<void>) | undefined;
+  travando?: boolean | undefined;
 }) {
   const ausente = (n: number | null, motivo?: string) =>
     n === null ? <SemValor motivo={motivo} /> : formatBRL(n);
@@ -562,15 +572,19 @@ function Resumo({
                   value={rateioHistoricoManual ?? rateioHistoricoCalculado}
                   onChange={(v) => onRateioHistoricoChange(v ?? null)}
                 />
-                {rateioHistoricoManual !== null && rateioHistoricoManual !== rateioHistoricoCalculado && (
-                  <span className="text-[10px] font-medium text-warning">Editado manualmente</span>
-                )}
+                {rateioHistoricoManual !== null &&
+                  rateioHistoricoManual !== rateioHistoricoCalculado && (
+                    <span className="text-[10px] font-medium text-warning">
+                      Editado manualmente
+                    </span>
+                  )}
               </div>
             </Field>
             <Field
               rotulo="% histórico"
               dica={
-                variacaoHistoricaManual !== null && variacaoHistoricaManual !== variacaoHistoricaCalculada
+                variacaoHistoricaManual !== null &&
+                variacaoHistoricaManual !== variacaoHistoricaCalculada
                   ? `Editado manualmente. Calculado pelo sistema: ${pct(variacaoHistoricaCalculada)}. Deixe vazio para voltar ao valor calculado.`
                   : `Calculado pelo sistema a partir do histórico. Edite para sobrescrever.`
               }
@@ -581,9 +595,12 @@ function Resumo({
                   value={variacaoHistoricaManual ?? variacaoHistoricaCalculada}
                   onChange={(v) => onVariacaoHistoricaChange(v ?? null)}
                 />
-                {variacaoHistoricaManual !== null && variacaoHistoricaManual !== variacaoHistoricaCalculada && (
-                  <span className="text-[10px] font-medium text-warning">Editado manualmente</span>
-                )}
+                {variacaoHistoricaManual !== null &&
+                  variacaoHistoricaManual !== variacaoHistoricaCalculada && (
+                    <span className="text-[10px] font-medium text-warning">
+                      Editado manualmente
+                    </span>
+                  )}
               </div>
             </Field>
           </div>
@@ -601,8 +618,15 @@ function Resumo({
               Usar como rateio aprovado
             </Button>
             {aoTravar && (
-              <Button type="button" size="sm" className="w-full" onClick={() => void aoTravar()}>
-                Travar rateio no histórico
+              <Button
+                type="button"
+                size="sm"
+                className="w-full"
+                disabled={travando}
+                aria-busy={travando}
+                onClick={() => void aoTravar()}
+              >
+                {travando ? "Travando…" : "Travar rateio no histórico"}
               </Button>
             )}
           </div>

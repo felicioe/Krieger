@@ -24,7 +24,7 @@ import {
   type DecisaoConflitoPendente,
 } from "@/components/importacao/ConflitoImportacao";
 import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
-import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
+import { Exportacoes } from "@/components/app/Exportacoes";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
@@ -176,16 +176,21 @@ function FormMensal({ inicial }: { inicial: Mensal }) {
         acoes={
           <>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <BotaoDocumento
-              gerar={() =>
-                documentoMensal({
-                  mensal: m,
-                  condominio: condo ? normalizarCondominio(condo) : null,
-                  escritorio,
-                })
-              }
-              bloqueio={sujo ? "Salve o relatório antes de gerar o documento." : null}
-              rotulo="Gerar relatório"
+            <Exportacoes
+              acoes={{
+                documentos: [
+                  {
+                    rotulo: "Relatório mensal",
+                    gerar: () =>
+                      documentoMensal({
+                        mensal: m,
+                        condominio: condo ? normalizarCondominio(condo) : null,
+                        escritorio,
+                      }),
+                  },
+                ],
+              }}
+              bloqueio={sujo ? "Salve o relatório antes de exportar." : null}
             />
             <ImportarPdf
               modo="editor"

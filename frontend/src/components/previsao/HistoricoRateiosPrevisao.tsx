@@ -97,7 +97,7 @@ export function HistoricoRateiosPrevisao({
           do exercício) para a previsão partir do valor correto.
         </p>
       )}
-      <div className="grid gap-4 md:grid-cols-[10rem_10rem_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-4 md:grid-cols-[minmax(0,10rem)_minmax(0,10rem)_minmax(0,1fr)]">
         <Field rotulo={`Rateio histórico (${ano - 1})`} erro={mudou ? (erro ?? null) : null}>
           <DinheiroInput
             value={linha.rateioAprovado}
@@ -119,7 +119,7 @@ export function HistoricoRateiosPrevisao({
             disabled={!podeEditar}
           />
         </Field>
-        <div className="space-y-1 text-sm">
+        <div className="min-w-0 space-y-1 text-sm">
           <p className="flex flex-wrap items-center gap-2">
             % em uso:{" "}
             <strong className="num">

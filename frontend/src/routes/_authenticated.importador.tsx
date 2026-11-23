@@ -11,14 +11,22 @@ import {
   GitCompareArrows,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/app/PageHeader";
 import { ImportarPdf } from "@/components/importacao/ImportarPdf";
 import { AvisoImportacoesPendentes } from "@/components/importacao/AvisoImportacoesPendentes";
 import { AnexarComparativo } from "@/components/importacao/AnexarComparativo";
 import { ImportarFracao } from "@/components/importacao/ImportarFracao";
 import { ImportarApolice } from "@/components/importacao/ImportarApolice";
+import { ImportarListagemCondominios } from "@/components/importacao/ImportarListagemCondominios";
 import { listaQuery } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import type { Condominio } from "@/domain/types";
@@ -59,12 +67,13 @@ function CartaoImportacao({
 
 function Importador() {
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
+  const [listagemAberta, setListagemAberta] = useState(false);
 
   return (
     <>
       <PageHeader
         titulo="Importador"
-        descricao="Escolha o tipo de relatório do Systemar e o PDF. Você confere o que foi lido antes de gravar."
+        descricao="Escolha o tipo de documento em PDF (relatório do Systemar ou apólice de seguro). Você confere o que foi lido antes de gravar."
         acoes={
           <>
             <Button variant="ghost" size="icon" asChild title="Ajuda sobre esta tela">
@@ -163,10 +172,8 @@ function Importador() {
           icone={Building2}
           titulo="Listagem de Condomínios"
           acao={
-            <Button variant="outline" asChild>
-              <Link to="/importador-condominios">
-                <FileUp /> Importar listagem de condomínios
-              </Link>
+            <Button variant="outline" onClick={() => setListagemAberta(true)}>
+              <FileUp /> Importar listagem de condomínios
             </Button>
           }
         >
@@ -177,6 +184,18 @@ function Importador() {
           </p>
         </CartaoImportacao>
       </div>
+      <Dialog open={listagemAberta} onOpenChange={setListagemAberta}>
+        <DialogContent className="sm:max-w-5xl">
+          <DialogHeader>
+            <DialogTitle>Importar listagem de condomínios</DialogTitle>
+            <DialogDescription>
+              Selecione o PDF de listagem de condomínios do Systemar para conferir as alterações
+              antes de gravar.
+            </DialogDescription>
+          </DialogHeader>
+          <ImportarListagemCondominios condominios={condominios} />
+        </DialogContent>
+      </Dialog>
       <p className="mt-4 text-sm text-muted-foreground">
         Se o condomínio do PDF ainda não estiver cadastrado, o relatório espera em{" "}
         <Link to="/importacoes" className="font-medium text-primary underline">

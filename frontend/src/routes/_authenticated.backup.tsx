@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
 import { DataTable, type Coluna } from "@/components/app/DataTable";
+import { RolagemTabela } from "@/components/ui/table";
 import { api, mensagemErro } from "@/lib/api";
 import type { CargaPrevistoLinha, CargaPrevistoResultado } from "@/lib/apiTypes";
 import { useUsuario } from "@/lib/auth";
@@ -27,7 +28,7 @@ import { cabecalho } from "@/lib/head";
 import { nomeArquivoBackup, resumoBackup, ROTULO_STORE } from "@/domain/backup";
 import { diasDesdeBackup } from "@/domain/painel";
 import type { BackupRegistro, Backup as DadosBackup, ConfigBackup } from "@/domain/types";
-import { haDias } from "@/components/app/textos";
+import { contagem, haDias } from "@/components/app/textos";
 
 export const Route = createFileRoute("/_authenticated/backup")({
   head: () =>
@@ -88,7 +89,7 @@ function CargaPrevistos() {
       setResultado(r);
       toast.success(
         modo === "aplicar"
-          ? `${r.gravados} previsto(s) aprovado(s) gravado(s).`
+          ? `${contagem(r.gravados, "previsto aprovado gravado", "previstos aprovados gravados")}.`
           : "Simulação concluída. Nada foi gravado.",
       );
     } catch (e) {
@@ -117,7 +118,7 @@ function CargaPrevistos() {
         </Button>
       </div>
       {resultado && (
-        <div className="mt-4 overflow-x-auto rounded-md border">
+        <RolagemTabela className="mt-4 rounded-md border">
           <table className="w-full border-collapse text-sm">
             <thead className="bg-muted/60">
               <tr className="border-b">
@@ -172,7 +173,7 @@ function CargaPrevistos() {
               ))}
             </tbody>
           </table>
-        </div>
+        </RolagemTabela>
       )}
       <ConfirmDialog
         aberto={!!atualizando}
@@ -190,7 +191,7 @@ function CargaPrevistos() {
         aberto={confirmando}
         aoMudar={setConfirmando}
         titulo="Aplicar a carga inicial?"
-        descricao={`Serão gravados ${prontos} previsto(s) aprovado(s). Previstos existentes e prestações de contas não são alterados. Confira a simulação antes de continuar.`}
+        descricao={`Serão gravados ${contagem(prontos, "previsto aprovado", "previstos aprovados")}. Previstos existentes e prestações de contas não são alterados. Confira a simulação antes de continuar.`}
         rotuloConfirmar="Aplicar carga"
         aoConfirmar={() => executar("aplicar")}
       />
@@ -388,6 +389,7 @@ function PaginaBackup() {
             </strong>
           </p>
           <Button
+            permissao="backup.editar"
             className="mt-4 h-auto min-h-9 max-w-full whitespace-normal"
             onClick={gerar}
             disabled={gerando}

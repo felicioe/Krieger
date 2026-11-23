@@ -87,6 +87,54 @@ export function rateioBaseDoAno(
 }
 
 /**
+ * Rateio aprovado do ano anterior no histórico, quando ele não bate com o rateio atual do
+ * exercício (#308). O histórico é a fonte do rateio; a tela avisa a divergência e oferece usar o
+ * valor do histórico, sem trocar nada sozinha. `null` quando não há histórico ou os dois batem.
+ */
+export function rateioBaseDivergente(
+  e: Pick<Exercicio, "condoId" | "ano" | "rateioAtual">,
+  linhas: HistoricoRateio[],
+): number | null {
+  const base = rateioBaseDoAno(linhas, e.condoId, Number(e.ano));
+  if (base === null || base === undefined || !Number.isFinite(base)) return null;
+  const atual = e.rateioAtual;
+  if (atual !== null && atual !== undefined && Math.abs(atual - base) < 0.005) return null;
+  return base;
+}
+
+/**
+ * Rateio aprovado do exercício com o histórico como fonte (#327). Com o rateio do ano já travado
+ * (há linha do histórico para o ano do exercício), vale o aprovado do histórico; sem linha,
+ * vale o do exercício. Exercício fechado não muda.
+ */
+export function rateioAprovadoDoHistorico(
+  e: Pick<Exercicio, "condoId" | "ano"> & { fechado?: boolean },
+  linhas: HistoricoRateio[],
+): number | null {
+  if (e.fechado) return null;
+  const valor = historicoDoAno(linhas, e.condoId, Number(e.ano))?.rateioAprovado;
+  return typeof valor === "number" && Number.isFinite(valor) ? valor : null;
+}
+
+export function aplicarRateioAprovadoDoHistorico<
+  T extends Pick<Exercicio, "condoId" | "ano" | "rateioAprovado"> & { fechado?: boolean },
+>(e: T, linhas: HistoricoRateio[]): T {
+  const valor = rateioAprovadoDoHistorico(e, linhas);
+  return valor === null || e.rateioAprovado === valor ? e : { ...e, rateioAprovado: valor };
+}
+
+/** Último rateio aprovado no histórico do condomínio, com o ano (#308). */
+export function ultimoRateioAprovado(
+  linhas: HistoricoRateio[],
+  condoId: string,
+): { ano: number; valor: number } | null {
+  const ultima = linhas
+    .filter((l) => l.condoId === condoId && Number.isFinite(l.rateioAprovado))
+    .sort((a, b) => Number(b.ano) - Number(a.ano))[0];
+  return ultima ? { ano: Number(ultima.ano), valor: ultima.rateioAprovado } : null;
+}
+
+/**
  * Variação % do exercício `ano` sobre o ano anterior, usando o histórico travado.
  * Prefere o valor travado do próprio ano; se ainda não travou, usa o sugerido.
  */
@@ -122,15 +170,21 @@ export function percentualAprovadoDoHistorico(
 }
 
 /**
- * Mescla o histórico com o exercício: devolve o exercício com `rateioAtual` preenchido pelo
- * aprovado do ano anterior quando ele estiver vazio. Não sobrescreve valor já informado.
+ * Rateio atual do exercício com o histórico como fonte (#308, decisão de 22/11/2026):
+ * - havendo o aprovado do ano anterior no histórico, ele vale, mesmo que outro valor tenha sido
+ *   digitado no exercício;
+ * - sem histórico, vale o digitado no exercício;
+ * - exercício fechado não muda.
+ * No histórico, a linha digitada à mão já prevalece sobre a importada do PDF (a importação só
+ * grava quando não existe linha para o ano).
  */
 export function aplicarRateioBase<
-  T extends Pick<Exercicio, "condoId" | "ano" | "rateioAtual">,
+  T extends Pick<Exercicio, "condoId" | "ano" | "rateioAtual"> & { fechado?: boolean },
 >(e: T, linhas: HistoricoRateio[]): T {
-  if (e.rateioAtual !== null && e.rateioAtual !== undefined) return e;
+  if (e.fechado) return e;
   const base = rateioBaseDoAno(linhas, e.condoId, Number(e.ano));
-  return base === null ? e : { ...e, rateioAtual: base };
+  if (base === null || base === undefined || !Number.isFinite(base)) return e;
+  return e.rateioAtual === base ? e : { ...e, rateioAtual: base };
 }
 
 /**
@@ -563,3 +617,38 @@ export function planejarAnoAnterior(
   return planejarHistorico(iniciais, atuais, ctx);
 }
 
+
+/** Etapa em que o travamento parou. Cada uma grava uma coisa diferente. */
+export type EtapaTravamento = "exercicio" | "historico" | "propagacao";
+
+export type ResultadoTravamento =
+  | { ok: true; proximoId: string | null }
+  | { ok: false; etapa: EtapaTravamento; erro: unknown; proximoId: string | null };
+
+/**
+ * Trava o rateio em três gravações, nesta ordem: exercício (rateio aprovado), histórico
+ * (linha do ano) e propagação (base do exercício seguinte). Para na primeira que falha e diz em
+ * qual parou, para a tela não afirmar que algo foi salvo quando não foi. Tentar de novo é seguro:
+ * o plano reaproveita o id da linha existente e só propaga quando o seguinte ainda não tem base.
+ */
+export async function executarTravamentoRateio(entrada: {
+  gravarExercicio: () => Promise<Exercicio>;
+  planejar: (exercicioSalvo: Exercicio) => PlanoTravamento;
+  gravarHistorico: (linha: PlanoTravamento["linha"]) => Promise<unknown>;
+  gravarProximo: (id: string, rateioAtual: number) => Promise<unknown>;
+}): Promise<ResultadoTravamento> {
+  let etapa: EtapaTravamento = "exercicio";
+  let proximoId: string | null = null;
+  try {
+    const salvo = await entrada.gravarExercicio();
+    etapa = "historico";
+    const plano = entrada.planejar(salvo);
+    await entrada.gravarHistorico(plano.linha);
+    etapa = "propagacao";
+    proximoId = plano.proximo?.id ?? null;
+    if (plano.proximo) await entrada.gravarProximo(plano.proximo.id, plano.proximo.rateioAtual);
+    return { ok: true, proximoId };
+  } catch (erro) {
+    return { ok: false, etapa, erro, proximoId };
+  }
+}

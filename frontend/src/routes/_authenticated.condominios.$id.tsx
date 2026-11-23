@@ -1,7 +1,7 @@
 import { Link } from "@/components/app/LinkPermitido";
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { useRef, useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   CalendarPlus,
@@ -24,6 +24,7 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { SecaoRecolhivel } from "@/components/app/SecaoRecolhivel";
 import { contagem } from "@/components/app/textos";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AjudaDePara, AjudaExpressoes } from "@/components/condominios/AjudaCadastro";
 import { Field } from "@/components/app/Field";
 import { CampoRubrica } from "@/components/app/CampoRubrica";
@@ -49,6 +50,7 @@ import {
   linhaRateioAlterada,
   linhasRateioDoCondominio,
   planejarHistorico,
+  ultimoRateioAprovado,
   validarLinhasRateio,
   type LinhaRateioForm,
 } from "@/domain/historicoRateio";
@@ -70,7 +72,12 @@ export const Route = createFileRoute("/_authenticated/condominios/$id")({
   head: () => cabecalho("Condomínio", "Cadastro completo do condomínio."),
   loader: async ({ params, context: { queryClient } }) => {
     if (params.id === "novo") return null;
-    const c = await queryClient.ensureQueryData(itemQuery<Condominio>("condominios", params.id));
+    const [c] = await Promise.all([
+      queryClient.ensureQueryData(itemQuery<Condominio>("condominios", params.id)),
+      queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQueryTolerante<PrevisaoAprovada>("previsoes_aprovadas")),
+    ]);
     if (!c) throw notFound();
     return null;
   },
@@ -114,6 +121,7 @@ function CondominioExistente({ id }: { id: string }) {
       inicial={normalizarCondominio(data ?? { id })}
       historicoIndices={historicoIndices}
       linhasRateioIniciais={linhasRateioDoCondominio(historicoRateios, id)}
+      ultimoAprovado={ultimoRateioAprovado(historicoRateios, id)}
       previsoes={previsoes}
       exerciciosFechados={exercicios.filter((e) => e.fechado)}
     />
@@ -156,6 +164,20 @@ const TITULOS: Record<Secao, string> = {
   depara: "De-para de rótulos",
 };
 const idSecao = (k: Secao) => `secao-${k}`;
+type AbaCondominio = "cadastro" | "anoaano" | "configuracao";
+/** Em qual aba cada seção aparece (issue #303). */
+const ABA_DA_SECAO: Record<Secao, AbaCondominio> = {
+  unidades: "cadastro",
+  administracao: "cadastro",
+  seguro: "cadastro",
+  manutencoes: "cadastro",
+  documentos: "cadastro",
+  indices: "anoaano",
+  rateios: "anoaano",
+  automacoes: "anoaano",
+  regras: "configuracao",
+  depara: "configuracao",
+};
 
 /** Resumo de uma linha para cada seção recolhível (só contagem do que está preenchido). */
 function resumos(c: Condominio): Omit<Record<Secao, string>, "rateios"> {
@@ -209,14 +231,18 @@ function resumos(c: Condominio): Omit<Record<Secao, string>, "rateios"> {
   };
 }
 
-function FormCondominio({
+/** Exportado também para os testes de tela (#303, #304). */
+export function FormCondominio({
   inicial,
   historicoIndices = [],
   linhasRateioIniciais = [],
   previsoes = [],
   exerciciosFechados = [],
+  ultimoAprovado = null,
 }: {
   inicial: Condominio;
+  /** Último rateio aprovado no histórico (#308): quando existe, é ele que vale e o campo é só leitura. */
+  ultimoAprovado?: { ano: number; valor: number } | null;
   linhasRateioIniciais?: LinhaRateioForm[];
   previsoes?: PrevisaoAprovada[];
   exerciciosFechados?: { condoId: string; ano: number | string }[];
@@ -231,21 +257,40 @@ function FormCondominio({
   const usuario = useUsuario();
   const novo = !inicial.id;
   const [c, setC] = useState<Condominio>(inicial);
+  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
+  const podeEditar = temPermissao(usuario, "condominios.editar");
+  const sujo = podeEditar && JSON.stringify(c) !== salvoJson;
+  const sujoRef = useRef(sujo);
+  sujoRef.current = sujo;
+  const liberado = useRef(false);
+  useBlocker({
+    shouldBlockFn: () =>
+      !liberado.current &&
+      sujoRef.current &&
+      !window.confirm("Há alterações não salvas neste condomínio. Sair mesmo assim?"),
+    enableBeforeUnload: () => !liberado.current && sujoRef.current,
+  });
   // Histórico de rateios (issue #297): gravado junto do cadastro, só quando há permissão de previsão.
   const podeVerRateios = temPermissao(usuario, "previsao_orcamentaria.visualizar");
-  const podeEditarRateios = temPermissao(usuario, "previsao_orcamentaria.editar");
   const [rateios, setRateios] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
   const [rateiosGravados, setRateiosGravados] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
   const [tentouRateios, setTentouRateios] = useState(false);
-  const validacaoRateios = validarLinhasRateio(rateios, c.id);
+  const validacaoRateios = useMemo(
+    () => validarLinhasRateio(rateios, c.id),
+    [rateios, c.id],
+  );
   // Só as linhas novas ou alteradas bloqueiam o salvamento; linhas antigas não são revalidadas.
-  const errosRateios = validacaoRateios.porLinha.map((m, i) => {
-    const l = rateios[i]!;
-    const antiga = l.idExistente
-      ? rateiosGravados.find((g) => g.idExistente === l.idExistente)
-      : undefined;
-    return antiga && !linhaRateioAlterada(antiga, l) ? null : m;
-  });
+  const errosRateios = useMemo(
+    () =>
+      validacaoRateios.porLinha.map((m, i) => {
+        const l = rateios[i]!;
+        const antiga = l.idExistente
+          ? rateiosGravados.find((g) => g.idExistente === l.idExistente)
+          : undefined;
+        return antiga && !linhaRateioAlterada(antiga, l) ? null : m;
+      }),
+    [validacaoRateios, rateios, rateiosGravados],
+  );
   const [apoliceSelecionada, setApoliceSelecionada] = useState<string>(
     inicial.historicoApolices?.at(-1)?.id ?? "",
   );
@@ -253,8 +298,14 @@ function FormCondominio({
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const refNome = useRef<HTMLInputElement>(null);
   const [abertas, setAbertas] = useState(() => todas(false));
+  // Abas do cadastro (issue #303). Configuração só aparece para ADM e SuperADM.
+  const [aba, setAba] = useState<AbaCondominio>("cadastro");
+  const podeConfigurar = temPermissao(usuario, "condominios.configurar");
   const abrir = (k: Secao) => (v: boolean) => setAbertas((a) => ({ ...a, [k]: v }));
-  const secoesVisiveis = SECOES.filter((k) => k !== "rateios" || podeVerRateios);
+  const secoesVisiveis = SECOES.filter(
+    (k) =>
+      (k !== "rateios" || podeVerRateios) && (ABA_DA_SECAO[k] !== "configuracao" || podeConfigurar),
+  );
   const todasAbertas = secoesVisiveis.every((k) => abertas[k]);
   const res = {
     ...resumos(c),
@@ -263,6 +314,7 @@ function FormCondominio({
       : "Nenhum rateio registrado",
   };
   const irPara = (k: Secao) => {
+    setAba(ABA_DA_SECAO[k]);
     setAbertas((a) => ({ ...a, [k]: true }));
     requestAnimationFrame(() =>
       document.getElementById(idSecao(k))?.scrollIntoView({ behavior: "smooth", block: "start" }),
@@ -308,46 +360,22 @@ function FormCondominio({
         ...dados,
         indices: validarIndicesCondominio(dados.indices),
       });
-      // Histórico de rateios: exclusões primeiro e só o que mudou; o cadastro já foi gravado, então
-      // uma falha aqui é avisada sem desfazer o cadastro.
-      let erroRateios: string | null = null;
-      let frescas: LinhaRateioForm[] | null = null;
-      if (!novo && podeEditarRateios) {
-        const plano = planejarHistorico(rateiosGravados, rateios, {
-          condoId: salvo.id,
-          condoNome: salvo.nome,
-          agora: new Date().toISOString(),
-          novoId,
-        });
-        try {
-          for (const id of plano.excluir) await api.excluir("historico_rateios", id);
-          for (const linha of plano.salvar) await api.salvar("historico_rateios", linha);
-        } catch (e) {
-          erroRateios = e instanceof Error ? e.message : "erro desconhecido";
-        }
-        if (plano.excluir.length > 0 || plano.salvar.length > 0) {
-          const lista = await api.listar<HistoricoRateio>("historico_rateios");
-          frescas = linhasRateioDoCondominio(lista, salvo.id);
-        }
-      }
-      return { salvo, erroRateios, frescas };
+      // Histórico de rateios não é gravado pelo cadastro (issue #304): ele é editado só na
+      // Previsão orçamentária. Aqui o cadastro é salvo e a seção de rateios apenas consulta.
+      return { salvo };
     },
-    onSuccess: ({ salvo, erroRateios, frescas }) => {
+    onSuccess: ({ salvo }) => {
       queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
       queryClient.setQueryData(chaves.item("condominios", salvo.id), salvo);
-      if (frescas) {
-        queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
-        setRateios(frescas);
-        setRateiosGravados(frescas);
-        setTentouRateios(false);
-      }
-      if (erroRateios) {
-        toast.error(`Condomínio salvo, mas o histórico de rateios não foi gravado: ${erroRateios}`);
+      toast.success("Condomínio salvo.");
+      const normalizado = normalizarCondominio(salvo);
+      setSalvoJson(JSON.stringify(normalizado));
+      if (novo) {
+        liberado.current = true;
+        navigate({ to: "/condominios/$id", params: { id: salvo.id }, replace: true });
       } else {
-        toast.success("Condomínio salvo.");
+        setC(normalizado);
       }
-      if (novo) navigate({ to: "/condominios/$id", params: { id: salvo.id }, replace: true });
-      else setC(normalizarCondominio(salvo));
     },
   });
 
@@ -355,6 +383,7 @@ function FormCondominio({
     mutationFn: () => api.excluir("condominios", c.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
+      liberado.current = true;
       toast.success("Condomínio excluído.");
       navigate({ to: "/condominios" });
     },
@@ -362,6 +391,7 @@ function FormCondominio({
 
   function enviar(e: FormEvent) {
     e.preventDefault();
+    if (!podeEditar || salvar.isPending) return;
     const r = prepararCondominio(c);
     if (!r.ok) {
       setErroNome(r.erro);
@@ -370,12 +400,6 @@ function FormCondominio({
       return;
     }
     setErroNome(null);
-    if (!novo && podeEditarRateios && errosRateios.some((m) => m !== null)) {
-      setTentouRateios(true);
-      setAbertas((a) => ({ ...a, rateios: true }));
-      toast.error("Corrija o histórico de rateios antes de salvar.");
-      return;
-    }
     setC(r.valor);
     // Só grava atualizadoEm/atualizadoPor no que é enviado pro servidor — não no estado local
     // imediato: se o salvamento falhar, "Atualizado em" não deve passar a impressão de que
@@ -476,797 +500,857 @@ function FormCondominio({
       )}
 
       <form id="form-condominio" onSubmit={enviar} className="space-y-6" noValidate>
-        <SectionCard
-          titulo="Dados gerais"
-          descricao="O essencial para começar. O nome é obrigatório; o resto pode ser completado depois."
-        >
-          <div className="grid gap-4 sm:grid-cols-6">
-            <Field rotulo="Código" className="sm:col-span-1">
-              <Input value={c.codigo} onChange={(e) => set("codigo", e.target.value)} />
-            </Field>
-            <Field rotulo="Nome" obrigatorio erro={erroNome} className="sm:col-span-5">
-              <Input
-                value={c.nome}
-                onChange={(e) => {
-                  set("nome", e.target.value);
-                  if (erroNome) setErroNome(null);
-                }}
-                ref={refNome}
-              />
-            </Field>
-            <Field
-              rotulo="Nome no relatório"
-              dica="Se ficar vazio, será usado o nome."
-              className="sm:col-span-4"
-            >
-              <Input
-                value={c.nomeRelatorio}
-                onChange={(e) => set("nomeRelatorio", e.target.value)}
-                placeholder={c.nome}
-              />
-            </Field>
-            <Field rotulo="CNPJ" className="sm:col-span-2">
-              <Input
-                value={c.cnpj}
-                onChange={(e) => set("cnpj", mascaraCNPJ(e.target.value))}
-                placeholder="00.000.000/0000-00"
-                inputMode="numeric"
-                className="num"
-              />
-            </Field>
-            <Field rotulo="Unidades" className="sm:col-span-2">
-              <InteiroInput value={c.unidades} onChange={(v) => set("unidades", v)} />
-            </Field>
-            <Field rotulo="Rateio mensal atual" className="sm:col-span-2">
-              <DinheiroInput value={c.rateioAtual} onChange={(v) => set("rateioAtual", v)} />
-            </Field>
-            <Field
-              rotulo="Área total (m²)"
-              dica="Informativo, lido da Listagem de Condomínios."
-              className="sm:col-span-2"
-            >
-              <NumeroInput value={c.areaTotalM2 ?? null} onChange={(v) => set("areaTotalM2", v)} />
-            </Field>
-            <Field
-              rotulo="Endereço (edital)"
-              dica="O botão preenche a partir do CNPJ, usando os dados públicos da Receita Federal — revise antes de salvar."
-              className="sm:col-span-6"
-            >
-              <div className="flex gap-2">
-                <Input
-                  value={c.enderecoEdital}
-                  onChange={(e) => set("enderecoEdital", e.target.value)}
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={atualizarPelaReceita}
-                  disabled={buscandoReceita}
-                >
-                  {buscandoReceita ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-                  Atualizar pela Receita
-                </Button>
-              </div>
-            </Field>
-            <Field
-              rotulo="Pasta de documentos"
-              dica="Caminho da pasta deste condomínio no servidor de arquivos da empresa (NAS), usado pelo agente de indexação da Consulta de Documentos para localizar convenção/regimento/atas. Deixe em branco para não indexar este condomínio."
-              className="sm:col-span-6"
-            >
-              <Input
-                value={c.pastaDocumentos}
-                onChange={(e) => set("pastaDocumentos", e.target.value)}
-                placeholder="\\servidor\condominios\Nome do Condomínio"
-              />
-            </Field>
-            <Field
-              rotulo="Termo da administradora"
-              dica="Como a administradora é citada nos documentos."
-              className="sm:col-span-3"
-            >
-              <Input
-                value={c.administradoraTermo}
-                onChange={(e) => set("administradoraTermo", e.target.value)}
-              />
-            </Field>
-            <Field rotulo="Prazo de convocação (dias)" className="sm:col-span-1">
-              <InteiroInput
-                value={c.prazoConvocacao}
-                onChange={(v) => set("prazoConvocacao", v ?? 0)}
-              />
-            </Field>
-            <Field rotulo="Quórum" className="sm:col-span-2">
-              <Input value={c.quorum} onChange={(e) => set("quorum", e.target.value)} />
-            </Field>
-          </div>
-        </SectionCard>
-
-        <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-foreground">Demais informações</h2>
-            <p className="text-xs text-muted-foreground">
-              Abra cada parte quando precisar. Tudo o que estiver preenchido é salvo junto, aberto
-              ou recolhido.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setAbertas(todas(!todasAbertas))}
+        <Tabs value={aba} onValueChange={(v) => setAba(v as AbaCondominio)} className="space-y-6">
+          <TabsList className="h-auto flex-wrap justify-start">
+            <TabsTrigger value="cadastro">Cadastro</TabsTrigger>
+            <TabsTrigger value="anoaano">Ano a ano</TabsTrigger>
+            {podeConfigurar && <TabsTrigger value="configuracao">Configuração</TabsTrigger>}
+          </TabsList>
+          <TabsContent
+            value="cadastro"
+            forceMount
+            hidden={aba !== "cadastro"}
+            className="space-y-6 data-[state=inactive]:hidden"
           >
-            {todasAbertas ? <ChevronsDownUp /> : <ChevronsUpDown />}
-            {todasAbertas ? "Recolher todas" : "Abrir todas"}
-          </Button>
-        </div>
-
-        <nav aria-label="Ir direto para uma seção" className="flex flex-wrap gap-1.5">
-          {secoesVisiveis.map((k) => (
-            <Button
-              key={k}
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-7 rounded-full px-3 text-xs"
-              onClick={() => irPara(k)}
+            <SectionCard
+              titulo="Dados gerais"
+              descricao="O essencial para começar. O nome é obrigatório; o resto pode ser completado depois."
             >
-              {TITULOS[k]}
-            </Button>
-          ))}
-        </nav>
-
-        <SecaoRecolhivel
-          id={idSecao("unidades")}
-          titulo="Unidades e frações"
-          descricao="Relação importada do relatório de frações. Nomes de moradores não são armazenados."
-          resumo={res.unidades}
-          aberta={abertas.unidades}
-          aoMudar={abrir("unidades")}
-        >
-          <RepeatableList
-            itens={c.fracaoUnidades ?? []}
-            onChange={(v) => set("fracaoUnidades", v as UnidadeCondominio[])}
-            novo={() => ({
-              unidade: "",
-              fracaoUnidade: 0,
-              fracaoBox: 0,
-              fracaoTotal: 0,
-              fracaoPrevista: 0,
-              tipo: "unidade" as const,
-            })}
-            colunas="grid-cols-[6rem_8rem_8rem_8rem_8rem_7rem]"
-            cabecalhos={[
-              "Unidade",
-              "Fração unidade",
-              "Fração box",
-              "Fração total",
-              "Fração prevista",
-              "Tipo",
-            ]}
-            rotuloAdicionar="Adicionar unidade"
-            vazio="Nenhuma unidade ou fração cadastrada."
-            render={(u, up) => (
-              <>
-                <Input
-                  aria-label="Unidade"
-                  value={u.unidade}
-                  onChange={(e) => up({ unidade: e.target.value })}
-                />
-                <NumeroInput
-                  aria-label="Fração da unidade"
-                  value={u.fracaoUnidade}
-                  casas={6}
-                  placeholder="0,000000"
-                  onChange={(v) => up({ fracaoUnidade: v ?? 0 })}
-                />
-                <NumeroInput
-                  aria-label="Fração do box"
-                  value={u.fracaoBox}
-                  casas={6}
-                  placeholder="0,000000"
-                  onChange={(v) => up({ fracaoBox: v ?? 0 })}
-                />
-                <NumeroInput
-                  aria-label="Fração total"
-                  value={u.fracaoTotal}
-                  casas={6}
-                  placeholder="0,000000"
-                  onChange={(v) => up({ fracaoTotal: v ?? 0 })}
-                />
-                <NumeroInput
-                  aria-label="Fração prevista"
-                  value={u.fracaoPrevista}
-                  casas={6}
-                  placeholder="0,000000"
-                  onChange={(v) => up({ fracaoPrevista: v ?? 0 })}
-                />
-                <Selecao
-                  aria-label="Tipo"
-                  value={u.tipo ?? "unidade"}
-                  opcoes={[
-                    { valor: "unidade", rotulo: "Unidade" },
-                    { valor: "deposito", rotulo: "Depósito" },
-                    { valor: "garagem", rotulo: "Garagem" },
-                  ]}
-                  onChange={(v) => up({ tipo: v })}
-                />
-              </>
-            )}
-          />
-          <p className="mt-3 text-xs text-muted-foreground">
-            Fração prevista cadastrada:{" "}
-            {(c.fracaoUnidades ?? [])
-              .reduce((s, u) => s + (Number(u.fracaoPrevista) || 0), 0)
-              .toFixed(6)}
-            . O uso dessa fração no rateio será tratado em etapa própria.
-          </p>
-        </SecaoRecolhivel>
-
-        <SecaoRecolhivel
-          id={idSecao("administracao")}
-          titulo="Administração"
-          descricao="Síndico, subsíndico, conselheiros e respectivos mandatos."
-          resumo={res.administracao}
-          aberta={abertas.administracao}
-          aoMudar={abrir("administracao")}
-        >
-          <RepeatableList
-            itens={c.administracao}
-            onChange={(v) => set("administracao", v)}
-            novo={() => ({
-              cargo: "",
-              nome: "",
-              mandatoFim: "",
-              identificacao: "",
-              telefone: "",
-              noRelatorio: true,
-            })}
-            colunas="grid-cols-1 @2xl:grid-cols-[8rem_7rem_minmax(0,1fr)_10rem_8rem_7rem]"
-            cabecalhos={[
-              "Cargo",
-              "Identificação",
-              "Nome",
-              "Telefone",
-              "Fim do mandato",
-              "No relatório",
-            ]}
-            rotuloAdicionar="Adicionar membro"
-            vazio="Nenhum membro da administração informado."
-            render={(m, up) => (
-              <>
-                <Input
-                  aria-label="Cargo"
-                  placeholder="Cargo"
-                  value={m.cargo}
-                  onChange={(e) => up({ cargo: e.target.value })}
-                />
-                <Input
-                  aria-label="Identificação"
-                  placeholder="Unidade, sala, box..."
-                  value={m.identificacao ?? ""}
-                  onChange={(e) => up({ identificacao: e.target.value })}
-                />
-                <Input
-                  aria-label="Nome"
-                  placeholder="Nome"
-                  value={m.nome}
-                  onChange={(e) => up({ nome: e.target.value })}
-                />
-                <Input
-                  aria-label="Telefone"
-                  placeholder="Telefone"
-                  value={m.telefone ?? ""}
-                  onChange={(e) => up({ telefone: e.target.value })}
-                />
-                <MesAnoInput
-                  aria-label="Fim do mandato"
-                  value={m.mandatoFim}
-                  onChange={(v) => up({ mandatoFim: v })}
-                />
-                <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                  <Switch
-                    checked={m.noRelatorio !== false}
-                    onCheckedChange={(v) => up({ noRelatorio: v })}
-                    aria-label="Incluir no relatório"
+              <div className="grid gap-4 sm:grid-cols-6">
+                <Field rotulo="Código" className="sm:col-span-1">
+                  <Input value={c.codigo} onChange={(e) => set("codigo", e.target.value)} />
+                </Field>
+                <Field rotulo="Nome" obrigatorio erro={erroNome} className="sm:col-span-5">
+                  <Input
+                    value={c.nome}
+                    onChange={(e) => {
+                      set("nome", e.target.value);
+                      if (erroNome) setErroNome(null);
+                    }}
+                    ref={refNome}
                   />
-                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
-                </label>
-              </>
-            )}
-          />
-          {historicoIndices.length > 0 && (
-            <div className="mt-5 space-y-3 rounded-md border border-dashed p-3">
-              <div>
-                <h4 className="font-medium">Histórico por prestação de contas</h4>
+                </Field>
+                <Field
+                  rotulo="Nome no relatório"
+                  dica="Se ficar vazio, será usado o nome."
+                  className="sm:col-span-4"
+                >
+                  <Input
+                    value={c.nomeRelatorio}
+                    onChange={(e) => set("nomeRelatorio", e.target.value)}
+                    placeholder={c.nome}
+                  />
+                </Field>
+                <Field rotulo="CNPJ" className="sm:col-span-2">
+                  <Input
+                    value={c.cnpj}
+                    onChange={(e) => set("cnpj", mascaraCNPJ(e.target.value))}
+                    placeholder="00.000.000/0000-00"
+                    inputMode="numeric"
+                    className="num"
+                  />
+                </Field>
+                <Field rotulo="Unidades" className="sm:col-span-2">
+                  <InteiroInput value={c.unidades} onChange={(v) => set("unidades", v)} />
+                </Field>
+                {ultimoAprovado ? (
+                  <Field
+                    rotulo="Rateio mensal atual"
+                    className="sm:col-span-2"
+                    dica={`Aprovado para ${ultimoAprovado.ano}, do histórico de rateios. Para alterar, use a Previsão orçamentária.`}
+                  >
+                    <DinheiroInput value={ultimoAprovado.valor} onChange={() => {}} disabled />
+                  </Field>
+                ) : (
+                  <Field rotulo="Rateio mensal atual" className="sm:col-span-2">
+                    <DinheiroInput value={c.rateioAtual} onChange={(v) => set("rateioAtual", v)} />
+                  </Field>
+                )}
+                <Field
+                  rotulo="Área total (m²)"
+                  dica="Informativo, lido da Listagem de Condomínios."
+                  className="sm:col-span-2"
+                >
+                  <NumeroInput
+                    value={c.areaTotalM2 ?? null}
+                    onChange={(v) => set("areaTotalM2", v)}
+                  />
+                </Field>
+                <div className="flex flex-wrap items-end gap-2 sm:col-span-6">
+                  <Field
+                    rotulo="Endereço (edital)"
+                    dica="O botão preenche a partir do CNPJ, usando os dados públicos da Receita Federal — revise antes de salvar."
+                    className="min-w-0 flex-1"
+                  >
+                    <Input
+                      value={c.enderecoEdital}
+                      onChange={(e) => set("enderecoEdital", e.target.value)}
+                    />
+                  </Field>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={atualizarPelaReceita}
+                    disabled={buscandoReceita}
+                  >
+                    {buscandoReceita ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                    Atualizar pela Receita
+                  </Button>
+                </div>
+                <Field
+                  rotulo="Pasta de documentos"
+                  dica="Caminho da pasta deste condomínio na rede do escritório, usado para localizar convenção, regimento e atas na Consulta Inteligente. Deixe em branco se não utilizar pasta em rede."
+                  className="sm:col-span-6"
+                >
+                  <Input
+                    value={c.pastaDocumentos}
+                    onChange={(e) => set("pastaDocumentos", e.target.value)}
+                    placeholder="\\servidor\condominios\Nome do Condomínio"
+                  />
+                </Field>
+                <Field
+                  rotulo="Termo da administradora"
+                  dica="Como a administradora é citada nos documentos."
+                  className="sm:col-span-3"
+                >
+                  <Input
+                    value={c.administradoraTermo}
+                    onChange={(e) => set("administradoraTermo", e.target.value)}
+                  />
+                </Field>
+                <Field rotulo="Prazo de convocação (dias)" className="sm:col-span-1">
+                  <InteiroInput
+                    value={c.prazoConvocacao}
+                    onChange={(v) => set("prazoConvocacao", v ?? 0)}
+                  />
+                </Field>
+                <Field rotulo="Quórum" className="sm:col-span-2">
+                  <Input value={c.quorum} onChange={(e) => set("quorum", e.target.value)} />
+                </Field>
+              </div>
+            </SectionCard>
+
+            <div className="flex flex-wrap items-end justify-between gap-3 pt-2">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold text-foreground">Demais informações</h2>
                 <p className="text-xs text-muted-foreground">
-                  Índices preservados nas prestações importadas ou cadastradas.
+                  Abra cada parte quando precisar. Tudo o que estiver preenchido é salvo junto,
+                  aberto ou recolhido.
                 </p>
               </div>
-              {historicoIndices.map((h) => (
-                <div
-                  key={`${h.ano}-${h.periodo?.ini ?? ""}`}
-                  className="rounded-md border bg-muted/20 p-3 text-sm"
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setAbertas(todas(!todasAbertas))}
+              >
+                {todasAbertas ? <ChevronsDownUp /> : <ChevronsUpDown />}
+                {todasAbertas ? "Recolher todas" : "Abrir todas"}
+              </Button>
+            </div>
+
+            <nav aria-label="Ir direto para uma seção" className="flex flex-wrap gap-1.5">
+              {secoesVisiveis.map((k) => (
+                <Button
+                  key={k}
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 rounded-full px-3 text-xs"
+                  onClick={() => irPara(k)}
                 >
-                  <p className="font-medium">
-                    Prestação de contas de {h.ano}
-                    {h.periodo?.ini && h.periodo?.fim
-                      ? ` · ${h.periodo.ini} a ${h.periodo.fim}`
-                      : ""}
-                  </p>
-                  <p className="mt-1 text-muted-foreground">
-                    {h.indices
-                      .map(
-                        (i) =>
-                          `${i.ano ?? "—"}: ${i.pct == null ? "—" : `${i.pct.toFixed(2).replace(".", ",")}%`}`,
-                      )
-                      .join(" · ")}
+                  {TITULOS[k]}
+                </Button>
+              ))}
+            </nav>
+
+            <SecaoRecolhivel
+              id={idSecao("unidades")}
+              titulo="Unidades e frações"
+              descricao="Relação importada do relatório de frações. Nomes de moradores não são armazenados."
+              resumo={res.unidades}
+              aberta={abertas.unidades}
+              aoMudar={abrir("unidades")}
+            >
+              <RepeatableList
+                itens={c.fracaoUnidades ?? []}
+                onChange={(v) => set("fracaoUnidades", v as UnidadeCondominio[])}
+                novo={() => ({
+                  unidade: "",
+                  fracaoUnidade: 0,
+                  fracaoBox: 0,
+                  fracaoTotal: 0,
+                  fracaoPrevista: 0,
+                  tipo: "unidade" as const,
+                })}
+                colunas="grid-cols-[6rem_8rem_8rem_8rem_8rem_7rem]"
+                cabecalhos={[
+                  "Unidade",
+                  "Fração unidade",
+                  "Fração box",
+                  "Fração total",
+                  "Fração prevista",
+                  "Tipo",
+                ]}
+                rotuloAdicionar="Adicionar unidade"
+                vazio="Nenhuma unidade ou fração cadastrada."
+                render={(u, up) => (
+                  <>
+                    <Input
+                      aria-label="Unidade"
+                      value={u.unidade}
+                      onChange={(e) => up({ unidade: e.target.value })}
+                    />
+                    <NumeroInput
+                      aria-label="Fração da unidade"
+                      value={u.fracaoUnidade}
+                      casas={6}
+                      placeholder="0,000000"
+                      onChange={(v) => up({ fracaoUnidade: v ?? 0 })}
+                    />
+                    <NumeroInput
+                      aria-label="Fração do box"
+                      value={u.fracaoBox}
+                      casas={6}
+                      placeholder="0,000000"
+                      onChange={(v) => up({ fracaoBox: v ?? 0 })}
+                    />
+                    <NumeroInput
+                      aria-label="Fração total"
+                      value={u.fracaoTotal}
+                      casas={6}
+                      placeholder="0,000000"
+                      onChange={(v) => up({ fracaoTotal: v ?? 0 })}
+                    />
+                    <NumeroInput
+                      aria-label="Fração prevista"
+                      value={u.fracaoPrevista}
+                      casas={6}
+                      placeholder="0,000000"
+                      onChange={(v) => up({ fracaoPrevista: v ?? 0 })}
+                    />
+                    <Selecao
+                      aria-label="Tipo"
+                      value={u.tipo ?? "unidade"}
+                      opcoes={[
+                        { valor: "unidade", rotulo: "Unidade" },
+                        { valor: "deposito", rotulo: "Depósito" },
+                        { valor: "garagem", rotulo: "Garagem" },
+                      ]}
+                      onChange={(v) => up({ tipo: v })}
+                    />
+                  </>
+                )}
+              />
+              <p className="mt-3 text-xs text-muted-foreground">
+                Fração prevista cadastrada:{" "}
+                {(c.fracaoUnidades ?? [])
+                  .reduce((s, u) => s + (Number(u.fracaoPrevista) || 0), 0)
+                  .toFixed(6)}
+                . O uso dessa fração no rateio será tratado em etapa própria.
+              </p>
+            </SecaoRecolhivel>
+            <SecaoRecolhivel
+              id={idSecao("administracao")}
+              titulo="Administração"
+              descricao="Síndico, subsíndico, conselheiros e respectivos mandatos."
+              resumo={res.administracao}
+              aberta={abertas.administracao}
+              aoMudar={abrir("administracao")}
+            >
+              <RepeatableList
+                itens={c.administracao}
+                onChange={(v) => set("administracao", v)}
+                novo={() => ({
+                  cargo: "",
+                  nome: "",
+                  mandatoFim: "",
+                  identificacao: "",
+                  telefone: "",
+                  noRelatorio: true,
+                })}
+                colunas="grid-cols-1 @2xl:grid-cols-[8rem_7rem_minmax(0,1fr)_10rem_8rem_7rem]"
+                cabecalhos={[
+                  "Cargo",
+                  "Identificação",
+                  "Nome",
+                  "Telefone",
+                  "Fim do mandato",
+                  "No relatório",
+                ]}
+                rotuloAdicionar="Adicionar membro"
+                vazio="Nenhum membro da administração informado."
+                render={(m, up) => (
+                  <>
+                    <Input
+                      aria-label="Cargo"
+                      placeholder="Cargo"
+                      value={m.cargo}
+                      onChange={(e) => up({ cargo: e.target.value })}
+                    />
+                    <Input
+                      aria-label="Identificação"
+                      placeholder="Unidade, sala, box..."
+                      value={m.identificacao ?? ""}
+                      onChange={(e) => up({ identificacao: e.target.value })}
+                    />
+                    <Input
+                      aria-label="Nome"
+                      placeholder="Nome"
+                      value={m.nome}
+                      onChange={(e) => up({ nome: e.target.value })}
+                    />
+                    <Input
+                      aria-label="Telefone"
+                      placeholder="Telefone"
+                      value={m.telefone ?? ""}
+                      onChange={(e) => up({ telefone: e.target.value })}
+                    />
+                    <MesAnoInput
+                      aria-label="Fim do mandato"
+                      value={m.mandatoFim}
+                      onChange={(v) => up({ mandatoFim: v })}
+                    />
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                      <Switch
+                        checked={m.noRelatorio !== false}
+                        onCheckedChange={(v) => up({ noRelatorio: v })}
+                        aria-label="Incluir no relatório"
+                      />
+                      <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                    </label>
+                  </>
+                )}
+              />
+              {historicoIndices.length > 0 && (
+                <div className="mt-5 space-y-3 rounded-md border border-dashed p-3">
+                  <div>
+                    <h4 className="font-medium">Histórico por prestação de contas</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Índices preservados nas prestações importadas ou cadastradas.
+                    </p>
+                  </div>
+                  {historicoIndices.map((h) => (
+                    <div
+                      key={`${h.ano}-${h.periodo?.ini ?? ""}`}
+                      className="rounded-md border bg-muted/20 p-3 text-sm"
+                    >
+                      <p className="font-medium">
+                        Prestação de contas de {h.ano}
+                        {h.periodo?.ini && h.periodo?.fim
+                          ? ` · ${h.periodo.ini} a ${h.periodo.fim}`
+                          : ""}
+                      </p>
+                      <p className="mt-1 text-muted-foreground">
+                        {h.indices
+                          .map(
+                            (i) =>
+                              `${i.ano ?? "—"}: ${i.pct == null ? "—" : `${i.pct.toFixed(2).replace(".", ",")}%`}`,
+                          )
+                          .join(" · ")}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SecaoRecolhivel>
+            <SecaoRecolhivel
+              id={idSecao("seguro")}
+              titulo="Seguro"
+              resumo={res.seguro}
+              aberta={abertas.seguro}
+              aoMudar={abrir("seguro")}
+            >
+              {(c.historicoApolices?.length ?? 0) > 0 && (
+                <div className="mb-5 rounded-md border bg-muted/20 p-3">
+                  <Field rotulo="Apólice cadastrada">
+                    <Selecao
+                      value={apoliceSelecionada}
+                      onChange={(id) => {
+                        setApoliceSelecionada(id);
+                        const a = c.historicoApolices?.find((x) => x.id === id);
+                        if (a)
+                          setC((atual) => ({
+                            ...atual,
+                            seguradora: a.seguradora,
+                            vigenciaSeguro: a.vigenciaFim,
+                            seguro: { riscoAbsoluto: a.riscoAbsoluto, coberturas: a.coberturas },
+                          }));
+                      }}
+                      opcoes={(c.historicoApolices ?? []).map((a) => ({
+                        valor: a.id,
+                        rotulo: `${a.seguradora || "Seguradora não informada"} · ${a.vigenciaIni || "—"} a ${a.vigenciaFim || "—"}`,
+                      }))}
+                    />
+                  </Field>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Selecione uma apólice para consultar a vigência, o risco e as coberturas
+                    importadas. A apólice escolhida não altera o histórico.
                   </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </SecaoRecolhivel>
-
-        <SecaoRecolhivel
-          id={idSecao("seguro")}
-          titulo="Seguro"
-          resumo={res.seguro}
-          aberta={abertas.seguro}
-          aoMudar={abrir("seguro")}
-        >
-          {(c.historicoApolices?.length ?? 0) > 0 && (
-            <div className="mb-5 rounded-md border bg-muted/20 p-3">
-              <Field rotulo="Apólice cadastrada">
-                <Selecao
-                  value={apoliceSelecionada}
-                  onChange={(id) => {
-                    setApoliceSelecionada(id);
-                    const a = c.historicoApolices?.find((x) => x.id === id);
-                    if (a)
-                      setC((atual) => ({
-                        ...atual,
-                        seguradora: a.seguradora,
-                        vigenciaSeguro: a.vigenciaFim,
-                        seguro: { riscoAbsoluto: a.riscoAbsoluto, coberturas: a.coberturas },
-                      }));
-                  }}
-                  opcoes={(c.historicoApolices ?? []).map((a) => ({
-                    valor: a.id,
-                    rotulo: `${a.seguradora || "Seguradora não informada"} · ${a.vigenciaIni || "—"} a ${a.vigenciaFim || "—"}`,
-                  }))}
-                />
-              </Field>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Selecione uma apólice para consultar a vigência, o risco e as coberturas importadas.
-                A apólice escolhida não altera o histórico.
-              </p>
-            </div>
-          )}
-          <div className="mb-5 grid gap-4 sm:grid-cols-3">
-            <Field rotulo="Seguradora">
-              <Input value={c.seguradora} onChange={(e) => set("seguradora", e.target.value)} />
-            </Field>
-            <Field rotulo="Vigência do seguro (até)">
-              <DataInput value={c.vigenciaSeguro} onChange={(v) => set("vigenciaSeguro", v)} />
-            </Field>
-            <Field rotulo="Risco absoluto">
-              <DinheiroInput
-                value={c.seguro.riscoAbsoluto}
-                onChange={(v) => set("seguro", { ...c.seguro, riscoAbsoluto: v })}
-              />
-            </Field>
-          </div>
-          <Label className="mb-2 block text-xs font-medium text-muted-foreground">Coberturas</Label>
-          <RepeatableList
-            itens={c.seguro.coberturas}
-            onChange={(v) => set("seguro", { ...c.seguro, coberturas: v })}
-            novo={() => ({ desc: "", valor: null, noRelatorio: true })}
-            colunas="@2xl:grid-cols-[1fr_12rem_8rem]"
-            cabecalhos={["Descrição", "Valor", "No relatório"]}
-            rotuloAdicionar="Adicionar cobertura"
-            vazio="Nenhuma cobertura informada."
-            render={(cob, up) => (
-              <>
-                <Input
-                  aria-label="Descrição"
-                  placeholder="Descrição da cobertura"
-                  value={cob.desc}
-                  onChange={(e) => up({ desc: e.target.value })}
-                />
-                <DinheiroInput
-                  aria-label="Valor"
-                  value={cob.valor}
-                  onChange={(v) => up({ valor: v })}
-                />
-                <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                  <Switch
-                    checked={cob.noRelatorio !== false}
-                    onCheckedChange={(v) => up({ noRelatorio: v })}
-                    aria-label="Incluir no relatório"
+              )}
+              <div className="mb-5 grid gap-4 sm:grid-cols-3">
+                <Field rotulo="Seguradora">
+                  <Input value={c.seguradora} onChange={(e) => set("seguradora", e.target.value)} />
+                </Field>
+                <Field rotulo="Vigência do seguro (até)">
+                  <DataInput value={c.vigenciaSeguro} onChange={(v) => set("vigenciaSeguro", v)} />
+                </Field>
+                <Field rotulo="Risco absoluto">
+                  <DinheiroInput
+                    value={c.seguro.riscoAbsoluto}
+                    onChange={(v) => set("seguro", { ...c.seguro, riscoAbsoluto: v })}
                   />
-                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
-                </label>
-              </>
-            )}
-          />
-        </SecaoRecolhivel>
-
-        <SecaoRecolhivel
-          id={idSecao("manutencoes")}
-          titulo="Manutenções e vistorias"
-          resumo={res.manutencoes}
-          aberta={abertas.manutencoes}
-          aoMudar={abrir("manutencoes")}
-        >
-          <div className="grid gap-4 sm:grid-cols-4">
-            <Field rotulo="Recarga de extintores (vence em)">
-              <DataInput
-                value={c.vigenciaExtintores}
-                onChange={(v) => set("vigenciaExtintores", v)}
+                </Field>
+              </div>
+              <Label className="mb-2 block text-xs font-medium text-muted-foreground">
+                Coberturas
+              </Label>
+              <RepeatableList
+                itens={c.seguro.coberturas}
+                onChange={(v) => set("seguro", { ...c.seguro, coberturas: v })}
+                novo={() => ({ desc: "", valor: null, noRelatorio: true })}
+                colunas="@2xl:grid-cols-[1fr_12rem_8rem]"
+                cabecalhos={["Descrição", "Valor", "No relatório"]}
+                rotuloAdicionar="Adicionar cobertura"
+                vazio="Nenhuma cobertura informada."
+                render={(cob, up) => (
+                  <>
+                    <Input
+                      aria-label="Descrição"
+                      placeholder="Descrição da cobertura"
+                      value={cob.desc}
+                      onChange={(e) => up({ desc: e.target.value })}
+                    />
+                    <DinheiroInput
+                      aria-label="Valor"
+                      value={cob.valor}
+                      onChange={(v) => up({ valor: v })}
+                    />
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                      <Switch
+                        checked={cob.noRelatorio !== false}
+                        onCheckedChange={(v) => up({ noRelatorio: v })}
+                        aria-label="Incluir no relatório"
+                      />
+                      <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                    </label>
+                  </>
+                )}
               />
-            </Field>
-            <Field rotulo="Última limpeza da caixa de gordura">
-              <DataInput value={c.ultGordura} onChange={(v) => set("ultGordura", v)} />
-            </Field>
-            <Field rotulo="Última dedetização">
-              <DataInput value={c.ultDedetizacao} onChange={(v) => set("ultDedetizacao", v)} />
-            </Field>
-            <Field rotulo="Última limpeza da caixa d'água">
-              <DataInput value={c.ultCaixaDagua} onChange={(v) => set("ultCaixaDagua", v)} />
-            </Field>
-            <Field rotulo="Ano da última vistoria técnica">
-              <InteiroInput
-                value={c.vistoriaAno}
-                onChange={(v) => set("vistoriaAno", v)}
-                maxLength={4}
-                placeholder="aaaa"
-              />
-            </Field>
-            <Field rotulo="Intervalo da vistoria (anos)">
-              <InteiroInput
-                value={c.vistoriaIntervalo}
-                onChange={(v) => set("vistoriaIntervalo", v ?? 3)}
-              />
-            </Field>
-            <Field rotulo="Lei da vistoria" className="sm:col-span-2">
-              <Input
-                value={c.vistoriaLei}
-                onChange={(e) => set("vistoriaLei", e.target.value)}
-                placeholder="Ex.: Lei municipal nº …"
-              />
-            </Field>
-          </div>
-        </SecaoRecolhivel>
-
-        <SecaoRecolhivel
-          id={idSecao("documentos")}
-          titulo="Documentos obrigatórios"
-          descricao="Lista independente das datas acima — status marcado manualmente (sem vencimento calculado), para itens como alvarás."
-          resumo={res.documentos}
-          aberta={abertas.documentos}
-          aoMudar={abrir("documentos")}
-        >
-          <RepeatableList
-            itens={c.documentosObrigatorios}
-            onChange={(v) => set("documentosObrigatorios", v)}
-            novo={() => ({
-              nome: "",
-              status: "pendente" as const,
-              informacao: "",
-              observacao: "",
-              noRelatorio: true,
-            })}
-            colunas="grid-cols-[minmax(0,1fr)_7rem] @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
-            cabecalhos={["Item", "Status", "Vencimento / informação", "No relatório", "Observação"]}
-            rotuloAdicionar="Adicionar item"
-            vazio="Nenhum item cadastrado."
-            render={(d, up) => (
-              <>
-                <Input
-                  aria-label="Item"
-                  placeholder="Nome do item"
-                  value={d.nome}
-                  onChange={(e) => up({ nome: e.target.value })}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={
-                    d.status === "ok"
-                      ? "justify-center gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
-                      : "justify-center gap-1.5 border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
-                  }
-                  onClick={() => up({ status: d.status === "ok" ? "pendente" : "ok" })}
-                >
-                  {d.status === "ok" ? "✓ Em dia" : "✗ Pendente"}
-                </Button>
-                <Input
-                  aria-label="Vencimento ou informação"
-                  placeholder="dd/mm/aaaa ou texto livre"
-                  className="col-span-2 @2xl:col-span-1"
-                  value={d.informacao}
-                  onChange={(e) => up({ informacao: e.target.value })}
-                />
-                <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground @2xl:col-span-1 @2xl:justify-self-center">
-                  <Switch
-                    checked={d.noRelatorio}
-                    onCheckedChange={(v) => up({ noRelatorio: v })}
-                    aria-label="Incluir no relatório"
-                  />
-                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
-                </label>
-                <Input
-                  aria-label="Observação"
-                  placeholder="opcional"
-                  className="col-span-2 @2xl:col-span-1"
-                  value={d.observacao}
-                  onChange={(e) => up({ observacao: e.target.value })}
-                />
-              </>
-            )}
-          />
-        </SecaoRecolhivel>
-
-        <SecaoRecolhivel
-          id={idSecao("indices")}
-          titulo="Índices de correção aplicados"
-          resumo={res.indices}
-          aberta={abertas.indices}
-          aoMudar={abrir("indices")}
-        >
-          <p className="mb-3 text-sm text-muted-foreground">
-            Histórico exclusivo deste condomínio. A primeira importação preenche os índices;
-            alterações e exclusões são gravadas ao salvar o cadastro. Relatórios fechados preservam
-            seu histórico original.
-          </p>
-          <RepeatableList
-            itens={c.indices}
-            onChange={(v) => set("indices", v)}
-            novo={() => ({ ano: new Date().getFullYear(), pct: null, noRelatorio: true })}
-            colunas="grid-cols-1 @min-[12rem]:grid-cols-2 @2xl:grid-cols-[8rem_10rem_9rem]"
-            cabecalhos={["Ano", "Percentual", "No relatório"]}
-            rotuloAdicionar="Adicionar índice"
-            vazio="Nenhum índice informado."
-            render={(ind, up) => (
-              <>
-                <InteiroInput
-                  aria-label="Ano"
-                  maxLength={4}
-                  value={ind.ano}
-                  onChange={(v) => up({ ano: v })}
-                />
-                <PercentualInput
-                  aria-label="Percentual"
-                  value={ind.pct}
-                  onChange={(v) => up({ pct: v })}
-                />
-                <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
-                  <Switch
-                    checked={ind.noRelatorio !== false}
-                    onCheckedChange={(v) => up({ noRelatorio: v })}
-                    aria-label="Incluir no relatório"
-                  />
-                  <span className="@2xl:hidden">Incluir nas Considerações finais</span>
-                </label>
-              </>
-            )}
-          />
-        </SecaoRecolhivel>
-
-        {podeVerRateios && (
-          <SecaoRecolhivel
-            id={idSecao("rateios")}
-            titulo="Histórico de rateios"
-            resumo={res.rateios}
-            aberta={abertas.rateios}
-            aoMudar={abrir("rateios")}
-          >
-            {novo ? (
-              <p className="text-sm text-muted-foreground">
-                Salve o cadastro para registrar o histórico de rateios deste condomínio.
-              </p>
-            ) : (
-              <HistoricoRateiosCondominio
-                condoId={c.id}
-                linhas={rateios}
-                iniciais={rateiosGravados}
-                onChange={setRateios}
-                desabilitado={!podeEditarRateios}
-                erros={tentouRateios ? errosRateios : null}
-                previsoes={previsoes}
-                exerciciosFechados={exerciciosFechados}
-              />
-            )}
-          </SecaoRecolhivel>
-        )}
-
-        <SecaoRecolhivel
-          id={idSecao("automacoes")}
-          titulo="Histórico mensal e automações"
-          resumo={res.automacoes}
-          aberta={abertas.automacoes}
-          aoMudar={abrir("automacoes")}
-        >
-          <div className="mb-5 flex items-center gap-3">
-            <Switch
-              id="somente-anual"
-              checked={c.somenteAnual}
-              onCheckedChange={(v) => set("somenteAnual", v)}
-            />
-            <Label htmlFor="somente-anual" className="text-sm">
-              Somente prestação de contas anual (sem histórico mensal)
-            </Label>
-          </div>
-          <div className="mb-5 grid gap-4 sm:grid-cols-3">
-            <Field rotulo="Método da variação">
-              <Selecao
-                value={c.variacaoMetodo}
-                onChange={(v) => set("variacaoMetodo", v)}
-                opcoes={VARIACAO}
-              />
-            </Field>
-            {c.variacaoMetodo === "valor" ? (
-              <Field
-                rotulo="Variação (R$)"
-                dica="Valor fixo somado à base, positivo ou negativo — não é percentual."
-              >
-                <DinheiroInput value={c.variacaoParam} onChange={(v) => set("variacaoParam", v)} />
-              </Field>
-            ) : (
-              <Field
-                rotulo="Parâmetro da variação"
-                dica="Percentual ou quantidade de índices, conforme o método."
-              >
-                <NumeroInput value={c.variacaoParam} onChange={(v) => set("variacaoParam", v)} />
-              </Field>
-            )}
-          </div>
-          <Label className="mb-2 block text-xs font-medium text-muted-foreground">
-            Regras de preenchimento automático
-          </Label>
-          <RepeatableList
-            itens={c.regras}
-            onChange={(v) => set("regras", v)}
-            novo={() => ({
-              campo: "",
-              rotulo: "",
-              fonte: "",
-              regex: "",
-              modo: "ultimo" as ModoRegra,
-            })}
-            colunas="@2xl:grid-cols-[1fr_1fr_1fr_1.4fr_10rem]"
-            cabecalhos={["Campo", "Rótulo", "Fonte", "Expressão de busca", "Modo"]}
-            rotuloAdicionar="Adicionar regra"
-            vazio="Nenhuma regra de preenchimento automático."
-            render={(r, up) => (
-              <>
-                <Input
-                  aria-label="Campo"
-                  placeholder="Campo"
-                  value={r.campo}
-                  onChange={(e) => up({ campo: e.target.value })}
-                />
-                <Input
-                  aria-label="Rótulo"
-                  placeholder="Rótulo"
-                  value={r.rotulo}
-                  onChange={(e) => up({ rotulo: e.target.value })}
-                />
-                <Input
-                  aria-label="Fonte"
-                  placeholder="Fonte"
-                  value={r.fonte}
-                  onChange={(e) => up({ fonte: e.target.value })}
-                />
-                <Input
-                  aria-label="Expressão de busca"
-                  placeholder="^energia"
-                  className="font-mono text-xs"
-                  value={r.regex}
-                  onChange={(e) => up({ regex: e.target.value })}
-                />
-                <Selecao
-                  aria-label="Modo"
-                  value={r.modo}
-                  onChange={(v) => up({ modo: v })}
-                  opcoes={MODO_REGRA}
-                />
-              </>
-            )}
-          />
-        </SecaoRecolhivel>
-
-        <SecaoRecolhivel
-          id={idSecao("regras")}
-          titulo="Regras do relatório"
-          descricao="Quais despesas saem da base da previsão, quais contam como consumo de água e como arredondar o rateio."
-          resumo={res.regras}
-          aberta={abertas.regras}
-          aoMudar={abrir("regras")}
-        >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <CampoRubrica
-              rotulo="Palavras-chave de dedução"
-              dica="Despesas (ou grupos) com uma dessas palavras no nome saem da base da previsão."
-              placeholder="ex.: fundo de caixa p/ obras"
-              value={c.deducaoRegex}
-              onChange={(v) => set("deducaoRegex", v)}
-            />
-            <CampoRubrica
-              rotulo="Palavras-chave de água"
-              dica="Despesas somadas como consumo de água no relatório final."
-              value={c.aguaRubrica}
-              onChange={(v) => set("aguaRubrica", v)}
-            />
-            <CampoRubrica
-              rotulo="Palavras-chave de energia elétrica"
-              dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final."
-              placeholder="ex.: energia, luz"
-              value={c.energiaRubrica}
-              onChange={(v) => set("energiaRubrica", v)}
-            />
-            <CampoRubrica
-              rotulo="Palavras-chave de elevadores"
-              dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final."
-              placeholder="ex.: elevador, ascensor"
-              value={c.elevadorRubrica}
-              onChange={(v) => set("elevadorRubrica", v)}
-            />
-            <Field
-              rotulo="Fornecedor dos elevadores"
-              dica="Texto livre, impresso junto da linha Elevadores no relatório final."
+            </SecaoRecolhivel>
+            <SecaoRecolhivel
+              id={idSecao("manutencoes")}
+              titulo="Manutenções e vistorias"
+              resumo={res.manutencoes}
+              aberta={abertas.manutencoes}
+              aoMudar={abrir("manutencoes")}
             >
-              <Input
-                value={c.elevadorFornecedor}
-                onChange={(e) => set("elevadorFornecedor", e.target.value)}
+              <div className="grid gap-4 sm:grid-cols-4">
+                <Field rotulo="Recarga de extintores (vence em)">
+                  <DataInput
+                    value={c.vigenciaExtintores}
+                    onChange={(v) => set("vigenciaExtintores", v)}
+                  />
+                </Field>
+                <Field rotulo="Última limpeza da caixa de gordura">
+                  <DataInput value={c.ultGordura} onChange={(v) => set("ultGordura", v)} />
+                </Field>
+                <Field rotulo="Última dedetização">
+                  <DataInput value={c.ultDedetizacao} onChange={(v) => set("ultDedetizacao", v)} />
+                </Field>
+                <Field rotulo="Última limpeza da caixa d'água">
+                  <DataInput value={c.ultCaixaDagua} onChange={(v) => set("ultCaixaDagua", v)} />
+                </Field>
+                <Field rotulo="Ano da última vistoria técnica">
+                  <InteiroInput
+                    value={c.vistoriaAno}
+                    onChange={(v) => set("vistoriaAno", v)}
+                    maxLength={4}
+                    placeholder="aaaa"
+                  />
+                </Field>
+                <Field rotulo="Intervalo da vistoria (anos)">
+                  <InteiroInput
+                    value={c.vistoriaIntervalo}
+                    onChange={(v) => set("vistoriaIntervalo", v ?? 3)}
+                  />
+                </Field>
+                <Field rotulo="Lei da vistoria" className="sm:col-span-2">
+                  <Input
+                    value={c.vistoriaLei}
+                    onChange={(e) => set("vistoriaLei", e.target.value)}
+                    placeholder="Ex.: Lei municipal nº …"
+                  />
+                </Field>
+              </div>
+            </SecaoRecolhivel>
+            <SecaoRecolhivel
+              id={idSecao("documentos")}
+              titulo="Documentos obrigatórios"
+              descricao="Lista independente das datas acima — status marcado manualmente (sem vencimento calculado), para itens como alvarás."
+              resumo={res.documentos}
+              aberta={abertas.documentos}
+              aoMudar={abrir("documentos")}
+            >
+              <RepeatableList
+                itens={c.documentosObrigatorios}
+                onChange={(v) => set("documentosObrigatorios", v)}
+                novo={() => ({
+                  nome: "",
+                  status: "pendente" as const,
+                  informacao: "",
+                  observacao: "",
+                  noRelatorio: true,
+                })}
+                colunas="grid-cols-[minmax(0,1fr)_7rem] @2xl:grid-cols-[minmax(0,11rem)_7rem_9rem_5.5rem_minmax(0,1fr)]"
+                cabecalhos={[
+                  "Item",
+                  "Status",
+                  "Vencimento / informação",
+                  "No relatório",
+                  "Observação",
+                ]}
+                rotuloAdicionar="Adicionar item"
+                vazio="Nenhum item cadastrado."
+                render={(d, up) => (
+                  <>
+                    <Input
+                      aria-label="Item"
+                      placeholder="Nome do item"
+                      value={d.nome}
+                      onChange={(e) => up({ nome: e.target.value })}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={
+                        d.status === "ok"
+                          ? "justify-center gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-400"
+                          : "justify-center gap-1.5 border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10"
+                      }
+                      onClick={() => up({ status: d.status === "ok" ? "pendente" : "ok" })}
+                    >
+                      {d.status === "ok" ? "✓ Em dia" : "✗ Pendente"}
+                    </Button>
+                    <Input
+                      aria-label="Vencimento ou informação"
+                      placeholder="dd/mm/aaaa ou texto livre"
+                      className="col-span-2 @2xl:col-span-1"
+                      value={d.informacao}
+                      onChange={(e) => up({ informacao: e.target.value })}
+                    />
+                    <label className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground @2xl:col-span-1 @2xl:justify-self-center">
+                      <Switch
+                        checked={d.noRelatorio}
+                        onCheckedChange={(v) => up({ noRelatorio: v })}
+                        aria-label="Incluir no relatório"
+                      />
+                      <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                    </label>
+                    <Input
+                      aria-label="Observação"
+                      placeholder="opcional"
+                      className="col-span-2 @2xl:col-span-1"
+                      value={d.observacao}
+                      onChange={(e) => up({ observacao: e.target.value })}
+                    />
+                  </>
+                )}
               />
-            </Field>
-            <Field rotulo="Arredondamento do rateio">
-              <Selecao
-                value={c.arredondamento}
-                onChange={(v) => set("arredondamento", v)}
-                opcoes={ARREDONDAMENTO}
+            </SecaoRecolhivel>
+          </TabsContent>
+          <TabsContent
+            value="anoaano"
+            forceMount
+            hidden={aba !== "anoaano"}
+            className="space-y-6 data-[state=inactive]:hidden"
+          >
+            <SecaoRecolhivel
+              id={idSecao("indices")}
+              titulo="Índices de correção aplicados"
+              resumo={res.indices}
+              aberta={abertas.indices}
+              aoMudar={abrir("indices")}
+            >
+              <p className="mb-3 text-sm text-muted-foreground">
+                Histórico exclusivo deste condomínio. A primeira importação preenche os índices;
+                alterações e exclusões são gravadas ao salvar o cadastro. Relatórios fechados
+                preservam seu histórico original.
+              </p>
+              <RepeatableList
+                itens={c.indices}
+                onChange={(v) => set("indices", v)}
+                novo={() => ({ ano: new Date().getFullYear(), pct: null, noRelatorio: true })}
+                colunas="grid-cols-1 @min-[12rem]:grid-cols-2 @2xl:grid-cols-[8rem_10rem_9rem]"
+                cabecalhos={["Ano", "Percentual", "No relatório"]}
+                rotuloAdicionar="Adicionar índice"
+                vazio="Nenhum índice informado."
+                render={(ind, up) => (
+                  <>
+                    <InteiroInput
+                      aria-label="Ano"
+                      maxLength={4}
+                      value={ind.ano}
+                      onChange={(v) => up({ ano: v })}
+                    />
+                    <PercentualInput
+                      aria-label="Percentual"
+                      value={ind.pct}
+                      onChange={(v) => up({ pct: v })}
+                    />
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground @2xl:justify-self-center">
+                      <Switch
+                        checked={ind.noRelatorio !== false}
+                        onCheckedChange={(v) => up({ noRelatorio: v })}
+                        aria-label="Incluir no relatório"
+                      />
+                      <span className="@2xl:hidden">Incluir nas Considerações finais</span>
+                    </label>
+                  </>
+                )}
               />
-            </Field>
-          </div>
-          <div className="mt-5">
-            <AjudaExpressoes />
-          </div>
-        </SecaoRecolhivel>
-
-        <SecaoRecolhivel
-          id={idSecao("depara")}
-          titulo="De-para de rótulos"
-          descricao="Substitui rótulos do balancete pelos nomes usados no relatório."
-          resumo={res.depara}
-          aberta={abertas.depara}
-          aoMudar={abrir("depara")}
-        >
-          <div className="mb-4">
-            <AjudaDePara />
-          </div>
-          <RepeatableList
-            itens={c.mapeamento}
-            onChange={(v) => set("mapeamento", v)}
-            novo={() => ({ de: "", para: "" })}
-            colunas="@2xl:grid-cols-2"
-            cabecalhos={["De (como vem no balancete)", "Para (como sai no relatório)"]}
-            rotuloAdicionar="Adicionar de-para"
-            vazio="Nenhum de-para cadastrado."
-            render={(m, up) => (
-              <>
-                <Input aria-label="De" value={m.de} onChange={(e) => up({ de: e.target.value })} />
-                <Input
-                  aria-label="Para"
-                  value={m.para}
-                  onChange={(e) => up({ para: e.target.value })}
-                />
-              </>
+            </SecaoRecolhivel>
+            {podeVerRateios && (
+              <SecaoRecolhivel
+                id={idSecao("rateios")}
+                titulo="Histórico de rateios"
+                resumo={res.rateios}
+                aberta={abertas.rateios}
+                aoMudar={abrir("rateios")}
+              >
+                {novo ? (
+                  <p className="text-sm text-muted-foreground">
+                    Salve o cadastro para registrar o histórico de rateios deste condomínio.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      Somente consulta. Para incluir ou alterar o histórico, use a{" "}
+                      <Link to="/previsao-orcamentaria" className="underline underline-offset-2">
+                        Previsão orçamentária
+                      </Link>
+                      .
+                    </p>
+                    <HistoricoRateiosCondominio
+                      condoId={c.id}
+                      linhas={rateios}
+                      iniciais={rateiosGravados}
+                      onChange={setRateios}
+                      desabilitado
+                      erros={tentouRateios ? errosRateios : null}
+                      previsoes={previsoes}
+                      exerciciosFechados={exerciciosFechados}
+                    />
+                  </>
+                )}
+              </SecaoRecolhivel>
             )}
-          />
-        </SecaoRecolhivel>
+            <SecaoRecolhivel
+              id={idSecao("automacoes")}
+              titulo="Histórico mensal e automações"
+              resumo={res.automacoes}
+              aberta={abertas.automacoes}
+              aoMudar={abrir("automacoes")}
+            >
+              <div className="mb-5 flex items-center gap-3">
+                <Switch
+                  id="somente-anual"
+                  checked={c.somenteAnual}
+                  onCheckedChange={(v) => set("somenteAnual", v)}
+                />
+                <Label htmlFor="somente-anual" className="text-sm">
+                  Somente prestação de contas anual (sem histórico mensal)
+                </Label>
+              </div>
+              <div className="mb-5 grid gap-4 sm:grid-cols-3">
+                <Field rotulo="Método da variação">
+                  <Selecao
+                    value={c.variacaoMetodo}
+                    onChange={(v) => set("variacaoMetodo", v)}
+                    opcoes={VARIACAO}
+                  />
+                </Field>
+                {c.variacaoMetodo === "valor" ? (
+                  <Field
+                    rotulo="Variação (R$)"
+                    dica="Valor fixo somado à base, positivo ou negativo — não é percentual."
+                  >
+                    <DinheiroInput
+                      value={c.variacaoParam}
+                      onChange={(v) => set("variacaoParam", v)}
+                    />
+                  </Field>
+                ) : (
+                  <Field
+                    rotulo="Parâmetro da variação"
+                    dica="Percentual ou quantidade de índices, conforme o método."
+                  >
+                    <NumeroInput
+                      value={c.variacaoParam}
+                      onChange={(v) => set("variacaoParam", v)}
+                    />
+                  </Field>
+                )}
+              </div>
+              <Label className="mb-2 block text-xs font-medium text-muted-foreground">
+                Regras de preenchimento automático
+              </Label>
+              <RepeatableList
+                itens={c.regras}
+                onChange={(v) => set("regras", v)}
+                novo={() => ({
+                  campo: "",
+                  rotulo: "",
+                  fonte: "",
+                  regex: "",
+                  modo: "ultimo" as ModoRegra,
+                })}
+                colunas="@2xl:grid-cols-[1fr_1fr_1fr_1.4fr_10rem]"
+                cabecalhos={["Campo", "Rótulo", "Fonte", "Expressão de busca", "Modo"]}
+                rotuloAdicionar="Adicionar regra"
+                vazio="Nenhuma regra de preenchimento automático."
+                render={(r, up) => (
+                  <>
+                    <Input
+                      aria-label="Campo"
+                      placeholder="Campo"
+                      value={r.campo}
+                      onChange={(e) => up({ campo: e.target.value })}
+                    />
+                    <Input
+                      aria-label="Rótulo"
+                      placeholder="Rótulo"
+                      value={r.rotulo}
+                      onChange={(e) => up({ rotulo: e.target.value })}
+                    />
+                    <Input
+                      aria-label="Fonte"
+                      placeholder="Fonte"
+                      value={r.fonte}
+                      onChange={(e) => up({ fonte: e.target.value })}
+                    />
+                    <Input
+                      aria-label="Expressão de busca da conta (ex.: energia ou água)"
+                      placeholder="Ex.: energia (ou ^energia para início do nome)"
+                      className="font-mono text-xs"
+                      value={r.regex}
+                      onChange={(e) => up({ regex: e.target.value })}
+                    />
+                    <Selecao
+                      aria-label="Modo"
+                      value={r.modo}
+                      onChange={(v) => up({ modo: v })}
+                      opcoes={MODO_REGRA}
+                    />
+                  </>
+                )}
+              />
+            </SecaoRecolhivel>
+          </TabsContent>
+          {podeConfigurar && (
+            <TabsContent
+              value="configuracao"
+              forceMount
+              hidden={aba !== "configuracao"}
+              className="space-y-6 data-[state=inactive]:hidden"
+            >
+              <SecaoRecolhivel
+                id={idSecao("regras")}
+                titulo="Regras do relatório"
+                descricao="Quais despesas saem da base da previsão, quais contam como consumo de água e como arredondar o rateio."
+                resumo={res.regras}
+                aberta={abertas.regras}
+                aoMudar={abrir("regras")}
+              >
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <CampoRubrica
+                    rotulo="Palavras-chave de dedução"
+                    dica="Despesas (ou grupos) com uma dessas palavras no nome saem da base da previsão."
+                    placeholder="ex.: fundo de caixa p/ obras"
+                    value={c.deducaoRegex}
+                    onChange={(v) => set("deducaoRegex", v)}
+                  />
+                  <CampoRubrica
+                    rotulo="Palavras-chave de água"
+                    dica="Despesas somadas como consumo de água no relatório final."
+                    value={c.aguaRubrica}
+                    onChange={(v) => set("aguaRubrica", v)}
+                  />
+                  <CampoRubrica
+                    rotulo="Palavras-chave de energia elétrica"
+                    dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final."
+                    placeholder="ex.: energia, luz"
+                    value={c.energiaRubrica}
+                    onChange={(v) => set("energiaRubrica", v)}
+                  />
+                  <CampoRubrica
+                    rotulo="Palavras-chave de elevadores"
+                    dica="Mesmo mecanismo da água, para a seção Consumo de serviços do relatório final."
+                    placeholder="ex.: elevador, ascensor"
+                    value={c.elevadorRubrica}
+                    onChange={(v) => set("elevadorRubrica", v)}
+                  />
+                  <Field
+                    rotulo="Fornecedor dos elevadores"
+                    dica="Texto livre, impresso junto da linha Elevadores no relatório final."
+                  >
+                    <Input
+                      value={c.elevadorFornecedor}
+                      onChange={(e) => set("elevadorFornecedor", e.target.value)}
+                    />
+                  </Field>
+                  <Field rotulo="Arredondamento do rateio">
+                    <Selecao
+                      value={c.arredondamento}
+                      onChange={(v) => set("arredondamento", v)}
+                      opcoes={ARREDONDAMENTO}
+                    />
+                  </Field>
+                </div>
+                <div className="mt-5">
+                  <AjudaExpressoes />
+                </div>
+              </SecaoRecolhivel>
+              <SecaoRecolhivel
+                id={idSecao("depara")}
+                titulo="De-para de rótulos"
+                descricao="Substitui rótulos do balancete pelos nomes usados no relatório."
+                resumo={res.depara}
+                aberta={abertas.depara}
+                aoMudar={abrir("depara")}
+              >
+                <div className="mb-4">
+                  <AjudaDePara />
+                </div>
+                <RepeatableList
+                  itens={c.mapeamento}
+                  onChange={(v) => set("mapeamento", v)}
+                  novo={() => ({ de: "", para: "" })}
+                  colunas="@2xl:grid-cols-2"
+                  cabecalhos={["De (como vem no balancete)", "Para (como sai no relatório)"]}
+                  rotuloAdicionar="Adicionar de-para"
+                  vazio="Nenhum de-para cadastrado."
+                  render={(m, up) => (
+                    <>
+                      <Input
+                        aria-label="De"
+                        value={m.de}
+                        onChange={(e) => up({ de: e.target.value })}
+                      />
+                      <Input
+                        aria-label="Para"
+                        value={m.para}
+                        onChange={(e) => up({ para: e.target.value })}
+                      />
+                    </>
+                  )}
+                />
+              </SecaoRecolhivel>
+            </TabsContent>
+          )}
+        </Tabs>
 
         <div className="flex justify-end">{botaoSalvar}</div>
       </form>

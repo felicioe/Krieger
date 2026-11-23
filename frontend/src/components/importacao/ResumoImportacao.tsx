@@ -261,13 +261,15 @@ function PaginasExtras({
             {pv && (
               <li>
                 <span className="font-medium">Previsão orçamentária sugerida lida</span>
-                {pv.categorias.length > 0 && <> ({pv.categorias.length} categoria(s) de despesa</>}
+                {pv.categorias.length > 0 && (
+                  <> ({contagem(pv.categorias.length, "categoria", "categorias")} de despesa</>
+                )}
                 {pv.categorias.length > 0 && pv.rateioMensalSugerido != null && (
                   <>, rateio mensal sugerido no PDF {formatBRL(pv.rateioMensalSugerido)}</>
                 )}
                 {pv.categorias.length > 0 && <>)</>}.{" "}
                 {naPrestacao
-                  ? "Ela preenche o menu Previsão orçamentária, onde as deduções e a variação continuam editáveis."
+                  ? "Ela preenche o menu Previsão do rateio, onde as deduções e a variação continuam editáveis."
                   : "Ela só é usada na prestação de contas."}
               </li>
             )}

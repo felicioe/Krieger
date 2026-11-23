@@ -6,6 +6,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Field } from "@/components/app/Field";
 import { SelecaoBusca, opcoesCondominio } from "@/components/app/inputs";
 import { formatBRL } from "@/lib/format";
+import { contagem } from "@/components/app/textos";
 import { api, mensagemErro } from "@/lib/api";
 import { chaves } from "@/lib/queries";
 import { lerApoliceSeguro } from "@/domain/pdfParser";
@@ -117,7 +118,7 @@ export function ImportarApolice({ condominios }: { condominios: Condominio[] }) 
           <p>
             Risco absoluto:{" "}
             <strong>{lido.riscoAbsoluto == null ? "—" : formatBRL(lido.riscoAbsoluto)}</strong> ·{" "}
-            {lido.coberturas.length} cobertura(s).
+            {contagem(lido.coberturas.length, "cobertura", "coberturas")}.
           </p>
           <Field rotulo="Cadastro de destino">
             <SelecaoBusca

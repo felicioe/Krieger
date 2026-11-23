@@ -78,7 +78,7 @@ export function PreviaRelatorio({
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
             Prestação de contas
           </p>
-          <h1 className="mt-3 text-2xl font-semibold text-primary">{nomeCondo}</h1>
+          <p className="mt-3 text-2xl font-semibold text-primary">{nomeCondo}</p>
           {condominio?.cnpj && (
             <p className="num mt-1 text-muted-foreground">CNPJ {condominio.cnpj}</p>
           )}
@@ -111,7 +111,7 @@ export function PreviaRelatorio({
               />
               <Bloco titulo="Receitas" linhas={d.receitas.itens} total={d.totais.receitas} />
               <div>
-                <h4 className="mb-1 font-semibold">Despesas</h4>
+                <h3 className="mb-1 font-semibold">Despesas</h3>
                 <RolagemTabela className="">
                   <table className="w-full">
                     <tbody>
@@ -244,7 +244,7 @@ export function PreviaRelatorio({
 
       {rel.secoes.analise && (
         <Secao n={numero("analise")} titulo="Análise gráfica">
-          <h4 className="mb-2 font-semibold">Previsto × realizado por grupo</h4>
+          <h3 className="mb-2 font-semibold">Previsto × realizado por grupo</h3>
           {!rel.comparativo.grupos.length ? (
             <Vazio>Sem dados para o gráfico.</Vazio>
           ) : semRealizado(rel.comparativo) ? (
@@ -254,7 +254,7 @@ export function PreviaRelatorio({
           )}
           {e.mostrarPizza !== false && (
             <>
-              <h4 className="mb-2 mt-6 font-semibold">Despesas do exercício {e.ano} por grupo</h4>
+              <h3 className="mb-2 mt-6 font-semibold">Despesas do exercício {e.ano} por grupo</h3>
               {rel.despesasGrupo.length ? (
                 <GraficoPizza dados={rel.despesasGrupo} />
               ) : (
@@ -264,13 +264,13 @@ export function PreviaRelatorio({
           )}
           {e.mostrarReceitasPorCategoria !== false && rel.receitasPorCategoria.length > 0 && (
             <>
-              <h4 className="mb-2 mt-6 font-semibold">Receitas por categoria</h4>
+              <h3 className="mb-2 mt-6 font-semibold">Receitas por categoria</h3>
               <GraficoReceitasCategoria series={rel.receitasPorCategoria} />
             </>
           )}
           {e.mostrarEvolucaoMensal !== false && (
             <>
-              <h4 className="mb-2 mt-6 font-semibold">Evolução mensal</h4>
+              <h3 className="mb-2 mt-6 font-semibold">Evolução mensal</h3>
               {rel.evolucaoMensal.length ? (
                 <GraficoEvolucaoMensal pontos={rel.evolucaoMensal} />
               ) : (
@@ -433,7 +433,7 @@ function Bloco({
 }) {
   return (
     <div>
-      <h4 className="mb-1 font-semibold">{titulo}</h4>
+      <h3 className="mb-1 font-semibold">{titulo}</h3>
       <RolagemTabela className="">
         <table className="w-full">
           <tbody>
@@ -487,7 +487,7 @@ function Consideracoes({ e, rel, cidade }: { e: Exercicio; rel: RelatorioFinal; 
     <div className="space-y-5">
       {administracao.length > 0 && (
         <div>
-          <h4 className="mb-1 font-semibold">Administração</h4>
+          <h3 className="mb-1 font-semibold">Administração</h3>
           <dl>
             {administracao.map((m, i) => (
               <Item key={i} rotulo={m.cargo || "—"}>
@@ -502,7 +502,7 @@ function Consideracoes({ e, rel, cidade }: { e: Exercicio; rel: RelatorioFinal; 
       )}
       {(c.seguradora || c.vigenciaSeguro || coberturas.length > 0) && (
         <div>
-          <h4 className="mb-1 font-semibold">Seguro</h4>
+          <h3 className="mb-1 font-semibold">Seguro</h3>
           <dl>
             {c.seguradora && (
               <Item rotulo="Seguradora" alinhar="direita">
@@ -533,7 +533,7 @@ function Consideracoes({ e, rel, cidade }: { e: Exercicio; rel: RelatorioFinal; 
         c.ultCaixaDagua ||
         c.vistoriaAno) && (
         <div>
-          <h4 className="mb-1 font-semibold">Manutenções e vistorias</h4>
+          <h3 className="mb-1 font-semibold">Manutenções e vistorias</h3>
           <dl>
             {c.vigenciaExtintores && (
               <Item rotulo="Recarga dos extintores até">
@@ -572,7 +572,7 @@ function Consideracoes({ e, rel, cidade }: { e: Exercicio; rel: RelatorioFinal; 
       )}
       {documentos.length > 0 && (
         <div>
-          <h4 className="mb-1 font-semibold">Documentos obrigatórios</h4>
+          <h3 className="mb-1 font-semibold">Documentos obrigatórios</h3>
           <dl>
             {documentos.map((d, i) => (
               <Item key={i} rotulo={d.nome}>
@@ -586,7 +586,7 @@ function Consideracoes({ e, rel, cidade }: { e: Exercicio; rel: RelatorioFinal; 
       )}
       {servicos.length > 0 && (
         <div>
-          <h4 className="mb-1 font-semibold">Consumo de serviços</h4>
+          <h3 className="mb-1 font-semibold">Consumo de serviços</h3>
           <RolagemTabela className="">
             <table className="w-full">
               <thead>
@@ -620,7 +620,7 @@ function Consideracoes({ e, rel, cidade }: { e: Exercicio; rel: RelatorioFinal; 
       )}
       {(receber !== null || pagar !== null) && (
         <div>
-          <h4 className="mb-1 font-semibold">Valores</h4>
+          <h3 className="mb-1 font-semibold">Valores</h3>
           <dl>
             {receber !== null && (
               <Item rotulo="Contas a receber">
@@ -637,7 +637,7 @@ function Consideracoes({ e, rel, cidade }: { e: Exercicio; rel: RelatorioFinal; 
       )}
       {indices.length > 0 && (
         <div>
-          <h4 className="mb-1 font-semibold">Índices de correção aplicados</h4>
+          <h3 className="mb-1 font-semibold">Índices de correção aplicados</h3>
           <dl>
             {indices.map((i, k) => (
               <Item key={k} rotulo={String(i.ano ?? "—")}>

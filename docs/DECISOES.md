@@ -1,5 +1,77 @@
 # Decisões do projeto
 
+## 2026-11-22 — rateio aprovado: o histórico é a fonte quando o ano já foi travado (issue #327)
+
+Aprovado pelo responsável. Com linha do histórico de rateios para o ano do exercício (rateio
+travado na Previsão), o campo "Rateio aprovado" da prestação fica só leitura com o valor do
+histórico, e salvar a prestação grava esse valor no exercício. Sem linha para o ano, o campo segue
+editável. Exercício fechado não muda. Com isso, rateio atual (#308) e rateio aprovado têm a mesma
+fonte, e a alteração é feita só na Previsão orçamentária.
+
+## 2026-11-22 — rateio por fração ideal como distribuição, sem mudar o rateio sugerido (issue #132)
+
+Aprovado pelo responsável. A fração ideal (fração prevista do cadastro) decide quanto cada
+unidade paga do total mensal; o rateio sugerido e o índice da previsão continuam iguais, porque o
+reajuste % é o mesmo para todas as unidades. Sem relação de frações válida, a base é a quantidade
+de unidades, com o motivo na tela. Detalhes em `docs/AVALIACAO-FRACOES.md`.
+## 2026-11-22 — rateio atual: histórico prevalece; digitado só sem histórico (issue #308)
+
+Decisão do responsável: o rateio atual de um exercício aberto é o aprovado do ano anterior no
+histórico de rateios. O valor digitado na prestação só vale quando não existe histórico para o
+ano anterior. No histórico, a linha digitada à mão prevalece sobre a importada do PDF (a
+importação só grava quando não há linha para o ano). Exercícios fechados não mudam.
+
+Na prática: `aplicarRateioBase` passou a preferir o histórico mesmo com valor digitado; a
+prestação mostra o rateio do histórico como somente leitura e grava esse valor ao salvar; o
+cadastro do condomínio mostra o último aprovado. Para alterar, usa-se a Previsão orçamentária.
+
+## 2026-11-22 — sequência geral: menu antes da Etapa 1 (revisão do plano)
+
+Decisão do responsável: o trabalho segue uma ordem única, registrada em
+`docs/PLANO-ETAPAS-MODELOS.md` ("Sequência geral"). O menu por perfil (#310) vem
+antes das subissues da Etapa 1, porque a aba Configuração depende da mesma regra
+de permissão. Antes de tudo, fica o aviso de "sem base" no Previsto × Realizado
+mensal (#311), consequência da mudança já publicada em `e388145`.
+
+Pendência de regra, a confirmar: o README define que o Usuário começa com o
+conjunto do ADM. A proposta do responsável é que o Usuário comece só com o
+operacional. Isso altera o padrão da matriz e precisa de autorização antes da
+implementação.
+
+## 2026-11-22 — entrada de dados: fonte única e organização por etapa (inventário em INVENTARIO-ENTRADA-DADOS.md)
+
+Decisão do responsável, seguindo as recomendações do inventário:
+
+- **Considerações finais têm fonte única no cadastro.** Com o exercício aberto, a
+  prestação de contas lê e grava no cadastro (`considDoCondominio`); no fechamento,
+  os valores são congelados no exercício. Exercícios já fechados mantêm o que têm.
+  Evita divergência entre cópias e alerta de vencimento errado no Painel.
+- **Histórico de rateios é editado só na Previsão Orçamentária.** O cadastro do
+  condomínio apenas consulta, com link para a Previsão.
+- **Aba Configuração do cadastro fica restrita por permissão (administração).**
+  Campos técnicos (palavras-chave, de-para, regras do relatório, arredondamento,
+  método da variação) saem da visão do uso diário.
+- **Ordem de execução:** Etapa 1 primeiro (organização em abas, sem mudar regra),
+  depois Etapa 2 (considerações), Etapa 3 (rateio atual) e Etapa 4 (fluxo guiado do
+  exercício). Detalhes e critérios em `docs/PLANO-ETAPAS-MODELOS.md`.
+
+## 2026-11-22 — reorganização do menu por perfil (proposta, aguarda aprovação)
+
+Proposta: separar funções de cadastro e configuração (ADM ou SuperADM) das
+operacionais, para que o perfil Usuário veja um menu enxuto. Perfis e regras:
+
+- **SuperADM** (`admin`): acesso total (`['*']`), incluindo Usuários, Backup e Escritório.
+- **ADM** (`adm`): tudo, exceto Usuários, Backup e Escritório.
+- **Usuário** (`user`): começa com o conjunto do ADM e é restringido pela matriz
+  `kr_perfil_permissoes`.
+
+Mudança de código limitada a `frontend/src/components/app/AppSidebar.tsx`
+(`GRUPOS_MENU`) e à leitura das permissões. Chaves existentes são reaproveitadas
+(`modulo.acao`, com `visualizar`/`editar`). Nova chave (por exemplo
+`condominios.configurar`) exige migration e só entra com autorização expressa do
+responsável. Até lá, a Aba Configuração é controlada pela permissão de
+administração já existente.
+
 ## 2026-11-21 — histórico de rateios dentro da Previsão Orçamentária (issue #294)
 
 A Previsão Orçamentária (modo rateio) ganhou o bloco **Histórico de rateios**: o **rateio histórico** e o **% histórico**

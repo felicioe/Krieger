@@ -2,25 +2,18 @@ import { Link } from "@/components/app/LinkPermitido";
 import { createFileRoute, useBlocker, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Fragment, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
-import {
-  CircleHelp,
-  Download,
-  FileSpreadsheet,
-  FileText,
-  Loader2,
-  Printer,
-  RefreshCw,
-  Save,
-} from "lucide-react";
+import { CircleHelp, FileSpreadsheet, Loader2, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { opcoesCondominio, Selecao, SelecaoBusca } from "@/components/app/inputs";
 import { useCondominiosRecentes } from "@/hooks/useCondominiosRecentes";
 import { useUsuario } from "@/lib/auth";
+import { DistribuicaoFracao } from "@/components/previsao/DistribuicaoFracao";
 import { PainelPrevisao } from "@/components/previsao/PainelPrevisao";
 import { HistoricoRateiosPrevisao } from "@/components/previsao/HistoricoRateiosPrevisao";
 import { api } from "@/lib/api";
@@ -37,6 +30,7 @@ import { calcularPrevisaoParaRelatorios } from "@/domain/previsaoRelatorios";
 import {
   aplicarRateioBase,
   aplicarVariacaoDoHistorico,
+  executarTravamentoRateio,
   planejarTravamentoRateio,
 } from "@/domain/historicoRateio";
 import type {
@@ -51,6 +45,7 @@ import { novoId } from "@/lib/id";
 import { formatBRL, formatNumeroBR } from "@/lib/format";
 import { imprimirTabela } from "@/lib/imprimirTabela";
 import { baixarMatrizXlsx } from "@/lib/exportar";
+import { Exportacoes } from "@/components/app/Exportacoes";
 import { RolagemTabela } from "@/components/ui/table";
 
 type Busca = { exercicio?: string; modo?: "rateio" | "relatorios" };
@@ -63,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/previsao-orcamentaria")({
           "Realizado e previsto por grupo ou conta, sem os ajustes exclusivos do rateio.",
         )
       : cabecalho(
-          "Previsão orçamentária",
+          "Previsão do rateio",
           "Apuração do reajuste do rateio a partir do realizado do período.",
         ),
   validateSearch: (s: Record<string, unknown>): Busca => {
@@ -116,7 +111,7 @@ function PaginaPrevisao() {
     return (
       <>
         <PageHeader
-          titulo="Previsão orçamentária"
+          titulo="Previsão do rateio"
           descricao="Previsão orçamentária de cada prestação de contas."
         />
         <SectionCard titulo="Nenhuma prestação de contas">
@@ -289,6 +284,8 @@ function EditorPrevisao({
     salvar.mutate(prepararExercicio(e));
   }
 
+  const [travando, setTravando] = useState(false);
+  const travandoRef = useRef(false);
   /**
    * Trava o rateio: grava o valor aprovado no exercício, registra a linha no histórico
    * acumulativo (`historico_rateios`) e propaga o valor como `rateioAtual` do exercício seguinte,
@@ -296,53 +293,74 @@ function EditorPrevisao({
    */
   async function aoTravar() {
     const aprovado = resultado.rateioSugerido;
-    if (aprovado === null || e.fechado) return;
+    if (aprovado === null || e.fechado || travandoRef.current) return;
+    travandoRef.current = true;
+    setTravando(true);
+    const anterior = e;
     const atualizado = prepararExercicio({ ...e, rateioAprovado: aprovado });
-    setE(atualizado);
-    try {
-      const salvo = await api.salvar("exercicios", atualizado);
-      const n = normalizarExercicio(salvo);
-      setE(n);
-      setSalvoJson(JSON.stringify(n));
-      queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
-      queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
-
-      // Linha do histórico (herda o rateio atual do ano anterior, calcula o %, preserva o % informado e a
-      // observação da linha existente) e propagação do aprovado ao exercício seguinte: ver
-      // `planejarTravamentoRateio` (domain/historicoRateio.ts), coberto por testes.
-      const plano = planejarTravamentoRateio({
-        exercicio: n,
-        aprovado,
-        historico: historicoRateios,
-        exercicios,
-        agora: new Date().toISOString(),
-        novoId,
-      });
-      await api.salvar("historico_rateios", plano.linha);
-      queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
-
-      // Propaga como base do exercício seguinte, se ainda não tiver rateio atual.
-      const proximo = plano.proximo
-        ? exercicios.find((x) => x.id === plano.proximo?.id)
-        : undefined;
-      if (proximo && plano.proximo) {
-        await api.salvar("exercicios", { ...proximo, rateioAtual: plano.proximo.rateioAtual });
+    const resultado_ = await executarTravamentoRateio({
+      gravarExercicio: async () => {
+        const salvo = await api.salvar("exercicios", atualizado);
+        const n = normalizarExercicio(salvo);
+        setE(n);
+        setSalvoJson(JSON.stringify(n));
         queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
+        queryClient.setQueryData(chaves.item("exercicios", salvo.id), salvo);
+        return n;
+      },
+      planejar: (n) =>
+        planejarTravamentoRateio({
+          exercicio: n,
+          aprovado,
+          historico: historicoRateios,
+          exercicios,
+          agora: new Date().toISOString(),
+          novoId,
+        }),
+      gravarHistorico: async (linha) => {
+        await api.salvar("historico_rateios", linha);
+        queryClient.invalidateQueries({ queryKey: chaves.lista("historico_rateios") });
+      },
+      gravarProximo: async (id, rateioAtual) => {
+        const proximo = exercicios.find((x) => x.id === id);
+        if (!proximo) return;
+        await api.salvar("exercicios", { ...proximo, rateioAtual });
+        queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
+      },
+    });
+    try {
+      if (resultado_.ok) {
+        const proximo = resultado_.proximoId
+          ? exercicios.find((x) => x.id === resultado_.proximoId)
+          : undefined;
+        toast.success(
+          proximo
+            ? `Rateio de ${formatBRL(aprovado)} travado. Aplicado como base de ${proximo.ano} e registrado no histórico do cadastro do condomínio.`
+            : `Rateio de ${formatBRL(aprovado)} travado e registrado no histórico do cadastro do condomínio.`,
+        );
+        return;
       }
-
-      toast.success(
-        proximo
-          ? `Rateio de ${formatBRL(aprovado)} travado. Aplicado como base de ${proximo.ano} e registrado no histórico do cadastro do condomínio.`
-          : `Rateio de ${formatBRL(aprovado)} travado e registrado no histórico do cadastro do condomínio.`,
-      );
-    } catch (erro) {
-      // O rateio aprovado já foi gravado no exercício antes deste ponto; o que falhou foi o
-      // histórico acumulativo. Dizer isso evita o usuário achar que nada foi salvo.
-      toast.error(
-        `Rateio aprovado salvo no exercício, mas o histórico não gravou: ${
-          erro instanceof Error ? erro.message : "erro desconhecido."
-        }`,
-      );
+      const motivo =
+        resultado_.erro instanceof Error ? resultado_.erro.message : "erro desconhecido.";
+      if (resultado_.etapa === "exercicio") {
+        // Nada foi gravado: volta ao estado anterior, sem marcar o rateio como aprovado.
+        setE(anterior);
+        toast.error(
+          `Não foi possível salvar o rateio aprovado no exercício. Nada foi travado; tente de novo. (${motivo})`,
+        );
+      } else if (resultado_.etapa === "historico") {
+        toast.error(
+          `O rateio aprovado foi salvo no exercício, mas o histórico não gravou. Tente travar de novo; nada foi duplicado. (${motivo})`,
+        );
+      } else {
+        const ano = exercicios.find((x) => x.id === resultado_.proximoId)?.ano;
+        toast.error(
+          `O histórico foi gravado, mas o rateio não foi aplicado como base de ${ano ?? "exercício seguinte"}. Tente travar de novo. (${motivo})`,
+        );
+      }
+    } finally {
+      travandoRef.current = false;
+      setTravando(false);
     }
   }
 
@@ -369,7 +387,7 @@ function EditorPrevisao({
   return (
     <>
       <PageHeader
-        titulo={`Previsão orçamentária — Exercício ${e.ano}`}
+        titulo={`Previsão do rateio — Exercício ${e.ano}`}
         descricao={
           <>
             {e.condoNome || condominio?.nome}
@@ -427,9 +445,11 @@ function EditorPrevisao({
       )}
 
       {e.fechado && (
-        <p className="mb-4 text-sm">
-          Exercício fechado. Reabra na prestação de contas para alterar a previsão.
-        </p>
+        <Alert className="mb-4">
+          <AlertDescription>
+            Exercício fechado. Reabra na prestação de contas para alterar a previsão.
+          </AlertDescription>
+        </Alert>
       )}
       <form id="form-previsao" onSubmit={enviar} noValidate>
         <fieldset disabled={e.fechado} className="min-w-0">
@@ -440,9 +460,16 @@ function EditorPrevisao({
             condoId={e.condoId}
             onChange={mudar}
             aoTravar={aoTravar}
+            travando={travando}
           />
         </fieldset>
       </form>
+      {/* Base do rateio e cota por unidade pela fração ideal (#132). */}
+      <DistribuicaoFracao
+        resultado={resultado}
+        condominio={e.fechado && e.fechamento ? e.fechamento.condominio : condominio}
+        arredondamento={e.arredondamento}
+      />
     </>
   );
 }
@@ -468,8 +495,6 @@ function RelatorioPrevisao({
   previsoesAprovadas: PrevisaoAprovada[];
 }) {
   const [detalhado, setDetalhado] = useState(false);
-  const [exportandoXlsx, setExportandoXlsx] = useState(false);
-  const exportandoRef = useRef(false);
   // Regra da issue #282 (cálculo em `domain/previsaoRelatorios.ts`):
   // - Realizado = relatórios mensais do período (alternativa: demonstrativo da prestação)
   // - Previsto = exercício anterior × (1 + reajuste%), proporcional aos meses com realizado
@@ -514,51 +539,17 @@ function RelatorioPrevisao({
     "Variação (%)": linha.variacaoPct === null ? null : Number(linha.variacaoPct.toFixed(2)),
   }));
   const nomeArquivo = `previsao-relatorios-${exercicio.ano}`;
-  const baixarCsv = () => {
-    const cabecalho = ["Grupo", "Conta", "Realizado", "Previsto", "Variação (%)"];
-    const conteudo = [
-      cabecalho,
+  const baixarXlsx = () =>
+    baixarMatrizXlsx(nomeArquivo, "Previsto x Realizado", [
+      ["Grupo", "Conta", "Realizado", "Previsto", "Variação (%)"],
       ...dadosExportacao.map((linha) => [
         linha.Grupo,
         linha.Conta,
-        linha.Realizado.toFixed(2),
-        linha.Previsto === null ? "" : linha.Previsto.toFixed(2),
+        linha.Realizado,
+        linha.Previsto ?? "",
         linha["Variação (%)"] ?? "",
       ]),
-    ]
-      .map((linha) => linha.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(";"))
-      .join("\r\n");
-    const url = URL.createObjectURL(
-      new Blob(["\ufeff" + conteudo], { type: "text/csv;charset=utf-8" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${nomeArquivo}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-  const baixarXlsx = async () => {
-    if (exportandoRef.current) return;
-    exportandoRef.current = true;
-    setExportandoXlsx(true);
-    try {
-      await baixarMatrizXlsx(nomeArquivo, "Previsto x Realizado", [
-        ["Grupo", "Conta", "Realizado", "Previsto", "Variação (%)"],
-        ...dadosExportacao.map((linha) => [
-          linha.Grupo,
-          linha.Conta,
-          linha.Realizado,
-          linha.Previsto ?? "",
-          linha["Variação (%)"] ?? "",
-        ]),
-      ]);
-    } catch {
-      toast.error("Não foi possível preparar a planilha. Tente exportar novamente.");
-    } finally {
-      exportandoRef.current = false;
-      setExportandoXlsx(false);
-    }
-  };
+    ]);
   const imprimirPdf = () => {
     try {
       const abriu = imprimirTabela({
@@ -582,7 +573,7 @@ function RelatorioPrevisao({
       });
       if (!abriu)
         toast.error(
-          "A janela de impressão foi bloqueada. Permita pop-ups deste site e tente novamente.",
+          "A janela de impressão foi bloqueada. Libere janelas de impressão para este site e tente novamente.",
         );
     } catch {
       toast.error("Não foi possível preparar a impressão. Tente novamente.");
@@ -598,32 +589,11 @@ function RelatorioPrevisao({
             {periodo && <span className="num"> · período {periodo}</span>}
           </>
         }
-        acoes={
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={imprimirPdf}>
-              <FileText /> PDF
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => void baixarXlsx()}
-              disabled={exportandoXlsx}
-              aria-busy={exportandoXlsx}
-            >
-              {exportandoXlsx ? <Loader2 className="animate-spin" /> : <FileSpreadsheet />}{" "}
-              {exportandoXlsx ? "Preparando XLSX…" : "XLSX"}
-            </Button>
-            <Button variant="outline" onClick={baixarCsv}>
-              <Download /> CSV
-            </Button>
-            <Button variant="outline" onClick={imprimirPdf}>
-              <Printer /> Imprimir
-            </Button>
-          </div>
-        }
+        acoes={<Exportacoes acoes={{ xlsx: baixarXlsx, imprimir: imprimirPdf }} />}
       />
       <SectionCard className="mb-6">{seletor}</SectionCard>
       <SectionCard
-        titulo="Previsto × Realizado"
+        titulo="Base prevista para relatórios"
         descricao={
           calculo.situacaoPrevisto === "sem_base"
             ? "Sem previsão aprovada: não há exercício anterior com despesas (base histórica). Mostrando só o realizado."

@@ -5,6 +5,7 @@ import { useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
   Calculator,
+  ChevronDown,
   FileText,
   Loader2,
   RefreshCw,
@@ -17,6 +18,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/app/PageHeader";
 import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
@@ -34,17 +42,39 @@ import { useTravaImportacao } from "@/components/importacao/useTravaImportacao";
 import { AnexosPrestacao, anexosQuery } from "@/components/importacao/AnexosPrestacao";
 import { excluirPrestacaoComAnexos } from "@/components/importacao/anexos";
 import { api } from "@/lib/api";
-import { chaves, itemQuery, listaQuery } from "@/lib/queries";
+import { chaves, itemQuery, listaQuery, listaQueryTolerante } from "@/lib/queries";
 import { cabecalho } from "@/lib/head";
 import { useUsuario } from "@/lib/auth";
 import { demonstrativoVazio, mesesNoPeriodo } from "@/domain/demonstrativo";
 import { consolidarPeriodo } from "@/domain/demonstrativoDinamico";
 import { aplicarConsideracoesAoExercicio, origemComArquivo } from "@/domain/importacao";
-import { normalizarExercicio, prepararExercicio, validarNovoExercicio } from "@/domain/exercicio";
+import {
+  condominioComConsid,
+  considEfetiva,
+  normalizarExercicio,
+  prepararExercicio,
+  validarNovoExercicio,
+} from "@/domain/exercicio";
 import { previsaoSugeridaDoPdf } from "@/domain/previsaoSugerida";
-import { historicoDoExercicio } from "@/domain/historicoRateio";
+import {
+  aplicarRateioAprovadoDoHistorico,
+  aplicarRateioBase,
+  historicoDoExercicio,
+  rateioAprovadoDoHistorico,
+  rateioBaseDoAno,
+} from "@/domain/historicoRateio";
+import { CampoRateioHistorico } from "@/components/app/CampoRateioHistorico";
 import { novoId } from "@/lib/id";
-import type { Condominio, Exercicio, HistoricoRateio, Mensal } from "@/domain/types";
+import type {
+  Assembleia,
+  Ata,
+  Condominio,
+  Exercicio,
+  HistoricoRateio,
+  Mensal,
+} from "@/domain/types";
+import { etapasDoExercicio } from "@/domain/etapasExercicio";
+import { EtapasExercicio } from "@/components/app/EtapasExercicio";
 
 export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
   head: () => cabecalho("Prestação de contas", "Dados e demonstrativo do exercício."),
@@ -54,6 +84,9 @@ export const Route = createFileRoute("/_authenticated/prestacao-contas/$id")({
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Exercicio>("exercicios")),
       queryClient.ensureQueryData(anexosQuery(params.id)),
+      queryClient.ensureQueryData(listaQueryTolerante<HistoricoRateio>("historico_rateios")),
+      queryClient.ensureQueryData(listaQuery<Assembleia>("assembleias")),
+      queryClient.ensureQueryData(listaQuery<Ata>("atas")),
     ]);
     if (!e) throw notFound();
     return null;
@@ -81,11 +114,18 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   const usuario = useUsuario();
   const { data: condominios } = useSuspenseQuery(listaQuery<Condominio>("condominios"));
   const { data: exercicios } = useSuspenseQuery(listaQuery<Exercicio>("exercicios"));
-  const { refetch: atualizarMensais, isFetching: atualizandoMensais } = useSuspenseQuery(
-    listaQuery<Mensal>("mensais"),
+  const [atualizandoMensais, setAtualizandoMensais] = useState(false);
+  // Exercício aberto: as considerações vêm do cadastro, que é a fonte única (#307). Fechado: o congelado.
+  const condoDoExercicio = condominios.find((c) => c.id === inicial.condoId) ?? null;
+  const inicialComCadastro: Exercicio = inicial.fechado
+    ? inicial
+    : { ...inicial, consid: considEfetiva(inicial, condoDoExercicio) };
+  const [e, setE] = useState<Exercicio>(inicialComCadastro);
+  // Histórico de rateios: fonte do rateio atual (#308). Só avisa a divergência; não troca sozinho.
+  const { data: historicoRateios = [] } = useSuspenseQuery(
+    listaQueryTolerante<HistoricoRateio>("historico_rateios"),
   );
-  const [e, setE] = useState<Exercicio>(inicial);
-  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicial));
+  const [salvoJson, setSalvoJson] = useState(() => JSON.stringify(inicialComCadastro));
   const [confirmarExclusao, setConfirmarExclusao] = useState(false);
   const [confirmarFechamento, setConfirmarFechamento] = useState(false);
   const [motivoReabertura, setMotivoReabertura] = useState("");
@@ -104,6 +144,16 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   // foi o que apagou as despesas do balanço na reimportação do Lago Negro 2025.
   const demonstrativo = demonstrativoSalvo;
   const sujo = JSON.stringify(e) !== salvoJson;
+  // Rateio atual (#308): com histórico do ano anterior, vale o histórico; sem ele, o digitado.
+  const rateioDoHistorico = e.fechado
+    ? null
+    : rateioBaseDoAno(historicoRateios, e.condoId, Number(e.ano));
+  // Rateio aprovado (#327): com o rateio do ano travado no histórico, vale o do histórico.
+  const aprovadoDoHistorico = rateioAprovadoDoHistorico(e, historicoRateios);
+  // Fluxo guiado (#309): estado de cada etapa a partir do que já existe.
+  const { data: editais } = useSuspenseQuery(listaQuery<Assembleia>("assembleias"));
+  const { data: atas } = useSuspenseQuery(listaQuery<Ata>("atas"));
+  const etapas = etapasDoExercicio(e, editais, atas);
   const mesesPeriodo = mesesNoPeriodo(demonstrativo.periodo.ini, demonstrativo.periodo.fim);
 
   const mudar = (parcial: Partial<Exercicio>) =>
@@ -116,16 +166,24 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
    * apaga as contas que só o balanço tem.
    */
   async function atualizarPeloPeriodo() {
-    const novos = await atualizarMensais().then((r) => r.data ?? []);
-    const resultado = consolidarPeriodo(demonstrativoSalvo, novos, e.condoId);
-    if (resultado.estado !== "completa") {
-      toast.error(resultado.aviso ?? "Não foi possível consolidar os relatórios mensais.");
-      return;
+    setAtualizandoMensais(true);
+    try {
+      const novos = await queryClient.fetchQuery({
+        ...listaQuery<Mensal>("mensais"),
+        staleTime: 0,
+      });
+      const resultado = consolidarPeriodo(demonstrativoSalvo, novos, e.condoId);
+      if (resultado.estado !== "completa") {
+        toast.error(resultado.aviso ?? "Não foi possível consolidar os relatórios mensais.");
+        return;
+      }
+      mudar({ demonstrativo: resultado.demonstrativo });
+      toast.success(
+        `Demonstrativo consolidado com ${resultado.usados} ${resultado.usados === 1 ? "relatório mensal" : "relatórios mensais"}. Salve para gravar.`,
+      );
+    } finally {
+      setAtualizandoMensais(false);
     }
-    mudar({ demonstrativo: resultado.demonstrativo });
-    toast.success(
-      `Demonstrativo consolidado com ${resultado.usados} ${resultado.usados === 1 ? "relatório mensal" : "relatórios mensais"}. Salve para gravar.`,
-    );
   }
 
   // Avisa antes de sair com alterações não salvas (refs para ler o estado mais recente).
@@ -141,7 +199,22 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
   });
 
   const salvar = useMutation({
-    mutationFn: (dados: Exercicio) => api.salvar("exercicios", dados),
+    mutationFn: async (dados: Exercicio) => {
+      // Exercício aberto: o que foi editado nas considerações grava também no cadastro (#307).
+      // Fechado não toca no cadastro, para não voltar dados antigos sobre alterações posteriores.
+      if (!dados.fechado && condo) {
+        await api.salvar("condominios", condominioComConsid(condo, dados.consid));
+        queryClient.invalidateQueries({ queryKey: chaves.store("condominios") });
+      }
+      // Rateio atual (#308): com histórico do ano anterior, grava o valor do histórico.
+      return api.salvar(
+        "exercicios",
+        aplicarRateioAprovadoDoHistorico(
+          aplicarRateioBase(dados, historicoRateios),
+          historicoRateios,
+        ),
+      );
+    },
     onSuccess: (salvo) => {
       const n = normalizarExercicio(salvo);
       queryClient.invalidateQueries({ queryKey: chaves.lista("exercicios") });
@@ -270,16 +343,6 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           <>
             {e.fechado && <Badge variant="success">Exercício fechado</Badge>}
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => void atualizarPeloPeriodo()}
-              disabled={atualizandoMensais || e.fechado}
-              title="Somar os relatórios mensais do período neste demonstrativo"
-            >
-              {atualizandoMensais ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-              Atualizar dados
-            </Button>
             {!e.fechado && (
               <ImportarPdf
                 modo="editor"
@@ -306,16 +369,6 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               />
             )}
             <Button variant="outline" asChild>
-              <Link to="/previsao-orcamentaria" search={{ exercicio: e.id }}>
-                <Calculator /> Previsão orçamentária
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/previsto-realizado" search={{ exercicio: e.id }}>
-                Previsto × Realizado
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
               <Link to="/relatorio-final/$id" params={{ id: e.id }}>
                 <FileText /> Relatório final
               </Link>
@@ -324,27 +377,50 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               permissao="prestacao_contas.editar"
               variant="outline"
               type="button"
-              disabled={
-                salvar.isPending ||
-                fechamento.isPending ||
-                sujo ||
-                (!e.fechado && JSON.stringify(demonstrativo) !== JSON.stringify(demonstrativoSalvo))
-              }
+              disabled={salvar.isPending || fechamento.isPending || sujo}
               title="Salve os dados e a previsão antes de fechar o exercício."
               onClick={() => setConfirmarFechamento(true)}
             >
               {e.fechado ? "Reabrir exercício" : "Fechar exercício"}
             </Button>
-            <Button
-              permissao="prestacao_contas.editar"
-              variant="outline"
-              type="button"
-              disabled={e.fechado}
-              onClick={() => setConfirmarExclusao(true)}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 /> Excluir
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" type="button">
+                  Mais ações <ChevronDown className="size-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem
+                  disabled={atualizandoMensais || e.fechado}
+                  onClick={() => void atualizarPeloPeriodo()}
+                >
+                  {atualizandoMensais ? (
+                    <Loader2 className="mr-2 size-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 size-4" />
+                  )}
+                  Atualizar dados pelos mensais
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/previsao-orcamentaria" search={{ exercicio: e.id }}>
+                    <Calculator className="mr-2 size-4" /> Previsão do rateio
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/previsto-realizado" search={{ exercicio: e.id }}>
+                    <FileText className="mr-2 size-4" /> Previsto × Realizado
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={e.fechado}
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => setConfirmarExclusao(true)}
+                >
+                  <Trash2 className="mr-2 size-4" /> Excluir prestação de contas
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               permissao="prestacao_contas.editar"
               type="submit"
@@ -357,6 +433,8 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
           </>
         }
       />
+
+      <EtapasExercicio etapas={etapas} exercicioId={e.id} />
 
       {e.fechado && (
         <Alert className="mb-4">
@@ -410,24 +488,37 @@ function FormExercicio({ inicial }: { inicial: Exercicio }) {
               <Field rotulo="Data de emissão" className="sm:col-span-2">
                 <DataInput value={e.dataEmissao} onChange={(v) => mudar({ dataEmissao: v })} />
               </Field>
-              <Field rotulo="Rateio atual (por unidade)" className="sm:col-span-3">
-                <DinheiroInput
-                  value={e.rateioAtual}
-                  onChange={(v) => mudar({ rateioAtual: v })}
-                  disabled={e.fechado}
-                />
-              </Field>
-              <Field
-                rotulo="Rateio aprovado"
-                dica="Valor aprovado em assembleia."
+              <CampoRateioHistorico
+                rotulo="Rateio atual (por unidade)"
                 className="sm:col-span-3"
-              >
-                <DinheiroInput
-                  value={e.rateioAprovado}
-                  onChange={(v) => mudar({ rateioAprovado: v })}
-                  disabled={e.fechado}
-                />
-              </Field>
+                valor={e.rateioAtual}
+                onChange={(v) => mudar({ rateioAtual: v })}
+                disabled={e.fechado}
+                doHistorico={
+                  rateioDoHistorico !== null
+                    ? {
+                        valor: rateioDoHistorico,
+                        dica: `Aprovado para ${Number(e.ano) - 1}, do histórico de rateios. Para alterar, use a Previsão orçamentária.`,
+                      }
+                    : null
+                }
+              />
+              <CampoRateioHistorico
+                rotulo="Rateio aprovado"
+                className="sm:col-span-3"
+                dica="Valor aprovado em assembleia."
+                valor={e.rateioAprovado}
+                onChange={(v) => mudar({ rateioAprovado: v })}
+                disabled={e.fechado}
+                doHistorico={
+                  aprovadoDoHistorico !== null
+                    ? {
+                        valor: aprovadoDoHistorico,
+                        dica: `Travado no histórico de rateios para ${e.ano}. Para alterar, use a Previsão orçamentária.`,
+                      }
+                    : null
+                }
+              />
             </div>
           </SectionCard>
 

@@ -65,19 +65,29 @@ export function baixarBase64(
   salvarArquivo(blob, nomeArquivo);
 }
 
-export function imprimirPdfBase64(base64OuDataUrl: string): void {
+export function imprimirPdfBase64(base64OuDataUrl: string): boolean {
   const url = base64ParaBlobUrl(base64OuDataUrl, "application/pdf");
-  const w = window.open(url, "_blank");
-  if (w) {
-    w.addEventListener("load", () => {
-      try {
-        w.focus();
-        w.print();
-      } catch {
-        // O navegador já exibe os controles nativos do PDF
-      }
-    });
+  const w = window.open(url, "_blank", "noopener");
+  if (!w) {
+    URL.revokeObjectURL(url);
+    return false;
   }
+  try {
+    w.opener = null;
+  } catch {
+    // Alguns navegadores já isolam opener ao passar "noopener"
+  }
+  w.addEventListener("load", () => {
+    try {
+      w.focus();
+      w.print();
+    } catch {
+      // O navegador já exibe os controles nativos do PDF
+    }
+  });
+  // Revoga a URL após dar tempo de carregamento/impressão sem vazar memória indefinidamente
+  setTimeout(() => URL.revokeObjectURL(url), 120_000);
+  return true;
 }
 
 export async function calcularHashSha256(buffer: ArrayBuffer): Promise<string> {

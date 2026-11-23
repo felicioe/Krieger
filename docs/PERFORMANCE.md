@@ -30,6 +30,17 @@ CPU/rede e método. INP de campo exige observação de uso; não inventar nota a
 partir de um build ou de uma resposta HTTP. Testes de fornecedor devem ser
 identificados como tais, sem confundi-los com verificação independente.
 
+## Adaptador de demonstração
+
+O adaptador de demonstração (#332) usa importação dinâmica somente quando
+uma operação de API ocorre num hostname de demonstração. Em produção, as
+operações continuam no adaptador PHP e o navegador não solicita os dados
+fictícios na carga inicial.
+
+Em builds locais consecutivos com `npm run bundle:check`, a carga inicial
+passou de 189.190 para 167.793 bytes gzip (21.397 bytes a menos).
+O chunk `api-*` passou de 26.482 para 2.754 bytes gzip.
+
 ## Anexos da prestação de contas
 
 A listagem usa `api.anexos.listar(exercicioId)`: o filtro por exercício e a remoção

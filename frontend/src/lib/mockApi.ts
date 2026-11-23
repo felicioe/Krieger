@@ -59,7 +59,12 @@ function permissoesPadraoDoPerfil(perfil: Perfil): string[] {
   if (perfil === "admin") return ["*"];
   const todas = catalogoPermissoes().map((p) => p.chave);
   // ADM e Usuário começam iguais: tudo menos as telas de administração.
-  return todas.filter((chave) => !MODULOS_ADMINISTRACAO.includes(chave.split(".")[0] ?? ""));
+  // A configuração do condomínio segue a migração: só o ADM a recebe por padrão.
+  return todas.filter(
+    (chave) =>
+      !MODULOS_ADMINISTRACAO.includes(chave.split(".")[0] ?? "") &&
+      !(perfil === "user" && chave === "condominios.configurar"),
+  );
 }
 
 /** Matriz vigente: o que o SuperADM gravou para o perfil, ou o padrão quando ainda não mexeu. */
@@ -70,7 +75,7 @@ function permissoesDoPerfil(perfil: Perfil): string[] {
 }
 function catalogoPermissoes(): PermissaoCatalogo[] {
   const modulos = [...new Set(rotasPermissoes.map(([, m]) => m))];
-  return modulos.flatMap((m) =>
+  const base = modulos.flatMap((m) =>
     ["visualizar", ...(MODULOS_EDITAVEIS.includes(m) ? ["editar"] : [])].map((acao) => ({
       chave: m + "." + acao,
       modulo: m,
@@ -78,6 +83,16 @@ function catalogoPermissoes(): PermissaoCatalogo[] {
       acao,
     })),
   );
+  // Ações além de visualizar/editar, como a aba Configuração do cadastro (ver migrations/20261122).
+  return [
+    ...base,
+    {
+      chave: "condominios.configurar",
+      modulo: "condominios",
+      tela: "condominios",
+      acao: "configurar",
+    },
+  ];
 }
 import {
   ApiError,

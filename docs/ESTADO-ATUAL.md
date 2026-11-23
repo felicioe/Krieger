@@ -1,5 +1,53 @@
 # Estado atual e passagem de contexto
 
+## Auditoria Impeccable 5 dimensões (`audit`, `adapt`, `optimize`, `clarify`, `distill`) — 22/11/2026
+
+Relatório em `docs/auditorias/IMPECCABLE-5-DIMENSOES-2026-11-22.md`. Foram abertas e corrigidas as 18 pendências (`#386`–`#403`):
+
+- **`optimize` (`#386`–`#388`, `#397`, `#398`, `#402`)**: cache de sessão com TTL de 60 s (`garantirSessaoRecente`) eliminando a chamada bloqueante a cada navegação; pré-carregamento em paralelo nos loaders de Condomínios e Atas e carga de `mensais` sob demanda em Prestação de contas; `ParecerMarkdown` carregado via `React.lazy` na Consulta Inteligente e imports nomeados de `recharts` em `chart.tsx`; memoização de `compararPrevistoRealizadoMensal` (sem execução duplicada) e validações de rateio; remoção de `JSON.stringify` morto em Prestação de contas; `staleTime` por perfil em `queries.ts` e invalidações restritas em Limpeza de Dados e Drive.
+- **`audit` + `adapt` (`#389`–`#391`, `#394`–`#396`)**: área de envio do Drive acessível por teclado e `aria-label` em campos/botões de ícone; `<textarea>` da ata diretamente dentro de `<Field>`; remoção de botão fechar duplicado e ajuste de contraste/hierarquia em `PainelVariaveis`; `<RolagemTabela>` nas tabelas dos modais do Drive e em Backup; `role="menu"` no Drive e remoção de `<h1>` duplicado / ajuste `<h4>` → `<h3>` em `PreviaRelatorio`; layouts responsivos nos modais do Drive, Consulta IA e `alvo-toque` nos botões nativos.
+- **`clarify` + `distill` (`#392`, `#393`, `#399`–`#401`, `#403`)**: terminologia alinhada ao menu lateral (`Previsão do rateio`, `Base prevista para relatórios`), remoção de jargões (`PDF inline`, `pop-ups`, `Layouts`) e pluralização natural via `contagem()`; cabeçalho da Prestação de contas enxugado com menu `Mais ações`; botão `Enviar` unificado no Drive; cartão `Listagem de Condomínios` abrindo diálogo direto no Importador.
+
+## Auditoria Impeccable (`harden` + `critique`) e correções — 22/11/2026
+
+Relatório completo em `docs/auditorias/IMPECCABLE-HARDEN-CRITIQUE-2026-11-22.md`. Foram abertas e corrigidas todas as 15 pendências (`#369`–`#383`):
+
+- **P1 (`#369`–`#372`)**: confirmação destrutiva ao excluir no Drive e em Modelos de Ata; `throw notFound()` no `loader` + tratamento de erro em Modelos de Ata; permissões granulares em Importações, Backup, Modelos de Ata, Escritório, Condomínio (`onSubmit`) e visualizador do Drive; confirmação por digitação (`APAGAR TUDO`), link para `/backup` com data do último backup e inclusão de `modelos_ata` no total da Limpeza de Dados.
+- **P2 (`#373`–`#380`)**: alertas de erro com "Tentar novamente" no Drive e Consulta IA; `useBlocker` em Condomínio, Escritório e Modelos de Ata; `max-h-[90vh] overflow-y-auto` em `DialogContent`; proteção contra corrida no visualizador PDF, `opener = null`, revogação de Blob URL e aviso de pop-up bloqueado; redução de ações duplicadas no topo do Drive; `<SelecaoBusca>` + rótulos reais de competência em Previsto × Realizado e Orçado × Realizado Mensal; navegação direta e motivo visível no Consolidado; linguagem contábil PT-BR, `contagem()` e ícones Lucide no lugar de jargões/emojis.
+- **P3 (`#381`–`#383`)**: contenção na viewport, `Escape` e trava de clique duplo no Drive; Central de Ajuda sincronizada com `AppSidebar.tsx`; padronização de checkboxes/`disabled` no Relatório final, `<PageHeader>` em estados vazios, `<Alert>` para exercício fechado, bloqueio de autoexclusão e agrupamento/filtro por módulo em Permissões de Usuários.
+
+## Auditoria de navegação — 22/11/2026
+
+- #338: sem preferência salva, o menu inicia recolhido e abre o grupo da rota
+  atual. O controle geral fica no início do menu e a preferência explícita
+  continua associada ao usuário.
+- #337: estrelas visíveis também no toque, com alvos de 44 px. O menu exibe
+  até cinco atalhos na ordem em que foram adicionados. Os destinos e os
+  controles permanecem nos grupos de origem, inclusive para remover escolhas
+  antigas que excedam o limite.
+- #336: Ajuda e versão reúne Central de ajuda e Registro de Alterações.
+  Minha senha e Sair ficam na conta, e Usuários fica em Administração,
+  restrito ao perfil SuperADM.
+- #335: a navegação distingue Previsão do rateio de Previsão para relatórios
+  e as visões Previsto × Realizado acumulado e por mês. Carga de dados
+  mensais identifica a tela de acompanhamento. Rotas e permissões permanecem.
+- #331: as descrições do Resumo da previsão quebram em várias linhas. Em
+  cartões estreitos o valor passa para a linha seguinte, no mesmo ajuste.
+- #332: o adaptador de demonstração é buscado só na primeira operação em
+  ambiente de demonstração. O ambiente de produção continua chamando o PHP.
+- #333: no Drive, autoidentificação por nome usa o selo compartilhado de
+  sucesso e documentos não identificados usam o de aviso. Os dois mantêm
+  rótulos textuais distintos. Num lote fictício, as medições de contraste
+  no Chromium foram 4,70:1 e 10,75:1, respectivamente.
+
+
+## Acessibilidade da previsão e do relatório final — 22/11/2026
+
+O link para a previsão em **Previsto × Realizado** tem sublinhado permanente e
+indicador de foco por teclado (#329). No **Relatório final**, as opções de pizza
+por grupo e evolução mensal têm caixas de 24 × 24 px no desktop e mantêm a área
+de toque ampliada em telas estreitas ou com ponteiro de toque (#330).
+
 ## Histórico de rateios na Previsão Orçamentária — 21/11/2026 (issue #294)
 
 Componente `components/previsao/HistoricoRateiosPrevisao.tsx` (modo rateio): rateio histórico e % histórico do ano anterior,

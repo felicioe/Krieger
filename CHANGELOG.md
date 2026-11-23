@@ -2,7 +2,21 @@
 
 <!-- Gerado por npm run changelog:gerar. Fonte única: frontend/src/data/versoes.json. -->
 
-Versão atual: **1.14**.
+Versão atual: **1.16**.
+
+## 1.16 — Permissões da aba Configuração e menu conferido com a matriz
+
+- A aba Configuração do cadastro do condomínio passa a depender da permissão Configurar condomínio, na matriz de perfis. Antes, aparecia por perfil fixo e não podia ser ajustada.
+- Salvar alterações em regras, rubricas, arredondamento ou de-para exige essa permissão também no servidor.
+- Um teste confere que cada item do menu abre apenas para quem tem a permissão correspondente.
+
+## 1.15 — Exportação padronizada e Relatório final no menu Relatórios
+
+- Todas as telas com exportação usam o mesmo botão Exportar, com PDF, Word (quando a tela tem documento próprio), XLSX e Imprimir (A4 paisagem). O CSV saiu do menu.
+- A Previsão orçamentária, as atas, os editais, o relatório mensal e os relatórios do menu Relatórios passaram a usar esse botão único.
+- Previsto × Realizado e Comparativo de despesas, Inadimplência e Previsto × Realizado mensal passam a oferecer PDF e Word, além do XLSX e da impressão.
+- O Relatório final ganhou entrada no menu Relatórios: escolha a prestação de contas e abra o relatório. O botão na tela da prestação continua funcionando.
+- A emissão do relatório final continua pelo diálogo Conferir e emitir, porque ela valida o relatório e registra a data e quem emitiu.
 
 ## 1.14 — Histórico de rateios e documentos obrigatórios por cidade
 

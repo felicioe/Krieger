@@ -79,6 +79,20 @@ export function contarUnidadesPresentes(presentes: Presente[]): number {
   return new Set(presentes.map((p) => p.unidade.trim().toLowerCase()).filter(Boolean)).size;
 }
 
+/**
+ * Quórum depois de uma mudança na lista de presentes (issue #305). Enquanto o número de unidades
+ * ainda é igual à contagem da lista, ele acompanha a lista. Se a pessoa ajustou o número à mão, o
+ * valor fica como está, e a tela avisa a divergência.
+ */
+export function quorumAposPresentes(
+  quorum: Ata["quorum"],
+  presentesAntes: Presente[],
+  presentesNovos: Presente[],
+): Ata["quorum"] {
+  if (quorum.unidadesPresentes !== contarUnidadesPresentes(presentesAntes)) return quorum;
+  return { ...quorum, unidadesPresentes: contarUnidadesPresentes(presentesNovos) };
+}
+
 /** Ata já existente para o edital, se houver. */
 export function ataDoEdital(assembleiaId: string, atas: Pick<Ata, "id" | "assembleiaId">[]) {
   return assembleiaId ? (atas.find((a) => a.assembleiaId === assembleiaId) ?? null) : null;

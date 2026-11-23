@@ -69,7 +69,6 @@ function Ajuda() {
         titulo="Central de Ajuda"
         descricao="Guias, tutoriais e respostas rápidas para usar o Krieger."
       />
-
       {/* Busca livre */}
       <div className="mb-6 flex gap-2">
         <div className="relative flex-1">
@@ -83,11 +82,9 @@ function Ajuda() {
             aria-label="Buscar na Central de Ajuda"
           />
         </div>
-        {buscaTexto && (
-          <Button variant="ghost" size="icon" onClick={() => setBuscaTexto("")} aria-label="Limpar busca">
-            <X className="size-4" />
-          </Button>
-        )}
+        <Button variant="ghost" size="icon" onClick={() => setBuscaTexto("")} aria-label="Limpar busca">
+          <X className="size-4" />
+        </Button>
       </div>
 
       {/* Cards de categorias */}

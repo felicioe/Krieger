@@ -24,7 +24,7 @@ import { SectionCard } from "@/components/app/SectionCard";
 import { Field } from "@/components/app/Field";
 import { RepeatableList } from "@/components/app/RepeatableList";
 import { ConfirmDialog } from "@/components/app/ConfirmDialog";
-import { BotaoDocumento } from "@/components/documentos/BotaoDocumento";
+import { Exportacoes } from "@/components/app/Exportacoes";
 import { DataInput, HoraInput, InteiroInput, Selecao } from "@/components/app/inputs";
 import { api } from "@/lib/api";
 import { chaves, itemQuery, listaQuery } from "@/lib/queries";
@@ -32,6 +32,7 @@ import { dataParaBR, dataParaISO, formatData, formatNumeroBR, parseData } from "
 import { cabecalho } from "@/lib/head";
 import {
   contarUnidadesPresentes,
+  quorumAposPresentes,
   normalizarAta,
   novoItemAta,
   OPCOES_MODALIDADE,
@@ -58,6 +59,7 @@ export const Route = createFileRoute("/_authenticated/atas/$id")({
       queryClient.ensureQueryData(listaQuery<Condominio>("condominios")),
       queryClient.ensureQueryData(listaQuery<Assembleia>("assembleias")),
       queryClient.ensureQueryData(itemQuery<ConfigEscritorio>("config", "escritorio")),
+      queryClient.ensureQueryData(listaQuery<ModeloAta>("modelos_ata")),
     ]);
     if (!a) throw notFound();
     return null;
@@ -213,10 +215,13 @@ function FormAta({ inicial }: { inicial: Ata }) {
           <>
             <Badge variant={travada ? "success" : "warning"}>{rotuloStatus(a.status)}</Badge>
             {sujo && <Badge variant="warning">Alterações não salvas</Badge>}
-            <BotaoDocumento
-              gerar={gerarDocumento}
-              bloqueio={sujo ? "Salve a ata antes de gerar o documento." : null}
-              rotulo={travada ? "Gerar ata" : "Gerar rascunho"}
+            <Exportacoes
+              acoes={{
+                documentos: [
+                  { rotulo: travada ? "Ata" : "Rascunho da ata", gerar: gerarDocumento },
+                ],
+              }}
+              bloqueio={sujo ? "Salve a ata antes de exportar." : null}
             />
             {travada ? (
               <Button
@@ -314,7 +319,7 @@ function FormAta({ inicial }: { inicial: Ata }) {
             <div className="mt-4 max-w-xs">
               <Field
                 rotulo="Modelo de ata"
-                dica="Escolha um layout por cartório/cidade ou use o padrão."
+                dica="Escolha um formato por cartório ou cidade, ou use o padrão."
               >
                 <Selecao
                   value={a.modeloAtaId ?? ""}
@@ -371,7 +376,12 @@ function FormAta({ inicial }: { inicial: Ata }) {
           >
             <RepeatableList<Presente>
               itens={a.presentes}
-              onChange={(presentes) => mudar({ presentes })}
+              onChange={(presentes) =>
+                mudar({
+                  presentes,
+                  quorum: quorumAposPresentes(a.quorum, a.presentes, presentes),
+                })
+              }
               novo={() => ({ unidade: "", nome: "", procurador: false })}
               colunas="grid-cols-1 @min-[12rem]:grid-cols-[5.5rem_minmax(0,1fr)] @2xl:grid-cols-[7rem_minmax(0,1fr)_8rem]"
               cabecalhos={["Unidade", "Nome", "Procurador"]}
