@@ -35,11 +35,31 @@ export type Categoria = { id: AjudaCategoria; nome: string; descricao: string };
 
 /** Mesma ordem do menu lateral. Os ícones ficam na tela. */
 export const CATEGORIAS: Categoria[] = [
-  { id: "inicio", nome: "Primeiros passos", descricao: "Como o sistema se organiza e o cadastro base." },
-  { id: "rateio", nome: "Apuração do rateio", descricao: "Prestação de contas, previsão e importação do Systemar." },
-  { id: "relatorios", nome: "Relatórios", descricao: "Acompanhamento mensal, inadimplência e comparativos." },
-  { id: "assembleias", nome: "Assembleias e documentos", descricao: "Editais, atas e o drive de documentos." },
-  { id: "administracao", nome: "Administração", descricao: "Escritório, usuários, permissões e backup." },
+  {
+    id: "inicio",
+    nome: "Primeiros passos",
+    descricao: "Como o sistema se organiza e o cadastro base.",
+  },
+  {
+    id: "rateio",
+    nome: "Apuração do rateio",
+    descricao: "Prestação de contas, previsão e importação do Systemar.",
+  },
+  {
+    id: "relatorios",
+    nome: "Relatórios",
+    descricao: "Acompanhamento mensal, inadimplência e comparativos.",
+  },
+  {
+    id: "assembleias",
+    nome: "Assembleias e documentos",
+    descricao: "Editais, atas e o drive de documentos.",
+  },
+  {
+    id: "administracao",
+    nome: "Administração",
+    descricao: "Escritório, usuários, permissões e backup.",
+  },
 ];
 
 export const ARTIGOS: ArtigoAjuda[] = [
@@ -160,18 +180,42 @@ export const ARTIGOS: ArtigoAjuda[] = [
     id: "previsao-relatorios",
     categoria: "rateio",
     titulo: "Previsão para relatórios",
-    resumo: "Realizado e previsto lado a lado, sem os ajustes exclusivos do rateio.",
-    palavrasChave: ["previsão", "relatório", "por grupo", "detalhado", "exportar"],
+    resumo:
+      "Compara o realizado do exercício com a previsão aprovada, proporcional aos meses com dados.",
+    palavrasChave: [
+      "previsão",
+      "relatório",
+      "aprovada",
+      "realizado",
+      "por grupo",
+      "detalhado",
+      "exportar",
+    ],
     blocos: [
       {
         tipo: "p",
         texto:
-          "O realizado vem das despesas do demonstrativo; o previsto aplica o percentual de reajuste a esse realizado. Não entram deduções, ajustes avulsos nem variação de despesas sugeridas.",
+          "O **realizado** vem dos **relatórios mensais** do período do exercício. Só quando não há nenhum mensal o sistema usa o demonstrativo da prestação de contas, e avisa na tela.",
+      },
+      {
+        tipo: "p",
+        texto:
+          "O **previsto** é a **previsão aprovada**: a congelada no fechamento, se o exercício estiver fechado, ou a gravada para o exercício. Sem previsão aprovada, ele é derivado das despesas do **exercício anterior**. O previsto não é o realizado atual com reajuste.",
+      },
+      {
+        tipo: "p",
+        texto:
+          "Com relatórios mensais, a comparação vai até o último mês carregado e o previsto é proporcional a esses meses. Os ajustes da previsão orçamentária (deduções, valores avulsos, variação sugerida) não entram aqui.",
+      },
+      {
+        tipo: "atencao",
+        texto:
+          "Mês sem relatório dentro do período conta como zero no realizado; a tela lista esses meses e também aponta meses com mais de um relatório.",
       },
       {
         tipo: "dica",
         texto:
-          "Alterne entre **Por grupo** e **Detalhado**. PDF e Imprimir abrem a saída em janela própria, sem o menu; XLSX e CSV baixam os dados da apresentação selecionada.",
+          "Alterne entre **Por grupo** e **Detalhado**. PDF e Imprimir abrem a saída em janela própria, sem o menu; XLSX baixa os dados da apresentação selecionada.",
       },
     ],
   },
@@ -235,8 +279,8 @@ export const ARTIGOS: ArtigoAjuda[] = [
     id: "relatorio-mensal",
     categoria: "relatorios",
     titulo: "Acompanhamento de carga mensal",
-    resumo: "O boletim mensal do condomínio e as exportações em CSV, XLSX e PDF.",
-    palavrasChave: ["mensal", "boletim", "csv", "xlsx", "pdf", "exportar", "imprimir"],
+    resumo: "O boletim mensal do condomínio e o botão Exportar (PDF, Word, XLSX e impressão).",
+    palavrasChave: ["mensal", "boletim", "xlsx", "pdf", "word", "exportar", "imprimir"],
     rota: "/relatorio-mensal",
     blocos: [
       {
@@ -247,7 +291,7 @@ export const ARTIGOS: ArtigoAjuda[] = [
       {
         tipo: "dica",
         texto:
-          "Esta lista, o Previsto × Realizado e as prestações exportam em **CSV** (abre no Excel com vírgula decimal) e **XLSX**, e imprimem em **A4 paisagem** com as mesmas colunas da tela.",
+          "As telas com exportação usam o mesmo botão **Exportar**: PDF, Word (quando a tela tem documento próprio), **XLSX** e impressão em **A4 paisagem**, sempre com as mesmas colunas da tela.",
       },
     ],
   },
@@ -329,7 +373,8 @@ export const ARTIGOS: ArtigoAjuda[] = [
       },
       {
         tipo: "dica",
-        texto: "Os modelos de edital e de ata guardam blocos de texto reutilizáveis entre convocações e cidades.",
+        texto:
+          "Os modelos de edital e de ata guardam blocos de texto reutilizáveis entre convocações e cidades.",
       },
     ],
   },
@@ -353,7 +398,16 @@ export const ARTIGOS: ArtigoAjuda[] = [
     categoria: "administracao",
     titulo: "Escritório, usuários e backup",
     resumo: "Perfis de acesso, permissões, dados do escritório e cópia de segurança.",
-    palavrasChave: ["usuários", "perfil", "permissões", "superadm", "adm", "backup", "escritório", "senha"],
+    palavrasChave: [
+      "usuários",
+      "perfil",
+      "permissões",
+      "superadm",
+      "adm",
+      "backup",
+      "escritório",
+      "senha",
+    ],
     rota: "/usuarios",
     blocos: [
       {

@@ -275,10 +275,7 @@ export function FormCondominio({
   const [rateios, setRateios] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
   const [rateiosGravados, setRateiosGravados] = useState<LinhaRateioForm[]>(linhasRateioIniciais);
   const [tentouRateios, setTentouRateios] = useState(false);
-  const validacaoRateios = useMemo(
-    () => validarLinhasRateio(rateios, c.id),
-    [rateios, c.id],
-  );
+  const validacaoRateios = useMemo(() => validarLinhasRateio(rateios, c.id), [rateios, c.id]);
   // Só as linhas novas ou alteradas bloqueiam o salvamento; linhas antigas não são revalidadas.
   const errosRateios = useMemo(
     () =>

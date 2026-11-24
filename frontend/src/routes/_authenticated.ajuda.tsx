@@ -17,7 +17,12 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,7 +40,8 @@ import { cn, irPara } from "@/lib/utils";
 type Busca = { secao?: string; artigo?: string };
 
 export const Route = createFileRoute("/_authenticated/ajuda")({
-  head: () => cabecalho("Central de Ajuda", "Guias e respostas rápidas para usar o Sistema Krieger."),
+  head: () =>
+    cabecalho("Central de Ajuda", "Guias e respostas rápidas para usar o Sistema Krieger."),
   validateSearch: (s: Record<string, unknown>): Busca => {
     const secao = typeof s["secao"] === "string" && s["secao"] ? s["secao"] : undefined;
     const artigo = typeof s["artigo"] === "string" && s["artigo"] ? s["artigo"] : undefined;
@@ -52,7 +58,12 @@ const ICONES: Record<AjudaCategoria, ComponentType<{ className?: string }>> = {
   administracao: ShieldCheck,
 };
 
-const MAIS_ACESSADOS = ["previsao-orcamentaria", "importador", "prestacao-contas", "consolidado-escritorio"];
+const MAIS_ACESSADOS = [
+  "previsao-orcamentaria",
+  "importador",
+  "prestacao-contas",
+  "consolidado-escritorio",
+];
 
 const porId = (id: string) => ARTIGOS.find((a) => a.id === id);
 
@@ -174,7 +185,9 @@ function Ajuda() {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-foreground">{cat.nome}</span>
-                  <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">{cat.descricao}</span>
+                  <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                    {cat.descricao}
+                  </span>
                 </span>
                 <span className="shrink-0 text-xs font-medium text-primary lg:mt-auto">
                   {total} {total === 1 ? "artigo" : "artigos"}
@@ -187,7 +200,10 @@ function Ajuda() {
 
       {/* Índice + artigos */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <nav aria-label="Índice da ajuda" className="hidden lg:sticky lg:top-6 lg:block lg:self-start">
+        <nav
+          aria-label="Índice da ajuda"
+          className="hidden lg:sticky lg:top-6 lg:block lg:self-start"
+        >
           <div className="rounded-lg border bg-card p-3 text-sm shadow-sm">
             {CATEGORIAS.map((cat) => {
               const itens = visiveis.filter((a) => a.categoria === cat.id);
@@ -218,9 +234,13 @@ function Ajuda() {
 
         <div className="min-w-0 space-y-4">
           {filtrando && (
-            <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground" aria-live="polite">
+            <div
+              className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground"
+              aria-live="polite"
+            >
               <span>
-                {visiveis.length} {visiveis.length === 1 ? "artigo encontrado" : "artigos encontrados"}
+                {visiveis.length}{" "}
+                {visiveis.length === 1 ? "artigo encontrado" : "artigos encontrados"}
               </span>
               <Button variant="ghost" size="sm" onClick={limpar}>
                 <X className="size-4" /> Limpar filtros
@@ -236,7 +256,9 @@ function Ajuda() {
             <div className="flex flex-col items-center rounded-lg border border-dashed bg-card px-6 py-12 text-center">
               <SearchX className="size-10 text-muted-foreground/60" />
               <p className="mt-3 font-medium text-foreground">Nenhum artigo encontrado</p>
-              <p className="mt-1 text-sm text-muted-foreground">Tente outra palavra ou veja todos os guias.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Tente outra palavra ou veja todos os guias.
+              </p>
               <Button variant="outline" size="sm" className="mt-4" onClick={limpar}>
                 Ver todos os artigos
               </Button>
@@ -250,7 +272,8 @@ function Ajuda() {
             <div className="text-sm">
               <p className="font-medium text-foreground">Não encontrou o que procurava?</p>
               <p className="text-muted-foreground">
-                Fale com o SuperADM do escritório. Ele também libera acesso a telas que não aparecem no seu menu.
+                Fale com o SuperADM do escritório. Ele também libera acesso a telas que não aparecem
+                no seu menu.
               </p>
             </div>
           </div>
@@ -321,7 +344,9 @@ function CartaoArtigo({ artigo, destacado }: { artigo: ArtigoAjuda; destacado: b
             <Accordion type="multiple" className="rounded-md border px-4">
               {artigo.perguntas.map((p, i) => (
                 <AccordionItem key={i} value={String(i)} className="last:border-b-0">
-                  <AccordionTrigger className="text-left text-sm font-medium">{p.pergunta}</AccordionTrigger>
+                  <AccordionTrigger className="text-left text-sm font-medium">
+                    {p.pergunta}
+                  </AccordionTrigger>
                   <AccordionContent className="text-sm text-muted-foreground">
                     <Rico texto={p.resposta} />
                   </AccordionContent>
@@ -370,7 +395,11 @@ function BlocoAjuda({ bloco }: { bloco: Bloco }) {
       );
     case "dica":
       return (
-        <Destaque icone={<Lightbulb className="size-4" />} titulo="Dica" className="border-primary/20 bg-primary/5 text-primary">
+        <Destaque
+          icone={<Lightbulb className="size-4" />}
+          titulo="Dica"
+          className="border-primary/20 bg-primary/5 text-primary"
+        >
           <Rico texto={bloco.texto} />
         </Destaque>
       );

@@ -1,9 +1,16 @@
-import { describe, it } from "vitest";
+/**
+ * Ferramenta LOCAL (fora da suíte do CI): relatório de reconhecimento de
+ * apólices sobre os .txt extraídos dos PDFs de seguros.
+ * Rodar: VITEST_INCLUDE=scripts/batch-apolice-relatorio.test.ts APOLICE_TXT_DIR=<pasta> npx vitest run
+ */
+import { describe, expect, it } from "vitest";
 import { lerApoliceSeguro } from "@/domain/pdfParser";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
-const RESULTS_DIR = "C:\\Users\\Evandro\\.claude\\parser_results";
+const RESULTS_DIR = process.env["APOLICE_TXT_DIR"] ?? "C:\\Users\\Evandro\\.claude\\parser_results";
+const RELATORIO = path.join(os.tmpdir(), "batch-apolice-report.md");
 
 describe("batch: lerApoliceSeguro em todos os PDFs de Seguros", () => {
   it("relatório de reconhecimento de layouts", () => {
@@ -45,9 +52,9 @@ describe("batch: lerApoliceSeguro em todos os PDFs de Seguros", () => {
       "",
     );
 
-    fs.writeFileSync("/tmp/batch-apolice-report.md", reportLines.join("\n"), "utf8");
+    fs.writeFileSync(RELATORIO, reportLines.join("\n"), "utf8");
 
-    console.log(`\n📊 RELATÓRIO SALVO: /tmp/batch-apolice-report.md`);
+    console.log(`\n📊 RELATÓRIO SALVO: ${RELATORIO}`);
     console.log(`Reconhecidos: ${recognized} / ${files.length}`);
     console.log(`Não reconhecidos: ${notRecognized} / ${files.length}`);
 

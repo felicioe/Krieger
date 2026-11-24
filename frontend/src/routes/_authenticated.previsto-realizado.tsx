@@ -138,6 +138,18 @@ function PaginaComparativo() {
     ],
   );
 
+  // Hooks antes do retorno antecipado (rules-of-hooks).
+  const condominiosComExercicio = useMemo(() => {
+    const ids = new Set(exercicios.map((e) => e.condoId));
+    return condominios
+      .filter((c) => ids.has(c.id))
+      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
+  }, [condominios, exercicios]);
+  const opcoesCondos = useMemo(
+    () => opcoesCondominio(condominiosComExercicio, true, recentes),
+    [condominiosComExercicio, recentes],
+  );
+
   const cabeca = (
     <PageHeader
       titulo="Previsto × Realizado acumulado"
@@ -161,16 +173,6 @@ function PaginaComparativo() {
     );
   }
 
-  const condominiosComExercicio = useMemo(() => {
-    const ids = new Set(exercicios.map((e) => e.condoId));
-    return condominios
-      .filter((c) => ids.has(c.id))
-      .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  }, [condominios, exercicios]);
-  const opcoesCondos = useMemo(
-    () => opcoesCondominio(condominiosComExercicio, true, recentes),
-    [condominiosComExercicio, recentes],
-  );
   const opcoesExercicio = exercicios
     .filter((e) => e.condoId === exercicio.condoId)
     .map((e) => ({

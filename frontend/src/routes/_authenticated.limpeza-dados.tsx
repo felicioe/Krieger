@@ -229,8 +229,7 @@ function PaginaLimpezaDados() {
   }
 
   const totalGeral = totalCadastrosOperacionais(contagens.data);
-  const confirmacaoValida =
-    textoConfirmacaoTudo.trim().toUpperCase() === FRASE_CONFIRMACAO_TUDO;
+  const confirmacaoValida = textoConfirmacaoTudo.trim().toUpperCase() === FRASE_CONFIRMACAO_TUDO;
 
   return (
     <>

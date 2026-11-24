@@ -1,7 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useMemo, useState, type FormEvent } from "react";
-import { AlertTriangle, Copy, Eye, FileDown, FolderOpen, Loader2, RefreshCw, Send, Sparkles } from "lucide-react";
+import {
+  AlertTriangle,
+  Copy,
+  Eye,
+  FileDown,
+  FolderOpen,
+  Loader2,
+  RefreshCw,
+  Send,
+  Sparkles,
+} from "lucide-react";
 import { toast } from "sonner";
 const ParecerMarkdown = lazy(() => import("@/components/consulta/ParecerMarkdown"));
 import { Button } from "@/components/ui/button";
@@ -198,7 +208,9 @@ function PaginaConsultaDocumentos() {
         ...op,
         detalhe: [
           op.detalhe,
-          qtd > 0 ? `${contagem(qtd, "documento", "documentos")} na base` : "Sem documentos na base",
+          qtd > 0
+            ? `${contagem(qtd, "documento", "documentos")} na base`
+            : "Sem documentos na base",
         ]
           .filter(Boolean)
           .join(" • "),

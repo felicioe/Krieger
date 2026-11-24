@@ -89,7 +89,13 @@ import {
   processarArquivoParaRegistroDrive,
 } from "@/lib/driveProcessador";
 import { cabecalho } from "@/lib/head";
-import { chaves, documentosDriveQuery, documentosResumoQuery, itemQuery, listaQuery } from "@/lib/queries";
+import {
+  chaves,
+  documentosDriveQuery,
+  documentosResumoQuery,
+  itemQuery,
+  listaQuery,
+} from "@/lib/queries";
 
 type BuscaDrive = { condoId?: string; docId?: string };
 
@@ -340,7 +346,9 @@ function PaginaDriveDocumentos() {
         ...op,
         detalhe: [
           op.detalhe,
-          qtd > 0 ? `${contagem(qtd, "documento", "documentos")} no Drive` : "Sem documentos no Drive",
+          qtd > 0
+            ? `${contagem(qtd, "documento", "documentos")} no Drive`
+            : "Sem documentos no Drive",
         ]
           .filter(Boolean)
           .join(" • "),
@@ -1372,8 +1380,8 @@ function PaginaDriveDocumentos() {
                         <FileText className="mb-2 size-8" />
                         <p>
                           Este documento foi sincronizado apenas com o texto extraído pelo agente
-                          local de pastas. Para visualizar o PDF na própria tela no navegador, envie o
-                          arquivo diretamente pelo botão <strong>Subir Arquivos</strong>.
+                          local de pastas. Para visualizar o PDF na própria tela no navegador, envie
+                          o arquivo diretamente pelo botão <strong>Subir Arquivos</strong>.
                         </p>
                       </div>
                     )}
@@ -1499,7 +1507,8 @@ function PaginaDriveDocumentos() {
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
-              Confirmar envio de {contagem(itensPendentesCalculados.length, "documento", "documentos")} para o Drive
+              Confirmar envio de{" "}
+              {contagem(itensPendentesCalculados.length, "documento", "documentos")} para o Drive
             </DialogTitle>
             <DialogDescription>
               Pastas e subpastas são cadastradas automaticamente. Arquivos fora de pasta não
@@ -1543,8 +1552,8 @@ function PaginaDriveDocumentos() {
                   Arquivo Word (.DOCX) ou Imagem (.JPG/.PNG) detectado
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  A visualização em tela será <strong>sempre em PDF na própria tela</strong>. Como deseja
-                  armazenar o arquivo no Drive?
+                  A visualização em tela será <strong>sempre em PDF na própria tela</strong>. Como
+                  deseja armazenar o arquivo no Drive?
                 </p>
                 <label className="flex cursor-pointer items-start gap-2.5 rounded border bg-background p-2.5 text-xs">
                   <input
@@ -1559,8 +1568,8 @@ function PaginaDriveDocumentos() {
                       Converter para PDF e manter também o arquivo original (Recomendado)
                     </span>
                     <p className="text-muted-foreground">
-                      Permite visualizar/imprimir em PDF na própria tela e baixar tanto o PDF quanto o
-                      arquivo original (.DOCX / .JPG).
+                      Permite visualizar/imprimir em PDF na própria tela e baixar tanto o PDF quanto
+                      o arquivo original (.DOCX / .JPG).
                     </p>
                   </div>
                 </label>

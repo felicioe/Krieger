@@ -10,7 +10,8 @@ describe("Central de Ajuda", () => {
 
   it("mantém os ids usados pelos links ?secao= de outras telas e os aliases antigos", () => {
     const ids = new Set(ARTIGOS.map((a) => a.id));
-    for (const id of ["importador", "prestacao-contas", "previsao-orcamentaria"]) expect(ids).toContain(id);
+    for (const id of ["importador", "prestacao-contas", "previsao-orcamentaria"])
+      expect(ids).toContain(id);
     for (const destino of Object.values(ALIASES)) expect(ids).toContain(destino);
     expect(ids.size).toBe(ARTIGOS.length);
   });
