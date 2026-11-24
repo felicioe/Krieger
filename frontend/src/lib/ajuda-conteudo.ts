@@ -35,11 +35,31 @@ export type Categoria = { id: AjudaCategoria; nome: string; descricao: string };
 
 /** Mesma ordem do menu lateral. Os ícones ficam na tela. */
 export const CATEGORIAS: Categoria[] = [
-  { id: "inicio", nome: "Primeiros passos", descricao: "Como o sistema se organiza e o cadastro base." },
-  { id: "rateio", nome: "Apuração do rateio", descricao: "Prestação de contas, previsão e importação do Systemar." },
-  { id: "relatorios", nome: "Relatórios", descricao: "Acompanhamento mensal, inadimplência e comparativos." },
-  { id: "assembleias", nome: "Assembleias e documentos", descricao: "Editais, atas e o drive de documentos." },
-  { id: "administracao", nome: "Administração", descricao: "Escritório, usuários, permissões e backup." },
+  {
+    id: "inicio",
+    nome: "Primeiros passos",
+    descricao: "Como o sistema se organiza e o cadastro base.",
+  },
+  {
+    id: "rateio",
+    nome: "Apuração do rateio",
+    descricao: "Prestação de contas, previsão e importação do Systemar.",
+  },
+  {
+    id: "relatorios",
+    nome: "Relatórios",
+    descricao: "Acompanhamento mensal, inadimplência e comparativos.",
+  },
+  {
+    id: "assembleias",
+    nome: "Assembleias e documentos",
+    descricao: "Editais, atas e o drive de documentos.",
+  },
+  {
+    id: "administracao",
+    nome: "Administração",
+    descricao: "Escritório, usuários, permissões e backup.",
+  },
 ];
 
 export const ARTIGOS: ArtigoAjuda[] = [
@@ -160,8 +180,17 @@ export const ARTIGOS: ArtigoAjuda[] = [
     id: "previsao-relatorios",
     categoria: "rateio",
     titulo: "Previsão para relatórios",
-    resumo: "Compara o realizado do exercício com a previsão aprovada, proporcional aos meses com dados.",
-    palavrasChave: ["previsão", "relatório", "aprovada", "realizado", "por grupo", "detalhado", "exportar"],
+    resumo:
+      "Compara o realizado do exercício com a previsão aprovada, proporcional aos meses com dados.",
+    palavrasChave: [
+      "previsão",
+      "relatório",
+      "aprovada",
+      "realizado",
+      "por grupo",
+      "detalhado",
+      "exportar",
+    ],
     blocos: [
       {
         tipo: "p",
@@ -344,7 +373,8 @@ export const ARTIGOS: ArtigoAjuda[] = [
       },
       {
         tipo: "dica",
-        texto: "Os modelos de edital e de ata guardam blocos de texto reutilizáveis entre convocações e cidades.",
+        texto:
+          "Os modelos de edital e de ata guardam blocos de texto reutilizáveis entre convocações e cidades.",
       },
     ],
   },
@@ -368,7 +398,16 @@ export const ARTIGOS: ArtigoAjuda[] = [
     categoria: "administracao",
     titulo: "Escritório, usuários e backup",
     resumo: "Perfis de acesso, permissões, dados do escritório e cópia de segurança.",
-    palavrasChave: ["usuários", "perfil", "permissões", "superadm", "adm", "backup", "escritório", "senha"],
+    palavrasChave: [
+      "usuários",
+      "perfil",
+      "permissões",
+      "superadm",
+      "adm",
+      "backup",
+      "escritório",
+      "senha",
+    ],
     rota: "/usuarios",
     blocos: [
       {

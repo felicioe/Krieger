@@ -166,9 +166,7 @@ export function PainelVariaveis() {
         </DialogTrigger>
         <DialogContent className="max-w-3xl max-h-[85vh] p-0">
           <DialogHeader className="p-4 border-b">
-            <DialogTitle className="text-lg">
-              Variáveis disponíveis para modelos de ata
-            </DialogTitle>
+            <DialogTitle className="text-lg">Variáveis disponíveis para modelos de ata</DialogTitle>
             <div className="relative mt-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input

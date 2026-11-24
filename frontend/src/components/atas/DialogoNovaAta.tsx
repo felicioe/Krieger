@@ -70,7 +70,7 @@ export function DialogoNovaAta({
   const livres = useMemo(
     () => (condoId ? editaisLivres(condoId) : []),
     [condoId, assembleias, atas],
-  ); // eslint-disable-line react-hooks/exhaustive-deps
+  );
   const comAta = condoId
     ? assembleias.filter((a) => a.condoId === condoId).length - livres.length
     : 0;

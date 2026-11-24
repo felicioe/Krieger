@@ -13,7 +13,10 @@ import type { ModeloAta } from "@/domain/types";
 
 export const Route = createFileRoute("/_authenticated/modelos-ata/")({
   head: () =>
-    cabecalho("Modelos de ata", "Formatos de ata por cartório ou cidade para geração de PDF e Word."),
+    cabecalho(
+      "Modelos de ata",
+      "Formatos de ata por cartório ou cidade para geração de PDF e Word.",
+    ),
   loader: ({ context: { queryClient } }) =>
     queryClient.ensureQueryData(listaQuery<ModeloAta>("modelos_ata")),
   component: PaginaModelosAta,
