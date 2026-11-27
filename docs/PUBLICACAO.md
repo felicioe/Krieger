@@ -64,6 +64,17 @@ O CI instala/compila frontend antes do pacote desde o PR #51. Não há workflow
 de deploy neste repositório. Preservar configuração fora da pasta publicada e
 seguir as regras do conector na sessão de publicação. Refs #19/#49.
 
+## Publicar com o script
+
+`node scripts/publicar-hostinger.mjs` mostra o plano sem enviar nada: SHA de `origin/main`,
+estado de `deploy-hostinger`, CI do SHA (exige `gh` autenticado) e migrations desde a última
+publicação.
+
+Com `--executar`, o script gera o pacote numa árvore limpa do SHA, confere o `.htaccess` e o
+bundle, envia um commit à `deploy-hostinger` por fast-forward (nunca força) e, com
+`--dominio <site>`, espera o site servir o bundle novo. Recusa publicar se o CI não estiver
+verde ou se o pacote for idêntico ao publicado.
+
 ## Preparar uma versão
 
 1. Buscar `origin/main` e selecionar o SHA aprovado; conferir árvore limpa.
