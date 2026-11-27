@@ -107,7 +107,7 @@ function ListaAtas() {
       />
       <div className="mb-4 grid max-w-2xl gap-3 sm:grid-cols-[minmax(0,1fr)_12rem]">
         <SelecaoBusca
-          aria-label="Filtrar por condomínio"
+          aria-label={`Filtrar por condomínio: ${condo === TODOS ? "Todos os condomínios" : (condominios.find((c) => c.id === condo)?.nome ?? "")}`}
           value={condo}
           onChange={(v) => filtrar({ condo: v })}
           opcoes={[
@@ -118,7 +118,7 @@ function ListaAtas() {
           className="bg-card"
         />
         <Selecao
-          aria-label="Filtrar por situação"
+          aria-label={`Filtrar por situação: ${status === "rascunho" ? "Rascunho" : status === "finalizada" ? "Finalizada" : "Todas as situações"}`}
           value={status}
           onChange={(v) => filtrar({ status: v })}
           opcoes={[
