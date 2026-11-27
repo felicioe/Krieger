@@ -5,3 +5,7 @@ config.local.php
 node_modules/
 dist/
 resultado-build.log
+
+# Saídas dos testes de navegador (Playwright)
+frontend/test-results/
+frontend/playwright-report/
