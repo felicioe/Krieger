@@ -185,7 +185,7 @@ function ListaMensais() {
       <AvisoImportacoesPendentes />
       <div className="mb-4 max-w-sm">
         <SelecaoBusca
-          aria-label="Filtrar por condomínio"
+          aria-label={`Filtrar por condomínio: ${condo === TODOS ? "Todos os condomínios" : (condominios.find((c) => c.id === condo)?.nome ?? "")}`}
           value={condo}
           onChange={(v) => {
             selecionarCondo(v);
