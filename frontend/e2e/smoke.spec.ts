@@ -75,10 +75,19 @@ test.describe("1280 px com texto a 200%", () => {
 const auditarNomes = () => {
   const nomeDe = (el: Element): string => {
     const ids = el.getAttribute("aria-labelledby");
-    if (ids) return ids.split(" ").map((i) => document.getElementById(i)?.textContent ?? "").join(" ").trim();
+    if (ids)
+      return ids
+        .split(" ")
+        .map((i) => document.getElementById(i)?.textContent ?? "")
+        .join(" ")
+        .trim();
     if (el.getAttribute("aria-label")) return (el.getAttribute("aria-label") ?? "").trim();
     const rotulos = (el as HTMLInputElement).labels;
-    if (rotulos && rotulos.length) return Array.from(rotulos).map((l) => l.textContent ?? "").join(" ").trim();
+    if (rotulos && rotulos.length)
+      return Array.from(rotulos)
+        .map((l) => l.textContent ?? "")
+        .join(" ")
+        .trim();
     return "";
   };
   const campos = Array.from(document.querySelectorAll("input:not([type=hidden]), select, textarea"))
@@ -87,14 +96,23 @@ const auditarNomes = () => {
     .map((el) => `campo sem nome: ${(el as HTMLInputElement).name || el.outerHTML.slice(0, 60)}`);
   const botoes = Array.from(document.querySelectorAll("button"))
     .filter((el) => el.offsetParent !== null)
-    .map((el) => ({ visivel: (el.textContent ?? "").replace(/\s+/g, " ").trim(), nome: nomeDe(el) || (el.textContent ?? "").trim() }))
+    .map((el) => ({
+      visivel: (el.textContent ?? "").replace(/\s+/g, " ").trim(),
+      nome: nomeDe(el) || (el.textContent ?? "").trim(),
+    }))
     .filter((b) => b.visivel && !b.nome.includes(b.visivel.slice(0, 12)))
     .map((b) => `botão visível "${b.visivel.slice(0, 40)}" com nome "${b.nome.slice(0, 40)}"`);
   return [...campos, ...botoes];
 };
 
 test.describe("nomes acessíveis (#355, #408)", () => {
-  for (const rota of ["#/condominios/condo-acacias", "#/editais", "#/atas", "#/relatorio-mensal", "#/modelos"]) {
+  for (const rota of [
+    "#/condominios/condo-acacias",
+    "#/editais",
+    "#/atas",
+    "#/relatorio-mensal",
+    "#/modelos",
+  ]) {
     test(`sem divergência em ${rota}`, async ({ page }) => {
       await comSessao(page);
       await page.goto(`/${rota}`);
