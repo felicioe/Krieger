@@ -52,7 +52,7 @@ export function DistribuicaoFracao({
       titulo="Rateio por fração ideal"
       descricao="Base do rateio: fração ideal (fração prevista do cadastro). O reajuste % é o mesmo para todas as unidades; muda só quanto cada uma paga."
     >
-      {base.aviso && <p className="mb-3 text-sm text-warning">{base.aviso}</p>}
+      {base.aviso && <p className="mb-3 text-sm text-warning-foreground">{base.aviso}</p>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm">
           Total mensal com fundo de reserva: <strong className="num">{formatBRL(d.total)}</strong>,
@@ -70,7 +70,7 @@ export function DistribuicaoFracao({
         </Button>
       </div>
       {d.residuo !== 0 && (
-        <p className="mt-2 text-sm text-warning">
+        <p className="mt-2 text-sm text-warning-foreground">
           Não foi possível distribuir {formatBRL(Math.abs(d.residuo))} da diferença de
           arredondamento. Confira o total e as frações.
         </p>
