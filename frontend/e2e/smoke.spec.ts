@@ -5,9 +5,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 const CHAVE_SESSAO = "krieger-mock-sessao-v1";
 
+// A sessão é gravada antes de qualquer script da página, em todo documento que for aberto.
 async function comSessao(page: Page) {
-  await page.goto("/");
-  await page.evaluate((chave) => localStorage.setItem(chave, "u-admin"), CHAVE_SESSAO);
+  await page.addInitScript((chave) => {
+    if (!localStorage.getItem(chave)) localStorage.setItem(chave, "u-admin");
+  }, CHAVE_SESSAO);
 }
 
 function coletarErros(page: Page): string[] {
@@ -24,6 +26,7 @@ test.describe("rotas autenticadas abertas direto", () => {
     test(`${rota} sem erro de hidratação nem de console`, async ({ page }) => {
       await comSessao(page);
       const erros = coletarErros(page);
+      // Documento novo na própria rota: a hidratação acontece com o hash já aberto.
       await page.goto(`/${rota}`);
       await page.waitForLoadState("networkidle");
       expect(erros).toEqual([]);
