@@ -574,7 +574,7 @@ function Resumo({
                 />
                 {rateioHistoricoManual !== null &&
                   rateioHistoricoManual !== rateioHistoricoCalculado && (
-                    <span className="text-[10px] font-medium text-warning">
+                    <span className="text-[10px] font-medium text-warning-foreground">
                       Editado manualmente
                     </span>
                   )}
@@ -597,7 +597,7 @@ function Resumo({
                 />
                 {variacaoHistoricaManual !== null &&
                   variacaoHistoricaManual !== variacaoHistoricaCalculada && (
-                    <span className="text-[10px] font-medium text-warning">
+                    <span className="text-[10px] font-medium text-warning-foreground">
                       Editado manualmente
                     </span>
                   )}
